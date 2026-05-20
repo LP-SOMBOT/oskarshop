@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -20,7 +21,7 @@ type GameCardProps = {
 };
 
 export default function GameCard({ id, title, description, thumbnail, price, discountedPrice, gameId, imageHint }: GameCardProps) {
-  const { buyNow, user } = useApp();
+  const { buyNow, user, t } = useApp();
 
   const numPrice = Number(price);
   const numDiscounted = discountedPrice ? Number(discountedPrice) : 0;
@@ -80,7 +81,7 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
       </CardContent>
       <CardFooter className="p-3 md:p-5 pt-0">
         <Button onClick={handleBuyNow} className="w-full rounded-xl md:rounded-2xl h-10 md:h-12 gap-1.5 md:gap-2 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 text-[10px] md:text-sm">
-          <ShoppingCart className="w-3.5 h-3.5 md:w-5 md:h-5" /> {user ? "Buy Now" : "Login to Buy"}
+          <ShoppingCart className="w-3.5 h-3.5 md:w-5 md:h-5" /> {user ? t('buy_now') : t('login_to_buy')}
         </Button>
       </CardFooter>
     </Card>

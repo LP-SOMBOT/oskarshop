@@ -358,7 +358,9 @@ const translations: Record<Language, Record<string, string>> = {
     delivering_diamonds: "Delivering Diamonds...",
     delivered_success: "Successfully Delivered!",
     order_cancelled: "Order Cancelled",
-    admin_message: "Admin Message"
+    admin_message: "Admin Message",
+    buy_now: "Buy Now",
+    login_to_buy: "Login to Buy"
   },
   so: {
     home: "Hoyga",
@@ -402,7 +404,9 @@ const translations: Record<Language, Record<string, string>> = {
     delivering_diamonds: "Dheemanka ayaa laguu soo dirayaa...",
     delivered_success: "Si guul ah ayaa loo gudbiyey!",
     order_cancelled: "Dalabka waa la kansalay",
-    admin_message: "Fariinta Admin-ka"
+    admin_message: "Fariinta Admin-ka",
+    buy_now: "IIBSO",
+    login_to_buy: "Galan si aad u iibsato"
   }
 };
 
@@ -598,7 +602,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     onValue(eventsRef, (s) => {
-      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
+      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })).sort((a, b) => b.createdAt - a.createdAt) : [];
       setEvents(data);
       setCache(EVENTS_CACHE_KEY, data);
       setSyncStatus(prev => ({ ...prev, events: true }));
