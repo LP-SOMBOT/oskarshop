@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useApp } from '@/lib/context';
@@ -12,6 +11,7 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
+  AlertTriangle,
   XCircle,
   ArrowRight,
   RefreshCw,
@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Image from 'next/image';
+import Image from "next/image";
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn, formatWhatsAppNumber } from '@/lib/utils';
 import { useState, useMemo, useEffect } from 'react';
@@ -61,7 +61,7 @@ export default function MyAccountsView() {
     if (!user) return [];
     return (accountPosts || [])
       .filter(p => p.uid === user.uid)
-      .sort((a, b) => b.createdAt - a.createdAt);
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }, [accountPosts, user]);
 
   const stats = useMemo(() => {
@@ -167,9 +167,9 @@ export default function MyAccountsView() {
              <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">No Listings Found</p>
              <p className="text-sm sm:text-lg">Wali wax account ah maadan soo dhigin Marketplace-ka.</p>
           </div>
-          <Button onClick={() => setActiveTab('accounts')} className="rounded-2xl px-10 h-14 gap-2 font-black uppercase tracking-widest shadow-xl shadow-primary/20">
+          <button onClick={() => setActiveTab('accounts')} className="bg-primary text-white rounded-2xl px-10 h-14 gap-2 font-black uppercase tracking-widest shadow-xl shadow-primary/20">
              Start Selling <ArrowRight size={20} />
-          </Button>
+          </button>
         </div>
       ) : (
         <div className="space-y-8 sm:space-y-12">
@@ -516,4 +516,3 @@ function StatusInfo({ icon: Icon, label, value, color }: { icon: any, label: str
     </div>
   );
 }
-
