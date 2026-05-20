@@ -343,7 +343,22 @@ const translations: Record<Language, Record<string, string>> = {
     rank: "RANK",
     admin_hub: "Oskar Admin Hub",
     restricted_access: "Restricted Access",
-    manage_orders: "Manage orders, listings, and users."
+    manage_orders: "Manage orders, listings, and users.",
+    no_orders: "No orders found",
+    no_orders_desc: "Your top-up and account purchases will appear here once you place them.",
+    continue_shopping: "Continue Shopping",
+    player_id: "Player ID",
+    game_name: "Game Name",
+    sender_no: "Sender No",
+    whatsapp: "WhatsApp",
+    seller: "Seller",
+    platform: "Platform",
+    final_amount: "Final Amount",
+    verifying_payment: "Verifying Payment...",
+    delivering_diamonds: "Delivering Diamonds...",
+    delivered_success: "Successfully Delivered!",
+    order_cancelled: "Order Cancelled",
+    admin_message: "Admin Message"
   },
   so: {
     home: "Hoyga",
@@ -372,7 +387,22 @@ const translations: Record<Language, Record<string, string>> = {
     rank: "KAALINTA",
     admin_hub: "Maamulka Oskar",
     restricted_access: "Galan gaar ah",
-    manage_orders: "Maamul dalabaadka iyo suuqa."
+    manage_orders: "Maamul dalabaadka iyo suuqa.",
+    no_orders: "Dalabaad ma jiraan",
+    no_orders_desc: "Dalabaadkaaga halkaan ayay ka muuqan doonaan markaad dalab sameyso.",
+    continue_shopping: "Sii wad adeegashada",
+    player_id: "Game ID-ga",
+    game_name: "Magaca Game-ka",
+    sender_no: "Lacag Diraha",
+    whatsapp: "WhatsApp",
+    seller: "Iibiyaha",
+    platform: "Platform",
+    final_amount: "Wadarta Guud",
+    verifying_payment: "Lacagta ayaa la hubinayaa...",
+    delivering_diamonds: "Dheemanka ayaa laguu soo dirayaa...",
+    delivered_success: "Si guul ah ayaa loo gudbiyey!",
+    order_cancelled: "Dalabka waa la kansalay",
+    admin_message: "Fariinta Admin-ka"
   }
 };
 

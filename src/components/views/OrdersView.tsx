@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -23,7 +24,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 export default function OrdersView() {
-  const { orders, isInitialLoading, setActiveTab } = useApp();
+  const { orders, isInitialLoading, setActiveTab, t } = useApp();
 
   if (isInitialLoading) {
     return (
@@ -43,14 +44,14 @@ export default function OrdersView() {
               <ShoppingBag size={40} className="md:size-16 text-slate-300 dark:text-slate-700" />
            </div>
            <div className="space-y-2 md:space-y-3 px-4">
-              <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white uppercase tracking-tighter">No orders found</h3>
-              <p className="text-sm md:text-lg max-w-md mx-auto">Your top-up and account purchases will appear here once you place them.</p>
+              <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white uppercase tracking-tighter">{t('no_orders')}</h3>
+              <p className="text-sm md:text-lg max-w-md mx-auto">{t('no_orders_desc')}</p>
            </div>
            <button 
             onClick={() => setActiveTab('games')}
             className="text-primary font-black text-base md:text-xl flex items-center gap-2 md:gap-3 hover:gap-5 transition-all group"
            >
-             Continue Shopping <ChevronRight size={20} className="md:size-6 group-hover:translate-x-2 transition-transform" />
+             {t('continue_shopping')} <ChevronRight size={20} className="md:size-6 group-hover:translate-x-2 transition-transform" />
            </button>
         </div>
       ) : (
@@ -76,6 +77,7 @@ function DetailRow({ icon: Icon, label, value, color }: { icon: any, label: stri
 }
 
 function OrderCard({ order }: { order: any }) {
+  const { t } = useApp();
   const item = order.items?.[0];
   const isAccount = item?.gameId === 'accounts' || order.gameId === 'accounts';
 
@@ -125,21 +127,21 @@ function OrderCard({ order }: { order: any }) {
           <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 border border-slate-100 dark:border-white/5 flex-1 shadow-inner">
              {isAccount ? (
                <>
-                 <DetailRow icon={User} label="Seller" value={order.gameDetails?.sellerName || "Market Seller"} />
-                 <DetailRow icon={ShieldCheck} label="Platform" value={order.gameDetails?.platform || "Google"} />
-                 <DetailRow icon={MessageCircle} label="WhatsApp" value={order.gameDetails?.whatsappNumber} color="text-primary" />
+                 <DetailRow icon={User} label={t('seller')} value={order.gameDetails?.sellerName || "Market Seller"} />
+                 <DetailRow icon={ShieldCheck} label={t('platform')} value={order.gameDetails?.platform || "Google"} />
+                 <DetailRow icon={MessageCircle} label={t('whatsapp')} value={order.gameDetails?.whatsappNumber} color="text-primary" />
                </>
              ) : (
                <>
-                 <DetailRow icon={Gamepad2} label="Player ID" value={order.gameDetails?.playerID} color="font-mono text-primary text-xs sm:text-sm" />
-                 <DetailRow icon={User} label="Game Name" value={order.gameDetails?.playerName} />
-                 <DetailRow icon={CreditCard} label="Sender No" value={order.gameDetails?.senderNumber} color="text-green-600" />
-                 <DetailRow icon={MessageCircle} label="WhatsApp" value={order.gameDetails?.whatsappNumber} />
+                 <DetailRow icon={Gamepad2} label={t('player_id')} value={order.gameDetails?.playerID} color="font-mono text-primary text-xs sm:text-sm" />
+                 <DetailRow icon={User} label={t('game_name')} value={order.gameDetails?.playerName} />
+                 <DetailRow icon={CreditCard} label={t('sender_no')} value={order.gameDetails?.senderNumber} color="text-green-600" />
+                 <DetailRow icon={MessageCircle} label={t('whatsapp')} value={order.gameDetails?.whatsappNumber} />
                </>
              )}
              
              <div className="pt-3 md:pt-4 border-t border-slate-200/50 dark:border-white/5 flex justify-between items-center">
-                <span className="text-muted-foreground font-black text-[8px] sm:text-[10px] lg:text-[14px] uppercase tracking-[0.1em] sm:tracking-[0.2em]">Final Amount</span>
+                <span className="text-muted-foreground font-black text-[8px] sm:text-[10px] lg:text-[14px] uppercase tracking-[0.1em] sm:tracking-[0.2em]">{t('final_amount')}</span>
                 <span className="font-headline font-bold text-primary text-xl sm:text-3xl lg:text-4xl">${order.total.toFixed(2)}</span>
              </div>
           </div>
@@ -147,27 +149,27 @@ function OrderCard({ order }: { order: any }) {
           <div className="mt-6 md:mt-8">
              {order.status === 'pending' && (
                <div className="p-4 sm:p-5 lg:p-6 bg-amber-50 dark:bg-amber-500/10 rounded-xl sm:rounded-[1.5rem] flex gap-3 md:gap-4 items-center text-amber-700 dark:text-amber-400 text-xs sm:text-sm lg:text-base font-black border border-amber-100 dark:border-amber-500/20 shadow-sm animate-pulse uppercase tracking-wider">
-                  <Clock size={20} className="shrink-0" /> <p>Verifying Payment...</p>
+                  <Clock size={20} className="shrink-0" /> <p>{t('verifying_payment')}</p>
                </div>
              )}
              {order.status === 'processing' && (
                <div className="p-4 sm:p-5 lg:p-6 bg-blue-50 dark:bg-blue-500/10 rounded-xl sm:rounded-[1.5rem] flex gap-3 md:gap-4 items-center text-blue-700 dark:text-blue-400 text-xs sm:text-sm lg:text-base font-black border border-blue-100 dark:border-blue-500/20 shadow-sm uppercase tracking-wider">
-                  <RefreshCw size={20} className="shrink-0 animate-spin" /> <p>Delivering Diamonds...</p>
+                  <RefreshCw size={20} className="shrink-0 animate-spin" /> <p>{t('delivering_diamonds')}</p>
                </div>
              )}
              {order.status === 'successful' && (
                <div className="p-4 sm:p-5 lg:p-6 bg-green-50 dark:bg-green-500/10 rounded-xl sm:rounded-[1.5rem] flex gap-3 md:gap-4 items-center text-green-700 dark:text-green-400 text-xs sm:text-sm lg:text-base font-black border border-green-100 dark:border-green-500/20 shadow-sm uppercase tracking-wider">
-                  <CheckCircle2 size={20} className="shrink-0" /> <p>Successfully Delivered!</p>
+                  <CheckCircle2 size={20} className="shrink-0" /> <p>{t('delivered_success')}</p>
                </div>
              )}
              {order.status === 'cancelled' && (
                <div className="p-4 sm:p-6 lg:p-8 bg-red-50 dark:bg-red-950/10 rounded-[1.5rem] sm:rounded-[2.5rem] flex flex-col gap-3 md:gap-4 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/20 shadow-sm">
                   <div className="flex gap-3 md:gap-4 items-center text-xs sm:text-sm lg:text-lg font-black uppercase tracking-wider">
-                    <ShieldAlert size={20} className="shrink-0" /> <p>Order Cancelled</p>
+                    <ShieldAlert size={20} className="shrink-0" /> <p>{t('order_cancelled')}</p>
                   </div>
                   {order.cancellationReason && (
                     <div className="p-3 md:p-4 bg-white/50 dark:bg-black/20 rounded-xl md:rounded-2xl border border-red-200/50 dark:border-red-800/30">
-                       <p className="text-[8px] uppercase font-black tracking-widest mb-1 opacity-60">Admin Message:</p>
+                       <p className="text-[8px] uppercase font-black tracking-widest mb-1 opacity-60">{t('admin_message')}:</p>
                        <p className="text-[11px] sm:text-sm lg:text-base font-bold italic">"{order.cancellationReason}"</p>
                     </div>
                   )}
