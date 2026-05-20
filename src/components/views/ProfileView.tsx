@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Moon,
   Sun,
+  Globe,
   ShieldCheck as AccountIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function ProfileView() {
   const { 
-    user, loading, logout, isInitialLoading, updateUserProfile, allUsers, setActiveTab, theme, toggleTheme, storeSettings
+    user, loading, logout, isInitialLoading, updateUserProfile, allUsers, setActiveTab, theme, toggleTheme, storeSettings, language, setLanguage, t
   } = useApp();
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -61,7 +62,7 @@ export default function ProfileView() {
     try {
       const url = await uploadToImgbb(file);
       setEditData(prev => ({ ...prev, photoURL: url }));
-      toast({ title: "Sawirka waa la soo geliyey!" });
+      toast({ title: t('photo_updated') || "Sawirka waa la soo geliyey!" });
     } catch (e) { toast({ title: "Upload failed", variant: "destructive" }); } finally { setIsSaving(false); }
   };
 
@@ -112,10 +113,10 @@ export default function ProfileView() {
           </div>
           <div className="flex items-center justify-center gap-2 md:gap-4">
             <Badge className="bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-none px-4 py-1.5 md:px-6 md:py-2.5 rounded-full flex gap-1.5 items-center font-black text-[10px] sm:text-sm lg:text-xl shadow-sm">
-              <Star className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 fill-amber-600" /> {user.points || 0} POINTS
+              <Star className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 fill-amber-600" /> {user.points || 0} {t('points')}
             </Badge>
             <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-black text-[10px] sm:text-sm lg:text-xl rounded-full px-4 py-1.5 md:px-6 md:py-2.5 uppercase tracking-widest">
-              RANK #{userRank}
+              {t('rank')} #{userRank}
             </Badge>
           </div>
         </div>
@@ -124,15 +125,15 @@ export default function ProfileView() {
       <div className="space-y-10 md:space-y-12 lg:space-y-16">
          {user.isAdmin && (
            <div className="space-y-3 md:space-y-4 max-w-4xl mx-auto">
-              <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-4 md:ml-8 flex items-center gap-2"> <ShieldCheck size={14} /> Restricted Access </p>
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-4 md:ml-8 flex items-center gap-2"> <ShieldCheck size={14} /> {t('restricted_access')} </p>
               <button onClick={() => router.push('/admin')} className="w-full p-6 md:p-8 lg:p-14 bg-slate-900 dark:bg-slate-800 text-white rounded-[2rem] md:rounded-[3rem] lg:rounded-[4rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all border-2 md:border-4 border-white/5">
                 <div className="flex items-center gap-4 md:gap-8 lg:gap-12 text-left min-w-0">
                   <div className="w-12 h-12 md:w-16 md:h-16 lg:w-28 lg:h-28 bg-white/10 rounded-2xl lg:rounded-3xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
                     <LayoutDashboard className="w-6 h-6 md:w-8 md:h-8 lg:w-16 lg:h-16" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-headline font-bold text-lg md:text-2xl lg:text-5xl uppercase tracking-tighter truncate">Oskar Admin Hub</h3>
-                    <p className="text-white/40 text-[10px] md:text-sm lg:text-xl font-medium mt-1 truncate">Manage orders, listings, and users.</p>
+                    <h3 className="font-headline font-bold text-lg md:text-2xl lg:text-5xl uppercase tracking-tighter truncate">{t('admin_hub')}</h3>
+                    <p className="text-white/40 text-[10px] md:text-sm lg:text-xl font-medium mt-1 truncate">{t('manage_orders')}</p>
                   </div>
                 </div>
                 <div className="w-8 h-8 md:w-12 md:h-12 lg:w-20 lg:h-20 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shrink-0">
@@ -143,21 +144,27 @@ export default function ProfileView() {
          )}
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-14">
-            <ProfileGroup title="Store & Marketplace">
-                <ProfileOption icon={ShoppingBag} label="Order History" onClick={() => setActiveTab('orders')} />
-                <ProfileOption icon={AccountIcon} label="My accounts" onClick={() => setActiveTab('my-accounts')} />
-                <ProfileOption icon={Gamepad2} label="Sell My Account" onClick={() => setActiveTab('accounts')} />
-                <ProfileOption icon={Trophy} label="Global Leaderboard" onClick={() => setActiveTab('ranking')} />
+            <ProfileGroup title={t('store_marketplace')}>
+                <ProfileOption icon={ShoppingBag} label={t('orders')} onClick={() => setActiveTab('orders')} />
+                <ProfileOption icon={AccountIcon} label={t('my_accounts')} onClick={() => setActiveTab('my-accounts')} />
+                <ProfileOption icon={Gamepad2} label={t('sell_account')} onClick={() => setActiveTab('accounts')} />
+                <ProfileOption icon={Trophy} label={t('leaderboard')} onClick={() => setActiveTab('ranking')} />
             </ProfileGroup>
-            <ProfileGroup title="Support Center">
-                <ProfileOption icon={HelpCircle} label="App Tutorial" onClick={() => { if (helpLinks.tutorialUrl) window.open(helpLinks.tutorialUrl, '_blank'); else toast({ title: "Coming Soon" }); }} />
-                <ProfileOption icon={MessageCircle} label="WhatsApp Support" onClick={() => { const num = formatWhatsAppNumber(helpLinks.whatsappNumber || "252613982172"); window.open(`https://wa.me/${num}`, '_blank'); }} />
-                <ProfileOption icon={Video} label="Oskar TikTok" onClick={() => { const url = helpLinks.tiktokUrl || "https://tiktok.com/@Oskarshop"; window.open(url, '_blank'); }} />
+            <ProfileGroup title={t('support_center')}>
+                <ProfileOption icon={HelpCircle} label={t('app_tutorial')} onClick={() => { if (helpLinks.tutorialUrl) window.open(helpLinks.tutorialUrl, '_blank'); else toast({ title: "Coming Soon" }); }} />
+                <ProfileOption icon={MessageCircle} label={t('whatsapp_support')} onClick={() => { const num = formatWhatsAppNumber(helpLinks.whatsappNumber || "252613982172"); window.open(`https://wa.me/${num}`, '_blank'); }} />
+                <ProfileOption icon={Video} label={t('tiktok')} onClick={() => { const url = helpLinks.tiktokUrl || "https://tiktok.com/@Oskarshop"; window.open(url, '_blank'); }} />
             </ProfileGroup>
-            <ProfileGroup title="Global Settings">
-                <ProfileOption icon={theme === 'light' ? Moon : Sun} label={theme === 'light' ? "Dark Mode" : "Light Mode"} onClick={toggleTheme} />
-                <ProfileOption icon={UserCircle} label="Update Profile" onClick={() => setIsEditModalOpen(true)} />
-                <ProfileOption icon={LogOut} label="Log Out Session" onClick={logout} variant="danger" />
+            <ProfileGroup title={t('global_settings')}>
+                <ProfileOption icon={theme === 'light' ? Moon : Sun} label={theme === 'light' ? t('dark_mode') : t('light_mode')} onClick={toggleTheme} />
+                <ProfileOption 
+                  icon={Globe} 
+                  label={t('language')} 
+                  onClick={() => setLanguage(language === 'so' ? 'en' : 'so')} 
+                  subLabel={language === 'so' ? 'English' : 'Somali'}
+                />
+                <ProfileOption icon={UserCircle} label={t('update_profile')} onClick={() => setIsEditModalOpen(true)} />
+                <ProfileOption icon={LogOut} label={t('logout')} onClick={logout} variant="danger" />
             </ProfileGroup>
          </div>
       </div>
@@ -166,7 +173,7 @@ export default function ProfileView() {
          <DialogContent className="rounded-[2.5rem] md:rounded-[4rem] p-0 border-none shadow-2xl max-w-2xl bg-white dark:bg-slate-900 max-h-[95vh] overflow-y-auto scrollbar-hide w-[95vw] sm:w-full mx-auto my-auto">
             <div className="h-2 md:h-3 bg-primary w-full shrink-0" />
             <DialogHeader className="p-6 md:p-12 pb-0">
-               <DialogTitle className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white">Profile Details</DialogTitle>
+               <DialogTitle className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white">{t('update_profile')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleUpdate} className="p-5 md:p-12 space-y-5 md:space-y-10">
                <div className="flex justify-center mb-2 md:mb-8">
@@ -203,7 +210,7 @@ function ProfileGroup({ title, children }: { title: string, children: React.Reac
   );
 }
 
-function ProfileOption({ icon: Icon, label, onClick, variant }: { icon: any, label: string, onClick: () => void, variant?: 'danger' }) {
+function ProfileOption({ icon: Icon, label, onClick, variant, subLabel }: { icon: any, label: string, onClick: () => void, variant?: 'danger', subLabel?: string }) {
   return (
     <button onClick={onClick} className="w-full flex items-center justify-between p-5 sm:p-8 lg:p-10 transition-all hover:bg-slate-50/50 dark:hover:bg-white/5 active:scale-[0.98]">
       <div className="flex items-center gap-4 sm:gap-6 min-w-0">
@@ -213,10 +220,13 @@ function ProfileOption({ icon: Icon, label, onClick, variant }: { icon: any, lab
          )}>
             <Icon className="w-5 h-5 sm:w-7 sm:h-7 lg:w-8 lg:h-8" />
          </div>
-         <span className={cn( 
-           "font-bold text-sm sm:text-lg lg:text-2xl text-slate-900 dark:text-white tracking-tight truncate", 
-           variant === 'danger' ? "text-red-500" : "" 
-         )}>{label}</span>
+         <div className="text-left min-w-0">
+            <span className={cn( 
+              "font-bold text-sm sm:text-lg lg:text-2xl text-slate-900 dark:text-white tracking-tight truncate block", 
+              variant === 'danger' ? "text-red-500" : "" 
+            )}>{label}</span>
+            {subLabel && <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-widest">{subLabel}</p>}
+         </div>
       </div>
       <ChevronRight size={18} className="text-slate-300 dark:text-white/20 shrink-0" />
     </button>

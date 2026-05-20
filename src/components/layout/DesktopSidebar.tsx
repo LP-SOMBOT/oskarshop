@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -13,18 +14,18 @@ import { Button } from "@/components/ui/button";
  * Replaces Header and BottomNav for a more professional desktop experience.
  */
 export default function DesktopSidebar() {
-  const { activeTab, setActiveTab, user, storeSettings, notifications, orders, logout } = useApp();
+  const { activeTab, setActiveTab, user, storeSettings, notifications, orders, logout, t } = useApp();
 
   const unreadNotifs = (notifications || []).filter(n => !n.read).length;
   const activeOrdersCount = (orders || []).filter(o => o.status === 'pending' || o.status === 'processing').length;
 
   const navItems = [
-    { id: "home", label: "Home", icon: House },
-    { id: "games", label: "Games", icon: Gamepad2 },
-    { id: "accounts", label: "Accounts", icon: ShieldCheck },
-    { id: "orders", label: "Orders", icon: ShoppingBag, badge: activeOrdersCount },
-    { id: "notifications", label: "Alerts", icon: Bell, badge: unreadNotifs },
-    { id: "profile", label: "Profile", icon: CircleUser },
+    { id: "home", label: t('home'), icon: House },
+    { id: "games", label: t('games'), icon: Gamepad2 },
+    { id: "accounts", label: t('accounts'), icon: ShieldCheck },
+    { id: "orders", label: t('orders'), icon: ShoppingBag, badge: activeOrdersCount },
+    { id: "notifications", label: t('notifications'), icon: Bell, badge: unreadNotifs },
+    { id: "profile", label: t('profile'), icon: CircleUser },
   ];
 
   return (
@@ -92,7 +93,7 @@ export default function DesktopSidebar() {
                 <p className="font-bold text-sm truncate dark:text-white">{user.name}</p>
                 <div className="flex items-center gap-1 text-amber-500">
                   <Star size={12} fill="currentColor" />
-                  <span className="text-[10px] font-black">{user.points || 0} PTS</span>
+                  <span className="text-[10px] font-black">{user.points || 0} {t('points')}</span>
                 </div>
               </div>
             </div>
@@ -103,7 +104,7 @@ export default function DesktopSidebar() {
                 className="flex-1 h-10 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 font-bold gap-2 text-xs" 
                 onClick={logout}
               >
-                <LogOut size={14} /> Out
+                <LogOut size={14} /> {t('logout').split(' ')[0]}
               </Button>
               <Button 
                 variant="outline" 
@@ -111,7 +112,7 @@ export default function DesktopSidebar() {
                 className="flex-1 h-10 rounded-xl font-bold text-xs" 
                 onClick={() => setActiveTab('profile')}
               >
-                Settings
+                {t('profile')}
               </Button>
             </div>
           </div>

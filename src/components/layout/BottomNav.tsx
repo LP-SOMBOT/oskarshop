@@ -1,3 +1,4 @@
+
 "use client";
 
 import { House, Gamepad2, CircleUser, ShoppingBag, ShieldCheck } from "lucide-react";
@@ -5,7 +6,7 @@ import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
 
 export default function BottomNav() {
-  const { activeTab, setActiveTab, allChatSessions, user, notifications, orders } = useApp();
+  const { activeTab, setActiveTab, allChatSessions, user, notifications, orders, t } = useApp();
 
   const unreadChat = user?.isAdmin 
     ? allChatSessions.reduce((acc, s) => acc + (s.unreadCount || 0), 0)
@@ -15,11 +16,11 @@ export default function BottomNav() {
   const activeOrdersCount = (orders || []).filter(o => o.status === 'pending' || o.status === 'processing').length;
 
   const navItems = [
-    { id: "home", label: "Home", icon: House },
-    { id: "games", label: "Games", icon: Gamepad2 },
-    { id: "accounts", label: "Accounts", icon: ShieldCheck },
-    { id: "orders", label: "Orders", icon: ShoppingBag, badge: activeOrdersCount },
-    { id: "profile", label: "Profile", icon: CircleUser, badge: unreadNotifs > 0 ? unreadNotifs : unreadChat },
+    { id: "home", label: t('home'), icon: House },
+    { id: "games", label: t('games'), icon: Gamepad2 },
+    { id: "accounts", label: t('accounts'), icon: ShieldCheck },
+    { id: "orders", label: t('orders'), icon: ShoppingBag, badge: activeOrdersCount },
+    { id: "profile", label: t('profile'), icon: CircleUser, badge: unreadNotifs > 0 ? unreadNotifs : unreadChat },
   ];
 
   return (

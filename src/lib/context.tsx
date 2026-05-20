@@ -229,6 +229,8 @@ type BannedInfo = {
   phone: string;
 };
 
+type Language = 'so' | 'en';
+
 type AppContextType = {
   user: any;
   loading: boolean;
@@ -297,6 +299,9 @@ type AppContextType = {
   bannedInfo: BannedInfo | null;
   isPostingAccount: boolean;
   setIsPostingAccount: (isPosting: boolean) => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -308,6 +313,68 @@ const GAMES_CACHE_KEY = 'oskar_games_cache';
 const EVENTS_CACHE_KEY = 'oskar_events_cache';
 const BANNERS_CACHE_KEY = 'oskar_banners_cache';
 const THEME_CACHE_KEY = 'oskar_theme_cache';
+const LANG_CACHE_KEY = 'oskar_lang_cache';
+
+const translations: Record<Language, Record<string, string>> = {
+  en: {
+    home: "Home",
+    games: "Games",
+    accounts: "Accounts",
+    orders: "Orders",
+    profile: "Profile",
+    chat: "Chat",
+    notifications: "Alerts",
+    ranking: "Ranking",
+    my_accounts: "My accounts",
+    sell_account: "Sell My Account",
+    leaderboard: "Leaderboard",
+    logout: "Log Out",
+    language: "Language",
+    dark_mode: "Dark Mode",
+    light_mode: "Light Mode",
+    update_profile: "Update Profile",
+    store_marketplace: "Store & Marketplace",
+    support_center: "Support Center",
+    global_settings: "Global Settings",
+    app_tutorial: "App Tutorial",
+    whatsapp_support: "WhatsApp Support",
+    tiktok: "Oskar TikTok",
+    points: "POINTS",
+    rank: "RANK",
+    admin_hub: "Oskar Admin Hub",
+    restricted_access: "Restricted Access",
+    manage_orders: "Manage orders, listings, and users."
+  },
+  so: {
+    home: "Hoyga",
+    games: "Ciyaaraha",
+    accounts: "Suuqa",
+    orders: "Dalabaadka",
+    profile: "Profile",
+    chat: "Sheeko",
+    notifications: "Ogeysiis",
+    ranking: "Darajo",
+    my_accounts: "Account-yadayda",
+    sell_account: "Iibi Account-kaaga",
+    leaderboard: "Kala horeynta",
+    logout: "Ka Bax",
+    language: "Luqadda",
+    dark_mode: "Habka Mugdiga",
+    light_mode: "Habka Iftiinka",
+    update_profile: "Cusbooneysii Profile",
+    store_marketplace: "Bakhaarka & Suuqa",
+    support_center: "Xarunta Caawinta",
+    global_settings: "Settings-ka Guud",
+    app_tutorial: "Barashada App-ka",
+    whatsapp_support: "WhatsApp Caawinaad",
+    tiktok: "Oskar TikTok",
+    points: "PTS",
+    rank: "KAALINTA",
+    admin_hub: "Maamulka Oskar",
+    restricted_access: "Galan gaar ah",
+    manage_orders: "Maamul dalabaadka iyo suuqa."
+  }
+};
 
 const getCache = (key: string, fallback: any = null) => {
   if (typeof window === 'undefined') return fallback;
@@ -329,7 +396,7 @@ const setCache = (key: string, data: any) => {
         localStorage.removeItem(EVENTS_CACHE_KEY);
         localStorage.removeItem(BANNERS_CACHE_KEY);
         try {
-          if (key === SETTINGS_CACHE_KEY || key === USER_CACHE_KEY || key === THEME_CACHE_KEY) {
+          if (key === SETTINGS_CACHE_KEY || key === USER_CACHE_KEY || key === THEME_CACHE_KEY || key === LANG_CACHE_KEY) {
             localStorage.setItem(key, JSON.stringify(data));
           }
         } catch {}
@@ -348,6 +415,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeTab, setActiveTabState] = useState('home');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => getCache(THEME_CACHE_KEY, 'light'));
+  const [language, setLanguageState] = useState<Language>(() => getCache(LANG_CACHE_KEY, 'so'));
   
   const [isBannedModalOpen, setIsBannedModalOpen] = useState(false);
   const [bannedInfo, setBannedInfo] = useState<BannedInfo | null>(null);
@@ -393,6 +461,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    setCache(LANG_CACHE_KEY, lang);
+    toast({ title: lang === 'en' ? "Language changed to English" : "Luqadda waxaa loo baddalay Somali" });
+  };
+
+  const t = useCallback((key: string) => {
+    return translations[language][key] || key;
+  }, [language]);
 
   const isInitialLoading = useMemo(() => {
     return !syncStatus.settings || !syncStatus.products || !syncStatus.banners || !syncStatus.events || !syncStatus.games;
@@ -1103,7 +1181,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
-      theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount
+      theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
+      language, setLanguage, t
     }}>
       {children}
     </AppContext.Provider>
