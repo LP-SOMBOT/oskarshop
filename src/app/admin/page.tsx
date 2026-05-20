@@ -1879,7 +1879,7 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-purple-500">
                               <Monitor className="w-6 h-6" />
                               <div className="text-left">
-                                 h4 className="font-headline font-bold text-lg uppercase tracking-tight">Onboarding Slider</h4>
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Onboarding Slider</h4>
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Manage the 3-step introductory screens</p>
                               </div>
                            </div>
