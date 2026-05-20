@@ -1541,19 +1541,20 @@ export default function AdminPage() {
 
                <Card className="rounded-[1.5rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900">
                   <div className="overflow-x-auto scrollbar-hide">
-                    <Table className="min-w-[900px]">
+                    <Table className="min-w-[1000px]">
                       <TableHeader className="bg-slate-50/50 dark:bg-slate-800/40">
                         <TableRow className="border-none">
                           <TableHead className="px-8 font-bold">User Identity</TableHead>
                           <TableHead className="font-bold">Contact & Role</TableHead>
                           <TableHead className="font-bold">Reward Balance</TableHead>
+                          <TableHead className="font-bold">Presence</TableHead>
                           <TableHead className="font-bold">Status</TableHead>
                           <TableHead className="text-right px-8 font-bold">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.length === 0 ? (
-                          <TableRow><TableCell colSpan={5} className="h-40 text-center opacity-30 italic">No users found.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={6} className="h-40 text-center opacity-30 italic">No users found.</TableCell></TableRow>
                         ) : (
                           filteredUsers.map(u => (
                             <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/30">
@@ -1578,6 +1579,24 @@ export default function AdminPage() {
                                  <div className="flex items-center gap-2">
                                     <div className="p-1.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg text-amber-500"><Star size={14} fill="currentColor"/></div>
                                     <span className="font-headline font-bold text-lg">{u.points || 0}</span>
+                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                 <div className="flex flex-col">
+                                    {u.lastActive && (Date.now() - u.lastActive < 600000) ? (
+                                      <div className="flex items-center gap-1.5 text-green-500">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Online</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1.5 text-slate-400">
+                                        <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Offline</span>
+                                      </div>
+                                    )}
+                                    <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5 whitespace-nowrap">
+                                      {u.lastActive ? formatDistanceToNow(new Date(u.lastActive), { addSuffix: true }) : 'Never'}
+                                    </span>
                                  </div>
                               </TableCell>
                               <TableCell>
@@ -1860,7 +1879,7 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-purple-500">
                               <Monitor className="w-6 h-6" />
                               <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Onboarding Slider</h4>
+                                 h4 className="font-headline font-bold text-lg uppercase tracking-tight">Onboarding Slider</h4>
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Manage the 3-step introductory screens</p>
                               </div>
                            </div>
@@ -2264,5 +2283,3 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
     </div>
   );
 }
-
-    

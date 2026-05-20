@@ -216,6 +216,7 @@ type UserProfile = {
   role: 'user' | 'staff' | 'admin' | 'super_admin';
   points: number;
   createdAt: number;
+  lastActive?: number;
   photoURL?: string;
   gameName?: string;
   gameUid?: string;
@@ -484,6 +485,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
+
+  // Heartbeat to track presence
+  useEffect(() => {
+    if (!rtdb || !user) return;
+    const userRef = ref(rtdb, `users/${user.uid}`);
+    const updatePresence = () => {
+      update(userRef, { lastActive: Date.now() });
+    };
+    updatePresence();
+    const interval = setInterval(updatePresence, 300000); // Every 5 minutes
+    return () => clearInterval(interval);
+  }, [rtdb, user]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

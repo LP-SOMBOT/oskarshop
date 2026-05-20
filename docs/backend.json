@@ -13,9 +13,11 @@
         "phoneNumber": { "type": "string" },
         "points": { "type": "number" },
         "createdAt": { "type": "number" },
+        "lastActive": { "type": "number" },
         "photoURL": { "type": "string" },
         "gameName": { "type": "string" },
-        "gameUid": { "type": "string" }
+        "gameUid": { "type": "string" },
+        "banned": { "type": "boolean" }
       },
       "required": ["uid", "email"]
     },
