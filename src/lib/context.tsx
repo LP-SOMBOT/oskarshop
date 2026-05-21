@@ -328,7 +328,7 @@ const translations: Record<Language, Record<string, string>> = {
     notifications: "Alerts",
     ranking: "Ranking",
     my_accounts: "My accounts",
-    sell_account: "iibi/iibso account",
+    sell_account: "Sell/buy an account",
     leaderboard: "Leaderboard",
     logout: "Log Out",
     language: "Language",
