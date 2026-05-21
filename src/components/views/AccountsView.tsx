@@ -229,7 +229,7 @@ export default function AccountsView() {
          <DialogContent className="max-w-xl rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 mx-4">
             <DialogHeader className="p-6 md:p-10 pb-4 md:pb-6">
                <DialogTitle className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white">My Market Activity</DialogTitle>
-               <DialogDescription className="text-xs md:text-sm font-bold text-slate-500">Track the status of your listed and pending accounts.</DialogDescription>
+               <DialogDescription className="text-xs md:text-sm font-bold text-slate-50">Track the status of your listed and pending accounts.</DialogDescription>
             </DialogHeader>
             <div className="p-6 md:p-10 pt-0 space-y-4 md:space-y-6 max-h-[60vh] overflow-y-auto scrollbar-hide">
                {myActivity.length === 0 ? (
@@ -272,7 +272,7 @@ export default function AccountsView() {
 }
 
 function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: any, onCancel: () => void, onComplete: () => void }) {
-  const { postAccount, updateAccountPost, storeSettings } = useApp();
+  const { postAccount, updateAccountPost, storeSettings, user, enhancedUser } = useApp();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasTriggeredUssd, setHasTriggeredUssd] = useState(false);
@@ -295,7 +295,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     age: editingPost?.age || '',
     accountId: editingPost?.accountId || '',
     accountName: editingPost?.accountName || '',
-    internalWeapons: editingPost?.internalWeapons?.toString() || ''
+    internalWeapons: editingPost?.internalWeapons?.toString() || '',
+    senderNumber: editingPost?.senderNumber || ''
   });
 
   const isFreeFire = formData.gameType === 'freefire';
@@ -306,7 +307,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
   }, [formData.term, storeSettings]);
 
   const handleNext = () => {
-    if (!formData.level || !formData.price || !formData.phone || formData.imageUrls.length === 0) {
+    if (!formData.level || !formData.price || !formData.phone || !formData.senderNumber || formData.imageUrls.length === 0) {
       toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
       return;
     }
@@ -541,7 +542,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                   </Card>
 
                   {/* Final Listing Settings */}
-                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                      <FormGroup label="Listing Duration">
                         <Select value={formData.term} onValueChange={v => setFormData({...formData, term: v as any})}>
                            <SelectTrigger className="h-12 md:h-20 rounded-xl md:rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-xl shadow-inner">
@@ -554,6 +555,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                         </Select>
                      </FormGroup>
                      <FormInput label="WhatsApp for Support" value={formData.phone} type="tel" onChange={v => setFormData({...formData, phone: v})} placeholder="e.g. 613982172" />
+                     <FormInput label="Enter sender's number" value={formData.senderNumber} type="tel" onChange={v => setFormData({...formData, senderNumber: v})} placeholder="e.g. 613982172" icon={CreditCard} />
                   </Card>
 
                   <div className="pt-4 md:pt-10">
