@@ -374,7 +374,7 @@ const translations: Record<Language, Record<string, string>> = {
     view: "View",
     time_left: "Time Left",
     buy_button: "BUY",
-    terms_of_service: "Terms of Service"
+    terms_of_service: "Terms & Conditions"
   },
   so: {
     home: "Hoyga",
@@ -428,7 +428,7 @@ const translations: Record<Language, Record<string, string>> = {
     view: "Eeg",
     time_left: "Waqtiga haray",
     buy_button: "iibso",
-    terms_of_service: "Shuruudaha Adeegga"
+    terms_of_service: "Sharuudaha Iyo qawaaniinta"
   }
 };
 
