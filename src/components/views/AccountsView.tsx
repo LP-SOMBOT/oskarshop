@@ -284,18 +284,18 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     price: editingPost?.price?.toString() || '',
     phone: editingPost?.phone || '',
     imageUrls: editingPost?.imageUrls || (editingPost?.thumbnailUrl ? [editingPost.thumbnailUrl] : []),
-    evoWeapons: editingPost?.evoWeapons?.toString() || '0',
-    totalWeapons: editingPost?.totalWeapons?.toString() || '0',
-    emotes: editingPost?.emotes?.toString() || '0',
-    executionEmotes: editingPost?.executionEmotes?.toString() || '0',
-    arrivalEmotes: editingPost?.arrivalEmotes?.toString() || '0',
-    dharka: editingPost?.dharka?.toString() || '0',
+    evoWeapons: editingPost?.evoWeapons?.toString() || '',
+    totalWeapons: editingPost?.totalWeapons?.toString() || '',
+    emotes: editingPost?.emotes?.toString() || '',
+    executionEmotes: editingPost?.executionEmotes?.toString() || '',
+    arrivalEmotes: editingPost?.arrivalEmotes?.toString() || '',
+    dharka: editingPost?.dharka?.toString() || '',
     term: editingPost?.term || 'weekly',
     primeLevel: editingPost?.primeLevel?.toString() || '1',
     age: editingPost?.age || '',
     accountId: editingPost?.accountId || '',
     accountName: editingPost?.accountName || '',
-    internalWeapons: editingPost?.internalWeapons?.toString() || '0'
+    internalWeapons: editingPost?.internalWeapons?.toString() || ''
   });
 
   const isFreeFire = formData.gameType === 'freefire';
@@ -400,7 +400,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                   )} />
                   <span className={cn(
                     "text-[8px] md:text-[10px] font-black uppercase tracking-tighter hidden xs:inline",
-                    step === s ? "text-primary" : "text-slate-400"
+                    step === s ? 'text-primary' : 'text-slate-400'
                   )}>
                     {s === 1 ? 'Xogta' : s === 2 ? 'Payment' : 'Done'}
                   </span>
