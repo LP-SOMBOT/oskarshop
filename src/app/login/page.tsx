@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -9,13 +10,25 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { Mail, Lock, EyeOff, Eye, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, storeSettings } = useApp();
+  
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  
+  const { login, forgotPassword, t } = useApp();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,6 +46,14 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    await forgotPassword(forgotEmail);
+    setIsForgotModalOpen(false);
+    setForgotEmail("");
   };
 
   return (
@@ -91,9 +112,16 @@ export default function LoginPage() {
             </div>
 
             <div className="text-right">
-              <Link href="#" className="text-blue-600 text-sm font-bold hover:underline">
-                Forget Password?
-              </Link>
+              <button 
+                type="button"
+                onClick={() => {
+                  setForgotEmail(email); // Autofill from login field if present
+                  setIsForgotModalOpen(true);
+                }}
+                className="text-blue-600 text-sm font-bold hover:underline"
+              >
+                {t('forgot_password')}
+              </button>
             </div>
 
             <Button 
@@ -112,6 +140,48 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Dialog open={isForgotModalOpen} onOpenChange={setIsForgotModalOpen}>
+        <DialogContent className="max-w-sm rounded-[2.5rem] p-8 border-none shadow-2xl bg-white text-center">
+          <DialogHeader>
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-4">
+               <Mail size={32} />
+            </div>
+            <DialogTitle className="text-2xl font-headline font-bold text-gray-900">
+               {t('reset_password')}
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 text-sm mt-2">
+               {t('enter_reset_email')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleForgotSubmit} className="mt-6 space-y-4">
+            <Input 
+              type="email" 
+              placeholder="Email address" 
+              required 
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              className="h-14 rounded-full border-gray-100 bg-gray-50 px-6 font-bold"
+            />
+            <Button 
+              type="submit" 
+              className="w-full h-14 rounded-full font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-lg shadow-[#7C3AED]/20"
+            >
+              {t('reset_password')}
+            </Button>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setIsForgotModalOpen(false)}
+              className="w-full text-gray-400 font-bold"
+            >
+              Cancel
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

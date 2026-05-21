@@ -12,7 +12,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { 
   ref, 
@@ -248,6 +249,7 @@ type AppContextType = {
   setGlobalLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
   orders: Order[];
@@ -380,7 +382,11 @@ const translations: Record<Language, Record<string, string>> = {
     read_terms: "Read Terms",
     photo_updated: "Profile photo updated!",
     terms_welcome: "Welcome to Oskar Shop. To ensure a safe and secure environment for all gamers, please review our Terms and Conditions before proceeding.",
-    compliance_protocol: "Compliance protocol"
+    compliance_protocol: "Compliance protocol",
+    forgot_password: "Forgot Password?",
+    reset_password: "Reset Password",
+    reset_email_sent: "Check your email for the reset link.",
+    enter_reset_email: "Enter your email to receive a password reset link."
   },
   so: {
     home: "Hoyga",
@@ -438,7 +444,11 @@ const translations: Record<Language, Record<string, string>> = {
     read_terms: "Akhri Shuruudaha",
     photo_updated: "Sawirka waa la soo geliyey!",
     terms_welcome: "Ku soo dhawaada Oskar Shop. Si loo damaanad qaado deegaan ammaan ah dhammaan ciyaartoyda, fadlan dib u eeg Shuruudaha iyo Qawaaniinta ka hor intaadan sii socon.",
-    compliance_protocol: "Hab-maamuuska u hoggaansanaanta"
+    compliance_protocol: "Hab-maamuuska u hoggaansanaanta",
+    forgot_password: "Ma ilaawday password-ka?",
+    reset_password: "Bedel Password-ka",
+    reset_email_sent: "Ka hubi email-kaaga linkiga bedelaada.",
+    enter_reset_email: "Geli email-kaaga si lagugu soo diro linkiga bedelaada."
   }
 };
 
@@ -819,6 +829,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
       setCache(USER_CACHE_KEY, profile);
     } finally { setIsGlobalLoading(false); }
+  };
+
+  const forgotPassword = async (email: string) => {
+    setIsGlobalLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({ 
+        title: t('reset_password'), 
+        description: t('reset_email_sent') 
+      });
+    } catch (e: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "Error", 
+        description: e.message || "Failed to send reset email." 
+      });
+    } finally {
+      setIsGlobalLoading(false);
+    }
   };
 
   const logout = async () => {
@@ -1264,7 +1293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
+      login, signup, forgotPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
