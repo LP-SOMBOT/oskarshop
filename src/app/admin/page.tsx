@@ -1265,9 +1265,22 @@ export default function AdminPage() {
                                      <div className="min-w-0">
                                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Original Seller</p>
                                         <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white truncate">{selectedAccount.authorName}</p>
-                                        <div className="flex items-center gap-3 mt-2">
-                                           <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black">{selectedAccount.phone}</Badge>
-                                           <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(selectedAccount.phone)}`, '_blank')} className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"><MessageCircle size={14}/></button>
+                                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                                           <div className="flex flex-col gap-1">
+                                              <span className="text-[8px] font-black text-slate-400 uppercase">WhatsApp Support</span>
+                                              <div className="flex items-center gap-2">
+                                                 <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black">{selectedAccount.phone}</Badge>
+                                                 <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(selectedAccount.phone)}`, '_blank')} className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"><MessageCircle size={14}/></button>
+                                              </div>
+                                           </div>
+                                           {selectedAccount.senderNumber && (
+                                             <div className="flex flex-col gap-1">
+                                                <span className="text-[8px] font-black text-amber-500 uppercase">Number ka lacagta (Sender)</span>
+                                                <Badge variant="outline" className="bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40 font-black flex items-center gap-1.5">
+                                                   <CreditCard size={10} /> {selectedAccount.senderNumber}
+                                                </Badge>
+                                             </div>
+                                           )}
                                         </div>
                                      </div>
                                   </div>

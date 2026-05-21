@@ -100,6 +100,7 @@ type AccountPost = {
   thumbnailUrl: string;
   imageUrls: string[];
   phone: string;
+  senderNumber?: string;
   status: 'pending' | 'approved' | 'rejected' | 'processing' | 'holding' | 'sold';
   holdingBy?: string;
   boughtBy?: string;
