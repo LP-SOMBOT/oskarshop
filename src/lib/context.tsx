@@ -361,7 +361,14 @@ const translations: Record<Language, Record<string, string>> = {
     order_cancelled: "Order Cancelled",
     admin_message: "Admin Message",
     buy_now: "Buy Now",
-    login_to_buy: "Login to Buy"
+    login_to_buy: "Login to Buy",
+    select_game: "Select Game",
+    active_events: "Active Events 🔥",
+    take_advantage: "Take advantage before it ends!",
+    ranking_desc: "Make purchases to enter the top ranks and get discounts up to 3%. Each top-up purchase earns you 1 point (pts). More gifts coming soon I.a.",
+    view: "View",
+    time_left: "Time Left",
+    buy_button: "BUY"
   },
   so: {
     home: "Hoyga",
@@ -407,7 +414,14 @@ const translations: Record<Language, Record<string, string>> = {
     order_cancelled: "Dalabka waa la kansalay",
     admin_message: "Fariinta Admin-ka",
     buy_now: "IIBSO",
-    login_to_buy: "Galan si aad u iibsato"
+    login_to_buy: "Galan si aad u iibsato",
+    select_game: "Dooro Game ka",
+    active_events: "Active Events 🔥",
+    take_advantage: "Ka faa'ideeyso intuusan dhamaan!",
+    ranking_desc: "iib sameey Si aad u gasho kaalmaha hore una heshid discount gaaraya ilaa %3, halkii iibin top up waxaad Ku heleesaa 1 points (pts). Hadiyado kalena coming soon I.a.",
+    view: "Eeg",
+    time_left: "Waqtiga haray",
+    buy_button: "iibso"
   }
 };
 

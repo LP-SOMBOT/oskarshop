@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -27,7 +28,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function HomeView() {
-  const { storeSettings, games, events, setActiveTab, isInitialLoading } = useApp();
+  const { storeSettings, games, events, setActiveTab, isInitialLoading, t } = useApp();
   const [localDismiss, setLocalDismiss] = useState(false);
   const router = useRouter();
 
@@ -115,7 +116,7 @@ export default function HomeView() {
             <div className="p-1.5 md:p-3 bg-primary/10 rounded-lg md:rounded-2xl">
               <Gamepad2 className="w-4 h-4 md:w-8 md:h-8 lg:w-10 lg:h-10 text-primary" />
             </div>
-            <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Dooro Game ka</h2>
+            <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('select_game')}</h2>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
@@ -124,6 +125,7 @@ export default function HomeView() {
                 key={game.id} 
                 game={game} 
                 onClick={() => handleGameRedirect(game.id)} 
+                buyLabel={t('buy_button')}
               />
             ))}
           </div>
@@ -137,14 +139,14 @@ export default function HomeView() {
                 <Flame className="w-4 h-4 md:w-8 md:h-8 lg:w-10 lg:h-10 text-blue-500" />
               </div>
               <div>
-                <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Active Events 🔥</h2>
-                <p className="text-[9px] md:text-sm lg:text-lg text-muted-foreground font-medium uppercase tracking-[0.2em] mt-0.5">Ka faa'ideeyso intuusan dhamaan!</p>
+                <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('active_events')}</h2>
+                <p className="text-[9px] md:text-sm lg:text-lg text-muted-foreground font-medium uppercase tracking-[0.2em] mt-0.5">{t('take_advantage')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 xl:gap-12">
               {activeEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={event.id} event={event} viewLabel={t('view')} timeLeftLabel={t('time_left')} />
               ))}
             </div>
           </section>
@@ -158,8 +160,8 @@ export default function HomeView() {
                   <Trophy className="w-6 h-6 md:w-10 md:h-10 lg:w-14 lg:h-14" />
                </div>
                <div className="space-y-0.5 md:space-y-1">
-                  <h3 className="text-xl md:text-3xl lg:text-5xl font-headline font-bold tracking-tight uppercase">Ranking</h3>
-                  <p className="text-white/80 text-[10px] md:text-base lg:text-xl font-medium">iib sameey Si aad u gasho kaalmaha hore una heshid discount gaaraya ilaa %3, halkii iibin top up waxaad Ku heleesaa 1 points (pts). Hadiyado kalena coming soon I.a.</p>
+                  <h3 className="text-xl md:text-3xl lg:text-5xl font-headline font-bold tracking-tight uppercase">{t('ranking')}</h3>
+                  <p className="text-white/80 text-[10px] md:text-base lg:text-xl font-medium">{t('ranking_desc')}</p>
                </div>
             </div>
             <div className="mt-6 md:mt-0 self-end md:self-center w-10 h-10 md:w-16 md:h-16 lg:w-24 lg:h-24 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
@@ -172,7 +174,7 @@ export default function HomeView() {
   );
 }
 
-function EventCard({ event }: { event: any }) {
+function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel: string, timeLeftLabel: string }) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState<string>("");
 
@@ -218,7 +220,7 @@ function EventCard({ event }: { event: any }) {
           <div className="mb-4 md:mb-8 p-2.5 md:p-4 bg-amber-50 dark:bg-amber-500/5 rounded-xl md:rounded-3xl flex items-center gap-2 md:gap-4 text-amber-700 dark:text-amber-400">
              <Clock className="w-4 h-4 md:w-6 md:h-6 animate-pulse" />
              <div className="flex flex-col">
-                <span className="text-[7px] md:text-[10px] font-black uppercase tracking-wider opacity-60">Time Left</span>
+                <span className="text-[7px] md:text-[10px] font-black uppercase tracking-wider opacity-60">{timeLeftLabel}</span>
                 <span className="text-[11px] md:text-lg font-bold font-mono leading-none">{timeLeft}</span>
              </div>
           </div>
@@ -234,7 +236,7 @@ function EventCard({ event }: { event: any }) {
             className="rounded-full h-8 md:h-12 lg:h-14 px-3 md:px-8 lg:px-10 font-bold text-[10px] md:text-sm lg:text-lg hover:bg-primary/10 transition-all active:scale-95" 
             onClick={(e) => { e.stopPropagation(); router.push(`/events/${event.id}`); }}
           >
-            View <ChevronRight className="w-3 h-3 ml-0.5 md:ml-1" />
+            {viewLabel} <ChevronRight className="w-3 h-3 ml-0.5 md:ml-1" />
           </Button>
         </div>
       </div>
@@ -242,7 +244,7 @@ function EventCard({ event }: { event: any }) {
   );
 }
 
-function GameCollectionCard({ game, onClick }: { game: any, onClick: () => void }) {
+function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: () => void, buyLabel: string }) {
   return (
     <Card 
       onClick={onClick}
@@ -263,7 +265,7 @@ function GameCollectionCard({ game, onClick }: { game: any, onClick: () => void 
       </div>
 
       <button className="h-full px-4 md:px-8 lg:px-12 bg-primary text-white font-bold text-xs md:text-xl lg:text-2xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest">
-        iibso
+        {buyLabel}
       </button>
     </Card>
   );
