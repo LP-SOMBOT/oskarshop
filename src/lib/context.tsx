@@ -754,6 +754,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [rtdb, enhancedUser, showPushNotification]);
 
+  const broadcastNotification = async (title: string, body: string, targetUid?: string) => {
+    if (!rtdb) return;
+    const uid = targetUid || user?.uid;
+    if (!uid) return;
+    const notifRef = push(ref(rtdb, `notifications/${uid}`));
+    await set(notifRef, {
+      title,
+      body,
+      type: 'broadcast',
+      createdAt: Date.now(),
+      read: false,
+      linkTo: '#notifications'
+    });
+  };
+
+  const broadcastAdminNotification = async (title: string, body: string, skipPush?: boolean) => {
+    if (!rtdb) return;
+    const adminNotifRef = push(ref(rtdb, 'adminNotifications'));
+    await set(adminNotifRef, {
+      title,
+      body,
+      type: 'broadcast',
+      createdAt: Date.now(),
+      readBy: {}
+    });
+  };
+
   const refreshAdminData = () => {
     if (!rtdb) return;
     get(ref(rtdb, 'orders')).then(s => {
@@ -883,6 +910,102 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     router.push(`/checkout-account?id=${post.id}`);
   };
 
+  const markNotificationsAsRead = async (nid?: string) => {
+    if (!rtdb || !user) return;
+    if (nid) await update(ref(rtdb, `notifications/${user.uid}/${nid}`), { read: true });
+    else {
+      const updates: any = {};
+      notifications.forEach(n => updates[`notifications/${user.uid}/${n.id}/read`] = true);
+      await update(ref(rtdb), updates);
+    }
+  };
+
+  const markAdminNotificationsAsRead = async (nid?: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    if (nid) await update(ref(rtdb, `adminNotifications/${nid}/readBy/${enhancedUser.uid}`), true);
+    else {
+      const updates: any = {};
+      adminNotifications.forEach(n => updates[`adminNotifications/${n.id}/readBy/${enhancedUser.uid}`] = true);
+      await update(ref(rtdb), updates);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, status: string, cancellationReason?: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    const updates: any = { 
+      status,
+      processedBy: {
+        uid: enhancedUser.uid,
+        name: enhancedUser.name || "Admin",
+        photoURL: enhancedUser.photoURL || ""
+      },
+      processedAt: Date.now()
+    };
+    if (status === 'cancelled' && cancellationReason) {
+      updates.cancellationReason = cancellationReason;
+    }
+    if (status === 'successful') {
+      updates.completedAt = Date.now();
+      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+      const orderData = orderSnap.val();
+      if (orderData && orderData.userId) {
+         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
+      }
+    }
+    
+    await update(ref(rtdb, `orders/${orderId}`), updates);
+    
+    // Notify user
+    const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+    const orderData = orderSnap.val();
+    if (orderData && orderData.userId) {
+      const title = status === 'successful' ? "Diamonds Delivered! ✅" : 
+                    status === 'cancelled' ? "Order Cancelled ❌" : 
+                    "Order Update 📦";
+      const body = status === 'successful' ? `Your order #${orderId.toUpperCase()} is complete!` : 
+                   status === 'cancelled' ? `Order #${orderId.toUpperCase()} was cancelled: ${cancellationReason || 'Contact support'}` : 
+                   `Order #${orderId.toUpperCase()} status is now: ${status}`;
+                   
+      broadcastNotification(title, body, orderData.userId);
+    }
+  };
+
+  const updateAccountPostStatus = async (postId: string, status: string, boughtBy?: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    const updates: any = { 
+      status,
+      processedBy: {
+        uid: enhancedUser.uid,
+        name: enhancedUser.name || "Admin",
+        photoURL: enhancedUser.photoURL || ""
+      },
+      processedAt: Date.now()
+    };
+    if (boughtBy) updates.boughtBy = boughtBy;
+    if (status === 'sold') {
+      updates.sold = true;
+      updates.completedAt = Date.now();
+    }
+    
+    if (status === 'approved') {
+      const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
+      const postData = postSnap.val();
+      const now = Date.now();
+      const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
+      updates.expiresAt = now + duration;
+      updates.createdAt = now;
+    }
+
+    await update(ref(rtdb, `accountPosts/${postId}`), updates);
+    
+    const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
+    const postData = postSnap.val();
+    if (postData && postData.uid) {
+       const title = status === 'approved' ? "Post Approved! ✅" : status === 'rejected' ? "Post Rejected ❌" : "Listing Update 🎮";
+       broadcastNotification(title, `Your account listing #${postId.toUpperCase()} is now ${status}.`, postData.uid);
+    }
+  };
+
   const reportAccountOutcome = async (postId: string, outcome: 'bought' | 'not_bought') => {
     if (!rtdb || !user || !enhancedUser) return;
     
@@ -955,37 +1078,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updates: any = {};
     const reportTime = Date.now();
 
-    // 1. Update the individual claimant's status
     updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = confirmed ? 'accepted' : 'rejected';
     updates[`accountPosts/${postId}/sellerReported`] = true;
     updates[`accountPosts/${postId}/sellerReportedAt`] = reportTime;
 
     if (confirmed) {
-      // Logic: If seller's first claim response is sold, go directly to sold.
-      // But if they have previously rejected someone, or have multiple claims, admin should see it as conflict/holding.
       const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => c.status === 'rejected');
       const otherClaimantsCount = Object.keys(postData.claimants || {}).length - 1;
 
       if (hasPreviousRejections || otherClaimantsCount > 0) {
-        // Multi-claim scenario or history of rejection -> Go to holding for admin review
         updates[`accountPosts/${postId}/status`] = 'holding';
         updates[`accountPosts/${postId}/conflict`] = true;
         updates[`accountPosts/${postId}/boughtBy`] = buyerId;
         updates[`accountPosts/${postId}/holdingBy`] = buyerId;
       } else {
-        // First claim and confirmed -> Go directly to sold
         updates[`accountPosts/${postId}/status`] = 'sold';
         updates[`accountPosts/${postId}/sold`] = true;
         updates[`accountPosts/${postId}/boughtBy`] = buyerId;
         updates[`accountPosts/${postId}/holdingBy`] = buyerId;
         updates[`accountPosts/${postId}/completedAt`] = reportTime;
-        updates[`accountPosts/${postId}/claimants`] = null; // Clean up
+        updates[`accountPosts/${postId}/claimants`] = null; 
       }
 
       toast({ title: "Response Recorded!", description: confirmed ? "Sale confirmed. Waiting for finalization." : "Claim rejected." });
       broadcastNotification("Purchase Update! 🤑", confirmed ? "Seller has accepted your purchase claim!" : "Seller rejected your purchase claim.", buyerId);
     } else {
-      // Conflict: Seller explicitly rejects this buyer
       updates[`accountPosts/${postId}/status`] = 'holding';
       updates[`accountPosts/${postId}/conflict`] = true;
       
@@ -1034,26 +1151,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateUserProfile = async (updates: any) => { if (!rtdb || !user) return; await update(ref(rtdb, `users/${user.uid}`), updates); toast({ title: "Profile updated!" }); };
   const manageUser = async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); };
   const deleteUser = async (uid: string) => { if (!rtdb) return; await remove(ref(rtdb, `users/${uid}`)); toast({ title: "User account deleted." }); };
-
-  const markNotificationsAsRead = async (nid?: string) => {
-    if (!rtdb || !user) return;
-    if (nid) await update(ref(rtdb, `notifications/${user.uid}/${nid}`), { read: true });
-    else {
-      const updates: any = {};
-      notifications.forEach(n => updates[`notifications/${user.uid}/${n.id}/read`] = true);
-      await update(ref(rtdb), updates);
-    }
-  };
-
-  const markAdminNotificationsAsRead = async (nid?: string) => {
-    if (!rtdb || !enhancedUser?.isAdmin) return;
-    if (nid) await update(ref(rtdb, `adminNotifications/${nid}/readBy/${enhancedUser.uid}`), true);
-    else {
-      const updates: any = {};
-      adminNotifications.forEach(n => updates[`adminNotifications/${n.id}/readBy/${enhancedUser.uid}`] = true);
-      await update(ref(rtdb), updates);
-    }
-  };
 
   const sendMessage = async (text?: string, imageUrl?: string, targetId?: string) => {
     if (!rtdb || !user) return;
