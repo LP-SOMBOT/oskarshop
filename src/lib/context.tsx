@@ -227,6 +227,7 @@ type UserProfile = {
   gameUid?: string;
   phoneNumber?: string;
   banned?: boolean;
+  termsAccepted?: boolean;
 };
 
 type BannedInfo = {
@@ -305,6 +306,7 @@ type AppContextType = {
   bannedInfo: BannedInfo | null;
   isPostingAccount: boolean;
   setIsPostingAccount: (isPosting: boolean) => void;
+  acceptTerms: () => Promise<void>;
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
@@ -374,7 +376,9 @@ const translations: Record<Language, Record<string, string>> = {
     view: "View",
     time_left: "Time Left",
     buy_button: "BUY",
-    terms_of_service: "Terms & Conditions"
+    terms_of_service: "Terms & Conditions",
+    read_terms: "Read Terms",
+    photo_updated: "Profile photo updated!"
   },
   so: {
     home: "Hoyga",
@@ -428,7 +432,9 @@ const translations: Record<Language, Record<string, string>> = {
     view: "Eeg",
     time_left: "Waqtiga haray",
     buy_button: "iibso",
-    terms_of_service: "Sharuudaha Iyo qawaaniinta"
+    terms_of_service: "Sharuudaha Iyo qawaaniinta",
+    read_terms: "Akhri Shuruudaha",
+    photo_updated: "Sawirka waa la soo geliyey!"
   }
 };
 
@@ -766,7 +772,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const cred = await createUserWithEmailAndPassword(auth, e, p);
       await updateProfile(cred.user, { displayName: n });
-      const profile = { uid: cred.user.uid, email: e, name: n, phoneNumber: ph, role: 'user', points: 0, createdAt: Date.now() };
+      
+      const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
+      
+      const profile: UserProfile = { 
+        uid: cred.user.uid, 
+        email: e, 
+        name: n, 
+        phoneNumber: ph, 
+        role: 'user', 
+        points: 0, 
+        createdAt: Date.now(),
+        termsAccepted: localAccepted 
+      };
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
       setCache(USER_CACHE_KEY, profile);
     } finally { setIsGlobalLoading(false); }
@@ -1013,119 +1031,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() });
   };
 
-  const broadcastNotification = async (title: string, body: string, target?: string) => {
-    if (!rtdb) return;
-    const targetUids = target ? [target] : allUsers.map(u => u.uid);
-    const updates: any = {};
-    targetUids.forEach(uid => {
-      const nid = push(ref(rtdb, `notifications/${uid}`)).key;
-      updates[`notifications/${uid}/${nid}`] = { title, body, read: false, createdAt: Date.now(), type: 'broadcast', linkTo: '#notifications' };
-    });
-    await update(ref(rtdb), updates);
-  };
-
-  const broadcastAdminNotification = async (title: string, body: string, skipPush: boolean = false) => {
-    if (!rtdb) return;
-    const nid = push(ref(rtdb, 'adminNotifications')).key;
-    await set(ref(rtdb, `adminNotifications/${nid}`), { id: nid, title, body, createdAt: Date.now(), type: skipPush ? 'assignment_update' : 'system_alert', linkTo: '#notifications', readBy: {} });
-  };
-
-  const updateOrderStatus = async (oid: string, status: string, cancellationReason?: string) => {
-    if (!rtdb || !enhancedUser) return;
-    const orderSnap = await get(ref(rtdb, `orders/${oid}`));
-    const orderData = orderSnap.val();
-    if (!orderData) return;
-    const oldStatus = orderData.status; const userId = orderData.userId; const items = orderData.items || [];
-    const accountItem = items.find((i: any) => i.gameId === 'accounts' || i.gameId === 'account');
-    
-    const assignmentUpdate: any = { status };
-    if (status === 'cancelled' && cancellationReason) {
-      assignmentUpdate.cancellationReason = cancellationReason;
-    }
-
-    if (oldStatus === 'pending' && (status === 'processing' || status === 'successful' || status === 'cancelled')) {
-      assignmentUpdate.processedBy = { uid: enhancedUser.uid, name: enhancedUser.name, photoURL: enhancedUser.photoURL || "" };
-      assignmentUpdate.processedAt = Date.now();
-      broadcastAdminNotification(`Order Assigned! 🤝`, `${enhancedUser.name} is now handling Order #${oid.toUpperCase()}`, true);
-    }
-    if ((status === 'successful' || status === 'cancelled') && oldStatus !== status) assignmentUpdate.completedAt = Date.now();
-    
-    await update(ref(rtdb, `orders/${oid}`), assignmentUpdate);
-    
-    if (status === 'successful') {
-      if (accountItem && accountItem.id) await update(ref(rtdb, `accountPosts/${accountItem.id}`), { status: 'sold', sold: true, boughtBy: userId, holdingBy: userId, claimants: null });
-      if (userId && oldStatus !== 'successful') {
-        await update(ref(rtdb, `users/${userId}`), { points: increment(1) });
-        broadcastNotification("Order Successful! ✅", "Dalabkaaga waa lagu guuleystay. Waxaad heshay 1 point!", userId);
-      }
-    } else if (status === 'cancelled') {
-      if (userId) {
-        if (oldStatus === 'successful') {
-          await update(ref(rtdb, `users/${userId}`), { points: increment(-1) });
-        }
-        broadcastNotification(
-          "Dalabka waa la kansalay ❌", 
-          `Dalabkaagii #${oid.toUpperCase()} waa la kansalay. ${cancellationReason ? `Sabab: ${cancellationReason}` : ''}`, 
-          userId
-        );
-      }
-    }
-  };
-
-  const updateAccountPostStatus = async (pid: string, status: string, boughtBy?: string) => {
-    if (!rtdb || !enhancedUser) return;
-    const postSnap = await get(ref(rtdb, `accountPosts/${pid}`));
-    const postData = postSnap.val();
-    if (!postData) return;
-    const oldStatus = postData.status; 
-    const assignmentUpdate: any = { status };
-    
-    if (status === 'sold') {
-      assignmentUpdate.sold = true;
-      assignmentUpdate.boughtBy = boughtBy || postData.holdingBy || postData.boughtBy;
-      assignmentUpdate.holdingBy = boughtBy || postData.holdingBy || postData.boughtBy;
-      assignmentUpdate.conflict = false; 
-      assignmentUpdate.sellerReported = true; 
-      assignmentUpdate.claimants = null;
-    }
-
-    if (status === 'approved') {
-      assignmentUpdate.holdingBy = null;
-      assignmentUpdate.boughtBy = null;
-      assignmentUpdate.sold = false;
-      assignmentUpdate.conflict = false;
-      assignmentUpdate.buyerReported = false;
-      assignmentUpdate.buyerReportedAt = null;
-      assignmentUpdate.sellerReported = false;
-      assignmentUpdate.adminMessage = null;
-      assignmentUpdate.hiddenFromMarket = false;
-      assignmentUpdate.claimants = null;
-
-      if (oldStatus !== 'approved' || !postData.expiresAt) {
-        const term = postData.term || 'weekly';
-        const duration = term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
-        assignmentUpdate.expiresAt = Date.now() + duration;
-      }
-    }
-
-    if (oldStatus === 'pending' && (status === 'processing' || status === 'approved')) {
-      assignmentUpdate.processedBy = { uid: enhancedUser.uid, name: enhancedUser.name, photoURL: enhancedUser.photoURL || "" };
-      assignmentUpdate.processedAt = Date.now();
-      broadcastAdminNotification(`Listing Assigned! 🤝`, `${enhancedUser.name} is now reviewing listing #${pid.toUpperCase()}`, true);
-    }
-    if ((status === 'approved' || status === 'rejected' || status === 'sold') && oldStatus !== status) assignmentUpdate.completedAt = Date.now();
-    
-    await update(ref(rtdb, `accountPosts/${pid}`), assignmentUpdate);
-    
-    if (postData.uid) {
-       let msg = "";
-       if (status === 'approved') msg = "Your account is now live in the marketplace.";
-       if (status === 'rejected') msg = "Your account listing was rejected by admin.";
-       if (status === 'sold') msg = "Your account has been marked as SOLD! Check your balance.";
-       if (msg) broadcastNotification(status === 'approved' ? "Post Approved! ✅" : status === 'sold' ? "Account Sold! 🤑" : "Post Rejected ❌", msg, postData.uid);
-    }
-  };
-
   const updateUserProfile = async (updates: any) => { if (!rtdb || !user) return; await update(ref(rtdb, `users/${user.uid}`), updates); toast({ title: "Profile updated!" }); };
   const manageUser = async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); };
   const deleteUser = async (uid: string) => { if (!rtdb) return; await remove(ref(rtdb, `users/${uid}`)); toast({ title: "User account deleted." }); };
@@ -1242,6 +1147,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateStoreSettings = async (s: any) => update(ref(rtdb, 'settings'), s);
 
+  const acceptTerms = async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oskar_terms_accepted', 'true');
+    }
+    if (user && rtdb) {
+      try {
+        await update(ref(rtdb, `users/${user.uid}`), { termsAccepted: true });
+      } catch (e) {
+        console.error("Failed to sync terms acceptance:", e);
+      }
+    }
+  };
+
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
@@ -1250,7 +1168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
-      language, setLanguage, t
+      acceptTerms, language, setLanguage, t
     }}>
       {children}
     </AppContext.Provider>

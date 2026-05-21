@@ -7,6 +7,7 @@ import PWAInstaller from "@/components/layout/PWAInstaller";
 import { FirebaseClientProvider } from "@/firebase";
 import OnboardingGuard from "@/components/layout/OnboardingGuard";
 import NotificationGuard from "@/components/layout/NotificationGuard";
+import TermsGuard from "@/components/layout/TermsGuard";
 import GlobalLoading from "@/components/layout/GlobalLoading";
 import DynamicHead from "@/components/layout/DynamicHead";
 import SWRegistration from "@/components/layout/SWRegistration";
@@ -65,11 +66,13 @@ export default function RootLayout({
               <PWAInstaller />
               <BannedModal />
               <NotificationGuard>
-                <OnboardingGuard>
-                  <MainAppLayout>
-                    {children}
-                  </MainAppLayout>
-                </OnboardingGuard>
+                <TermsGuard>
+                  <OnboardingGuard>
+                    <MainAppLayout>
+                      {children}
+                    </MainAppLayout>
+                  </OnboardingGuard>
+                </TermsGuard>
               </NotificationGuard>
               <Toaster />
             </AppProvider>
