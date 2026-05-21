@@ -505,7 +505,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            <Star size={18} />
                            <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">Level & Pricing</h4>
                         </div>
-                        <FormInput label="Character Level" value={formData.level} type="number" onChange={v => setFormData({...formData, level: v})} placeholder="e.g. 65" />
+                        <FormInput label="ACCOUNT LEVEL" value={formData.level} type="number" onChange={v => setFormData({...formData, level: v})} placeholder="e.g. 65" />
                         <FormInput label="Selling Price ($)" value={formData.price} type="number" onChange={v => setFormData({...formData, price: v})} placeholder="e.g. 50" highlight />
                      </Card>
                   </div>
