@@ -82,7 +82,7 @@ export default function TermsGuard({ children }: { children: React.ReactNode }) 
               </DialogPrimitive.Title>
               
               <DialogPrimitive.Description className="text-muted-foreground dark:text-slate-400 text-sm leading-relaxed mb-8">
-                Welcome to Oskar Shop. To ensure a safe and secure environment for all gamers, please review our Terms and Conditions before proceeding.
+                {t('terms_welcome')}
               </DialogPrimitive.Description>
 
               <Button 
@@ -93,7 +93,7 @@ export default function TermsGuard({ children }: { children: React.ReactNode }) 
               </Button>
               
               <p className="mt-6 text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-widest">
-                Compliance protocol
+                {t('compliance_protocol')}
               </p>
             </div>
           </DialogPrimitive.Content>

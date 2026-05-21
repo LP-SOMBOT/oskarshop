@@ -378,7 +378,9 @@ const translations: Record<Language, Record<string, string>> = {
     buy_button: "BUY",
     terms_of_service: "Terms & Conditions",
     read_terms: "Read Terms",
-    photo_updated: "Profile photo updated!"
+    photo_updated: "Profile photo updated!",
+    terms_welcome: "Welcome to Oskar Shop. To ensure a safe and secure environment for all gamers, please review our Terms and Conditions before proceeding.",
+    compliance_protocol: "Compliance protocol"
   },
   so: {
     home: "Hoyga",
@@ -434,7 +436,9 @@ const translations: Record<Language, Record<string, string>> = {
     buy_button: "iibso",
     terms_of_service: "Sharuudaha Iyo qawaaniinta",
     read_terms: "Akhri Shuruudaha",
-    photo_updated: "Sawirka waa la soo geliyey!"
+    photo_updated: "Sawirka waa la soo geliyey!",
+    terms_welcome: "Ku soo dhawaada Oskar Shop. Si loo damaanad qaado deegaan ammaan ah dhammaan ciyaartoyda, fadlan dib u eeg Shuruudaha iyo Qawaaniinta ka hor intaadan sii socon.",
+    compliance_protocol: "Hab-maamuuska u hoggaansanaanta"
   }
 };
 
@@ -868,17 +872,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`);
   };
 
-  const updateAccountPost = async (pid: string, data: any) => {
+  const updateAccountPost = async (postId: string, data: any) => {
     if (!rtdb) return;
     const { price, totalCharge, fee, ...editableData } = data;
-    await update(ref(rtdb, `accountPosts/${pid}`), editableData);
+    await update(ref(rtdb, `accountPosts/${postId}`), editableData);
     toast({ title: "Post Updated!" });
   };
 
-  const renewAccountPost = async (pid: string, term: 'weekly' | 'monthly') => {
+  const renewAccountPost = async (postId: string, term: 'weekly' | 'monthly') => {
     if (!rtdb) return;
     
-    await update(ref(rtdb, `accountPosts/${pid}`), {
+    await update(ref(rtdb, `accountPosts/${postId}`), {
       term,
       expiresAt: null, 
       status: 'pending', 
