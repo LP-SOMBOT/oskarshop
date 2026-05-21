@@ -163,7 +163,7 @@ export default function ProfileView() {
                   icon={Globe} 
                   label={t('language')} 
                   onClick={() => setLanguage(language === 'so' ? 'en' : 'so')} 
-                  subLabel={language === 'so' ? 'English' : 'Somali'}
+                  subLabel={language === 'so' ? 'Somali' : 'English'}
                 />
                 <ProfileOption icon={UserCircle} label={t('update_profile')} onClick={() => setIsEditModalOpen(true)} />
                 <ProfileOption icon={LogOut} label={t('logout')} onClick={logout} variant="danger" />
