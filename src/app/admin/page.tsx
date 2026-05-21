@@ -66,6 +66,7 @@ import {
   Radio,
   Monitor,
   Layout,
+  ScrollText,
   Calendar as CalendarIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -302,6 +303,11 @@ export default function AdminPage() {
     listingFeeMonthly: 3,
   });
 
+  const [termsForm, setTermsForm] = useState({
+    en: "",
+    so: ""
+  });
+
   useEffect(() => {
     if (!loading && !user?.isAdmin) {
       router.replace('/');
@@ -329,6 +335,12 @@ export default function AdminPage() {
         setFeeConfigForm({
           listingFeeWeekly: storeSettings.config.shop.listingFeeWeekly || 1,
           listingFeeMonthly: storeSettings.config.shop.listingFeeMonthly || 3,
+        });
+      }
+      if (storeSettings.termsAndConditions) {
+        setTermsForm({
+          en: storeSettings.termsAndConditions.en || "",
+          so: storeSettings.termsAndConditions.so || ""
         });
       }
     }
@@ -551,6 +563,16 @@ export default function AdminPage() {
     try {
       await updateStoreSettings({ config: { ...storeSettings.config, shop: { ...storeSettings.config?.shop, ...feeConfigForm } } });
       toast({ title: "Fee settings updated" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveTerms = async () => {
+    setIsUploading(true);
+    try {
+      await updateStoreSettings({ termsAndConditions: termsForm });
+      toast({ title: "Terms & Conditions updated" });
     } finally {
       setIsUploading(false);
     }
@@ -1917,6 +1939,46 @@ export default function AdminPage() {
                                    </div>
                                 </div>
                               ))}
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Terms & Conditions */}
+                  <AccordionItem value="terms" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-8 py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-purple-600">
+                              <ScrollText className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Terms & Conditions</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Legal agreements and user policies</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-8 pb-8 pt-4">
+                           <div className="space-y-10">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                 <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Somali Version</Label>
+                                    <Textarea 
+                                      placeholder="Geli shuruudaha iyo qawaaniinta (Somali)..." 
+                                      value={termsForm.so} 
+                                      onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} 
+                                      className="rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-medium min-h-[300px] shadow-inner p-6" 
+                                    />
+                                 </div>
+                                 <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Version</Label>
+                                    <Textarea 
+                                      placeholder="Enter terms and conditions (English)..." 
+                                      value={termsForm.en} 
+                                      onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} 
+                                      className="rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-medium min-h-[300px] shadow-inner p-6" 
+                                    />
+                                 </div>
+                              </div>
+                              <Button onClick={handleSaveTerms} className="w-full h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-purple-600 hover:bg-purple-700">Sync Terms & Conditions</Button>
                            </div>
                         </AccordionContent>
                      </Card>

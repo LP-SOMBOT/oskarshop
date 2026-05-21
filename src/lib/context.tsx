@@ -183,6 +183,10 @@ type StoreSettings = {
   onboardingImages?: string[];
   sliderImages?: string[]; 
   paymentMethods?: Record<string, PaymentMethod>;
+  termsAndConditions?: {
+    en?: string;
+    so?: string;
+  };
   appStatus?: {
     offline: boolean;
     offlineTitle?: string;
@@ -369,7 +373,8 @@ const translations: Record<Language, Record<string, string>> = {
     ranking_desc: "Make purchases to enter the top ranks and get discounts up to 3%. Each top-up purchase earns you 1 point (pts). More gifts coming soon I.a.",
     view: "View",
     time_left: "Time Left",
-    buy_button: "BUY"
+    buy_button: "BUY",
+    terms_of_service: "Terms of Service"
   },
   so: {
     home: "Hoyga",
@@ -422,7 +427,8 @@ const translations: Record<Language, Record<string, string>> = {
     ranking_desc: "iib sameey Si aad u gasho kaalmaha hore una heshid discount gaaraya ilaa %3, halkii iibin top up waxaad Ku heleesaa 1 points (pts). Hadiyado kalena coming soon I.a.",
     view: "Eeg",
     time_left: "Waqtiga haray",
-    buy_button: "iibso"
+    buy_button: "iibso",
+    terms_of_service: "Shuruudaha Adeegga"
   }
 };
 
@@ -578,7 +584,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setActiveTab = useCallback((tab: string) => {
     setActiveTabState(tab);
     if (typeof window !== 'undefined') {
-      const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/");
+      const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || pathname === "/terms";
       if (isSpecialFlow || pathname !== '/') {
         router.push(tab === 'home' ? '/' : `/#${tab}`);
       } else {

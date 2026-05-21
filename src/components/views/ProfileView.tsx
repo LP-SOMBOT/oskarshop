@@ -22,6 +22,7 @@ import {
   Moon,
   Sun,
   Globe,
+  ScrollText,
   ShieldCheck as AccountIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -154,6 +155,7 @@ export default function ProfileView() {
                 <ProfileOption icon={HelpCircle} label={t('app_tutorial')} onClick={() => { if (helpLinks.tutorialUrl) window.open(helpLinks.tutorialUrl, '_blank'); else toast({ title: "Coming Soon" }); }} />
                 <ProfileOption icon={MessageCircle} label={t('whatsapp_support')} onClick={() => { const num = formatWhatsAppNumber(helpLinks.whatsappNumber || "252613982172"); window.open(`https://wa.me/${num}`, '_blank'); }} />
                 <ProfileOption icon={Video} label={t('tiktok')} onClick={() => { const url = helpLinks.tiktokUrl || "https://tiktok.com/@Oskarshop"; window.open(url, '_blank'); }} />
+                <ProfileOption icon={ScrollText} label={t('terms_of_service')} onClick={() => router.push('/terms')} />
             </ProfileGroup>
             <ProfileGroup title={t('global_settings')}>
                 <ProfileOption icon={theme === 'light' ? Moon : Sun} label={theme === 'light' ? t('dark_mode') : t('light_mode')} onClick={toggleTheme} />
