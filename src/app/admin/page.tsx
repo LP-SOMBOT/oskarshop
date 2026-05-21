@@ -2174,6 +2174,34 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader>
+             <DialogTitle className="text-xl sm:text-2xl font-headline font-bold">New Promotion Banner</DialogTitle>
+             <DialogDescription className="text-xs">This image will appear in the homepage slider.</DialogDescription>
+           </DialogHeader>
+           <div className="space-y-5 sm:space-y-6 mt-4 sm:mt-6">
+              <div className="flex justify-center mb-4">
+                 <div className="relative w-full aspect-[3/1] rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center group overflow-hidden">
+                    {bannerForm.imageUrl ? (
+                      <Image src={bannerForm.imageUrl} alt="" fill className="object-cover" unoptimized />
+                    ) : (
+                      <ImageIcon className="text-slate-300" />
+                    )}
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'banner')} />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase text-center p-4">Click to Upload Image</div>
+                    {isUploading && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center z-20"><Loader2 className="animate-spin text-primary" /></div>}
+                 </div>
+              </div>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Link Target (Optional)</Label>
+                <Input value={bannerForm.linkTo} onChange={e => setBannerForm({ ...bannerForm, linkTo: e.target.value })} className="h-11 sm:h-12 rounded-xl dark:bg-slate-800 border-none px-4" placeholder="e.g. #games-freefire" />
+              </div>
+              <Button onClick={handleSaveBanner} disabled={isUploading || !bannerForm.imageUrl} className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Publish Banner"}</Button>
+           </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
         <DialogContent className="max-w-md w-[95%] rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader><DialogTitle className="text-xl sm:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Method' : 'Add Payment Method'}</DialogTitle></DialogHeader>
