@@ -249,7 +249,7 @@ type AppContextType = {
   setGlobalLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
+  handleForgotPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
   orders: Order[];
@@ -831,19 +831,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally { setIsGlobalLoading(false); }
   };
 
-  const forgotPassword = async (email: string) => {
+  const handleForgotPassword = async (email: string) => {
+    if (!email) {
+      toast({ 
+        variant: "destructive",
+        title: "Required",
+        description: "Please enter your email address." 
+      });
+      return;
+    }
     setIsGlobalLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
       toast({ 
-        title: t('reset_password'), 
-        description: t('reset_email_sent') 
+        title: t('reset_password') || "Reset link sent!", 
+        description: t('reset_email_sent') || "Check your inbox for instructions." 
       });
-    } catch (e: any) {
+    } catch (error: any) {
+      let errorMessage = "Failed to send reset email.";
+      if (error.code === 'auth/user-not-found') errorMessage = "No user found with this email.";
+      else if (error.code === 'auth/invalid-email') errorMessage = "Invalid email address format.";
+      
       toast({ 
         variant: "destructive", 
         title: "Error", 
-        description: e.message || "Failed to send reset email." 
+        description: errorMessage 
       });
     } finally {
       setIsGlobalLoading(false);
@@ -1293,7 +1305,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, forgotPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
+      login, signup, handleForgotPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,

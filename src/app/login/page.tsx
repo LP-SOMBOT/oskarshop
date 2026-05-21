@@ -28,7 +28,7 @@ export default function LoginPage() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   
-  const { login, forgotPassword, t } = useApp();
+  const { login, handleForgotPassword, t } = useApp();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -51,7 +51,7 @@ export default function LoginPage() {
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;
-    await forgotPassword(forgotEmail);
+    await handleForgotPassword(forgotEmail);
     setIsForgotModalOpen(false);
     setForgotEmail("");
   };
