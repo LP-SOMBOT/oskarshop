@@ -67,8 +67,7 @@ import {
   Monitor,
   Layout,
   ScrollText,
-  Calendar as CalendarIcon,
-  Mail
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,7 +187,6 @@ export default function AdminPage() {
     loading,
     storeSettings, 
     updateStoreSettings, 
-    updateAdminSettings,
     allUsers, 
     allOrders, 
     games,
@@ -293,11 +291,6 @@ export default function AdminPage() {
     tiktokUrl: ""
   });
 
-  const [emailConfigForm, setEmailConfigForm] = useState({
-    senderEmail: "",
-    appPassword: ""
-  });
-
   const [appStatusForm, setAppStatusForm] = useState({
     offline: false,
     offlineTitle: "",
@@ -328,12 +321,6 @@ export default function AdminPage() {
           tutorialUrl: storeSettings.helpLinks.tutorialUrl || "",
           whatsappNumber: storeSettings.helpLinks.whatsappNumber || "",
           tiktokUrl: storeSettings.helpLinks.tiktokUrl || ""
-        });
-      }
-      if (storeSettings.emailConfig) {
-        setEmailConfigForm({
-          senderEmail: storeSettings.emailConfig.senderEmail || "",
-          appPassword: storeSettings.emailConfig.appPassword || ""
         });
       }
       if (storeSettings.appStatus) {
@@ -556,19 +543,6 @@ export default function AdminPage() {
     try {
       await updateStoreSettings({ helpLinks: helpLinksForm });
       toast({ title: "Support links updated" });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleSaveEmailConfig = async () => {
-    setIsUploading(true);
-    try {
-      // Direct write to /admin_settings/email_config to support the OTP system
-      await updateAdminSettings({ email_config: emailConfigForm });
-      // Keep local storeSettings updated for display
-      await updateStoreSettings({ emailConfig: emailConfigForm });
-      toast({ title: "Email service updated" });
     } finally {
       setIsUploading(false);
     }
@@ -1723,54 +1697,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Email Service Protocol */}
-                  <AccordionItem value="email-service" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-blue-600">
-                              <Mail className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Email Service Protocol</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Automated OTP & recovery credentials</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-8">
-                              <div className="p-4 sm:p-6 bg-blue-50 dark:bg-blue-950/20 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30 flex gap-3">
-                                 <Info className="text-blue-500 shrink-0 mt-1" size={20} />
-                                 <p className="text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-300 leading-relaxed">
-                                    These credentials are used by the Cloud Functions to send 6-digit OTP codes. For "App Password", generate a unique 16-character code in your Google Account security settings.
-                                 </p>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                                 <SettingInput 
-                                    label="Sender Gmail Address" 
-                                    value={emailConfigForm.senderEmail} 
-                                    onChange={v => setEmailConfigForm(f => ({ ...f, senderEmail: v }))} 
-                                    placeholder="admin@gmail.com" 
-                                 />
-                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Google App Password</Label>
-                                    <div className="relative">
-                                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                       <Input 
-                                          type="password"
-                                          value={emailConfigForm.appPassword} 
-                                          onChange={e => setEmailConfigForm(f => ({ ...f, appPassword: e.target.value }))} 
-                                          className="h-12 sm:h-16 rounded-xl sm:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-mono pl-12 shadow-inner" 
-                                          placeholder="•••• •••• •••• ••••" 
-                                       />
-                                    </div>
-                                 </div>
-                              </div>
-                              <Button onClick={handleSaveEmailConfig} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-blue-600 hover:bg-blue-700">Sync Email Service</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
                   {/* Maintenance Mode */}
                   <AccordionItem value="maintenance" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
@@ -2360,7 +2286,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="max-w-sm w-[90%] rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 border-none shadow-2xl bg-white dark:bg-slate-900">
+        <DialogContent className="max-sm w-[90%] rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 border-none shadow-2xl bg-white dark:bg-slate-900">
            <div className="flex flex-col items-center text-center space-y-4">
               <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-50 dark:bg-red-950/20 rounded-full flex items-center justify-center text-red-500 mb-2"><AlertCircle size={32} /></div>
               <DialogTitle className="text-lg sm:text-xl font-headline font-bold">Confirm Deletion</DialogTitle>

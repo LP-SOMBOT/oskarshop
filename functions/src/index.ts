@@ -6,16 +6,12 @@ admin.initializeApp();
 
 /**
  * @fileOverview Refactored Firebase Cloud Functions for Oskar Shop.
- * Switched from Nodemailer to Resend Email API to bypass Firebase SMTP blocks.
+ * Uses Resend Email API over HTTPS to bypass SMTP blocks.
  * 
- * 1. sendEmailOTP: Callable function to generate, save, and send a 6-digit code via Resend HTTP API.
- * 2. resetPasswordWithOtp: Verifies the code and updates the user password via Admin SDK.
+ * 1. sendEmailOTP: Generates, saves, and sends a 6-digit code via Resend.
+ * 2. resetPasswordWithOtp: Verifies the code and updates the user password.
  */
 
-/**
- * CALLABLE: sendEmailOTP
- * Handles OTP generation, RTDB logging, and Resend API dispatch via HTTPS POST.
- */
 export const sendEmailOTP = functions.https.onCall(async (data, context) => {
     const { email } = data;
     if (!email) {
@@ -28,18 +24,18 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
         const sanitizedEmail = email.replace(/\./g, '_');
         const expiresAt = Date.now() + 600000; // 10 minutes
 
-        // 2. Save to Database (Keeping structure intact under /email_otps/)
+        // 2. Save to Database
         await admin.database().ref(`email_otps/${sanitizedEmail}`).set({
             otp,
             email,
             expiresAt
         });
 
-        // 3. INTEGRATE RESEND API (HTTP fetch)
-        // Node.js 18+ provides built-in fetch. 
+        // 3. Dispatch via Resend API (HTTP POST)
+        // Note: Outbound requests to non-Google APIs require the Firebase Blaze Plan.
         const resendApiKey = "re_hgGKiQfD_NkgJ24f5kqvyDsx76NatW5jA";
         
-        const resendResponse = await fetch("https://api.resend.com/emails", {
+        const response = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${resendApiKey}`,
@@ -70,29 +66,21 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
             })
         });
 
-        if (!resendResponse.ok) {
-            const errorPayload = await resendResponse.json();
-            throw new Error(`Resend API Failure: ${JSON.stringify(errorPayload)}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Resend API Failure:", errorText);
+            // Re-throw with status for better visibility in frontend
+            throw new functions.https.HttpsError('internal', `Email Service Error: ${response.status} - ${errorText}`);
         }
         
         return { success: true };
     } catch (error: any) {
-        console.error("OTP Dispatch Failure:", error);
-        
-        // Ensure explicit error messages reach the frontend for debugging
+        console.error("OTP Flow Crash:", error);
         if (error instanceof functions.https.HttpsError) throw error;
-        
-        throw new functions.https.HttpsError(
-            'internal', 
-            error.message || 'API Dispatch Failed: Check Resend API Key or Network.'
-        );
+        throw new functions.https.HttpsError('internal', error.message || 'Network Dispatch Failed.');
     }
 });
 
-/**
- * CALLABLE: resetPasswordWithOtp
- * Verifies the OTP and applies the new password using the Admin SDK.
- */
 export const resetPasswordWithOtp = functions.https.onCall(async (data, context) => {
     const { email, otp, newPassword } = data;
     
@@ -116,10 +104,7 @@ export const resetPasswordWithOtp = functions.https.onCall(async (data, context)
     try {
         const userRecord = await admin.auth().getUserByEmail(email);
         await admin.auth().updateUser(userRecord.uid, { password: newPassword });
-        
-        // Finalize: Remove OTP node to prevent reuse
         await otpRef.remove();
-        
         return { success: true };
     } catch (err: any) {
         throw new functions.https.HttpsError('internal', err.message);
