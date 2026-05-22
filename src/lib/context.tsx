@@ -15,7 +15,9 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
 } from 'firebase/auth';
 import { 
   ref, 
@@ -530,6 +532,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
+  // Handle Redirect Result (for Google Login on Mobile/PWA)
+  useEffect(() => {
+    if (!auth || !rtdb) return;
+
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          const googleUser = result.user;
+          const userRef = ref(rtdb, `users/${googleUser.uid}`);
+          const snapshot = await get(userRef);
+          
+          if (!snapshot.exists()) {
+            const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
+            const profile: UserProfile = { 
+              uid: googleUser.uid, 
+              email: googleUser.email || "", 
+              name: googleUser.displayName || "Gamer", 
+              role: 'user', 
+              points: 0, 
+              createdAt: Date.now(),
+              termsAccepted: localAccepted,
+              photoURL: googleUser.photoURL || ""
+            };
+            await set(userRef, profile);
+          }
+          toast({ title: "Welcome!", description: "Successfully signed in with Google." });
+          router.push('/');
+        }
+      })
+      .catch((error) => {
+        console.error("Auth redirect error:", error);
+        if (error.code !== 'auth/no-auth-event') {
+          toast({ variant: "destructive", title: "Login Failed", description: error.message });
+        }
+      });
+  }, [auth, rtdb, router]);
+
   // Heartbeat to track presence
   useEffect(() => {
     if (!rtdb || !user) return;
@@ -698,7 +737,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(data);
       if (data) {
         setCache(USER_CACHE_KEY, data);
-        // Sync the completion flag to local storage for the guard
         const isComplete = data.phoneNumber && data.gameUid && data.name;
         if (isComplete) {
           localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
@@ -844,59 +882,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const googleUser = result.user;
-      
-      const userRef = ref(rtdb, `users/${googleUser.uid}`);
-      const snapshot = await get(userRef);
-      
-      if (!snapshot.exists()) {
-        const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
-        const profile: UserProfile = { 
-          uid: googleUser.uid, 
-          email: googleUser.email || "", 
-          name: googleUser.displayName || "Gamer", 
-          role: 'user', 
-          points: 0, 
-          createdAt: Date.now(),
-          termsAccepted: localAccepted,
-          photoURL: googleUser.photoURL || ""
-        };
-        await set(userRef, profile);
-        setCache(USER_CACHE_KEY, profile);
+      const standalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (standalone || isMobile) {
+        // Redirect is more reliable on mobile/standalone PWAs
+        await signInWithRedirect(auth, provider);
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        const googleUser = result.user;
+        const userRef = ref(rtdb, `users/${googleUser.uid}`);
+        const snapshot = await get(userRef);
+        
+        if (!snapshot.exists()) {
+          const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
+          const profile: UserProfile = { 
+            uid: googleUser.uid, 
+            email: googleUser.email || "", 
+            name: googleUser.displayName || "Gamer", 
+            role: 'user', 
+            points: 0, 
+            createdAt: Date.now(),
+            termsAccepted: localAccepted,
+            photoURL: googleUser.photoURL || ""
+          };
+          await set(userRef, profile);
+        }
+        toast({ title: "Welcome!", description: "Logged in with Google." });
+        router.push('/');
       }
-      router.push('/');
-    } finally {
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login Failed", description: error.message });
       setIsGlobalLoading(false);
     }
   };
 
   const handleForgotPassword = async (email: string) => {
     if (!email) {
-      toast({ 
-        variant: "destructive",
-        title: "Required",
-        description: "Please enter your email address." 
-      });
+      toast({ variant: "destructive", title: "Required", description: "Please enter your email address." });
       return;
     }
     setIsGlobalLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      toast({ 
-        title: t('reset_password') || "Reset link sent!", 
-        description: t('reset_email_sent') || "Check your inbox for instructions." 
-      });
+      toast({ title: t('reset_password') || "Reset link sent!", description: t('reset_email_sent') || "Check your inbox for instructions." });
     } catch (error: any) {
-      let errorMessage = "Failed to send reset email.";
-      if (error.code === 'auth/user-not-found') errorMessage = "No user found with this email.";
-      else if (error.code === 'auth/invalid-email') errorMessage = "Invalid email address format.";
-      
-      toast({ 
-        variant: "destructive", 
-        title: "Error", 
-        description: errorMessage 
-      });
+      toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
       setIsGlobalLoading(false);
     }
@@ -941,19 +972,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const postAccount = async (data: any) => {
     if (!rtdb || !user) return;
-    
     const postRef = push(ref(rtdb, 'accountPosts'));
-    await set(postRef, { 
-      ...data, 
-      uid: user.uid, 
-      authorName: enhancedUser?.name, 
-      authorAvatar: enhancedUser?.photoURL, 
-      status: 'pending', 
-      createdAt: Date.now(), 
-      expiresAt: null, 
-      views: 0, 
-      sold: false 
-    });
+    await set(postRef, { ...data, uid: user.uid, authorName: enhancedUser?.name, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`);
   };
@@ -967,24 +987,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const renewAccountPost = async (postId: string, term: 'weekly' | 'monthly') => {
     if (!rtdb) return;
-    
-    await update(ref(rtdb, `accountPosts/${postId}`), {
-      term,
-      expiresAt: null, 
-      status: 'pending', 
-      sold: false,
-      holdingBy: null,
-      boughtBy: null,
-      buyerReported: false,
-      buyerReportedAt: null,
-      sellerReported: false,
-      sellerReportedAt: null,
-      conflict: false,
-      adminMessage: null,
-      hiddenFromMarket: false,
-      sellerSeenDeletionAt: null,
-      claimants: null
-    });
+    await update(ref(rtdb, `accountPosts/${postId}`), { term, expiresAt: null, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, buyerReportedAt: null, sellerReported: false, sellerReportedAt: null, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null });
     toast({ title: "Renewal Initiated!", description: "Waiting for admin to verify renewal payment." });
   };
 
@@ -1022,61 +1025,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateOrderStatus = async (orderId: string, status: string, cancellationReason?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
-    const updates: any = { 
-      status,
-      processedBy: {
-        uid: enhancedUser.uid,
-        name: enhancedUser.name || "Admin",
-        photoURL: enhancedUser.photoURL || ""
-      },
-      processedAt: Date.now()
-    };
-    if (status === 'cancelled' && cancellationReason) {
-      updates.cancellationReason = cancellationReason;
-    }
+    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
+    if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
     if (status === 'successful') {
       updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val();
-      if (orderData && orderData.userId) {
-         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
-      }
+      if (orderData && orderData.userId) await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
     }
-    
     await update(ref(rtdb, `orders/${orderId}`), updates);
-    
-    // Notify user
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
     const orderData = orderSnap.val();
     if (orderData && orderData.userId) {
-      const title = status === 'successful' ? "Diamonds Delivered! ✅" : 
-                    status === 'cancelled' ? "Order Cancelled ❌" : 
-                    "Order Update 📦";
-      const body = status === 'successful' ? `Your order #${orderId.toUpperCase()} is complete!` : 
-                   status === 'cancelled' ? `Order #${orderId.toUpperCase()} was cancelled: ${cancellationReason || 'Contact support'}` : 
-                   `Order #${orderId.toUpperCase()} status is now: ${status}`;
-                   
+      const title = status === 'successful' ? "Diamonds Delivered! ✅" : status === 'cancelled' ? "Order Cancelled ❌" : "Order Update 📦";
+      const body = status === 'successful' ? `Your order #${orderId.toUpperCase()} is complete!` : status === 'cancelled' ? `Order #${orderId.toUpperCase()} was cancelled: ${cancellationReason || 'Contact support'}` : `Order #${orderId.toUpperCase()} status is now: ${status}`;
       broadcastNotification(title, body, orderData.userId);
     }
   };
 
   const updateAccountPostStatus = async (postId: string, status: string, boughtBy?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
-    const updates: any = { 
-      status,
-      processedBy: {
-        uid: enhancedUser.uid,
-        name: enhancedUser.name || "Admin",
-        photoURL: enhancedUser.photoURL || ""
-      },
-      processedAt: Date.now()
-    };
+    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (boughtBy) updates.boughtBy = boughtBy;
-    if (status === 'sold') {
-      updates.sold = true;
-      updates.completedAt = Date.now();
-    }
-    
+    if (status === 'sold') { updates.sold = true; updates.completedAt = Date.now(); }
     if (status === 'approved') {
       const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
       const postData = postSnap.val();
@@ -1085,9 +1056,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updates.expiresAt = now + duration;
       updates.createdAt = now;
     }
-
     await update(ref(rtdb, `accountPosts/${postId}`), updates);
-    
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
     if (postData && postData.uid) {
@@ -1098,84 +1067,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const reportAccountOutcome = async (postId: string, outcome: 'bought' | 'not_bought') => {
     if (!rtdb || !user || !enhancedUser) return;
-    
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
     if (!postData) return;
-
     const targetOrder = orders.find(o => o.gameDetails?.postId === postId && o.userId === user.uid);
-    
     if (outcome === 'not_bought') {
       const updates: any = {};
-      if (postData.claimants?.[user.uid]) {
-        updates[`accountPosts/${postId}/claimants/${user.uid}`] = null;
-      }
-      if (targetOrder) {
-        updates[`orders/${targetOrder.id}/buyerOutcome`] = outcome;
-        updates[`orders/${targetOrder.id}/status`] = 'cancelled';
-      }
-      if (Object.keys(updates).length > 0) {
-        await update(ref(rtdb), updates);
-      }
-      toast({ title: "Deal Cancelled", description: "You've cancelled your report for this account." });
+      if (postData.claimants?.[user.uid]) updates[`accountPosts/${postId}/claimants/${user.uid}`] = null;
+      if (targetOrder) { updates[`orders/${targetOrder.id}/buyerOutcome`] = outcome; updates[`orders/${targetOrder.id}/status`] = 'cancelled'; }
+      if (Object.keys(updates).length > 0) await update(ref(rtdb), updates);
     } else {
       const reportTime = Date.now();
-      
-      const claimantInfo = {
-        uid: user.uid,
-        name: enhancedUser.name || "Buyer",
-        whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A",
-        photo: enhancedUser.photoURL || "",
-        timestamp: reportTime,
-        status: 'pending'
-      };
-
+      const claimantInfo = { uid: user.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending' };
       await update(ref(rtdb, `accountPosts/${postId}/claimants/${user.uid}`), claimantInfo);
-      await update(postRef, { 
-        buyerReported: true, 
-        buyerReportedAt: reportTime
-      });
-
-      if (targetOrder) {
-        await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
-      }
-
+      await update(postRef, { buyerReported: true, buyerReportedAt: reportTime });
+      if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
       toast({ title: "Report Sent!", description: "Seller has been notified to verify the sale." });
-      
-      if (postData.uid) {
-         broadcastNotification(
-           "New Purchase Claim! 💰", 
-           `A buyer reported they bought your ${postData.gameType} account. Please verify in My Accounts!`, 
-           postData.uid
-         );
-      }
-
+      if (postData.uid) broadcastNotification("New Purchase Claim! 💰", `A buyer reported they bought your ${postData.gameType} account. Please verify in My Accounts!`, postData.uid);
       await broadcastAdminNotification("Buyer Report!", `Buyer reported purchase for account #${postId.toUpperCase()}.`);
     }
   };
 
   const respondToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
     if (!rtdb || !user) return;
-    
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
-    if (!postData) return;
-
-    if (!buyerId) return;
-
+    if (!postData || !buyerId) return;
     const updates: any = {};
     const reportTime = Date.now();
-
     updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = confirmed ? 'accepted' : 'rejected';
     updates[`accountPosts/${postId}/sellerReported`] = true;
     updates[`accountPosts/${postId}/sellerReportedAt`] = reportTime;
-
     if (confirmed) {
-      const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => c.status === 'rejected');
+      const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => (c as any).status === 'rejected');
       const otherClaimantsCount = Object.keys(postData.claimants || {}).length - 1;
-
       if (hasPreviousRejections || otherClaimantsCount > 0) {
         updates[`accountPosts/${postId}/status`] = 'holding';
         updates[`accountPosts/${postId}/conflict`] = true;
@@ -1189,17 +1116,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updates[`accountPosts/${postId}/completedAt`] = reportTime;
         updates[`accountPosts/${postId}/claimants`] = null; 
       }
-
       toast({ title: "Response Recorded!", description: confirmed ? "Sale confirmed. Waiting for finalization." : "Claim rejected." });
       broadcastNotification("Purchase Update! 🤑", confirmed ? "Seller has accepted your purchase claim!" : "Seller rejected your purchase claim.", buyerId);
     } else {
       updates[`accountPosts/${postId}/status`] = 'holding';
       updates[`accountPosts/${postId}/conflict`] = true;
-      
       toast({ title: "Claim Rejected", description: "This will be reviewed by an admin." });
       await broadcastAdminNotification("Conflict Detected! ⚠️", `Seller rejected buyer claim for account #${postId.toUpperCase()}.`);
     }
-
     await update(ref(rtdb), updates);
   };
 
@@ -1209,43 +1133,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postSnap = await get(postRef);
     const postData = postSnap.val();
     if (!postData) return;
-
-    const updates: any = { 
-      adminMessage: message,
-      sellerReported: true, 
-      conflict: false,
-      buyerReported: false,
-      buyerReportedAt: null,
-      claimants: null 
-    };
-
-    if (action === 'delete') {
-      updates.status = 'rejected';
-      updates.hiddenFromMarket = true;
-      updates.sold = false;
-    } else {
-      updates.status = action;
-      updates.hiddenFromMarket = false;
-    }
-
+    const updates: any = { adminMessage: message, sellerReported: true, conflict: false, buyerReported: false, buyerReportedAt: null, claimants: null };
+    if (action === 'delete') { updates.status = 'rejected'; updates.hiddenFromMarket = true; updates.sold = false; }
+    else { updates.status = action; updates.hiddenFromMarket = false; }
     await update(postRef, updates);
     broadcastNotification("Admin Action Taken 👮", message, postData.uid);
     toast({ title: `Action "${action}" Applied` });
   };
 
-  const markDeletionAsSeen = async (postId: string) => {
-    if (!rtdb) return;
-    await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() });
-  };
+  const markDeletionAsSeen = async (postId: string) => { if (!rtdb) return; await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() }); };
 
   const updateUserProfile = async (updates: any) => { 
     if (!rtdb || !user) return; 
     await update(ref(rtdb, `users/${user.uid}`), updates); 
-    // Set local cache flag
     const isComplete = updates.phoneNumber && updates.gameUid && updates.name;
-    if (isComplete) {
-      localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
-    }
+    if (isComplete) localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
     toast({ title: "Profile updated!" }); 
   };
   const manageUser = async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); };
@@ -1302,7 +1204,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const saveEvent = async (e: any) => { 
     if (!rtdb) return; 
     const { id, duration, durationUnit, ...data } = e;
-    
     let expiresAt = data.expiresAt || null;
     if (duration && durationUnit) {
       const now = Date.now();
@@ -1311,9 +1212,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       else if (durationUnit === 'hours') expiresAt = now + (val * 60 * 60 * 1000);
       else if (durationUnit === 'minutes') expiresAt = now + (val * 60 * 1000);
     }
-
     const eventToSave = { ...data, expiresAt, createdAt: Date.now() };
-
     if (id) await update(ref(rtdb, `events/${id}`), eventToSave); 
     else await push(ref(rtdb, 'events'), eventToSave); 
   };
@@ -1326,34 +1225,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const savePaymentMethod = async (m: any) => {
     if (!rtdb) return;
     const { id, ...data } = m;
-    if (id) {
-      await update(ref(rtdb, `settings/paymentMethods/${id}`), data);
-    } else {
-      const newRef = push(ref(rtdb, 'settings/paymentMethods'));
-      await set(newRef, { ...data, active: true });
-    }
+    if (id) await update(ref(rtdb, `settings/paymentMethods/${id}`), data);
+    else { const newRef = push(ref(rtdb, 'settings/paymentMethods')); await set(newRef, { ...data, active: true }); }
     toast({ title: "Payment Method Saved" });
   };
 
-  const deletePaymentMethod = async (id: string) => {
-    if (!rtdb) return;
-    await remove(ref(rtdb, `settings/paymentMethods/${id}`));
-    toast({ title: "Payment Method Removed" });
-  };
-
+  const deletePaymentMethod = async (id: string) => { if (!rtdb) return; await remove(ref(rtdb, `settings/paymentMethods/${id}`)); toast({ title: "Payment Method Removed" }); };
   const updateStoreSettings = async (s: any) => update(ref(rtdb, 'settings'), s);
 
   const acceptTerms = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('oskar_terms_accepted', 'true');
-    }
-    if (user && rtdb) {
-      try {
-        await update(ref(rtdb, `users/${user.uid}`), { termsAccepted: true });
-      } catch (e) {
-        console.error("Failed to sync terms acceptance:", e);
-      }
-    }
+    if (typeof window !== 'undefined') localStorage.setItem('oskar_terms_accepted', 'true');
+    if (user && rtdb) try { await update(ref(rtdb, `users/${user.uid}`), { termsAccepted: true }); } catch (e) {}
   };
 
   return (
