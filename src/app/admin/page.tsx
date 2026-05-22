@@ -188,6 +188,7 @@ export default function AdminPage() {
     loading,
     storeSettings, 
     updateStoreSettings, 
+    updateAdminSettings,
     allUsers, 
     allOrders, 
     games,
@@ -563,6 +564,9 @@ export default function AdminPage() {
   const handleSaveEmailConfig = async () => {
     setIsUploading(true);
     try {
+      // Direct write to /admin_settings/email_config to support the OTP system
+      await updateAdminSettings({ email_config: emailConfigForm });
+      // Keep local storeSettings updated for display
       await updateStoreSettings({ emailConfig: emailConfigForm });
       toast({ title: "Email service updated" });
     } finally {
@@ -2329,7 +2333,7 @@ export default function AdminPage() {
                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Link Target (Optional)</Label>
                 <Input value={bannerForm.linkTo} onChange={e => setBannerForm({ ...bannerForm, linkTo: e.target.value })} className="h-11 sm:h-12 rounded-xl dark:bg-slate-800 border-none px-4" placeholder="e.g. #games-freefire" />
               </div>
-              <Button onClick={handleSaveBanner} disabled={isUploading || !bannerForm.imageUrl} className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Publish Banner"}</Button>
+              <Button onClick={handleSaveBanner} disabled={isUploading || !bannerForm.imageUrl} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Publish Banner"}</Button>
            </div>
         </DialogContent>
       </Dialog>

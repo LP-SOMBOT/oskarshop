@@ -201,11 +201,6 @@ type StoreSettings = {
     offlineBody?: string;
     offlineImageUrl?: string;
   };
-  helpLinks?: {
-    tutorialUrl?: string;
-    whatsappNumber?: string;
-    tiktokUrl?: string;
-  };
   emailConfig?: {
     senderEmail?: string;
     appPassword?: string;
@@ -307,6 +302,7 @@ type AppContextType = {
   deletePaymentMethod: (id: string) => Promise<void>;
   storeSettings: StoreSettings;
   updateStoreSettings: (settings: any) => Promise<void>;
+  updateAdminSettings: (settings: any) => Promise<void>;
   broadcastNotification: (title: string, body: string, target?: string) => Promise<void>;
   broadcastAdminNotification: (title: string, body: string, skipPush?: boolean) => Promise<void>;
   messages: any[];
@@ -986,8 +982,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (e: any) {
       console.error("OTP Request Error:", e);
-      // Ensure we extract the human-readable error from the HttpsError object
-      const errorMsg = e.details || e.message || "Failed to send reset code.";
+      // Firebase v1 Callable Errors expose message directly
+      const errorMsg = e.message || "Failed to send reset code.";
       setAuthError(errorMsg);
       toast({ variant: "destructive", title: "Request Failed", description: errorMsg });
       return false;
@@ -1011,8 +1007,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return false;
     } catch (e: any) {
-      setAuthError(e.message || "Failed to reset password.");
-      toast({ variant: "destructive", title: "Reset Failed", description: e.message });
+      const errorMsg = e.message || "Failed to reset password.";
+      setAuthError(errorMsg);
+      toast({ variant: "destructive", title: "Reset Failed", description: errorMsg });
       return false;
     } finally {
       setIsGlobalLoading(false);
@@ -1020,7 +1017,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleForgotPassword = async (email: string) => {
-    // This is the old Firebase logic, now replaced by OTP
     if (!email) {
       toast({ variant: "destructive", title: "Required", description: "Please enter your email address." });
       return;
@@ -1335,6 +1331,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deletePaymentMethod = async (id: string) => { if (!rtdb) return; await remove(ref(rtdb, `settings/paymentMethods/${id}`)); toast({ title: "Payment Method Removed" }); };
   const updateStoreSettings = async (s: any) => update(ref(rtdb, 'settings'), s);
+  
+  const updateAdminSettings = async (s: any) => update(ref(rtdb, 'admin_settings'), s);
 
   const acceptTerms = async () => {
     if (typeof window !== 'undefined') localStorage.setItem('oskar_terms_accepted', 'true');
@@ -1346,7 +1344,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
       login, signup, loginWithGoogle, handleForgotPassword, requestPasswordResetCode, verifyAndResetPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
-      updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
+      updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
       acceptTerms, language, setLanguage, userProfile, t

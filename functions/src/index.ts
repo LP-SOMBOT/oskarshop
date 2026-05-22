@@ -25,7 +25,7 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
 
     try {
         // 1. DYNAMIC EMAIL SERVICE PROTOCOL: Fetch credentials from RTDB
-        // We use once('value') as requested to ensure a clean asynchronous read
+        // Path aligned with the Admin Dashboard "Email Service Protocol" settings
         const configSnap = await admin.database().ref('admin_settings/email_config').once('value');
         const config = configSnap.val();
 
@@ -50,11 +50,11 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
         });
 
         // 4. LIFECYCLE & ASYNC RESOLUTION: Explicit SMTP Configuration
-        // This setup uses the official Google SMTP host and port 465 (Secure)
+        // Using Port 465 with Secure: True as the official Google SMTP requirement
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 465,
-            secure: true, // Use SSL/TLS
+            secure: true, 
             auth: {
                 user: config.senderEmail,
                 pass: config.appPassword
@@ -86,15 +86,14 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
             `
         };
 
-        // GUARANTEE RESOLUTION: Await the dispatch before finishing
-        // This ensures the SMTP network connection completes before the container shuts down
+        // GUARANTEE RESOLUTION: Fully await the SMTP network call
         await transporter.sendMail(mailOptions);
         
         return { success: true };
     } catch (error: any) {
         console.error("OTP Dispatch Failure:", error);
         
-        // Return explicit error details to frontend
+        // Ensure explicit error messages reach the frontend for debugging
         if (error instanceof functions.https.HttpsError) throw error;
         
         throw new functions.https.HttpsError(
