@@ -36,9 +36,10 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
 
   return (
     <Card className="group overflow-hidden bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-[1.5rem] md:rounded-[2rem] flex flex-col h-full relative">
+      {/* Top Percentage Off Label */}
       {hasValidDiscount && (
         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10 animate-in fade-in zoom-in duration-500">
-           <Badge className="bg-red-500 text-white font-black px-2 py-0.5 md:px-3 md:py-1 rounded-full shadow-lg border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1">
+           <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1">
              <Sparkles size={10} className="md:w-3 md:h-3" /> {savingsPercent}% OFF
            </Badge>
         </div>
@@ -62,27 +63,30 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
       </div>
       
       <CardContent className="p-3 md:p-5 flex flex-col flex-grow">
-        <div className="mb-2 md:mb-3">
+        <div className="mb-2 md:mb-4">
            <h3 className="font-headline font-bold text-sm md:text-lg lg:text-xl line-clamp-1 text-slate-900 dark:text-white uppercase tracking-tight">{title}</h3>
            <p className="text-[9px] md:text-xs text-muted-foreground line-clamp-2 leading-relaxed opacity-70">{description}</p>
         </div>
         
-        <div className="flex flex-col mt-auto bg-slate-50 dark:bg-slate-800/50 p-2 md:p-3 rounded-xl border border-slate-100 dark:border-white/5">
+        <div className="flex flex-col mt-auto bg-slate-50 dark:bg-slate-800/50 p-2 md:p-4 rounded-xl border border-slate-100 dark:border-white/5 shadow-inner">
           {hasValidDiscount ? (
-            <div className="space-y-0.5">
+            <div className="space-y-1">
                <div className="flex items-center gap-2">
-                 <span className="text-[10px] md:text-xs text-muted-foreground line-through font-medium opacity-50">${numPrice.toFixed(2)}</span>
-                 <Badge variant="outline" className="h-4 md:h-5 text-[7px] md:text-[9px] font-black uppercase border-primary/20 text-primary px-1.5">Sale</Badge>
+                 <span className="text-[10px] md:text-xs text-muted-foreground line-through font-bold opacity-40">Was ${numPrice.toFixed(2)}</span>
+                 <div className="h-3 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+                 <span className="text-[8px] md:text-[10px] font-black text-red-500 uppercase tracking-widest">PROMO</span>
                </div>
                <div className="flex items-center justify-between">
                   <span className="text-xl md:text-3xl font-headline font-bold text-primary tracking-tighter">${numDiscounted.toFixed(2)}</span>
-                  <Tag size={12} className="text-primary animate-pulse md:w-4 md:h-4 opacity-40" />
+                  <div className="p-1 bg-primary/10 rounded-lg text-primary animate-pulse">
+                    <Tag size={12} className="md:w-4 md:h-4" />
+                  </div>
                </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
                <span className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">${numPrice.toFixed(2)}</span>
-               <span className="text-[8px] md:text-[10px] font-black text-muted-foreground uppercase opacity-40">Standard</span>
+               <span className="text-[8px] md:text-[10px] font-black text-muted-foreground uppercase opacity-40 tracking-widest">Standard</span>
             </div>
           )}
         </div>

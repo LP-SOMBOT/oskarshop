@@ -403,6 +403,7 @@ Fadlan ila soo xiriir.`;
               </RadioGroup>
             )}
 
+            {/* Price Detail Summary Block */}
             <div className="bg-gray-50 dark:bg-slate-800/40 p-4 md:p-8 rounded-2xl md:rounded-[2rem] mb-6 md:mb-8 border border-gray-100 dark:border-white/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Lock size={40} className="md:size-[60px]" />
