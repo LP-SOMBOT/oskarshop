@@ -27,14 +27,14 @@ export default function LoginPage() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   
-  const { login, loginWithGoogle, handleForgotPassword, user, userProfile, isGlobalLoading, authError, t } = useApp();
+  const { login, loginWithGoogle, handleForgotPassword, user, isGlobalLoading, authError, t } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    if (user && userProfile) {
+    if (user) {
       router.replace('/');
     }
-  }, [user, userProfile, router]);
+  }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +72,12 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl relative">
-        {isGlobalLoading && (
-          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4">
+        {(isGlobalLoading || user) && (
+          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
-             <p className="text-sm font-bold text-[#7C3AED] animate-pulse">Authenticating with Google...</p>
+             <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
+                {user ? "Authorizing access..." : "Connecting to Google..."}
+             </p>
           </div>
         )}
 
