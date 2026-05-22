@@ -560,8 +560,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCache(USER_CACHE_KEY, profile);
       } else {
         const existingData = snapshot.val();
-        setUserProfile(existingData);
-        setCache(USER_CACHE_KEY, existingData);
+        // Preserve role and points, but allow metadata updates if empty
+        const updates: any = {
+           lastActive: Date.now()
+        };
+        if (!existingData.photoURL && authUser.photoURL) updates.photoURL = authUser.photoURL;
+        if (!existingData.email && authUser.email) updates.email = authUser.email;
+        
+        if (Object.keys(updates).length > 1) {
+           await update(userRef, updates);
+        }
+        
+        const finalProfile = { ...existingData, ...updates };
+        setUserProfile(finalProfile);
+        setCache(USER_CACHE_KEY, finalProfile);
       }
     } catch (err: any) {
       console.error("Profile sync failed:", err);
@@ -935,13 +947,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
+      // On mobile devices and PWAs, popups are often blocked or fail. 
+      // Redirect is the only 100% reliable method for those environments.
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
       if (isMobile) {
-        // Force redirect on mobile to ensure zero popup blocking issues
         await signInWithRedirect(auth, provider);
       } else {
-        // Use popup on desktop for better UI flow
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
           await ensureUserProfile(result.user);

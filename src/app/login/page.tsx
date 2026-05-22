@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -62,7 +63,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
-      <div className="pt-12 pb-8 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
+      <div className="pt-10 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
         <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight">
           Welcome to <br /> Oskar Shop
         </h1>
@@ -76,7 +77,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
-                {user ? "Authorizing access..." : "Connecting to Google..."}
+                {user ? "Authorizing access..." : "Synchronizing..."}
              </p>
           </div>
         )}
@@ -155,9 +156,9 @@ export default function LoginPage() {
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "LOG IN"}
             </Button>
 
-            <div className="relative py-2 sm:py-4">
+            <div className="relative py-1 sm:py-4">
                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100" /></div>
-               <div className="relative flex justify-center text-[10px] sm:text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-black tracking-widest">Or login with</span></div>
+               <div className="relative flex justify-center text-[10px] sm:text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-black tracking-widest">Or</span></div>
             </div>
 
             <Button 
@@ -188,7 +189,7 @@ export default function LoginPage() {
               Continue with Google
             </Button>
 
-            <div className="text-center pt-4 pb-6">
+            <div className="text-center pt-2 pb-6">
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
                 Don't have an account? <Link href="/signup" className="text-[#7C3AED] font-bold hover:underline ml-1">Sign Up</Link>
               </p>

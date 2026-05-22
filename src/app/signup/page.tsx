@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -49,14 +50,14 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
-      <div className="pt-8 pb-6 sm:pt-16 sm:pb-12 px-6 sm:px-10 shrink-0">
+      <div className="pt-8 pb-4 sm:pt-16 sm:pb-12 px-6 sm:px-10 shrink-0">
         <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-4 sm:mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight mt-2 sm:mt-6">
+        <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight mt-1 sm:mt-6">
           Join <br /> Oskar Shop
         </h1>
-        <p className="text-xl sm:text-2xl font-headline text-white/80 mt-2 font-medium">
+        <p className="text-xl sm:text-2xl font-headline text-white/80 mt-1 font-medium">
           Sign Up
         </p>
       </div>
@@ -66,7 +67,7 @@ export default function SignupPage() {
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
-                {user ? "Creating session..." : "Authenticating with Google..."}
+                {user ? "Authorizing access..." : "Synchronizing..."}
              </p>
           </div>
         )}
@@ -158,14 +159,14 @@ export default function SignupPage() {
             <Button 
               type="submit" 
               disabled={isSubmitting || isGlobalLoading}
-              className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 text-white mt-2"
+              className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 text-white mt-1"
             >
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "CREATE ACCOUNT"}
             </Button>
 
-            <div className="relative py-2 sm:py-3">
+            <div className="relative py-1 sm:py-3">
                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100" /></div>
-               <div className="relative flex justify-center text-[10px] sm:text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-black tracking-widest">Or join with</span></div>
+               <div className="relative flex justify-center text-[10px] sm:text-xs uppercase"><span className="bg-white px-2 text-gray-400 font-black tracking-widest">Or</span></div>
             </div>
 
             <Button 
@@ -196,7 +197,7 @@ export default function SignupPage() {
               Continue with Google
             </Button>
 
-            <div className="text-center pt-4 pb-10">
+            <div className="text-center pt-2 pb-10">
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
                 Already have an account? <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">Log In</Link>
               </p>
