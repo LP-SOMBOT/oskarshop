@@ -1709,7 +1709,7 @@ export default function AdminPage() {
                                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] bg-white dark:bg-slate-900 flex items-center justify-center relative overflow-hidden shadow-2xl ring-8 ring-primary/5 transition-transform group-hover:scale-105">
                                     {storeSettings.logo ? <Image src={storeSettings.logo} alt="Logo" fill className="object-contain p-4 sm:p-6" unoptimized /> : <div className="text-4xl sm:text-6xl font-black text-slate-100">O</div>}
                                     <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'logo')} />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase text-center p-4">Click to Change Store Logo</div>
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-black uppercase text-center p-4 sm:p-6">Click to Change Store Logo</div>
                                  </div>
                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Application Favicon & Branding</p>
                               </div>
@@ -2432,7 +2432,7 @@ function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, 
 }
 
 function StatCard({ label, value, icon: Icon, color, badge }: { label: string, value: string, icon: any, color: string, badge?: boolean }) {
-  const colors: Record<string, string> = { blue: "bg-blue-50 dark:bg-blue-500/10 text-blue-500", amber: "bg-amber-50 dark:bg-amber-500/10 text-amber-500", emerald: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500", indigo: "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500" };
+  const colors: Record<string, string> = { blue: "bg-blue-50 dark:bg-blue-500/10 text-blue-500", amber: "bg-amber-50 dark:bg-amber-500/10 text-amber-500", emerald: "bg-emerald-50 dark:bg-emerald-500/10 text-amber-500", indigo: "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500" };
   return (
     <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 border-none shadow-lg bg-white dark:bg-slate-900 relative">
       {badge && <div className="absolute top-4 right-4 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />}
