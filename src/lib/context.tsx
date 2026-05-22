@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -574,9 +575,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const resolveRedirect = async () => {
       try {
-        setIsGlobalLoading(true);
         const result = await getRedirectResult(auth);
         if (result && result.user) {
+          setIsGlobalLoading(true); // Explicitly show loader during the sync phase
           await ensureUserProfile(result.user);
           toast({ title: "Authorized!", description: "Welcome to Oskar Shop." });
           router.replace('/');
@@ -934,17 +935,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
-      const standalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
-      const isMobileDevice = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      if (standalone || isMobileDevice) {
-        await signInWithRedirect(auth, provider);
-      } else {
+      
+      // Attempt Popup first for a seamless "No Refresh" experience on Desktop/Modern Mobile
+      try {
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
           await ensureUserProfile(result.user);
           toast({ title: "Welcome!", description: "Logged in with Google." });
           router.replace('/');
+        }
+      } catch (popupError: any) {
+        // Fallback to redirect if popup is blocked or explicitly restricted (e.g. standalone PWAs)
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || popupError.code === 'auth/popup-closed-by-user') {
+          console.log("Switching to redirect mode for compatibility...");
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupError;
         }
       }
     } catch (error: any) {

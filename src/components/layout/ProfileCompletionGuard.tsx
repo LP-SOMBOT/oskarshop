@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import Image from 'next/image';
  * ProfileCompletionGuard Component
  * 
  * Ensures that all users complete their mandatory profile details before accessing the app.
- * Optimized for mobile with a compact layout to prevent scrolling.
+ * Optimized for mobile with an ultra-compact layout to prevent scrolling on all screens.
  */
 export default function ProfileCompletionGuard({ children }: { children: React.ReactNode }) {
   const { user, userProfile, isInitialLoading, loading, updateUserProfile } = useApp();
@@ -29,17 +30,16 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
   });
 
   useEffect(() => {
-    // We only trigger this guard when user is authenticated AND synced
+    // Trigger guard when user is authenticated AND data nodes are synchronized
     if (!isInitialLoading && !loading && user) {
-      // Step 1: Check local cache first for instant bypass
+      // Dual layer check: Cache for speed, DB for truth
       const localCompleted = localStorage.getItem(`oskar_profile_complete_${user.uid}`) === 'true';
       if (localCompleted) {
         setOpen(false);
         return;
       }
 
-      // Step 2: Check database profile fields
-      // Mandatory info: name, phone and gameUid
+      // Check for missing mandatory info
       const isMissingInfo = !userProfile?.phoneNumber || !userProfile?.gameUid || !userProfile?.name;
       
       if (isMissingInfo) {
@@ -51,6 +51,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
         });
         setOpen(true);
       } else {
+        // Hydrate local cache if DB says we are done
         localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
         setOpen(false);
       }
@@ -77,7 +78,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
         localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
       }
       setOpen(false);
-      toast({ title: "Authorized!", description: "Welcome to Oskar Shop." });
+      toast({ title: "Profile Completed!", description: "Welcome to Oskar Shop." });
     } catch (error) {
       toast({ variant: "destructive", title: "Save Error", description: "Failed to update profile." });
     } finally {
@@ -85,6 +86,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
     }
   };
 
+  // Prevent UI flickering by waiting for initial auth state
   if (isInitialLoading || loading) return <>{children}</>;
 
   return (
@@ -93,7 +95,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[100004] bg-black/90 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           <DialogPrimitive.Content 
-            className="fixed left-[50%] top-[50%] z-[100005] grid w-[94%] max-w-sm translate-x-[-50%] translate-y-[-50%] border bg-background shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[2rem] border-none bg-white dark:bg-slate-900 outline-none overflow-hidden max-h-[95vh] scrollbar-hide"
+            className="fixed left-[50%] top-[50%] z-[100005] grid w-[94%] max-w-sm translate-x-[-50%] translate-y-[-50%] border bg-background shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[2rem] border-none bg-white dark:bg-slate-900 outline-none overflow-hidden max-h-[90vh] scrollbar-hide"
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
@@ -104,60 +106,60 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                  Complete Profile
                </DialogPrimitive.Title>
                <DialogPrimitive.Description className="text-white/80 text-[9px] font-medium mt-0.5 uppercase tracking-widest">
-                 Mandatory Authorization Step
+                 Authorized Access Only
                </DialogPrimitive.Description>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 pt-3 space-y-4">
-              {/* Scaled Avatar */}
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 pt-3 space-y-3 sm:space-y-4">
+              {/* Reduced Avatar for Mobile */}
               <div className="flex flex-col items-center">
-                 <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full border-4 border-slate-50 dark:border-slate-800 shadow-md overflow-hidden relative bg-slate-100 dark:bg-slate-800">
+                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-slate-50 dark:border-slate-800 shadow-md overflow-hidden relative bg-slate-100 dark:bg-slate-800">
                     {userProfile?.photoURL || user?.photoURL ? (
-                      <Image src={userProfile?.photoURL || user?.photoURL} alt="" fill className="object-cover" />
+                      <Image src={userProfile?.photoURL || user?.photoURL} alt="" fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300"><UserCircle size={24} /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300"><UserCircle size={20} /></div>
                     )}
                  </div>
               </div>
 
-              {/* Tighter Form Fields */}
-              <div className="space-y-2.5">
-                <div className="space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2">
-                    <UserCircle size={10} /> Name
+              {/* Tighter Form Fields to prevent scrolling */}
+              <div className="space-y-2">
+                <div className="space-y-0.5">
+                  <Label className="text-[8px] sm:text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
+                    <UserCircle size={10} /> Full Name
                   </Label>
                   <Input 
                     placeholder="Enter name" 
                     value={formData.name} 
                     onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="h-10 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm"
+                    className="h-9 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
                     required
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2">
-                    <Smartphone size={10} /> WhatsApp
+                <div className="space-y-0.5">
+                  <Label className="text-[8px] sm:text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
+                    <Smartphone size={10} /> WhatsApp No
                   </Label>
                   <Input 
                     type="tel"
                     placeholder="e.g. 613982172" 
                     value={formData.phoneNumber} 
                     onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
-                    className="h-10 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm"
+                    className="h-9 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
                     required
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2">
+                <div className="space-y-0.5">
+                  <Label className="text-[8px] sm:text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
                     <Gamepad2 size={10} /> Game ID / UID
                   </Label>
                   <Input 
                     placeholder="e.g. 982172" 
                     value={formData.gameUid} 
                     onChange={e => setFormData({...formData, gameUid: e.target.value.replace(/\D/g, '')})}
-                    className="h-10 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm"
+                    className="h-9 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
                     required
                   />
                 </div>
@@ -166,10 +168,14 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
               <Button 
                 type="submit" 
                 disabled={isSaving}
-                className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm sm:text-base shadow-xl shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest mt-1"
+                className="w-full h-11 sm:h-14 rounded-xl sm:rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm sm:text-base shadow-xl shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest mt-1"
               >
                 {isSaving ? <Loader2 className="animate-spin" /> : "Save & Access Store"}
               </Button>
+              
+              <p className="text-[7px] sm:text-[8px] text-center text-slate-300 dark:text-slate-700 uppercase tracking-widest">
+                Data used for diamond delivery only
+              </p>
             </form>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
