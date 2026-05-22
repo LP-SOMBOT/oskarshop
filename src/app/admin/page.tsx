@@ -1880,7 +1880,7 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-indigo-500">
                               <DollarSign className="w-6 h-6" />
                               <div className="text-left">
-                                 h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Listing fees and shop revenue logic</p>
                               </div>
                            </div>
@@ -1908,7 +1908,7 @@ export default function AdminPage() {
                                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Admin Payment Number (For Fees)</Label>
                                  <Input 
                                     value={storeSettings.paymentNumber || ''} 
-                                    onChange={e => updateStoreSettings({ paymentNumber: e.target.value })} 
+                                    onChange={e => updateStoreSettings({ announcementTicker: e.target.value })} 
                                     className="h-12 sm:h-16 rounded-xl sm:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 sm:px-6 shadow-inner" 
                                     placeholder="613982172" 
                                  />
