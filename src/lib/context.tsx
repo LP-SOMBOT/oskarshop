@@ -569,7 +569,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
-  // Global Auth Redirect Resolver
+  // Global Auth Redirect Resolver - Runs only once on mount
   useEffect(() => {
     if (!auth || !rtdb) return;
 
@@ -577,7 +577,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user) {
-          setIsGlobalLoading(true); // Explicitly show loader during the sync phase
+          setIsGlobalLoading(true);
           await ensureUserProfile(result.user);
           toast({ title: "Authorized!", description: "Welcome to Oskar Shop." });
           router.replace('/');
@@ -935,22 +935,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      // Attempt Popup first for a seamless "No Refresh" experience on Desktop/Modern Mobile
-      try {
+      if (isMobile) {
+        // Force redirect on mobile to ensure zero popup blocking issues
+        await signInWithRedirect(auth, provider);
+      } else {
+        // Use popup on desktop for better UI flow
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
           await ensureUserProfile(result.user);
           toast({ title: "Welcome!", description: "Logged in with Google." });
           router.replace('/');
-        }
-      } catch (popupError: any) {
-        // Fallback to redirect if popup is blocked or explicitly restricted (e.g. standalone PWAs)
-        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/cancelled-popup-request' || popupError.code === 'auth/popup-closed-by-user') {
-          console.log("Switching to redirect mode for compatibility...");
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw popupError;
         }
       }
     } catch (error: any) {
