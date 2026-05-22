@@ -56,7 +56,9 @@ export default function LoginPage() {
     e.preventDefault();
     if (!email) return;
     const success = await requestPasswordResetCode(email);
-    if (success) setMode('forgot-verify');
+    if (success) {
+      setMode('forgot-verify');
+    }
   };
 
   const handleVerifyAndReset = async (e: React.FormEvent) => {
@@ -93,11 +95,11 @@ export default function LoginPage() {
         )}
 
         <div className="max-w-md mx-auto h-full flex flex-col">
-          {/* Error Banner */}
+          {/* Error Banner for Debugging Auth & OTP Failures */}
           {authError && (
             <Alert variant="destructive" className="mb-6 rounded-2xl animate-in slide-in-from-top-2 border-2 shadow-lg">
               <AlertCircle className="h-5 w-5" />
-              <AlertTitle className="font-bold">Error Detected</AlertTitle>
+              <AlertTitle className="font-bold">Execution Error</AlertTitle>
               <AlertDescription className="text-xs font-medium">
                 {authError}
               </AlertDescription>

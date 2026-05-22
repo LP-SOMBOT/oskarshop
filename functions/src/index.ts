@@ -8,26 +8,28 @@ admin.initializeApp();
 /**
  * @fileOverview Firebase Cloud Functions for Baba Shop.
  * 
- * 1. requestEmailOTP: Callable function to generate, save, and send a 6-digit code.
+ * 1. sendEmailOTP: Callable function to generate, save, and send a 6-digit code.
  * 2. resetPasswordWithOtp: Verifies the code and updates the user password via Admin SDK.
  */
 
 /**
- * CALLABLE: requestEmailOTP
+ * CALLABLE: sendEmailOTP
  * Handles dynamic credential fetching, OTP generation, and branded email dispatch.
  */
-export const requestEmailOTP = functions.https.onCall(async (data, context) => {
+export const sendEmailOTP = functions.https.onCall(async (data, context) => {
     const { email } = data;
     if (!email) {
         throw new functions.https.HttpsError('invalid-argument', 'Email address is required.');
     }
 
     try {
-        // 1. DYNAMIC EMAIL SERVICE PROTOCOL: Fetch credentials first
-        const configSnap = await admin.database().ref('admin_settings/email_config').get();
+        // 1. DYNAMIC EMAIL SERVICE PROTOCOL: Fetch credentials from RTDB
+        // We use once('value') as requested to ensure a clean asynchronous read
+        const configSnap = await admin.database().ref('admin_settings/email_config').once('value');
         const config = configSnap.val();
 
         if (!config?.senderEmail || !config?.appPassword) {
+            // STOP EXECUTION: Throw explicit error for the frontend UI
             throw new functions.https.HttpsError(
                 'failed-precondition', 
                 'Configuration Error: Admin has not configured the sender Gmail credentials yet.'
@@ -47,6 +49,7 @@ export const requestEmailOTP = functions.https.onCall(async (data, context) => {
         });
 
         // 4. LIFECYCLE & ASYNC RESOLUTION: Instantiate transport inside scope
+        // This prevents the "530-5.7.0 Authentication Required" error on serverless restarts
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -80,15 +83,20 @@ export const requestEmailOTP = functions.https.onCall(async (data, context) => {
             `
         };
 
-        // Ensure the network call completes before returning
+        // GUARANTEE RESOLUTION: Await the dispatch before finishing
         await transporter.sendMail(mailOptions);
         
         return { success: true };
     } catch (error: any) {
         console.error("OTP Dispatch Failure:", error);
-        // Re-throw if it's already an HttpsError, otherwise wrap it
+        
+        // Return explicit error details to frontend
         if (error instanceof functions.https.HttpsError) throw error;
-        throw new functions.https.HttpsError('internal', error.message || 'SMTP Dispatch Failed');
+        
+        throw new functions.https.HttpsError(
+            'internal', 
+            error.message || 'SMTP Dispatch Failed: Please verify Gmail App Password.'
+        );
     }
 });
 

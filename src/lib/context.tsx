@@ -976,7 +976,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const functions = getFunctions();
-      const requestOtpFn = httpsCallable(functions, 'requestEmailOTP');
+      const requestOtpFn = httpsCallable(functions, 'sendEmailOTP');
       const result: any = await requestOtpFn({ email });
       
       if (result.data?.success) {
@@ -986,8 +986,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (e: any) {
       console.error("OTP Request Error:", e);
-      setAuthError(e.message || "Failed to send reset code.");
-      toast({ variant: "destructive", title: "Request Failed", description: e.message });
+      // Ensure we extract the human-readable error from the HttpsError object
+      const errorMsg = e.details || e.message || "Failed to send reset code.";
+      setAuthError(errorMsg);
+      toast({ variant: "destructive", title: "Request Failed", description: errorMsg });
       return false;
     } finally {
       setIsGlobalLoading(false);
