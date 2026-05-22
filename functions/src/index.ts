@@ -1,22 +1,20 @@
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import * as nodemailer from "nodemailer";
 
 admin.initializeApp();
 
 /**
  * @fileOverview Refactored Firebase Cloud Functions for Oskar Shop.
+ * Switched from Nodemailer to Resend Email API to bypass Firebase SMTP blocks.
  * 
- * 1. sendEmailOTP: Callable function to generate, save, and send a 6-digit code.
- *    - Performs dynamic credential lookup from RTDB.
- *    - Uses explicit Google SMTP configuration (Port 465).
+ * 1. sendEmailOTP: Callable function to generate, save, and send a 6-digit code via Resend HTTP API.
  * 2. resetPasswordWithOtp: Verifies the code and updates the user password via Admin SDK.
  */
 
 /**
  * CALLABLE: sendEmailOTP
- * Handles dynamic credential fetching, OTP generation, and branded email dispatch.
+ * Handles OTP generation, RTDB logging, and Resend API dispatch via HTTPS POST.
  */
 export const sendEmailOTP = functions.https.onCall(async (data, context) => {
     const { email } = data;
@@ -25,70 +23,57 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
     }
 
     try {
-        // 1. DYNAMIC EMAIL SERVICE PROTOCOL: Fetch credentials from RTDB
-        // Path aligned with the Admin Dashboard "Email Service Protocol" settings
-        const configSnap = await admin.database().ref('admin_settings/email_config').once('value');
-        const config = configSnap.val();
-
-        if (!config?.senderEmail || !config?.appPassword) {
-            // STOP EXECUTION: Throw explicit error for the frontend UI
-            throw new functions.https.HttpsError(
-                'failed-precondition', 
-                'Configuration Error: Admin has not configured the sender Gmail credentials yet.'
-            );
-        }
-
-        // 2. Generate 6-digit OTP
+        // 1. Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const sanitizedEmail = email.replace(/\./g, '_');
         const expiresAt = Date.now() + 600000; // 10 minutes
 
-        // 3. Save to Database
+        // 2. Save to Database (Keeping structure intact under /email_otps/)
         await admin.database().ref(`email_otps/${sanitizedEmail}`).set({
             otp,
             email,
             expiresAt
         });
 
-        // 4. LIFECYCLE & ASYNC RESOLUTION: Explicit SMTP Configuration
-        // Using Port 465 with Secure: True as the official Google SMTP requirement
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true, 
-            auth: {
-                user: config.senderEmail,
-                pass: config.appPassword
-            }
+        // 3. INTEGRATE RESEND API (HTTP fetch)
+        // Node.js 18+ provides built-in fetch. 
+        const resendApiKey = "re_hgGKiQfD_NkgJ24f5kqvyDsx76NatW5jA";
+        
+        const resendResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${resendApiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                from: "OskarShop <onboarding@resend.dev>",
+                to: [email],
+                subject: `${otp} is your OskarShop verification code`,
+                html: `
+                    <div style="background-color: #f8fafc; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; text-align: center; border-radius: 24px; border: 1px solid #e2e8f0;">
+                        <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">OskarShop Security Verification</h2>
+                        <p style="color: #64748b; font-size: 16px; margin-bottom: 30px;">Use the code below to complete your password reset request.</p>
+                        
+                        <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; display: inline-block; border: 2px solid #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <span style="font-size: 32px; font-weight: 900; letter-spacing: 12px; color: #0ea5e9; font-family: monospace;">${otp}</span>
+                        </div>
+                        
+                        <p style="color: #94a3b8; font-size: 12px; margin-top: 30px; line-height: 1.5;">
+                            This code will expire in exactly <b>10 minutes</b>.<br>
+                            If you did not request this code, please ignore this email.
+                        </p>
+                        
+                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+                        <p style="font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px;">OskarShop Premium Game Services</p>
+                    </div>
+                `
+            })
         });
 
-        // 5. DEFAULT BRANDED EMAIL SENDER TEMPLATE
-        const mailOptions = {
-            from: `"Baba Shop Support" <${config.senderEmail}>`,
-            to: email,
-            subject: `${otp} is your Baba Shop verification code`,
-            html: `
-                <div style="background-color: #0f172a; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; text-align: center; border-radius: 24px;">
-                    <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">Baba Shop Security Verification</h2>
-                    <p style="color: #94a3b8; font-size: 16px; margin-bottom: 30px;">Use the code below to complete your password reset request.</p>
-                    
-                    <div style="background-color: #1e293b; padding: 30px; border-radius: 16px; display: inline-block; border: 1px solid #334155;">
-                        <span style="font-size: 32px; font-weight: 900; letter-spacing: 12px; color: #0ea5e9; font-family: monospace;">${otp}</span>
-                    </div>
-                    
-                    <p style="color: #64748b; font-size: 12px; margin-top: 30px; line-height: 1.5;">
-                        This code will expire in exactly <b>10 minutes</b>.<br>
-                        If you did not request this code, please ignore this email.
-                    </p>
-                    
-                    <hr style="border: none; border-top: 1px solid #334155; margin: 30px 0;">
-                    <p style="font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 2px;">Baba Shop Premium Game Services</p>
-                </div>
-            `
-        };
-
-        // GUARANTEE RESOLUTION: Fully await the SMTP network call
-        await transporter.sendMail(mailOptions);
+        if (!resendResponse.ok) {
+            const errorPayload = await resendResponse.json();
+            throw new Error(`Resend API Failure: ${JSON.stringify(errorPayload)}`);
+        }
         
         return { success: true };
     } catch (error: any) {
@@ -99,7 +84,7 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
         
         throw new functions.https.HttpsError(
             'internal', 
-            error.message || 'SMTP Dispatch Failed: Please verify Gmail App Password.'
+            error.message || 'API Dispatch Failed: Check Resend API Key or Network.'
         );
     }
 });

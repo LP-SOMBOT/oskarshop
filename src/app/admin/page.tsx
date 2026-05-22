@@ -1844,7 +1844,7 @@ export default function AdminPage() {
                            <div className="space-y-6 sm:space-y-10">
                               <div className="flex items-center justify-between p-4 sm:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[1.5rem] sm:rounded-[2rem] border-2 border-slate-100 dark:border-white/5 shadow-inner">
                                  <div className="flex items-center gap-3 sm:gap-4">
-                                    <div className="p-2 sm:p-3 bg-red-100 dark:bg-red-500/10 rounded-xl sm:rounded-2xl text-red-500"><Radio className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" /></div>
+                                    <div className="p-2 sm:p-3 bg-red-100 dark:bg-red-50/10 rounded-xl sm:rounded-2xl text-red-500"><Radio className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" /></div>
                                     <div className="min-w-0 pr-2">
                                        <p className="font-bold text-lg sm:text-2xl text-slate-900 dark:text-white">TikTok LIVE Visibility</p>
                                        <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest mt-1">Show live promo banner on homepage</p>
