@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { User, Lock, Mail, Phone, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Mail, Phone, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -18,15 +18,14 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup, loginWithGoogle, user } = useApp();
+  const { signup, loginWithGoogle, user, userProfile, isGlobalLoading, authError } = useApp();
   const router = useRouter();
 
-  // Fail-safe: If user is detected (especially after a Google redirect), send them to home
   useEffect(() => {
-    if (user) {
+    if (user && userProfile) {
       router.replace('/');
     }
-  }, [user, router]);
+  }, [user, userProfile, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +36,6 @@ export default function SignupPage() {
         title: "Account Created!",
         description: "Welcome to Oskar Shop.",
       });
-      router.push('/');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -63,11 +61,28 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl">
+      <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl relative">
+        {isGlobalLoading && (
+          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4">
+             <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
+             <p className="text-sm font-bold text-[#7C3AED] animate-pulse">Authenticating with Google...</p>
+          </div>
+        )}
+
         <div className="max-w-md mx-auto h-full flex flex-col">
           <h2 className="text-2xl sm:text-3xl font-headline font-bold mb-6 sm:mb-8 text-gray-900">
             Create Account
           </h2>
+
+          {authError && (
+            <Alert variant="destructive" className="mb-6 rounded-2xl animate-in slide-in-from-top-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertDescription className="text-xs font-medium">
+                {authError}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <form onSubmit={handleSignup} className="space-y-4 sm:space-y-5">
             <div className="relative group">
@@ -140,7 +155,7 @@ export default function SignupPage() {
 
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || isGlobalLoading}
               className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 text-white mt-2"
             >
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "CREATE ACCOUNT"}
@@ -155,6 +170,7 @@ export default function SignupPage() {
               type="button"
               variant="outline"
               onClick={loginWithGoogle}
+              disabled={isGlobalLoading}
               className="w-full h-14 sm:h-16 rounded-full text-sm sm:text-base font-bold flex items-center justify-center gap-3 border-gray-200 hover:bg-gray-50 active:scale-95 transition-all"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

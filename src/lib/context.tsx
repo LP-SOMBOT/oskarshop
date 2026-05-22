@@ -16,7 +16,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  onAuthStateChanged
 } from 'firebase/auth';
 import { 
   ref, 
@@ -247,6 +248,7 @@ type AppContextType = {
   loading: boolean;
   isGlobalLoading: boolean;
   isInitialLoading: boolean;
+  authError: string | null;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   setGlobalLoading: (loading: boolean) => void;
@@ -495,6 +497,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   
   const [activeTab, setActiveTabState] = useState('home');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => getCache(THEME_CACHE_KEY, 'light'));
   const [language, setLanguageState] = useState<Language>(() => getCache(LANG_CACHE_KEY, 'so'));
   
@@ -532,47 +535,79 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
-  // Handle Auth Redirect Result immediately after return
+  // Unified Profile Creation & Sync Utility
+  const ensureUserProfile = useCallback(async (authUser: any) => {
+    if (!rtdb || !authUser) return;
+    try {
+      const userRef = ref(rtdb, `users/${authUser.uid}`);
+      const snapshot = await get(userRef);
+      
+      if (!snapshot.exists()) {
+        const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
+        const profile: UserProfile = { 
+          uid: authUser.uid, 
+          email: authUser.email || "", 
+          name: authUser.displayName || "Gamer", 
+          role: 'user', 
+          points: 0, 
+          createdAt: Date.now(),
+          termsAccepted: localAccepted,
+          photoURL: authUser.photoURL || ""
+        };
+        await set(userRef, profile);
+        setUserProfile(profile);
+        setCache(USER_CACHE_KEY, profile);
+      } else {
+        const existingData = snapshot.val();
+        setUserProfile(existingData);
+        setCache(USER_CACHE_KEY, existingData);
+      }
+    } catch (err: any) {
+      console.error("Profile sync failed:", err);
+      setAuthError(`Profile sync error: ${err.message}`);
+    }
+  }, [rtdb]);
+
+  // Global Auth Redirect Resolver
   useEffect(() => {
     if (!auth || !rtdb) return;
 
-    getRedirectResult(auth)
-      .then(async (result) => {
+    const resolveRedirect = async () => {
+      try {
+        setIsGlobalLoading(true);
+        const result = await getRedirectResult(auth);
         if (result && result.user) {
-          setIsGlobalLoading(true);
-          const googleUser = result.user;
-          const userRef = ref(rtdb, `users/${googleUser.uid}`);
-          const snapshot = await get(userRef);
-          
-          if (!snapshot.exists()) {
-            const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
-            const profile: UserProfile = { 
-              uid: googleUser.uid, 
-              email: googleUser.email || "", 
-              name: googleUser.displayName || "Gamer", 
-              role: 'user', 
-              points: 0, 
-              createdAt: Date.now(),
-              termsAccepted: localAccepted,
-              photoURL: googleUser.photoURL || ""
-            };
-            await set(userRef, profile);
-            setUserProfile(profile);
-            setCache(USER_CACHE_KEY, profile);
-          }
+          await ensureUserProfile(result.user);
           toast({ title: "Authorized!", description: "Welcome to Oskar Shop." });
-          setIsGlobalLoading(false);
-          router.push('/');
+          router.replace('/');
         }
-      })
-      .catch((error) => {
+      } catch (error: any) {
         if (error.code !== 'auth/no-auth-event') {
           console.error("Auth redirect error:", error);
+          setAuthError(`Authentication failed: ${error.message}`);
           toast({ variant: "destructive", title: "Authorization Failed", description: error.message });
-          setIsGlobalLoading(false);
         }
-      });
-  }, [auth, rtdb, router]);
+      } finally {
+        setIsGlobalLoading(false);
+      }
+    };
+
+    resolveRedirect();
+  }, [auth, rtdb, router, ensureUserProfile]);
+
+  // Handle active session changes
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        ensureUserProfile(u);
+      } else {
+        setUserProfile(null);
+        localStorage.removeItem(USER_CACHE_KEY);
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, ensureUserProfile]);
 
   // Heartbeat to track presence
   useEffect(() => {
@@ -582,7 +617,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       update(userRef, { lastActive: Date.now() });
     };
     updatePresence();
-    const interval = setInterval(updatePresence, 300000); // Every 5 minutes
+    const interval = setInterval(updatePresence, 300000); 
     return () => clearInterval(interval);
   }, [rtdb, user]);
 
@@ -730,7 +765,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!rtdb || !user) {
-      setUserProfile(null); setNotifications([]); setOrders([]);
+      setNotifications([]); setOrders([]);
       return;
     }
     const profileRef = ref(rtdb, `users/${user.uid}`);
@@ -857,11 +892,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (e: string, p: string) => {
     setIsGlobalLoading(true);
-    try { await signInWithEmailAndPassword(auth, e, p); } finally { setIsGlobalLoading(false); }
+    setAuthError(null);
+    try { 
+      await signInWithEmailAndPassword(auth, e, p); 
+    } catch (err: any) {
+      setAuthError(err.message);
+      throw err;
+    } finally { setIsGlobalLoading(false); }
   };
 
   const signup = async (e: string, p: string, n: string, ph: string) => {
     setIsGlobalLoading(true);
+    setAuthError(null);
     try {
       const cred = await createUserWithEmailAndPassword(auth, e, p);
       await updateProfile(cred.user, { displayName: n });
@@ -881,44 +923,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
       setUserProfile(profile);
       setCache(USER_CACHE_KEY, profile);
+    } catch (err: any) {
+      setAuthError(err.message);
+      throw err;
     } finally { setIsGlobalLoading(false); }
   };
 
   const loginWithGoogle = async () => {
     setIsGlobalLoading(true);
+    setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
       const standalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
-      const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isMobileDevice = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      if (standalone || isMobile) {
+      if (standalone || isMobileDevice) {
         await signInWithRedirect(auth, provider);
       } else {
         const result = await signInWithPopup(auth, provider);
-        const googleUser = result.user;
-        const userRef = ref(rtdb, `users/${googleUser.uid}`);
-        const snapshot = await get(userRef);
-        
-        if (!snapshot.exists()) {
-          const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
-          const profile: UserProfile = { 
-            uid: googleUser.uid, 
-            email: googleUser.email || "", 
-            name: googleUser.displayName || "Gamer", 
-            role: 'user', 
-            points: 0, 
-            createdAt: Date.now(),
-            termsAccepted: localAccepted,
-            photoURL: googleUser.photoURL || ""
-          };
-          await set(userRef, profile);
-          setUserProfile(profile);
-          setCache(USER_CACHE_KEY, profile);
+        if (result.user) {
+          await ensureUserProfile(result.user);
+          toast({ title: "Welcome!", description: "Logged in with Google." });
+          router.replace('/');
         }
-        toast({ title: "Welcome!", description: "Logged in with Google." });
-        router.push('/');
       }
     } catch (error: any) {
+      setAuthError(error.message);
       toast({ variant: "destructive", title: "Login Failed", description: error.message });
       setIsGlobalLoading(false);
     }
@@ -1247,7 +1277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{ 
-      user: enhancedUser, loading, isGlobalLoading, isInitialLoading, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
+      user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
       login, signup, loginWithGoogle, handleForgotPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
