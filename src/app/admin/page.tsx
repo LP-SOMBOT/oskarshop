@@ -293,7 +293,7 @@ export default function AdminPage() {
   });
 
   const [emailConfigForm, setEmailConfigForm] = useState({
-    gmailAddress: "",
+    senderEmail: "",
     appPassword: ""
   });
 
@@ -331,7 +331,7 @@ export default function AdminPage() {
       }
       if (storeSettings.emailConfig) {
         setEmailConfigForm({
-          gmailAddress: storeSettings.emailConfig.gmailAddress || "",
+          senderEmail: storeSettings.emailConfig.senderEmail || "",
           appPassword: storeSettings.emailConfig.appPassword || ""
         });
       }
@@ -1743,8 +1743,8 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                                  <SettingInput 
                                     label="Sender Gmail Address" 
-                                    value={emailConfigForm.gmailAddress} 
-                                    onChange={v => setEmailConfigForm(f => ({ ...f, gmailAddress: v }))} 
+                                    value={emailConfigForm.senderEmail} 
+                                    onChange={v => setEmailConfigForm(f => ({ ...f, senderEmail: v }))} 
                                     placeholder="admin@gmail.com" 
                                  />
                                  <div className="space-y-2">
@@ -1880,7 +1880,7 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-indigo-500">
                               <DollarSign className="w-6 h-6" />
                               <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
+                                 h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Listing fees and shop revenue logic</p>
                               </div>
                            </div>

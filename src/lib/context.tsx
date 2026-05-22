@@ -207,7 +207,7 @@ type StoreSettings = {
     tiktokUrl?: string;
   };
   emailConfig?: {
-    gmailAddress?: string;
+    senderEmail?: string;
     appPassword?: string;
   };
   config?: {
@@ -951,7 +951,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
-      // Environment check: Use redirect for mobile/standalone to avoid popup blocks
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || isStandalone();
       
       if (isMobileDevice) {
@@ -972,19 +971,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const requestPasswordResetCode = async (email: string) => {
-    if (!email || !rtdb) return false;
+    if (!email) return false;
     setIsGlobalLoading(true);
+    setAuthError(null);
     try {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const sanitizedEmail = email.replace(/\./g, '_');
-      await set(ref(rtdb, `email_otps/${sanitizedEmail}`), {
-        otp,
-        email,
-        expiresAt: Date.now() + 600000 // 10 mins
-      });
-      toast({ title: "Code Dispatched!", description: `Check ${email} for your security code.` });
-      return true;
+      const functions = getFunctions();
+      const requestOtpFn = httpsCallable(functions, 'requestEmailOTP');
+      const result: any = await requestOtpFn({ email });
+      
+      if (result.data?.success) {
+        toast({ title: "Code Dispatched!", description: `Check ${email} for your security code.` });
+        return true;
+      }
+      return false;
     } catch (e: any) {
+      console.error("OTP Request Error:", e);
+      setAuthError(e.message || "Failed to send reset code.");
       toast({ variant: "destructive", title: "Request Failed", description: e.message });
       return false;
     } finally {
@@ -995,6 +997,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const verifyAndResetPassword = async (email: string, otp: string, newPass: string) => {
     if (!email || !otp || !newPass) return false;
     setIsGlobalLoading(true);
+    setAuthError(null);
     try {
       const functions = getFunctions();
       const resetFn = httpsCallable(functions, 'resetPasswordWithOtp');
@@ -1006,6 +1009,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return false;
     } catch (e: any) {
+      setAuthError(e.message || "Failed to reset password.");
       toast({ variant: "destructive", title: "Reset Failed", description: e.message });
       return false;
     } finally {
@@ -1014,6 +1018,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleForgotPassword = async (email: string) => {
+    // This is the old Firebase logic, now replaced by OTP
     if (!email) {
       toast({ variant: "destructive", title: "Required", description: "Please enter your email address." });
       return;

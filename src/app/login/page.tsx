@@ -8,15 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, Key, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, Key, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
@@ -104,7 +97,7 @@ export default function LoginPage() {
           {authError && (
             <Alert variant="destructive" className="mb-6 rounded-2xl animate-in slide-in-from-top-2 border-2 shadow-lg">
               <AlertCircle className="h-5 w-5" />
-              <AlertTitle className="font-bold">Authentication Error</AlertTitle>
+              <AlertTitle className="font-bold">Error Detected</AlertTitle>
               <AlertDescription className="text-xs font-medium">
                 {authError}
               </AlertDescription>
@@ -221,7 +214,7 @@ export default function LoginPage() {
               </button>
               <div className="space-y-4">
                 <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Request Reset Code</h2>
-                <p className="text-sm text-muted-foreground">Enter your registered email address. We'll send a 6-digit OTP code to reset your password.</p>
+                <p className="text-sm text-muted-foreground">Enter your registered email address. We'll send a 6-digit verification code to your Gmail inbox.</p>
               </div>
               <form onSubmit={handleSendCode} className="space-y-6">
                 <div className="relative">
@@ -236,7 +229,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <Button type="submit" disabled={isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
-                  {isGlobalLoading ? <Loader2 className="animate-spin" /> : "Send Reset Code"}
+                  {isGlobalLoading ? <Loader2 className="animate-spin" /> : "Send Verification Code"}
                 </Button>
               </form>
             </div>
@@ -246,11 +239,11 @@ export default function LoginPage() {
             <div className="space-y-8 animate-in zoom-in-95 duration-300">
               <div className="space-y-4">
                 <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Verify & Reset</h2>
-                <p className="text-sm text-muted-foreground">We've sent a code to <span className="font-bold text-gray-900">{email}</span>. Please enter it below along with your new password.</p>
+                <p className="text-sm text-muted-foreground">Check your inbox. We've sent a 6-digit code to <span className="font-bold text-gray-900">{email}</span>.</p>
               </div>
               <form onSubmit={handleVerifyAndReset} className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-5 tracking-widest">6-Digit Code</Label>
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-5 tracking-widest">6-Digit OTP Code</Label>
                   <div className="relative">
                     <Key className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] w-5 h-5 z-10" />
                     <Input 
@@ -259,13 +252,13 @@ export default function LoginPage() {
                       maxLength={6}
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white font-mono text-xl tracking-[0.5em] font-black"
+                      className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white font-mono text-2xl tracking-[0.6em] font-black"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-5 tracking-widest">New Password</Label>
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-5 tracking-widest">Create New Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] w-5 h-5 z-10" />
                     <Input 
@@ -281,7 +274,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button type="submit" disabled={isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20">
-                  {isGlobalLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Reset</>}
+                  {isGlobalLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm New Password</>}
                 </Button>
 
                 <button type="button" onClick={() => setMode('forgot-request')} className="w-full text-gray-400 text-xs font-bold hover:text-gray-600">

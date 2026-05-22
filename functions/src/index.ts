@@ -6,72 +6,91 @@ import * as nodemailer from "nodemailer";
 admin.initializeApp();
 
 /**
- * @fileOverview Firebase Cloud Functions for Oskar Shop.
+ * @fileOverview Firebase Cloud Functions for Baba Shop.
  * 
- * 1. onOtpCreated: Sends a 6-digit code via Nodemailer when a reset is requested.
+ * 1. requestEmailOTP: Callable function to generate, save, and send a 6-digit code.
  * 2. resetPasswordWithOtp: Verifies the code and updates the user password via Admin SDK.
  */
 
 /**
- * TRIGGER: onOtpCreated
- * Path: /email_otps/{sanitizedEmail}
- * 
- * Refactored to handle dynamic authentication securely. 
- * Initialization of transporter is scoped inside the handler to prevent 
- * stale authentication tokens (530-5.7.0) in the serverless environment.
+ * CALLABLE: requestEmailOTP
+ * Handles dynamic credential fetching, OTP generation, and branded email dispatch.
  */
-export const onOtpCreated = functions.database.ref('/email_otps/{sanitizedEmail}')
-    .onCreate(async (snapshot, context) => {
-        const data = snapshot.val();
-        const email = data.email || context.params.sanitizedEmail.replace(/_/g, '.');
-        const otp = data.otp;
+export const requestEmailOTP = functions.https.onCall(async (data, context) => {
+    const { email } = data;
+    if (!email) {
+        throw new functions.https.HttpsError('invalid-argument', 'Email address is required.');
+    }
 
-        try {
-            // Fetch credentials dynamically from settings node to avoid hardcoding
-            const settingsSnap = await admin.database().ref('settings/emailConfig').get();
-            const config = settingsSnap.val();
+    try {
+        // 1. DYNAMIC EMAIL SERVICE PROTOCOL: Fetch credentials first
+        const configSnap = await admin.database().ref('admin_settings/email_config').get();
+        const config = configSnap.val();
 
-            if (!config?.gmailAddress || !config?.appPassword) {
-                console.error("Critical Failure: SMTP credentials not configured in /settings/emailConfig");
-                return null;
-            }
-
-            // Lexical transport initialization: Binding credentials to this runtime instance
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: config.gmailAddress,
-                    pass: config.appPassword
-                }
-            });
-
-            const mailOptions = {
-                from: `"Oskar Shop Support" <${config.gmailAddress}>`,
-                to: email,
-                subject: `${otp} is your password reset code`,
-                html: `
-                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 40px; border-radius: 20px; background: #ffffff; color: #1e293b; border: 1px solid #f1f5f9;">
-                        <h2 style="color: #0EA5E9; font-size: 24px; margin-bottom: 20px;">Security Verification</h2>
-                        <p style="font-size: 16px; line-height: 1.6;">You requested to reset your Oskar Shop password. Use the following code to continue:</p>
-                        <div style="background: #f0f9ff; padding: 40px; text-align: center; border-radius: 16px; margin: 30px 0;">
-                            <span style="font-size: 48px; font-weight: 800; letter-spacing: 12px; color: #0EA5E9;">${otp}</span>
-                        </div>
-                        <p style="font-size: 13px; color: #94a3b8; text-align: center;">This code expires in 10 minutes. If you did not request this, please secure your account.</p>
-                        <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;" />
-                        <p style="font-size: 11px; color: #cbd5e1; text-align: center; text-transform: uppercase; letter-spacing: 1px;">Oskar Shop Premium Game Services</p>
-                    </div>
-                `
-            };
-
-            // Properly awaited dispatch to ensure function doesn't exit early
-            await transporter.sendMail(mailOptions);
-            console.log(`Success: OTP dispatched to ${email}`);
-            return true;
-        } catch (error) {
-            console.error("Fatal: Nodemailer SMTP dispatch failed:", error);
-            return false;
+        if (!config?.senderEmail || !config?.appPassword) {
+            throw new functions.https.HttpsError(
+                'failed-precondition', 
+                'Configuration Error: Admin has not configured the sender Gmail credentials yet.'
+            );
         }
-    });
+
+        // 2. Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const sanitizedEmail = email.replace(/\./g, '_');
+        const expiresAt = Date.now() + 600000; // 10 minutes
+
+        // 3. Save to Database
+        await admin.database().ref(`email_otps/${sanitizedEmail}`).set({
+            otp,
+            email,
+            expiresAt
+        });
+
+        // 4. LIFECYCLE & ASYNC RESOLUTION: Instantiate transport inside scope
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: config.senderEmail,
+                pass: config.appPassword
+            }
+        });
+
+        // 5. DEFAULT BRANDED EMAIL SENDER TEMPLATE
+        const mailOptions = {
+            from: `"Baba Shop Support" <${config.senderEmail}>`,
+            to: email,
+            subject: `${otp} is your Baba Shop verification code`,
+            html: `
+                <div style="background-color: #0f172a; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; text-align: center; border-radius: 24px;">
+                    <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">Baba Shop Security Verification</h2>
+                    <p style="color: #94a3b8; font-size: 16px; margin-bottom: 30px;">Use the code below to complete your password reset request.</p>
+                    
+                    <div style="background-color: #1e293b; padding: 30px; border-radius: 16px; display: inline-block; border: 1px solid #334155;">
+                        <span style="font-size: 32px; font-weight: 900; letter-spacing: 12px; color: #0ea5e9; font-family: monospace;">${otp}</span>
+                    </div>
+                    
+                    <p style="color: #64748b; font-size: 12px; margin-top: 30px; line-height: 1.5;">
+                        This code will expire in exactly <b>10 minutes</b>.<br>
+                        If you did not request this code, please ignore this email.
+                    </p>
+                    
+                    <hr style="border: none; border-top: 1px solid #334155; margin: 30px 0;">
+                    <p style="font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 2px;">Baba Shop Premium Game Services</p>
+                </div>
+            `
+        };
+
+        // Ensure the network call completes before returning
+        await transporter.sendMail(mailOptions);
+        
+        return { success: true };
+    } catch (error: any) {
+        console.error("OTP Dispatch Failure:", error);
+        // Re-throw if it's already an HttpsError, otherwise wrap it
+        if (error instanceof functions.https.HttpsError) throw error;
+        throw new functions.https.HttpsError('internal', error.message || 'SMTP Dispatch Failed');
+    }
+});
 
 /**
  * CALLABLE: resetPasswordWithOtp
