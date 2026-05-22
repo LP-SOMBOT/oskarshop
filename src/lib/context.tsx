@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -540,6 +539,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
+          setIsGlobalLoading(true);
           const googleUser = result.user;
           const userRef = ref(rtdb, `users/${googleUser.uid}`);
           const snapshot = await get(userRef);
@@ -557,15 +557,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               photoURL: googleUser.photoURL || ""
             };
             await set(userRef, profile);
+            setUserProfile(profile);
+            setCache(USER_CACHE_KEY, profile);
           }
-          toast({ title: "Welcome!", description: "Successfully signed in with Google." });
+          toast({ title: "Authorized!", description: "Welcome to Oskar Shop." });
+          setIsGlobalLoading(false);
           router.push('/');
         }
       })
       .catch((error) => {
         if (error.code !== 'auth/no-auth-event') {
           console.error("Auth redirect error:", error);
-          toast({ variant: "destructive", title: "Login Failed", description: error.message });
+          toast({ variant: "destructive", title: "Authorization Failed", description: error.message });
+          setIsGlobalLoading(false);
         }
       });
   }, [auth, rtdb, router]);
@@ -875,6 +879,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         termsAccepted: localAccepted 
       };
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
+      setUserProfile(profile);
       setCache(USER_CACHE_KEY, profile);
     } finally { setIsGlobalLoading(false); }
   };
@@ -887,7 +892,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (standalone || isMobile) {
-        // Redirect is necessary for mobile/PWA environments to avoid blocking popups
         await signInWithRedirect(auth, provider);
       } else {
         const result = await signInWithPopup(auth, provider);
@@ -908,6 +912,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             photoURL: googleUser.photoURL || ""
           };
           await set(userRef, profile);
+          setUserProfile(profile);
+          setCache(USER_CACHE_KEY, profile);
         }
         toast({ title: "Welcome!", description: "Logged in with Google." });
         router.push('/');
