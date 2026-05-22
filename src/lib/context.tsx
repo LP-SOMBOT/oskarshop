@@ -316,6 +316,7 @@ type AppContextType = {
   acceptTerms: () => Promise<void>;
   language: Language;
   setLanguage: (lang: Language) => void;
+  userProfile: UserProfile | null;
   t: (key: string) => string;
 };
 
@@ -532,7 +533,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
-  // Handle Redirect Result (for Google Login on Mobile/PWA)
+  // Handle Auth Redirect Result immediately after return
   useEffect(() => {
     if (!auth || !rtdb) return;
 
@@ -562,8 +563,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((error) => {
-        console.error("Auth redirect error:", error);
         if (error.code !== 'auth/no-auth-event') {
+          console.error("Auth redirect error:", error);
           toast({ variant: "destructive", title: "Login Failed", description: error.message });
         }
       });
@@ -883,10 +884,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const provider = new GoogleAuthProvider();
       const standalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isMobile = typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (standalone || isMobile) {
-        // Redirect is more reliable on mobile/standalone PWAs
+        // Redirect is necessary for mobile/PWA environments to avoid blocking popups
         await signInWithRedirect(auth, provider);
       } else {
         const result = await signInWithPopup(auth, provider);
@@ -1246,7 +1247,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
-      acceptTerms, language, setLanguage, t
+      acceptTerms, language, setLanguage, userProfile, t
     }}>
       {children}
     </AppContext.Provider>

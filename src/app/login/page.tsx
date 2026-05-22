@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,15 @@ export default function LoginPage() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   
-  const { login, loginWithGoogle, handleForgotPassword, t } = useApp();
+  const { login, loginWithGoogle, handleForgotPassword, user, t } = useApp();
   const router = useRouter();
+
+  // Fail-safe: If user is detected (especially after a Google redirect), send them to home
+  useEffect(() => {
+    if (user) {
+      router.replace('/');
+    }
+  }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

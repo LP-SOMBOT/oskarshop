@@ -39,6 +39,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
       }
 
       // Step 2: Check database profile fields
+      // We check for name, phone and gameUid as mandatory fields
       const isMissingInfo = !userProfile?.phoneNumber || !userProfile?.gameUid || !userProfile?.name;
       
       if (isMissingInfo) {
@@ -50,6 +51,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
         });
         setOpen(true);
       } else {
+        // Data exists in DB, update cache
         localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
         setOpen(false);
       }
@@ -84,6 +86,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
     }
   };
 
+  // Do not show anything while loading core user data
   if (isInitialLoading || loading) return <>{children}</>;
 
   return (
@@ -96,6 +99,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
+            {/* Header */}
             <div className="bg-primary p-4 sm:p-8 text-white relative overflow-hidden shrink-0">
                <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={40} className="md:size-24" /></div>
                <DialogPrimitive.Title className="text-lg sm:text-2xl font-headline font-bold uppercase tracking-tight">
@@ -107,6 +111,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 sm:p-8 pt-4 space-y-4 sm:space-y-6">
+              {/* Profile Pic Placeholder */}
               <div className="flex flex-col items-center">
                  <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-slate-50 dark:border-slate-800 shadow-lg overflow-hidden relative bg-slate-100 dark:bg-slate-800">
                     {userProfile?.photoURL || user?.photoURL ? (
@@ -117,6 +122,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                  </div>
               </div>
 
+              {/* Form Fields */}
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 tracking-widest flex items-center gap-2">
