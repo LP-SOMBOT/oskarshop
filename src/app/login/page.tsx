@@ -36,6 +36,7 @@ export default function LoginPage() {
   const { login, loginWithGoogle, requestPasswordResetCode, verifyAndResetPassword, user, isGlobalLoading, authError, t } = useApp();
   const router = useRouter();
 
+  // Instant Auth Check
   useEffect(() => {
     if (user) {
       router.replace('/');
@@ -88,6 +89,7 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl relative">
+        {/* Authorizing Overlay for Redirect Results */}
         {(isGlobalLoading || user) && (
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />

@@ -20,6 +20,7 @@ import {
   getRedirectResult,
   onAuthStateChanged
 } from 'firebase/auth';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { 
   ref, 
   onValue, 
@@ -38,6 +39,7 @@ import {
 } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
+import { isStandalone } from './pwa-utils';
 
 export const safeGet = (obj: any, path: string, fallback: any = "") => {
   return path.split('.').reduce((acc, key) => acc?.[key] ?? fallback, obj);
@@ -569,6 +571,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const updates: any = {
            lastActive: Date.now()
         };
+        // Safely update profile with Google details if missing
         if (!existingData.photoURL && authUser.photoURL) updates.photoURL = authUser.photoURL;
         if (!existingData.email && authUser.email) updates.email = authUser.email;
         
@@ -586,7 +589,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
-  // Global Auth Redirect Resolver
+  // Global Auth Redirect Resolver - Crucial for Mobile Support
   useEffect(() => {
     if (!auth || !rtdb) return;
 
@@ -948,15 +951,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // Environment check: Use redirect for mobile/standalone to avoid popup blocks
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || isStandalone();
       
-      if (isMobile) {
+      if (isMobileDevice) {
         await signInWithRedirect(auth, provider);
       } else {
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
           await ensureUserProfile(result.user);
-          toast({ title: "Welcome!", description: "Logged in with Google." });
+          toast({ title: "Authorized!", description: "Welcome back." });
           router.replace('/');
         }
       }
@@ -975,10 +979,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const sanitizedEmail = email.replace(/\./g, '_');
       await set(ref(rtdb, `email_otps/${sanitizedEmail}`), {
         otp,
+        email,
         expiresAt: Date.now() + 600000 // 10 mins
       });
-      // In a real prod env, a Cloud Function would trigger here
-      toast({ title: "Code Dispatched!", description: `The 6-digit OTP has been sent to ${email}.` });
+      toast({ title: "Code Dispatched!", description: `Check ${email} for your security code.` });
       return true;
     } catch (e: any) {
       toast({ variant: "destructive", title: "Request Failed", description: e.message });
@@ -989,25 +993,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const verifyAndResetPassword = async (email: string, otp: string, newPass: string) => {
-    if (!email || !otp || !rtdb) return false;
+    if (!email || !otp || !newPass) return false;
     setIsGlobalLoading(true);
     try {
-      const sanitizedEmail = email.replace(/\./g, '_');
-      const otpSnap = await get(ref(rtdb, `email_otps/${sanitizedEmail}`));
-      if (!otpSnap.exists()) {
-        toast({ variant: "destructive", title: "Invalid Code", description: "No code found for this email." });
-        return false;
+      const functions = getFunctions();
+      const resetFn = httpsCallable(functions, 'resetPasswordWithOtp');
+      const result: any = await resetFn({ email, otp, newPassword: newPass });
+      
+      if (result.data?.success) {
+        toast({ title: "Password Reset Success!", description: "You can now login with your new credentials." });
+        return true;
       }
-      const data = otpSnap.val();
-      if (data.otp !== otp || Date.now() > data.expiresAt) {
-        toast({ variant: "destructive", title: "Expired/Invalid", description: "The code is either wrong or expired." });
-        return false;
-      }
-      // Note: Real password reset requires Admin SDK via Cloud Function
-      // This is the trigger logic that would be handled by a backend hook
-      await remove(ref(rtdb, `email_otps/${sanitizedEmail}`));
-      toast({ title: "Password Reset Success!", description: "You can now login with your new password." });
-      return true;
+      return false;
     } catch (e: any) {
       toast({ variant: "destructive", title: "Reset Failed", description: e.message });
       return false;
@@ -1024,7 +1021,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      toast({ title: t('reset_password') || "Reset link sent!", description: t('reset_email_sent') || "Check your inbox for instructions." });
+      toast({ title: t('reset_password'), description: t('reset_email_sent') });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
