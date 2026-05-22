@@ -18,7 +18,8 @@ import {
   ShoppingBag,
   Copy,
   Lock,
-  Tag
+  Tag,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,12 +72,13 @@ function CheckoutContent() {
     return (games || []).find(g => g.id === item?.gameId);
   }, [games, item?.gameId]);
 
+  const basePrice = useMemo(() => Number(item?.price || 0), [item]);
+  const discountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
+  const hasDiscount = useMemo(() => discountedPrice > 0 && discountedPrice < basePrice, [discountedPrice, basePrice]);
+
   const total = useMemo(() => {
-    if (!item) return 0;
-    const base = Number(item.price || 0);
-    const disc = Number(item.discountedPrice || 0);
-    return (disc > 0 && disc < base) ? disc : base;
-  }, [item]);
+    return hasDiscount ? discountedPrice : basePrice;
+  }, [hasDiscount, discountedPrice, basePrice]);
   
   const gameTitle = game?.title?.toLowerCase() || "";
   const isFreeFire = gameTitle.includes("free fire");
@@ -405,17 +407,33 @@ Fadlan ila soo xiriir.`;
               <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Lock size={40} className="md:size-[60px]" />
               </div>
-              <div className="flex flex-col xs:flex-row justify-between items-center gap-3 md:gap-6 relative z-10">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-medium">Order Total:</span>
-                  {item?.discountedPrice && Number(item.discountedPrice) < Number(item.price) && (
-                    <Badge className="bg-primary/10 text-primary border-none text-[7px] md:text-[10px] font-black uppercase tracking-tighter md:tracking-normal px-1.5 md:px-2 py-0.5">Promo Applied</Badge>
-                  )}
+              <div className="flex flex-col gap-3 relative z-10">
+                <div className="flex justify-between items-center text-sm md:text-lg">
+                   <span className="text-muted-foreground dark:text-slate-400 font-medium">Base Price:</span>
+                   <span className={cn("font-bold text-slate-900 dark:text-white", hasDiscount && "line-through opacity-40")}>${basePrice.toFixed(2)}</span>
                 </div>
-                <div className="text-center xs:text-right">
-                  <span className="text-2xl md:text-5xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
-                  <div className="flex items-center justify-center xs:justify-end gap-1 text-[8px] md:text-[11px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest mt-0.5 md:mt-1">
-                    <ShieldCheck size={10} className="md:w-3.5 md:h-3.5" /> Secure Rate
+                {hasDiscount && (
+                  <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2">
+                     <div className="flex items-center gap-2">
+                        <Tag size={16} className="text-green-500" />
+                        <span className="text-muted-foreground dark:text-slate-400 font-medium">Promo Discount:</span>
+                     </div>
+                     <span className="font-bold text-green-500">-${(basePrice - discountedPrice).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="h-px bg-slate-200 dark:bg-white/5 my-1" />
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">Final Total:</span>
+                    {hasDiscount && (
+                      <Badge className="bg-primary/10 text-primary border-none text-[7px] md:text-[10px] font-black uppercase tracking-tighter md:tracking-normal px-1.5 md:px-2 py-0.5">Applied</Badge>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl md:text-5xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
+                    <div className="flex items-center justify-end gap-1 text-[8px] md:text-[11px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest mt-0.5 md:mt-1">
+                      <ShieldCheck size={10} className="md:w-3.5 md:h-3.5" /> Secure Rate
+                    </div>
                   </div>
                 </div>
               </div>
@@ -428,7 +446,7 @@ Fadlan ila soo xiriir.`;
               <Button 
                 onClick={handlePaymentInitiation} 
                 disabled={paymentMethods.length === 0}
-                className="order-1 sm:order-2 flex-[2] h-12 md:h-16 rounded-xl md:rounded-2xl text-sm md:text-xl font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                className="order-1 sm:order-2 flex-[2] h-12 md:h-16 rounded-xl md:rounded-2xl text-sm md:text-xl font-bold shadow-xl shadow-primary/20 active:scale-[0.98] transition-all"
               >
                 Ku bixi {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'lacagta'}
               </Button>
@@ -452,7 +470,7 @@ Fadlan ila soo xiriir.`;
             </p>
             <div className="bg-primary/5 dark:bg-primary/10 p-4 md:p-8 rounded-2xl md:rounded-[2rem] mb-6 md:mb-12 text-left border border-primary/10 dark:border-primary/20 shadow-inner">
               <div className="flex justify-between font-bold text-sm md:text-xl mb-2.5 md:mb-4 dark:text-white">
-                <span>Wadarta</span>
+                <span>Wadarta dhabta ah</span>
                 <span className="text-primary font-headline text-lg md:text-3xl">${total.toFixed(2)}</span>
               </div>
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
