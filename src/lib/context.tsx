@@ -696,7 +696,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     onValue(profileRef, (s) => {
       const data = s.val();
       setUserProfile(data);
-      if (data) setCache(USER_CACHE_KEY, data);
+      if (data) {
+        setCache(USER_CACHE_KEY, data);
+        // Sync the completion flag to local storage for the guard
+        const isComplete = data.phoneNumber && data.gameUid && data.name;
+        if (isComplete) {
+          localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
+        }
+      }
       if (data?.banned) {
         setBannedInfo({
           name: data.name || "N/A",
@@ -897,7 +904,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     setIsGlobalLoading(true);
-    try { localStorage.removeItem(USER_CACHE_KEY); await signOut(auth); router.push('/login'); } finally { setIsGlobalLoading(false); }
+    try { 
+      if (user) localStorage.removeItem(`oskar_profile_complete_${user.uid}`);
+      localStorage.removeItem(USER_CACHE_KEY); 
+      await signOut(auth); 
+      router.push('/login'); 
+    } finally { setIsGlobalLoading(false); }
   };
 
   const buyNow = (item: any) => {
@@ -1226,7 +1238,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() });
   };
 
-  const updateUserProfile = async (updates: any) => { if (!rtdb || !user) return; await update(ref(rtdb, `users/${user.uid}`), updates); toast({ title: "Profile updated!" }); };
+  const updateUserProfile = async (updates: any) => { 
+    if (!rtdb || !user) return; 
+    await update(ref(rtdb, `users/${user.uid}`), updates); 
+    // Set local cache flag
+    const isComplete = updates.phoneNumber && updates.gameUid && updates.name;
+    if (isComplete) {
+      localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
+    }
+    toast({ title: "Profile updated!" }); 
+  };
   const manageUser = async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); };
   const deleteUser = async (uid: string) => { if (!rtdb) return; await remove(ref(rtdb, `users/${uid}`)); toast({ title: "User account deleted." }); };
 
