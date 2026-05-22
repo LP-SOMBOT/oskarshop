@@ -8,6 +8,7 @@ import { FirebaseClientProvider } from "@/firebase";
 import OnboardingGuard from "@/components/layout/OnboardingGuard";
 import NotificationGuard from "@/components/layout/NotificationGuard";
 import TermsGuard from "@/components/layout/TermsGuard";
+import ProfileCompletionGuard from "@/components/layout/ProfileCompletionGuard";
 import GlobalLoading from "@/components/layout/GlobalLoading";
 import DynamicHead from "@/components/layout/DynamicHead";
 import SWRegistration from "@/components/layout/SWRegistration";
@@ -68,9 +69,11 @@ export default function RootLayout({
               <NotificationGuard>
                 <TermsGuard>
                   <OnboardingGuard>
-                    <MainAppLayout>
-                      {children}
-                    </MainAppLayout>
+                    <ProfileCompletionGuard>
+                      <MainAppLayout>
+                        {children}
+                      </MainAppLayout>
+                    </ProfileCompletionGuard>
                   </OnboardingGuard>
                 </TermsGuard>
               </NotificationGuard>
