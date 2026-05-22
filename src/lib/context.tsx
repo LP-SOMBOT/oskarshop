@@ -13,7 +13,9 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { 
   ref, 
@@ -249,6 +251,7 @@ type AppContextType = {
   setGlobalLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   handleForgotPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
@@ -540,12 +543,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb, user]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(theme);
-      setCache(THEME_CACHE_KEY, theme);
-    }
+    if (typeof window === 'undefined') return;
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+    setCache(THEME_CACHE_KEY, theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -829,6 +831,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
       setCache(USER_CACHE_KEY, profile);
     } finally { setIsGlobalLoading(false); }
+  };
+
+  const loginWithGoogle = async () => {
+    setIsGlobalLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      
+      const userRef = ref(rtdb, `users/${googleUser.uid}`);
+      const snapshot = await get(userRef);
+      
+      if (!snapshot.exists()) {
+        const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
+        const profile: UserProfile = { 
+          uid: googleUser.uid, 
+          email: googleUser.email || "", 
+          name: googleUser.displayName || "Gamer", 
+          role: 'user', 
+          points: 0, 
+          createdAt: Date.now(),
+          termsAccepted: localAccepted,
+          photoURL: googleUser.photoURL || ""
+        };
+        await set(userRef, profile);
+        setCache(USER_CACHE_KEY, profile);
+      }
+      router.push('/');
+    } finally {
+      setIsGlobalLoading(false);
+    }
   };
 
   const handleForgotPassword = async (email: string) => {
@@ -1305,7 +1338,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, handleForgotPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
+      login, signup, loginWithGoogle, handleForgotPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, 
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,

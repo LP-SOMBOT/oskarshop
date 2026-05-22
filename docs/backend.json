@@ -17,7 +17,8 @@
         "photoURL": { "type": "string" },
         "gameName": { "type": "string" },
         "gameUid": { "type": "string" },
-        "banned": { "type": "boolean" }
+        "banned": { "type": "boolean" },
+        "termsAccepted": { "type": "boolean" }
       },
       "required": ["uid", "email"]
     },
@@ -60,7 +61,8 @@
         "status": { "type": "string", "enum": ["pending", "processing", "approved", "rejected", "holding", "sold"] },
         "createdAt": { "type": "number" },
         "views": { "type": "number" },
-        "sold": { "type": "boolean" }
+        "sold": { "type": "boolean" },
+        "senderNumber": { "type": "string" }
       }
     },
     "Notification": {
@@ -105,7 +107,7 @@
     }
   },
   "auth": {
-    "providers": ["password"]
+    "providers": ["password", "google.com"]
   },
   "database": {
     "users": { "description": "User profiles" },
