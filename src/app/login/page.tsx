@@ -13,6 +13,11 @@ import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
+/**
+ * @fileOverview COMPLETE REBUILD: Forgot Password Flow.
+ * Features aggressive error exposure and multi-screen state transitions.
+ */
+
 type AuthMode = 'login' | 'forgot-request' | 'forgot-verify';
 
 export default function LoginPage() {
@@ -29,7 +34,6 @@ export default function LoginPage() {
   const { login, loginWithGoogle, requestPasswordResetCode, verifyAndResetPassword, user, isGlobalLoading, authError, t } = useApp();
   const router = useRouter();
 
-  // Instant Auth Check
   useEffect(() => {
     if (user) {
       router.replace('/');
@@ -84,7 +88,6 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl relative">
-        {/* Authorizing Overlay for Redirect Results */}
         {(isGlobalLoading || user) && (
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
@@ -95,7 +98,6 @@ export default function LoginPage() {
         )}
 
         <div className="max-w-md mx-auto h-full flex flex-col">
-          {/* Error Banner for Debugging Auth & OTP Failures */}
           {authError && (
             <Alert variant="destructive" className="mb-6 rounded-2xl animate-in slide-in-from-top-2 border-2 shadow-lg">
               <AlertCircle className="h-5 w-5" />

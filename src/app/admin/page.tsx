@@ -747,7 +747,7 @@ export default function AdminPage() {
         <SideNavItem icon={Home} label="Back to Store" active={false} expanded={isSidebarExpanded || isMobile} onClick={() => router.push('/')} className="text-primary hover:bg-primary/5 mb-4" />
         <div className="h-px bg-slate-50 dark:bg-white/5 my-4 mx-2" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('dashboard'); setIsMobileMenuOpen(false); setSelectedAccountId(null); setSelectedOrderId(null); }} />
-        <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setActiveView('orders'); setIsMobileMenuOpen(false); setSelectedAccountId(null); }} badge={allOrders.filter(o => o.status === 'pending').length} />
+        <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('orders'); setIsMobileMenuOpen(false); setSelectedAccountId(null); }} badge={allOrders.filter(o => o.status === 'pending').length} />
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('account-posts'); setIsMobileMenuOpen(false); setSelectedOrderId(null); }} badge={accountPosts.filter(p => p.status === 'pending' || p.conflict || p.buyerReported).length} />
         <SideNavItem icon={Package} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('inventory'); setIsMobileMenuOpen(false); setSelectedAccountId(null); setSelectedOrderId(null); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('events'); setIsMobileMenuOpen(false); setSelectedAccountId(null); setSelectedOrderId(null); }} />
@@ -2164,7 +2164,7 @@ export default function AdminPage() {
               <div className="p-5 sm:p-8 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[2rem] border dark:border-white/5 space-y-4 sm:space-y-6">
                  <div className="flex items-center gap-3 text-primary mb-1 sm:mb-2">
                     <DollarSign size={16} className="md:size-[18px]" />
-                    <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Financial Config</h4>
+                    <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-1.5 sm:space-y-2">
