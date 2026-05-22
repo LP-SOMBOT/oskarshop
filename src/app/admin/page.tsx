@@ -2234,7 +2234,7 @@ export default function AdminPage() {
               <div className="p-5 sm:p-8 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[2rem] border dark:border-white/5 space-y-4 sm:space-y-6">
                  <div className="flex items-center gap-3 text-primary mb-1 sm:mb-2">
                     <DollarSign size={16} className="md:size-[18px]" />
-                    <h4 className="font-bold text-xs sm:text-sm uppercase tracking-tight">Financial Config</h4>
+                    <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Financial Config</h4>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-1.5 sm:space-y-2">

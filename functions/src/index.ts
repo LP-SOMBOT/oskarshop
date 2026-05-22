@@ -6,7 +6,7 @@ import * as nodemailer from "nodemailer";
 admin.initializeApp();
 
 /**
- * @fileOverview Firebase Cloud Functions for Baba Shop.
+ * @fileOverview Firebase Cloud Functions for Oskar Shop.
  * 
  * 1. sendEmailOTP: Callable function to generate, save, and send a 6-digit code.
  * 2. resetPasswordWithOtp: Verifies the code and updates the user password via Admin SDK.
@@ -15,6 +15,7 @@ admin.initializeApp();
 /**
  * CALLABLE: sendEmailOTP
  * Handles dynamic credential fetching, OTP generation, and branded email dispatch.
+ * Explicitly configured for smtp.gmail.com:465 with secure transport.
  */
 export const sendEmailOTP = functions.https.onCall(async (data, context) => {
     const { email } = data;
@@ -48,10 +49,12 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
             expiresAt
         });
 
-        // 4. LIFECYCLE & ASYNC RESOLUTION: Instantiate transport inside scope
-        // This prevents the "530-5.7.0 Authentication Required" error on serverless restarts
+        // 4. LIFECYCLE & ASYNC RESOLUTION: Explicit SMTP Configuration
+        // This setup uses the official Google SMTP host and port 465 (Secure)
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // Use SSL/TLS
             auth: {
                 user: config.senderEmail,
                 pass: config.appPassword
@@ -60,12 +63,12 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
 
         // 5. DEFAULT BRANDED EMAIL SENDER TEMPLATE
         const mailOptions = {
-            from: `"Baba Shop Support" <${config.senderEmail}>`,
+            from: `"Oskar Shop Support" <${config.senderEmail}>`,
             to: email,
-            subject: `${otp} is your Baba Shop verification code`,
+            subject: `${otp} is your Oskar Shop verification code`,
             html: `
                 <div style="background-color: #0f172a; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; text-align: center; border-radius: 24px;">
-                    <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">Baba Shop Security Verification</h2>
+                    <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">Oskar Shop Security Verification</h2>
                     <p style="color: #94a3b8; font-size: 16px; margin-bottom: 30px;">Use the code below to complete your password reset request.</p>
                     
                     <div style="background-color: #1e293b; padding: 30px; border-radius: 16px; display: inline-block; border: 1px solid #334155;">
@@ -78,12 +81,13 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
                     </p>
                     
                     <hr style="border: none; border-top: 1px solid #334155; margin: 30px 0;">
-                    <p style="font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 2px;">Baba Shop Premium Game Services</p>
+                    <p style="font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 2px;">Oskar Shop Premium Game Services</p>
                 </div>
             `
         };
 
         // GUARANTEE RESOLUTION: Await the dispatch before finishing
+        // This ensures the SMTP network connection completes before the container shuts down
         await transporter.sendMail(mailOptions);
         
         return { success: true };
