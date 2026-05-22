@@ -982,7 +982,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (e: any) {
       console.error("OTP Request Error:", e);
-      // Firebase v1 Callable Errors expose message directly
       const errorMsg = e.message || "Failed to send reset code.";
       setAuthError(errorMsg);
       toast({ variant: "destructive", title: "Request Failed", description: errorMsg });

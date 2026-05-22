@@ -6,9 +6,9 @@ admin.initializeApp();
 
 /**
  * @fileOverview Refactored Firebase Cloud Functions for Oskar Shop.
- * Uses Resend Email API over HTTPS to bypass SMTP blocks.
+ * Uses native fetch to call Resend API (HTTP) to bypass SMTP blocks.
  * 
- * 1. sendEmailOTP: Generates, saves, and sends a 6-digit code via Resend.
+ * 1. sendEmailOTP: Generates, saves, and sends a 6-digit code via Resend HTTP POST.
  * 2. resetPasswordWithOtp: Verifies the code and updates the user password.
  */
 
@@ -32,8 +32,8 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
         });
 
         // 3. Dispatch via Resend API (HTTP POST)
-        // Note: Outbound requests to non-Google APIs require the Firebase Blaze Plan.
-        const resendApiKey = "re_hgGKiQfD_NkgJ24f5kqvyDsx76NatW5jA";
+        // Note: Using the provided key directly for execution reliability in this environment.
+        const resendApiKey = process.env.RESEND_API_KEY || "re_hgGKiQfD_NkgJ24f5kqvyDsx76NatW5jA";
         
         const response = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -42,25 +42,25 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                from: "OskarShop <onboarding@resend.dev>",
+                from: "OskarShop Support <onboarding@resend.dev>",
                 to: [email],
-                subject: `${otp} is your OskarShop verification code`,
+                subject: "Oskar Shop Security Code",
                 html: `
-                    <div style="background-color: #f8fafc; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; text-align: center; border-radius: 24px; border: 1px solid #e2e8f0;">
-                        <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">OskarShop Security Verification</h2>
-                        <p style="color: #64748b; font-size: 16px; margin-bottom: 30px;">Use the code below to complete your password reset request.</p>
+                    <div style="background-color: #0f172a; padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #f8fafc; text-align: center; border-radius: 24px; border: 1px solid #1e293b;">
+                        <h2 style="color: #0ea5e9; font-size: 26px; font-weight: 800; margin-bottom: 10px;">Oskar Shop Password Verification</h2>
+                        <p style="color: #94a3b8; font-size: 16px; margin-bottom: 30px;">Use the code below to complete your password reset request.</p>
                         
-                        <div style="background-color: #ffffff; padding: 30px; border-radius: 16px; display: inline-block; border: 2px solid #0ea5e9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                            <span style="font-size: 32px; font-weight: 900; letter-spacing: 12px; color: #0ea5e9; font-family: monospace;">${otp}</span>
+                        <div style="background-color: #1e293b; padding: 30px; border-radius: 16px; display: inline-block; border: 2px solid #0ea5e9; box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);">
+                            <span style="font-size: 32px; font-weight: 900; letter-spacing: 12px; color: #38bdf8; font-family: monospace;">${otp}</span>
                         </div>
                         
-                        <p style="color: #94a3b8; font-size: 12px; margin-top: 30px; line-height: 1.5;">
+                        <p style="color: #64748b; font-size: 12px; margin-top: 30px; line-height: 1.5;">
                             This code will expire in exactly <b>10 minutes</b>.<br>
                             If you did not request this code, please ignore this email.
                         </p>
                         
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-                        <p style="font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px;">OskarShop Premium Game Services</p>
+                        <hr style="border: none; border-top: 1px solid #1e293b; margin: 30px 0;">
+                        <p style="font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 2px;">Oskar Shop Premium Game Services</p>
                     </div>
                 `
             })
@@ -69,7 +69,6 @@ export const sendEmailOTP = functions.https.onCall(async (data, context) => {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("Resend API Failure:", errorText);
-            // Re-throw with status for better visibility in frontend
             throw new functions.https.HttpsError('internal', `Email Service Error: ${response.status} - ${errorText}`);
         }
         
