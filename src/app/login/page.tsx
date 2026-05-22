@@ -216,7 +216,7 @@ export default function LoginPage() {
               </button>
               <div className="space-y-4">
                 <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Request Reset Code</h2>
-                <p className="text-sm text-muted-foreground">Enter your registered email address. We'll send a 6-digit verification code to your Gmail inbox.</p>
+                <p className="text-sm text-muted-foreground">Enter your registered email address. We'll send a 6-digit verification code to your email inbox.</p>
               </div>
               <form onSubmit={handleSendCode} className="space-y-6">
                 <div className="relative">

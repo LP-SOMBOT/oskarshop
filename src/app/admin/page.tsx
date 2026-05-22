@@ -1883,7 +1883,7 @@ export default function AdminPage() {
                                      <TableCell className="px-4 sm:px-8">
                                         <div className="flex items-center gap-3 sm:gap-4">
                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 border border-white dark:border-white/10 shadow-sm">
-                                              {m.icon ? <Image src={m.icon} alt="" fill className="object-cover" /> : <Monitor size={18} className="m-auto mt-3 text-slate-300"/>}
+                                              {m.icon ? <Image src={m.icon} alt={m.name} fill className="object-cover" /> : <Monitor size={18} className="m-auto mt-3 text-slate-300"/>}
                                            </div>
                                            <span className="font-black text-xs sm:text-sm uppercase tracking-widest">{m.name}</span>
                                         </div>
