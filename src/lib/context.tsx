@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -601,7 +600,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (error: any) {
         console.error("Auth redirect error:", error);
         setAuthError(`Authentication failed: ${error.message}`);
-        toast({ variant: "destructive", title: "Authorization Failed", description: error.message });
+        setIsGlobalLoading(false);
       } finally {
         setIsGlobalLoading(false);
       }
@@ -960,8 +959,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error: any) {
+      console.error("CRITICAL GOOGLE ERROR:", error);
       setAuthError(error.message);
-      toast({ variant: "destructive", title: "Login Failed", description: error.message });
       setIsGlobalLoading(false);
     }
   };
@@ -981,10 +980,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return false;
     } catch (e: any) {
-      console.error("OTP Request Error:", e);
-      const errorMsg = e.message || "Failed to send reset code.";
-      setAuthError(errorMsg);
-      toast({ variant: "destructive", title: "Request Failed", description: errorMsg });
+      console.log("CRITICAL RESET ERROR:", e);
+      setAuthError(e.message || "Failed to send reset code.");
       return false;
     } finally {
       setIsGlobalLoading(false);
@@ -1006,9 +1003,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return false;
     } catch (e: any) {
-      const errorMsg = e.message || "Failed to reset password.";
-      setAuthError(errorMsg);
-      toast({ variant: "destructive", title: "Reset Failed", description: errorMsg });
+      console.log("CRITICAL VERIFY ERROR:", e);
+      setAuthError(e.message || "Failed to reset password.");
       return false;
     } finally {
       setIsGlobalLoading(false);
@@ -1025,6 +1021,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await sendPasswordResetEmail(auth, email);
       toast({ title: t('reset_password'), description: t('reset_email_sent') });
     } catch (error: any) {
+      console.error("Forgot Pass Error:", error);
       toast({ variant: "destructive", title: "Error", description: error.message });
     } finally {
       setIsGlobalLoading(false);

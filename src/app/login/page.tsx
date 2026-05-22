@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,14 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, Key, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Mail, Lock, EyeOff, Eye, Loader2, Key, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
 
 /**
- * @fileOverview COMPLETE REBUILD: Forgot Password Flow.
- * Features aggressive error exposure and multi-screen state transitions.
+ * @fileOverview CLEAN REBUILD: Forgot Password Flow.
+ * Error boundary removed per user request; technical errors are now logged to console.
  */
 
 type AuthMode = 'login' | 'forgot-request' | 'forgot-verify';
@@ -31,7 +28,7 @@ export default function LoginPage() {
   const [otpCode, setOtpCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  const { login, loginWithGoogle, requestPasswordResetCode, verifyAndResetPassword, user, isGlobalLoading, authError, t } = useApp();
+  const { login, loginWithGoogle, requestPasswordResetCode, verifyAndResetPassword, user, isGlobalLoading, t } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -46,10 +43,11 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (error: any) {
+      console.error("Login Error:", error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Please check your credentials.",
+        description: "Please check your credentials.",
       });
     } finally {
       setIsSubmitting(false);
@@ -98,16 +96,8 @@ export default function LoginPage() {
         )}
 
         <div className="max-w-md mx-auto h-full flex flex-col">
-          {authError && (
-            <Alert variant="destructive" className="mb-6 rounded-2xl animate-in slide-in-from-top-2 border-2 shadow-lg">
-              <AlertCircle className="h-5 w-5" />
-              <AlertTitle className="font-bold">Execution Error</AlertTitle>
-              <AlertDescription className="text-xs font-medium">
-                {authError}
-              </AlertDescription>
-            </Alert>
-          )}
-
+          {/* Visual Error Boundary Removed as per request */}
+          
           {mode === 'login' && (
             <div className="space-y-6">
               <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">
