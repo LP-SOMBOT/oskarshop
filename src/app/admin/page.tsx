@@ -767,7 +767,81 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-10">
-                    <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                    {/* Mobile View: Cards */}
+                    <div className="grid grid-cols-1 gap-4 md:hidden">
+                       {accountPosts.length === 0 ? (
+                         <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No account listings found.</div>
+                       ) : (
+                         accountPosts.map(p => {
+                           const claimantsList = Object.values(p.claimants || {});
+                           const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
+                           const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !p.sellerReported && !p.sold;
+
+                           return (
+                             <Card 
+                               key={p.id} 
+                               className={cn(
+                                 "p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-5 transition-all",
+                                 isOverdue && "ring-2 ring-red-500/50 bg-red-50/50"
+                               )}
+                             >
+                                <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white">
+                                         {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
+                                      </div>
+                                      <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                   </div>
+                                   <StatusBadge status={p.status} />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                   <div className="space-y-1">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Game Type</p>
+                                      <p className="font-bold text-xs uppercase">{p.gameType} - LV {p.level}</p>
+                                   </div>
+                                   <div className="space-y-1">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pricing</p>
+                                      <p className="font-bold text-xs text-primary">${p.price}</p>
+                                   </div>
+                                </div>
+
+                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 grid grid-cols-2 gap-4">
+                                   <div className="space-y-1">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Claims</p>
+                                      <Badge className="bg-green-100 text-green-700 border-none text-[8px] font-black px-3">{claimantsList.length} Active</Badge>
+                                   </div>
+                                   <div className="space-y-1">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p>
+                                      <WaitTime post={p} />
+                                   </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t dark:border-white/5">
+                                   <MarketplaceExpiration expiresAt={p.expiresAt} status={p.status} />
+                                   <div className="flex gap-2">
+                                      <button 
+                                        onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
+                                        className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                                      >
+                                        <Eye size={18} />
+                                      </button>
+                                      <button 
+                                        onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
+                                        className="w-10 h-10 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                                      >
+                                        <Trash2 size={18} />
+                                      </button>
+                                   </div>
+                                </div>
+                             </Card>
+                           );
+                         })
+                       )}
+                    </div>
+
+                    {/* Desktop View: Table */}
+                    <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
@@ -786,7 +860,6 @@ export default function AdminPage() {
                                <TableRow><TableCell colSpan={8} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
                                accountPosts.map(p => {
-                                 // Check for critical wait time > 24h
                                  const claimantsList = Object.values(p.claimants || {});
                                  const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
                                  const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !p.sellerReported && !p.sold;
