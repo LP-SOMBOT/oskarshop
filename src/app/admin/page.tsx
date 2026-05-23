@@ -1648,7 +1648,7 @@ export default function AdminPage() {
            <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
+                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
                     {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
@@ -1879,6 +1879,12 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
     window.open(`https://wa.me/${formatted}`, '_blank');
   };
 
+  // Find final buyer info for confirmation banner
+  const finalBuyer = useMemo(() => {
+    if (post.status !== 'sold' || !post.boughtBy) return null;
+    return allUsers.find((u: any) => u.uid === post.boughtBy);
+  }, [post.status, post.boughtBy, allUsers]);
+
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
        <div className="flex items-center justify-between px-2">
@@ -1898,6 +1904,35 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              </button>
           </div>
        </div>
+
+       {/* Sold Confirmation Banner */}
+       {post.status === 'sold' && (
+         <Card className="rounded-[3rem] border-none bg-green-500 text-white p-8 md:p-12 space-y-8 md:space-y-12 animate-in zoom-in duration-500 shadow-2xl shadow-green-500/20">
+            <div className="flex items-center gap-6">
+               <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0">
+                  <PartyPopper size={40} className="md:size-12" />
+               </div>
+               <div>
+                  <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight leading-none">Confirmed Sale!</h2>
+                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Verified and closed successfully.</p>
+               </div>
+            </div>
+            
+            <div className="p-6 md:p-8 bg-black/10 backdrop-blur-md rounded-[2.5rem] flex items-center gap-6 border border-white/10 w-fit min-w-[280px]">
+               <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden relative border-2 border-white/30 shrink-0">
+                  {finalBuyer?.photoURL ? (
+                    <Image src={finalBuyer.photoURL} alt="" fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-white/10 flex items-center justify-center"><User size={24}/></div>
+                  )}
+               </div>
+               <div>
+                  <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
+                  <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
+               </div>
+            </div>
+         </Card>
+       )}
 
        {/* Main Account Card */}
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
