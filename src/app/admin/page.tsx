@@ -68,7 +68,11 @@ import {
   ArrowLeft,
   Link as LinkIcon,
   PlusCircle,
-  PencilLine
+  PencilLine,
+  ImagePlus,
+  Type,
+  ExternalLink,
+  Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -261,6 +265,12 @@ export default function AdminPage() {
 
   // Search States
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  const [accountSearchQuery, setAccountSearchQuery] = useState("");
+
+  // Filter States
+  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'processing' | 'successful' | 'cancelled'>('all');
+  const [accountFilter, setAccountFilter] = useState<'all' | 'pending' | 'approved' | 'holding' | 'sold'>('all');
 
   // Dialog States
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
@@ -297,9 +307,10 @@ export default function AdminPage() {
   const [isSavingStatus, setIsSavingStatus] = useState(false);
 
   // Settings Forms
+  const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
+  const [economyForm, setEconomyForm] = useState({ paymentNumber: "", listingFeeWeekly: 1.00, listingFeeMonthly: 3.00 });
   const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
   const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
-  const [feeConfigForm, setFeeConfigForm] = useState({ listingFeeWeekly: 1, listingFeeMonthly: 3 });
   const [termsForm, setTermsForm] = useState({ en: "", so: "" });
   const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
 
@@ -309,20 +320,42 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (storeSettings) {
+      setBrandForm({
+        announcementTicker: storeSettings.announcementTicker || "",
+        isLive: storeSettings.isLive || false,
+        logo: storeSettings.logo || ""
+      });
+      setEconomyForm({
+        paymentNumber: storeSettings.paymentNumber || "",
+        listingFeeWeekly: storeSettings.config?.shop?.listingFeeWeekly || 1.00,
+        listingFeeMonthly: storeSettings.config?.shop?.listingFeeMonthly || 3.00
+      });
       setHelpLinksForm(storeSettings.helpLinks || { tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
       setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
-      setFeeConfigForm({
-        listingFeeWeekly: storeSettings.config?.shop?.listingFeeWeekly || 1,
-        listingFeeMonthly: storeSettings.config?.shop?.listingFeeMonthly || 3,
-      });
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
       setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
     }
   }, [storeSettings]);
 
   // Data Filtering
-  const filteredOrders = useMemo(() => allOrders, [allOrders]);
-  const filteredAccounts = useMemo(() => accountPosts.sort((a,b) => b.createdAt - a.createdAt), [accountPosts]);
+  const filteredOrders = useMemo(() => {
+    return allOrders.filter(o => {
+      const matchSearch = o.id.toLowerCase().includes(orderSearchQuery.toLowerCase()) || 
+                          o.gameDetails?.playerName?.toLowerCase().includes(orderSearchQuery.toLowerCase());
+      const matchFilter = orderFilter === 'all' || o.status === orderFilter;
+      return matchSearch && matchFilter;
+    });
+  }, [allOrders, orderSearchQuery, orderFilter]);
+
+  const filteredAccounts = useMemo(() => {
+    return accountPosts.filter(p => {
+      const matchSearch = p.authorName?.toLowerCase().includes(accountSearchQuery.toLowerCase()) || 
+                          p.gameType?.toLowerCase().includes(accountSearchQuery.toLowerCase());
+      const matchFilter = accountFilter === 'all' || p.status === accountFilter;
+      return matchSearch && matchFilter;
+    }).sort((a,b) => b.createdAt - a.createdAt);
+  }, [accountPosts, accountSearchQuery, accountFilter]);
+
   const filteredUsers = useMemo(() => {
     return allUsers.filter(u => 
       u.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
@@ -333,6 +366,11 @@ export default function AdminPage() {
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
+
+  const paymentMethods = useMemo(() => {
+    if (!storeSettings?.paymentMethods) return [];
+    return Object.entries(storeSettings.paymentMethods).map(([id, m]: any) => ({ ...m, id }));
+  }, [storeSettings?.paymentMethods]);
 
   // Actions
   const handleOpenGameDialog = (game?: any) => {
@@ -345,6 +383,12 @@ export default function AdminPage() {
     setEditingProduct(p || null);
     setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
     setIsProductDialogOpen(true);
+  };
+
+  const handleOpenPaymentMethodDialog = (m?: any) => {
+    setEditingPaymentMethod(m || null);
+    setPaymentMethodForm(m ? { name: m.name, icon: m.icon || "", ussdTemplate: m.ussdTemplate || "", active: m.active } : { name: "", icon: "", ussdTemplate: "", active: true });
+    setIsPaymentMethodDialogOpen(true);
   };
 
   const handleSaveGame = async (e: React.FormEvent) => {
@@ -381,6 +425,14 @@ export default function AdminPage() {
       setIsBannerDialogOpen(false);
       toast({ title: "Banner Added" });
     } finally { setIsUploading(false); }
+  };
+
+  const handleSavePaymentMethod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await savePaymentMethod({ ...paymentMethodForm, id: editingPaymentMethod?.id });
+      setIsPaymentMethodDialogOpen(false);
+    } catch (err) {}
   };
 
   const handleStatusUpdate = async () => {
@@ -423,6 +475,7 @@ export default function AdminPage() {
       if (deleteTarget.type === 'user') await deleteUserFn(deleteTarget.id);
       if (deleteTarget.type === 'event') await deleteEvent(deleteTarget.id);
       if (deleteTarget.type === 'banner') await deleteBanner(deleteTarget.id);
+      if (deleteTarget.type === 'paymentMethod') await deletePaymentMethod(deleteTarget.id);
       toast({ title: "Deleted Successfully" });
       setIsDeleteDialogOpen(false);
     } finally { setDeleteTarget(null); }
@@ -436,9 +489,26 @@ export default function AdminPage() {
       if (target === 'product') setProductForm(f => ({ ...f, thumbnail: url }));
       if (target === 'event') setEventForm(f => ({ ...f, thumbnailUrl: url }));
       if (target === 'banner') setBannerForm(f => ({ ...f, imageUrl: url }));
-      if (target === 'logo') updateStoreSettings({ logo: url });
+      if (target === 'logo') setBrandForm(f => ({ ...f, logo: url }));
+      if (target === 'offlineImage') setAppStatusForm(f => ({ ...f, offlineImageUrl: url }));
+      if (target === 'paymentIcon') setPaymentMethodForm(f => ({ ...f, icon: url }));
       toast({ title: "Media Uploaded" });
     } finally { setIsUploading(false); }
+  };
+
+  const syncEconomySettings = async () => {
+    await updateStoreSettings({
+      paymentNumber: economyForm.paymentNumber,
+      config: {
+        ...storeSettings.config,
+        shop: {
+          ...storeSettings.config?.shop,
+          listingFeeWeekly: parseFloat(economyForm.listingFeeWeekly.toString()),
+          listingFeeMonthly: parseFloat(economyForm.listingFeeMonthly.toString())
+        }
+      }
+    });
+    toast({ title: "Economy settings updated" });
   };
 
   if (loading || isInitialLoading) {
@@ -466,7 +536,7 @@ export default function AdminPage() {
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} badge={1} />
+        <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
       <div className="p-4 border-t dark:border-white/5">
@@ -587,6 +657,22 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-8">
+                    {/* Pills Filters - Restored */}
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2">
+                       {['all', 'pending', 'processing', 'successful', 'cancelled'].map(f => (
+                          <button 
+                            key={f} 
+                            onClick={() => setOrderFilter(f as any)}
+                            className={cn(
+                              "px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all",
+                              orderFilter === f ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-white dark:bg-slate-900 text-slate-400 border border-gray-50 dark:border-white/5 hover:text-primary"
+                            )}
+                          >
+                             {f}
+                          </button>
+                       ))}
+                    </div>
+
                     <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -666,6 +752,22 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-10">
+                    {/* Pills Filters - Restored */}
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2">
+                       {['all', 'pending', 'holding', 'approved', 'sold'].map(f => (
+                          <button 
+                            key={f} 
+                            onClick={() => setAccountFilter(f as any)}
+                            className={cn(
+                              "px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all",
+                              accountFilter === f ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-white dark:bg-slate-900 text-slate-400 border border-gray-100 dark:border-white/5 hover:text-primary"
+                            )}
+                          >
+                             {f}
+                          </button>
+                       ))}
+                    </div>
+
                     <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -1058,7 +1160,221 @@ export default function AdminPage() {
                </div>
 
                <Accordion type="single" collapsible className="space-y-4 sm:space-y-6">
-                  {/* Settings Accordion Items */}
+                  {/* Brand Identity */}
+                  <AccordionItem value="branding" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-blue-500">
+                              <ImagePlus className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Brand Identity</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Logo, Ticker & Live Toggles</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-6 sm:space-y-10">
+                              <div className="flex flex-col md:flex-row gap-6 md:gap-10">
+                                 <div className="w-full md:w-48 space-y-3">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Store Logo</Label>
+                                    <div className="relative aspect-square rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
+                                       {brandForm.logo ? <Image src={brandForm.logo} alt="Logo" fill className="object-cover p-4" /> : <ImagePlus className="text-slate-300" />}
+                                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'logo')} />
+                                       {isUploading && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center"><Loader2 className="animate-spin" /></div>}
+                                    </div>
+                                 </div>
+                                 <div className="flex-1 space-y-6">
+                                    <SettingInput label="Announcement Ticker" value={brandForm.announcementTicker} onChange={v => setBrandForm(f => ({ ...f, announcementTicker: v }))} placeholder="Welcome to Oskar Shop..." />
+                                    <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-between border dark:border-white/5">
+                                       <div className="flex items-center gap-3">
+                                          <Radio className={cn("w-5 h-5", brandForm.isLive ? "text-red-500 animate-pulse" : "text-slate-400")} />
+                                          <div>
+                                             <p className="text-sm font-bold">Oskar is LIVE</p>
+                                             <p className="text-[10px] text-muted-foreground font-medium">Show TikTok live banner on home</p>
+                                          </div>
+                                       </div>
+                                       <Switch checked={brandForm.isLive} onCheckedChange={v => setBrandForm(f => ({ ...f, isLive: v }))} />
+                                    </div>
+                                 </div>
+                              </div>
+                              <Button onClick={() => updateStoreSettings(brandForm).then(()=>toast({title:"Branding Synced"}))} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">Save Brand Updates</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Marketplace Economy */}
+                  <AccordionItem value="economy" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-amber-500">
+                              <HandCoins className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Payment number & listing fees</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-6 sm:space-y-10">
+                              <SettingInput label="EVC / Premier Payment Number" value={economyForm.paymentNumber} onChange={v => setEconomyForm(f => ({ ...f, paymentNumber: v }))} placeholder="613982172" />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                                 <SettingInput label="Weekly Listing Fee ($)" type="number" value={economyForm.listingFeeWeekly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeWeekly: parseFloat(v) }))} placeholder="1.00" />
+                                 <SettingInput label="Monthly Listing Fee ($)" type="number" value={economyForm.listingFeeMonthly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeMonthly: parseFloat(v) }))} placeholder="3.00" />
+                              </div>
+                              <Button onClick={syncEconomySettings} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-amber-500 hover:bg-amber-600">Update Economy</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Payment Infrastructure */}
+                  <AccordionItem value="gateways" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-emerald-500">
+                              <Wallet className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Payment Infrastructure</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Manage USSD Templates</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-6 sm:space-y-8">
+                              <div className="flex justify-end">
+                                 <Button onClick={() => handleOpenPaymentMethodDialog()} size="sm" className="rounded-xl font-bold uppercase text-[10px] tracking-widest gap-2">
+                                    <Plus size={14} /> Add Method
+                                 </Button>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                 {paymentMethods.map(m => (
+                                    <div key={m.id} className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between border dark:border-white/5">
+                                       <div className="flex items-center gap-4">
+                                          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center text-primary shadow-sm overflow-hidden relative">
+                                             {m.icon ? <Image src={m.icon} alt="" fill className="object-cover" /> : <Smartphone size={24} />}
+                                          </div>
+                                          <div>
+                                             <p className="font-bold text-sm">{m.name}</p>
+                                             <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">{m.active ? 'Active' : 'Disabled'}</p>
+                                          </div>
+                                       </div>
+                                       <div className="flex gap-2">
+                                          <button onClick={() => handleOpenPaymentMethodDialog(m)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit size={18} /></button>
+                                          <button onClick={() => { setDeleteTarget({id:m.id, type:'paymentMethod'}); setIsDeleteDialogOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
+                                       </div>
+                                    </div>
+                                 ))}
+                              </div>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Communication Hub */}
+                  <AccordionItem value="communication" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-indigo-500">
+                              <MessageCircle className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Communication Hub</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Socials, Support & Tutorials</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-6 sm:space-y-10">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                 <SettingInput label="WhatsApp Support No" value={helpLinksForm.whatsappNumber} onChange={v => setHelpLinksForm(f => ({ ...f, whatsappNumber: v }))} placeholder="252613982172" />
+                                 <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tiktokUrl: v }))} placeholder="https://tiktok.com/@..." />
+                                 <SettingInput label="Tutorial Video URL" value={helpLinksForm.tutorialUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tutorialUrl: v }))} placeholder="https://youtube.com/..." />
+                              </div>
+                              <Button onClick={() => updateStoreSettings({ helpLinks: helpLinksForm }).then(()=>toast({title:"Links Synced"}))} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-indigo-500 hover:bg-indigo-600">Save Communication Links</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Compliance Editor */}
+                  <AccordionItem value="legal" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-emerald-600">
+                              <ScrollText className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Compliance Editor</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Terms & Conditions (EN/SO)</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-8 sm:space-y-12">
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+                                 <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
+                                    <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
+                                 </div>
+                                 <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Somali Terms (Shuruudaha)</Label>
+                                    <Textarea value={termsForm.so} onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Geli shuruudaha afka Soomaaliga..." />
+                                 </div>
+                              </div>
+                              <Button onClick={() => updateStoreSettings({ termsAndConditions: termsForm }).then(()=>toast({title:"Policy Updated"}))} className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl bg-emerald-600">Sync Legal Policy</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Maintenance Console */}
+                  <AccordionItem value="maintenance" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-red-500">
+                              <ShieldAlert className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Maintenance Console</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Global Maintenance Mode</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-8 sm:space-y-12">
+                              <div className="p-6 md:p-10 bg-red-50 dark:bg-red-950/20 rounded-3xl flex items-center justify-between border-2 border-red-100 dark:border-red-900/30">
+                                 <div className="flex items-center gap-4 md:gap-6">
+                                    <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg"><Monitor className="w-7 h-7" /></div>
+                                    <div>
+                                       <p className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Maintenance Mode</p>
+                                       <p className="text-xs md:text-sm font-medium text-red-700 dark:text-red-400">Lock entire store for maintenance</p>
+                                    </div>
+                                 </div>
+                                 <Switch checked={appStatusForm.offline} onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} className="scale-125" />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14">
+                                 <div className="space-y-6">
+                                    <SettingInput label="Maintenance Title" value={appStatusForm.offlineTitle} onChange={v => setAppStatusForm(f => ({ ...f, offlineTitle: v }))} placeholder="Under Maintenance" />
+                                    <div className="space-y-3">
+                                       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Maintenance Description</Label>
+                                       <Textarea value={appStatusForm.offlineBody} onChange={e => setAppStatusForm(f => ({ ...f, offlineBody: e.target.value }))} className="min-h-[150px] rounded-3xl bg-slate-50 dark:bg-slate-800 border-none p-6 font-medium shadow-inner" placeholder="Describe the downtime..." />
+                                    </div>
+                                 </div>
+                                 <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Maintenance Image / Poster</Label>
+                                    <div className="relative aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center overflow-hidden shadow-inner group">
+                                       {appStatusForm.offlineImageUrl ? <Image src={appStatusForm.offlineImageUrl} alt="Poster" fill className="object-cover" /> : <ImageIcon className="text-slate-300 w-10 h-10" />}
+                                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'offlineImage')} />
+                                       <p className="text-[8px] font-black uppercase text-slate-400 mt-2">Upload Poster</p>
+                                    </div>
+                                 </div>
+                              </div>
+                              <Button onClick={() => updateStoreSettings({ appStatus: appStatusForm }).then(()=>toast({title:"System State Synced"}))} variant="destructive" className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl">Publish System State</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  {/* Recovery Infrastructure */}
                   <AccordionItem value="emailjs" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1368,6 +1684,28 @@ export default function AdminPage() {
               <Button type="submit" disabled={isUploading || !bannerForm.imageUrl} className="w-full h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest bg-primary text-white">
                 {isUploading ? <Loader2 className="animate-spin" /> : "Add Banner"}
               </Button>
+           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
+           <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
+              <div className="flex justify-center mb-4">
+                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
+                    {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
+                 </div>
+              </div>
+              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => setPaymentMethodForm(f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
+              <SettingInput label="USSD Template" value={paymentMethodForm.ussdTemplate} onChange={v => setPaymentMethodForm(f => ({ ...f, ussdTemplate: v }))} placeholder="*712*613982172*$#" />
+              <p className="text-[9px] font-bold text-slate-400 italic leading-relaxed">Use $ as a placeholder for the price (e.g. *711*613982172*$#)</p>
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                 <Label className="font-bold text-sm">Active</Label>
+                 <Switch checked={paymentMethodForm.active} onCheckedChange={v => setPaymentMethodForm(f => ({ ...f, active: v }))} />
+              </div>
+              <Button type="submit" disabled={isUploading} className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-lg bg-primary">Save Method</Button>
            </form>
         </DialogContent>
       </Dialog>
