@@ -1094,22 +1094,18 @@ export default function AdminPage() {
           {activeView === 'events' && (
             <div className="space-y-12 animate-in fade-in duration-700">
                {/* Header Controls */}
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div className="space-y-2">
-                     <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Active Events</h3>
-                     <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Manage banners, time-limited sales, and community updates.</p>
-                  </div>
-                  <div className="flex gap-4">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
+                  <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                      <Button 
                        variant="outline"
                        onClick={() => { setBannerForm({ imageUrl: "", linkTo: "" }); setIsBannerDialogOpen(true); }}
-                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95"
+                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
                      >
                         <Plus size={18} /> New Banner
                      </Button>
                      <Button 
                        onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }}
-                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all"
+                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
                      >
                         <Megaphone size={18} /> Create Event
                      </Button>
