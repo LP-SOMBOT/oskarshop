@@ -355,6 +355,9 @@ export default function AdminPage() {
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
 
+  // Orders View Specific - Only Top Up Items
+  const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
+
   const paymentMethods = useMemo(() => {
     if (!storeSettings?.paymentMethods) return [];
     return Object.entries(storeSettings.paymentMethods).map(([id, m]: any) => ({ ...m, id }));
@@ -520,7 +523,7 @@ export default function AdminPage() {
         <SideNavItem icon={Home} label="Back to Store" active={false} expanded={isSidebarExpanded || isMobile} onClick={() => router.push('/')} className="text-primary hover:bg-primary/5 mb-4" />
         <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={allOrders.filter(o => o.status === 'pending').length} />
+        <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
@@ -657,10 +660,10 @@ export default function AdminPage() {
                              </TableRow>
                           </TableHeader>
                           <TableBody>
-                             {allOrders.length === 0 ? (
+                             {topUpOrders.length === 0 ? (
                                <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
                              ) : (
-                               allOrders.map(o => (
+                               topUpOrders.map(o => (
                                  <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
                                     <TableCell className="px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
                                     <TableCell>
@@ -1175,7 +1178,7 @@ export default function AdminPage() {
                               <SettingInput label="EVC / Premier Payment Number" value={economyForm.paymentNumber} onChange={v => setEconomyForm(f => ({ ...f, paymentNumber: v }))} placeholder="613982172" />
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                                  <SettingInput label="Weekly Listing Fee ($)" type="number" value={economyForm.listingFeeWeekly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeWeekly: parseFloat(v) }))} placeholder="1.00" />
-                                 <SettingInput label="Monthly Listing Fee ($)" type="number" value={economyForm.listingFeeWeekly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeMonthly: parseFloat(v) }))} placeholder="3.00" />
+                                 <SettingInput label="Monthly Listing Fee ($)" type="number" value={economyForm.listingFeeMonthly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeMonthly: parseFloat(v) }))} placeholder="3.00" />
                               </div>
                               <Button onClick={syncEconomySettings} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-amber-500 hover:bg-amber-600">Update Economy</Button>
                            </div>
@@ -1491,7 +1494,7 @@ export default function AdminPage() {
                     }} 
                     className={cn(
                       "w-full h-18 rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3",
-                      selectedUser?.banned ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"
+                      selectedUser?.banned ? "bg-green-600 hover:bg-green-700" : "bg-red-50 hover:bg-red-600"
                     )}
                  >
                     {selectedUser?.banned ? (
@@ -1826,15 +1829,17 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 </Select>
              </div>
 
-             <div className="space-y-3">
-                <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Reason for User</label>
-                <Textarea 
-                  value={reason} 
-                  onChange={e => setReason(e.target.value)} 
-                  placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
-                  className="rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
-                />
-             </div>
+             {status === 'cancelled' && (
+               <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Reason for User</label>
+                  <Textarea 
+                    value={reason} 
+                    onChange={(e) => setReason(e.target.value)} 
+                    placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
+                    className="rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
+                  />
+               </div>
+             )}
 
              <Button 
                 onClick={onUpdate} 
