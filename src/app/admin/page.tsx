@@ -55,7 +55,12 @@ import {
   ScrollText,
   Calendar as CalendarIcon,
   Mail,
-  Send
+  Send,
+  Filter,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +109,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 import Image from "next/image";
@@ -132,7 +143,7 @@ function CountdownDisplay({ expiresAt, status }: { expiresAt?: number, status: s
       if (diff <= 0) setTimeLeft("EXPIRED");
       else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         setTimeLeft(`${d}d ${h}h ${m}m`);
       }
@@ -226,6 +237,7 @@ export default function AdminPage() {
   const [isUserManageOpen, setIsUserManageOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
+  const [isOrderUpdateOpen, setIsOrderUpdateOpen] = useState(false);
 
   const [editingGame, setEditingGame] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -448,10 +460,11 @@ export default function AdminPage() {
     setIsPaymentMethodDialogOpen(true);
   };
 
-  const handleOpenOrderPage = (order: any) => {
+  const handleOpenOrderUpdate = (order: any) => {
     setSelectedOrderId(order.id);
     setPendingStatus(order.status);
     setCancellationReason(order.cancellationReason || "");
+    setIsOrderUpdateOpen(true);
   };
 
   const confirmDelete = (id: string, type: 'user' | 'game' | 'product' | 'event' | 'banner' | 'account' | 'order' | 'payment') => {
@@ -613,16 +626,17 @@ export default function AdminPage() {
       await updateOrderStatus(selectedOrderId, pendingOrderStatus, pendingOrderStatus === 'cancelled' ? cancellationReason : undefined);
       toast({ title: `Order set to ${pendingOrderStatus}` });
       setSelectedOrderId(null);
+      setIsOrderUpdateOpen(false);
     } finally {
       setIsSavingStatus(false);
     }
   };
 
   const handleAccountStatusSave = async () => {
-    if (!selectedAccount || !pendingAccountStatus) return;
+    if (!selectedAccountId || !pendingAccountStatus) return;
     setIsSavingStatus(true);
     try {
-      await updateAccountPostStatus(selectedAccount.id, pendingAccountStatus, pendingAccountStatus === 'sold' ? assignBuyerId : undefined);
+      await updateAccountPostStatus(selectedAccountId, pendingAccountStatus, pendingAccountStatus === 'sold' ? assignBuyerId : undefined);
       toast({ title: `Listing set to ${pendingAccountStatus}` });
       setSelectedAccountId(null);
     } finally {
@@ -631,12 +645,12 @@ export default function AdminPage() {
   };
 
   const handleForceSold = async (buyerId: string, buyerName: string) => {
-    if (!selectedAccount) return;
+    if (!selectedAccountId) return;
     setPendingAccountStatus('sold');
     setAssignBuyerId(buyerId);
     setIsSavingStatus(true);
     try {
-      await updateAccountPostStatus(selectedAccount.id, 'sold', buyerId);
+      await updateAccountPostStatus(selectedAccountId, 'sold', buyerId);
       toast({ title: `Successfully sold to ${buyerName}` });
       setSelectedAccountId(null);
     } catch (e) {
@@ -833,6 +847,374 @@ export default function AdminPage() {
             <div className="space-y-6 sm:space-y-10">
               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"><StatCard label="Revenue" value={`$${metrics.revenue.toFixed(2)}`} icon={DollarSign} color="blue" /><StatCard label="Pending Items" value={metrics.pendingCount.toString()} icon={ShoppingBag} color="amber" badge={metrics.pendingCount > 0} /><StatCard label="Users" value={metrics.users.toString()} icon={Users} color="emerald" /><StatCard label="Inventory" value={metrics.inventory.toString()} icon={Package} color="indigo" /></div>
               <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 md:p-10 border-none shadow-xl bg-white dark:bg-slate-900 h-[300px] sm:h-[400px]"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.1} /><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10}} /><YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 10}} /><Tooltip contentStyle={{backgroundColor: '#1E293B', border: 'none', borderRadius: '12px', color: '#fff'}} itemStyle={{color: '#0EA5E9'}} /><Area type="monotone" dataKey="value" stroke="#0EA5E9" fillOpacity={0.1} fill="#0EA5E9" strokeWidth={4} /></AreaChart></ResponsiveContainer></Card>
+            </div>
+          )}
+
+          {activeView === 'orders' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <div className="flex items-center gap-3">
+                    <ShoppingBag className="text-primary w-6 h-6" />
+                    <h3 className="text-xl font-headline font-bold">Process Orders</h3>
+                 </div>
+                 <div className="flex gap-2 w-full sm:w-auto">
+                    <Select value={orderStatusFilter} onValueChange={setOrderStatusFilter}>
+                       <SelectTrigger className="w-full sm:w-[150px] rounded-xl dark:bg-slate-900">
+                          <SelectValue placeholder="All Status" />
+                       </SelectTrigger>
+                       <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="successful">Successful</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                       </SelectContent>
+                    </Select>
+                 </div>
+              </div>
+
+              <Card className="rounded-2xl border-none shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                 <div className="overflow-x-auto">
+                    <Table>
+                       <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                          <TableRow>
+                             <TableHead>Order ID</TableHead>
+                             <TableHead>Customer</TableHead>
+                             <TableHead>Item</TableHead>
+                             <TableHead>Total</TableHead>
+                             <TableHead>Status</TableHead>
+                             <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                          {filteredOrders.length === 0 ? (
+                            <TableRow><TableCell colSpan={6} className="text-center py-20 opacity-30 italic">No orders found matching criteria.</TableCell></TableRow>
+                          ) : (
+                            filteredOrders.map(o => (
+                              <TableRow key={o.id}>
+                                 <TableCell className="font-mono font-bold text-xs uppercase text-primary">{o.id}</TableCell>
+                                 <TableCell>
+                                    <div className="flex flex-col">
+                                       <span className="font-bold text-sm">{o.gameDetails?.playerName || "Guest"}</span>
+                                       <span className="text-[10px] text-muted-foreground">{o.gameDetails?.whatsappNumber || "N/A"}</span>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell className="text-xs font-bold">{o.items?.[0]?.title || "N/A"}</TableCell>
+                                 <TableCell className="font-black text-primary">${o.total.toFixed(2)}</TableCell>
+                                 <TableCell>
+                                    <Badge className={cn("border-none text-[10px] uppercase font-black", getStatusBadge(o.status))}>
+                                       {o.status}
+                                    </Badge>
+                                 </TableCell>
+                                 <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                       <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => handleOpenOrderUpdate(o)}><Edit size={14}/></Button>
+                                       <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => confirmDelete(o.id, 'order')}><Trash2 size={14}/></Button>
+                                    </div>
+                                 </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                       </TableBody>
+                    </Table>
+                 </div>
+              </Card>
+            </div>
+          )}
+
+          {activeView === 'inventory' && (
+            <div className="space-y-10">
+               <Tabs defaultValue="games" className="w-full">
+                  <TabsList className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6">
+                     <TabsTrigger value="games" className="rounded-lg font-bold">Game Collections</TabsTrigger>
+                     <TabsTrigger value="products" className="rounded-lg font-bold">Products / Packages</TabsTrigger>
+                     <TabsTrigger value="banners" className="rounded-lg font-bold">Promo Banners</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="games">
+                     <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-headline font-bold">Games</h3>
+                        <Button onClick={() => handleOpenGameDialog()} className="rounded-xl gap-2">+ Add Game</Button>
+                     </div>
+                     <Card className="rounded-2xl border-none shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                        <Table>
+                           <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                              <TableRow>
+                                 <TableHead>Icon</TableHead>
+                                 <TableHead>Title</TableHead>
+                                 <TableHead>Category</TableHead>
+                                 <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                              {games.map(g => (
+                                <TableRow key={g.id}>
+                                   <TableCell>
+                                      <div className="w-10 h-10 rounded-lg overflow-hidden relative border dark:border-white/10">
+                                         {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-2 opacity-20" />}
+                                      </div>
+                                   </TableCell>
+                                   <TableCell className="font-bold text-sm">{g.title}</TableCell>
+                                   <TableCell><Badge variant="outline" className="text-[10px] uppercase">{g.category}</Badge></TableCell>
+                                   <TableCell className="text-right">
+                                      <div className="flex justify-end gap-1">
+                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500" onClick={() => handleOpenGameDialog(g)}><Edit size={14}/></Button>
+                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => confirmDelete(g.id, 'game')}><Trash2 size={14}/></Button>
+                                      </div>
+                                   </TableCell>
+                                </TableRow>
+                              ))}
+                           </TableBody>
+                        </Table>
+                     </Card>
+                  </TabsContent>
+
+                  <TabsContent value="products">
+                     <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-headline font-bold">Products</h3>
+                        <Button onClick={() => handleOpenProductDialog()} className="rounded-xl gap-2">+ New Package</Button>
+                     </div>
+                     <Card className="rounded-2xl border-none shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                        <Table>
+                           <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                              <TableRow>
+                                 <TableHead>Item</TableHead>
+                                 <TableHead>Game</TableHead>
+                                 <TableHead>Price</TableHead>
+                                 <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                              {products.map(p => (
+                                <TableRow key={p.id}>
+                                   <TableCell>
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-10 h-10 rounded-lg overflow-hidden relative shrink-0 border">
+                                            {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" /> : <Package className="m-auto mt-2 opacity-20" />}
+                                         </div>
+                                         <span className="font-bold text-sm truncate max-w-[150px]">{p.title}</span>
+                                      </div>
+                                   </TableCell>
+                                   <TableCell className="text-xs font-bold opacity-60">
+                                      {games.find(g => g.id === p.gameId)?.title || "Unknown"}
+                                   </TableCell>
+                                   <TableCell>
+                                      <div className="flex flex-col">
+                                         <span className="font-bold text-primary">${p.price}</span>
+                                         {p.discountedPrice && <span className="text-[10px] text-muted-foreground line-through">${p.discountedPrice}</span>}
+                                      </div>
+                                   </TableCell>
+                                   <TableCell className="text-right">
+                                      <div className="flex justify-end gap-1">
+                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500" onClick={() => handleOpenProductDialog(p)}><Edit size={14}/></Button>
+                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => confirmDelete(p.id, 'product')}><Trash2 size={14}/></Button>
+                                      </div>
+                                   </TableCell>
+                                </TableRow>
+                              ))}
+                           </TableBody>
+                        </Table>
+                     </Card>
+                  </TabsContent>
+
+                  <TabsContent value="banners">
+                     <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-headline font-bold">Homepage Banners</h3>
+                        <Button onClick={() => setIsBannerDialogOpen(true)} className="rounded-xl gap-2">+ Add Banner</Button>
+                     </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {banners.map(b => (
+                          <Card key={b.id} className="group relative aspect-video rounded-2xl overflow-hidden border-none shadow-lg">
+                             <Image src={b.imageUrl} alt="" fill className="object-cover" />
+                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <Button size="icon" variant="destructive" className="rounded-full" onClick={() => confirmDelete(b.id, 'banner')}><Trash2 size={18}/></Button>
+                             </div>
+                          </Card>
+                        ))}
+                     </div>
+                  </TabsContent>
+               </Tabs>
+            </div>
+          )}
+
+          {activeView === 'account-posts' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <div className="flex items-center gap-3">
+                    <ShieldCheck className="text-primary w-6 h-6" />
+                    <h3 className="text-xl font-headline font-bold">Marketplace Listings</h3>
+                 </div>
+                 <div className="flex gap-2 w-full sm:w-auto">
+                    <Input placeholder="Search listings..." className="rounded-xl" value={accountSearchQuery} onChange={(e) => setAccountSearchQuery(e.target.value)} />
+                    <Select value={accountStatusFilter} onValueChange={setAccountStatusFilter}>
+                       <SelectTrigger className="w-[180px] rounded-xl">
+                          <SelectValue placeholder="All Status" />
+                       </SelectTrigger>
+                       <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="holding">Holding</SelectItem>
+                          <SelectItem value="sold">Sold</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                       </SelectContent>
+                    </Select>
+                 </div>
+              </div>
+
+              <Card className="rounded-2xl border-none shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                 <div className="overflow-x-auto">
+                    <Table>
+                       <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                          <TableRow>
+                             <TableHead>Listing</TableHead>
+                             <TableHead>Seller</TableHead>
+                             <TableHead>Price</TableHead>
+                             <TableHead>Status</TableHead>
+                             <TableHead>Expires</TableHead>
+                             <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                          {sortedAndFilteredAccounts.map(p => (
+                            <TableRow key={p.id}>
+                               <TableCell>
+                                  <div className="flex items-center gap-3">
+                                     <div className="w-10 h-10 rounded-lg overflow-hidden relative border shrink-0">
+                                        {p.thumbnailUrl ? <Image src={p.thumbnailUrl} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-2 opacity-20" />}
+                                     </div>
+                                     <div className="flex flex-col">
+                                        <span className="text-xs font-bold uppercase">{p.gameType}</span>
+                                        <span className="text-[10px] text-muted-foreground uppercase font-mono">{p.id}</span>
+                                     </div>
+                                  </div>
+                               </TableCell>
+                               <TableCell>
+                                  <div className="flex flex-col">
+                                     <span className="font-bold text-sm truncate max-w-[100px]">{p.authorName}</span>
+                                     <span className="text-[10px] opacity-60">{p.phone}</span>
+                                  </div>
+                               </TableCell>
+                               <TableCell className="font-black text-primary">${p.price}</TableCell>
+                               <TableCell>
+                                  <Badge className={cn("text-[8px] uppercase border-none", getStatusBadge(p.status))}>{p.status}</Badge>
+                               </TableCell>
+                               <TableCell><CountdownDisplay expiresAt={p.expiresAt} status={p.status} /></TableCell>
+                               <TableCell className="text-right">
+                                  <div className="flex justify-end gap-1">
+                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => handleOpenAccountPage(p.id)}><Eye size={14}/></Button>
+                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-amber-500" onClick={() => { setSelectedAccountId(p.id); setIsEnforceDialogOpen(true); }}><ShieldAlert size={14}/></Button>
+                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => confirmDelete(p.id, 'account')}><Trash2 size={14}/></Button>
+                                  </div>
+                               </TableCell>
+                            </TableRow>
+                          ))}
+                       </TableBody>
+                    </Table>
+                 </div>
+              </Card>
+            </div>
+          )}
+
+          {activeView === 'events' && (
+             <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                   <div className="flex items-center gap-3">
+                      <Megaphone className="text-primary w-6 h-6" />
+                      <h3 className="text-xl font-headline font-bold">Active Promotions</h3>
+                   </div>
+                   <Button onClick={() => handleOpenEventDialog()} className="rounded-xl gap-2">+ Create Event</Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {events.map(ev => (
+                     <Card key={ev.id} className="rounded-2xl border-none shadow-xl overflow-hidden bg-white dark:bg-slate-900 group">
+                        <div className="aspect-video relative overflow-hidden">
+                           {ev.thumbnailUrl ? <Image src={ev.thumbnailUrl} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">No Image</div>}
+                           <div className="absolute top-2 right-2 flex gap-1">
+                              <Button size="icon" className="h-8 w-8 bg-white/20 backdrop-blur-md text-white hover:bg-white/40" onClick={() => handleOpenEventDialog(ev)}><Edit size={14}/></Button>
+                              <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => confirmDelete(ev.id, 'event')}><Trash2 size={14}/></Button>
+                           </div>
+                           {!ev.active && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><Badge variant="destructive" className="uppercase text-xs font-black">Deactivated</Badge></div>}
+                        </div>
+                        <div className="p-4 space-y-2">
+                           <h4 className="font-bold text-sm line-clamp-1">{ev.title}</h4>
+                           <p className="text-[10px] text-muted-foreground line-clamp-2">{ev.shortDescription}</p>
+                           {ev.expiresAt && (
+                             <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500 pt-2 border-t dark:border-white/5">
+                                <Clock size={12} /> Ends: {format(new Date(ev.expiresAt), 'MMM d, h:mm a')}
+                             </div>
+                           )}
+                        </div>
+                     </Card>
+                   ))}
+                </div>
+             </div>
+          )}
+
+          {activeView === 'users' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <div className="flex items-center gap-3">
+                    <Users className="text-primary w-6 h-6" />
+                    <h3 className="text-xl font-headline font-bold">User Directory</h3>
+                 </div>
+                 <div className="relative w-full sm:w-[300px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input placeholder="Search name, email, or ID..." className="pl-10 rounded-xl" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} />
+                 </div>
+              </div>
+
+              <Card className="rounded-2xl border-none shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                 <div className="overflow-x-auto">
+                    <Table>
+                       <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                          <TableRow>
+                             <TableHead>Profile</TableHead>
+                             <TableHead>Contact</TableHead>
+                             <TableHead>Points</TableHead>
+                             <TableHead>Role</TableHead>
+                             <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                          {filteredUsers.length === 0 ? (
+                            <TableRow><TableCell colSpan={5} className="text-center py-20 opacity-30 italic">No users found matching search.</TableCell></TableRow>
+                          ) : (
+                            filteredUsers.map(u => (
+                              <TableRow key={u.uid}>
+                                 <TableCell>
+                                    <div className="flex items-center gap-3">
+                                       <div className="w-10 h-10 rounded-full overflow-hidden relative shrink-0 border dark:border-white/10">
+                                          {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300 font-black">O</div>}
+                                       </div>
+                                       <div className="flex flex-col">
+                                          <span className="font-bold text-sm truncate max-w-[120px]">{u.name || "Gamer"}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase font-mono">{u.uid.substring(0,8)}</span>
+                                       </div>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell>
+                                    <div className="flex flex-col">
+                                       <span className="text-xs font-medium truncate max-w-[150px]">{u.email}</span>
+                                       <span className="text-[10px] text-primary font-bold">{u.phoneNumber || "No Phone"}</span>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell className="font-black text-amber-500">{u.points || 0}</TableCell>
+                                 <TableCell><Badge variant="outline" className="text-[9px] uppercase font-black">{u.role}</Badge></TableCell>
+                                 <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                       <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }}><Edit size={14}/></Button>
+                                       <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => confirmDelete(u.uid, 'user')}><Trash2 size={14}/></Button>
+                                    </div>
+                                 </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                       </TableBody>
+                    </Table>
+                 </div>
+              </Card>
             </div>
           )}
 
@@ -1520,6 +1902,48 @@ export default function AdminPage() {
               <Button type="submit" disabled={isUploading} className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Save Payment Method"}</Button>
            </form>
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={isOrderUpdateOpen} onOpenChange={setIsOrderUpdateOpen}>
+         <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 border-none shadow-2xl bg-white dark:bg-slate-900">
+            <DialogHeader>
+               <DialogTitle>Update Order Status</DialogTitle>
+               <DialogDescription>Change the status for Order #{selectedOrderId?.toUpperCase()}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-4">
+               <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={pendingOrderStatus} onValueChange={setPendingStatus}>
+                     <SelectTrigger className="rounded-xl border-none bg-slate-50 dark:bg-slate-800">
+                        <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="successful">Successful</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
+               {pendingOrderStatus === 'cancelled' && (
+                 <div className="space-y-2 animate-in slide-in-from-top-2">
+                    <Label>Cancellation Reason</Label>
+                    <Textarea 
+                      placeholder="e.g. Payment not received" 
+                      value={cancellationReason}
+                      onChange={e => setCancellationReason(e.target.value)}
+                      className="rounded-xl border-none bg-slate-50 dark:bg-slate-800"
+                    />
+                 </div>
+               )}
+            </div>
+            <DialogFooter>
+               <Button variant="ghost" onClick={() => setIsOrderUpdateOpen(false)}>Cancel</Button>
+               <Button onClick={handleStatusSave} disabled={isSavingStatus}>
+                  {isSavingStatus ? <Loader2 className="animate-spin" /> : "Apply Status"}
+               </Button>
+            </DialogFooter>
+         </DialogContent>
       </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
