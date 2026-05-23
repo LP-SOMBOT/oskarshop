@@ -61,6 +61,7 @@ import {
   CheckCircle2,
   XCircle,
   History,
+  LayoutGrid,
   Target as TargetIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -436,7 +437,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-Target-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
+      <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
         <SidebarContent />
       </aside>
 
@@ -456,7 +457,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
-               {selectedOrderId ? "Order Details" : selectedAccountId ? "Account Details" : activeView.replace('-', ' ')}
+               {selectedOrderId ? "Order Details" : selectedAccountId ? "Account Details" : activeView.toUpperCase().replace('-', ' ')}
              </h2>
           </div>
           <div className="flex items-center gap-4">
@@ -542,57 +543,76 @@ export default function AdminPage() {
                    isSaving={isSavingStatus}
                  />
                ) : (
-                 <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                       <h3 className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Active Orders</h3>
-                       <div className="flex items-center gap-3 w-full sm:w-auto">
-                          <Input placeholder="Search orders..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="h-12 rounded-xl dark:bg-slate-900 border-none shadow-sm" />
-                          <Select value={orderFilter} onValueChange={setOrderFilter}>
-                             <SelectTrigger className="w-[140px] h-12 rounded-xl dark:bg-slate-900 border-none">
-                                <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent className="rounded-xl border-none shadow-2xl">
-                                <SelectItem value="all" className="p-3 font-bold text-xs uppercase">All Status</SelectItem>
-                                <SelectItem value="pending" className="p-3 font-bold text-xs uppercase">Pending</SelectItem>
-                                <SelectItem value="processing" className="p-3 font-bold text-xs uppercase">Processing</SelectItem>
-                                <SelectItem value="successful" className="p-3 font-bold text-xs uppercase">Success</SelectItem>
-                                <SelectItem value="cancelled" className="p-3 font-bold text-xs uppercase">Cancelled</SelectItem>
-                             </SelectContent>
-                          </Select>
+                 <div className="space-y-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                       <div className="relative flex-1 max-w-xl">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <Input placeholder="Search ID or Player..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="h-12 rounded-xl bg-white dark:bg-slate-900 border-none shadow-sm pl-12 font-bold" />
+                       </div>
+                       <div className="flex flex-wrap gap-2">
+                          {['all', 'pending', 'processing', 'successful', 'cancelled'].map((f) => (
+                            <button
+                              key={f}
+                              onClick={() => setOrderFilter(f)}
+                              className={cn(
+                                "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                                orderFilter === f 
+                                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                                  : "bg-white dark:bg-slate-900 text-slate-400 hover:bg-slate-50"
+                              )}
+                            >
+                              {f}
+                            </button>
+                          ))}
                        </div>
                     </div>
-                    <Card className="rounded-2xl md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                    <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
-                          <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
-                             <TableRow className="border-none">
-                                <TableHead className="px-6 font-bold uppercase text-[10px] tracking-widest text-slate-400">Order ID</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Customer</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Package</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Total</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Status</TableHead>
-                                <TableHead className="text-right px-6 font-bold uppercase text-[10px] tracking-widest text-slate-400">Actions</TableHead>
+                          <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
+                             <TableRow className="border-none h-16">
+                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Reference</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Player & Item</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Status</TableHead>
+                                <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                              </TableRow>
                           </TableHeader>
                           <TableBody>
                              {filteredOrders.length === 0 ? (
-                               <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic">No matching orders found.</TableCell></TableRow>
+                               <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found matching criteria.</TableCell></TableRow>
                              ) : (
                                filteredOrders.map(o => (
-                                 <TableRow key={o.id} className="border-slate-50 dark:border-white/5 hover:bg-slate-50/50 transition-colors">
-                                    <TableCell className="px-6 font-mono font-bold text-xs text-primary">{o.id.toUpperCase()}</TableCell>
+                                 <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
+                                    <TableCell className="px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
                                     <TableCell>
                                        <div className="flex flex-col">
-                                          <span className="font-bold text-sm">{o.gameDetails?.playerName || "Gamer"}</span>
-                                          <span className="text-[10px] opacity-40 uppercase font-black">{o.gameDetails?.whatsappNumber || "No Phone"}</span>
+                                          <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || "Guest"}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{o.items?.[0]?.title || "Unknown Item"}</span>
                                        </div>
                                     </TableCell>
-                                    <TableCell className="font-bold text-xs text-slate-500">{o.items?.[0]?.title || "N/A"}</TableCell>
-                                    <TableCell className="font-black text-primary">${o.total.toFixed(2)}</TableCell>
+                                    <TableCell>
+                                       <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
+                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
+                                          </div>
+                                          <span className="text-xs font-bold text-slate-500">{o.processedBy?.name || <span className="opacity-30 italic">Unassigned</span>}</span>
+                                       </div>
+                                    </TableCell>
                                     <TableCell><StatusBadge status={o.status} /></TableCell>
-                                    <TableCell className="text-right px-6">
-                                       <div className="flex justify-end gap-2">
-                                          <Button size="icon" variant="ghost" className="h-10 w-10 text-primary rounded-xl" onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}><Edit size={16}/></Button>
-                                          <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 rounded-xl" onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}><Trash2 size={16}/></Button>
+                                    <TableCell className="text-right px-10">
+                                       <div className="flex justify-end items-center gap-3">
+                                          <button 
+                                            onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                            className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
+                                          >
+                                            <Eye size={18} />
+                                          </button>
+                                          <button 
+                                            onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                            className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
+                                          >
+                                            <Trash2 size={18} />
+                                          </button>
                                        </div>
                                     </TableCell>
                                  </TableRow>
@@ -677,7 +697,12 @@ export default function AdminPage() {
                                     <TableCell><CountdownDisplay expiresAt={p.expiresAt} status={p.status} /></TableCell>
                                     <TableCell className="text-right px-6">
                                        <div className="flex justify-end gap-2">
-                                          <Button size="icon" variant="ghost" className="h-10 w-10 text-primary rounded-xl" onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}><Eye size={16}/></Button>
+                                          <button 
+                                            onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
+                                            className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
+                                          >
+                                            <Eye size={18} />
+                                          </button>
                                           <Button size="icon" variant="ghost" className="h-10 w-10 text-amber-500 rounded-xl" onClick={() => { setSelectedAccountId(p.id); setIsEnforceDialogOpen(true); }}><ShieldAlert size={16}/></Button>
                                           <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 rounded-xl" onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}><Trash2 size={16}/></Button>
                                        </div>
