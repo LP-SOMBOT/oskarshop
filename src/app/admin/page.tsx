@@ -141,7 +141,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
 
 /**
  * High-Fidelity Marketplace Countdown
@@ -263,15 +263,6 @@ export default function AdminPage() {
   // Expansion States
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
-  // Search States
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [orderSearchQuery, setOrderSearchQuery] = useState("");
-  const [accountSearchQuery, setAccountSearchQuery] = useState("");
-
-  // Filter States
-  const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'processing' | 'successful' | 'cancelled'>('all');
-  const [accountFilter, setAccountFilter] = useState<'all' | 'pending' | 'approved' | 'holding' | 'sold'>('all');
-
   // Dialog States
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -337,32 +328,29 @@ export default function AdminPage() {
     }
   }, [storeSettings]);
 
-  // Data Filtering
-  const filteredOrders = useMemo(() => {
-    return allOrders.filter(o => {
-      const matchSearch = o.id.toLowerCase().includes(orderSearchQuery.toLowerCase()) || 
-                          o.gameDetails?.playerName?.toLowerCase().includes(orderSearchQuery.toLowerCase());
-      const matchFilter = orderFilter === 'all' || o.status === orderFilter;
-      return matchSearch && matchFilter;
+  // Live Performance Chart Data
+  const chartData = useMemo(() => {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = subDays(new Date(), 6 - i);
+      return {
+        date: d,
+        label: format(d, 'EEE'),
+        v: 0
+      };
     });
-  }, [allOrders, orderSearchQuery, orderFilter]);
 
-  const filteredAccounts = useMemo(() => {
-    return accountPosts.filter(p => {
-      const matchSearch = p.authorName?.toLowerCase().includes(accountSearchQuery.toLowerCase()) || 
-                          p.gameType?.toLowerCase().includes(accountSearchQuery.toLowerCase());
-      const matchFilter = accountFilter === 'all' || p.status === accountFilter;
-      return matchSearch && matchFilter;
-    }).sort((a,b) => b.createdAt - a.createdAt);
-  }, [accountPosts, accountSearchQuery, accountFilter]);
+    allOrders
+      .filter(o => o.status === 'successful')
+      .forEach(order => {
+        const orderDate = new Date(order.createdAt);
+        const dayMatch = last7Days.find(d => isSameDay(d.date, orderDate));
+        if (dayMatch) {
+          dayMatch.v += order.total;
+        }
+      });
 
-  const filteredUsers = useMemo(() => {
-    return allUsers.filter(u => 
-      u.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      u.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      u.uid?.toLowerCase().includes(userSearchQuery.toLowerCase())
-    );
-  }, [allUsers, userSearchQuery]);
+    return last7Days.map(d => ({ day: d.label, v: d.v }));
+  }, [allOrders]);
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
@@ -628,7 +616,7 @@ export default function AdminPage() {
                </div>
                <Card className="rounded-[2.5rem] p-6 sm:p-10 border-none shadow-xl bg-white dark:bg-slate-900 h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                     <AreaChart data={[{day:'Mon',v:20},{day:'Tue',v:45},{day:'Wed',v:35},{day:'Thu',v:80},{day:'Fri',v:65},{day:'Sat',v:100},{day:'Sun',v:85}]}>
+                     <AreaChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
                         <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize:10, fontWeight:'bold'}} />
                         <YAxis hide />
@@ -657,22 +645,6 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-8">
-                    {/* Pills Filters - Restored */}
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2">
-                       {['all', 'pending', 'processing', 'successful', 'cancelled'].map(f => (
-                          <button 
-                            key={f} 
-                            onClick={() => setOrderFilter(f as any)}
-                            className={cn(
-                              "px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all",
-                              orderFilter === f ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-white dark:bg-slate-900 text-slate-400 border border-gray-50 dark:border-white/5 hover:text-primary"
-                            )}
-                          >
-                             {f}
-                          </button>
-                       ))}
-                    </div>
-
                     <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -685,10 +657,10 @@ export default function AdminPage() {
                              </TableRow>
                           </TableHeader>
                           <TableBody>
-                             {filteredOrders.length === 0 ? (
+                             {allOrders.length === 0 ? (
                                <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
                              ) : (
-                               filteredOrders.map(o => (
+                               allOrders.map(o => (
                                  <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
                                     <TableCell className="px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
                                     <TableCell>
@@ -702,7 +674,9 @@ export default function AdminPage() {
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
                                              {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
                                           </div>
-                                          <span className="text-xs font-bold text-slate-500">{o.processedBy?.name || <span className="opacity-30 italic">Unassigned</span>}</span>
+                                          <span className={cn("text-xs font-bold", o.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
+                                            {o.processedBy?.name || "Unassigned"}
+                                          </span>
                                        </div>
                                     </TableCell>
                                     <TableCell><StatusBadge status={o.status} /></TableCell>
@@ -756,7 +730,7 @@ export default function AdminPage() {
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
-                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller</TableHead>
+                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller Info</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Game Info</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Active Claims</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
@@ -767,10 +741,10 @@ export default function AdminPage() {
                              </TableRow>
                           </TableHeader>
                           <TableBody>
-                             {filteredAccounts.length === 0 ? (
+                             {accountPosts.length === 0 ? (
                                <TableRow><TableCell colSpan={8} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
-                               filteredAccounts.map(p => (
+                               accountPosts.map(p => (
                                  <TableRow 
                                     key={p.id} 
                                     className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/50 transition-colors"
@@ -778,7 +752,7 @@ export default function AdminPage() {
                                     <TableCell className="px-10">
                                        <div className="flex items-center gap-3">
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
-                                             {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200">U</div>}
+                                             {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                           </div>
                                           <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
                                        </div>
@@ -802,7 +776,9 @@ export default function AdminPage() {
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
                                              {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
-                                          <span className="text-xs font-bold text-slate-500 truncate max-w-[100px]">{p.processedBy?.name || "Oskarshopad..."}</span>
+                                          <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
+                                            {p.processedBy?.name || "Unassigned"}
+                                          </span>
                                        </div>
                                     </TableCell>
                                     <TableCell><WaitTime post={p} /></TableCell>
@@ -1034,15 +1010,6 @@ export default function AdminPage() {
                      <h1 className="text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Community Control</h1>
                      <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs lg:text-sm">Search users, update roles, and manage reward points.</p>
                   </div>
-                  <div className="relative w-full md:w-96 lg:w-[500px]">
-                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                     <Input 
-                        placeholder="Search name, email, or UID..." 
-                        className="pl-12 h-14 lg:h-16 rounded-xl lg:rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold text-sm md:text-lg"
-                        value={userSearchQuery}
-                        onChange={(e) => setUserSearchQuery(e.target.value)}
-                     />
-                  </div>
                </div>
 
                <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden overflow-x-auto scrollbar-hide">
@@ -1058,10 +1025,10 @@ export default function AdminPage() {
                         </TableRow>
                      </TableHeader>
                      <TableBody>
-                        {filteredUsers.length === 0 ? (
+                        {allUsers.length === 0 ? (
                           <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
                         ) : (
-                          filteredUsers.map(u => {
+                          allUsers.map(u => {
                             const isOnline = u.lastActive && (Date.now() - u.lastActive) < 300000;
                             return (
                               <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
