@@ -4,7 +4,7 @@ import * as React from "react"
 
 /**
  * High-Fidelity Toast State Manager
- * Handles the creation, lifecycle, and auto-dismissal of notifications.
+ * Handles the creation, de-duplication, and automatic lifecycle of notifications.
  */
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -28,27 +28,42 @@ const TOAST_DURATION = 3000;
 let count = 0;
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER;
-  return count.toString();
+  return `toast-${count}-${Date.now()}`;
 }
 
 const listeners: Array<(state: Toast[]) => void> = [];
 let memoryState: Toast[] = [];
 
+/**
+ * Global Dispatcher
+ * Controls the internal state of all active toasts.
+ */
 function dispatch(action: ToastAction) {
   switch (action.type) {
     case 'ADD_TOAST':
+      // ANTI-DUPLICATION: Check if exactly the same toast is already active
+      const isDuplicate = memoryState.some(
+        (t) => t.title === action.toast.title && t.description === action.toast.description && t.open
+      );
+      
+      if (isDuplicate) return;
+
       memoryState = [action.toast, ...memoryState].slice(0, TOAST_LIMIT);
       break;
+      
     case 'DISMISS_TOAST':
       memoryState = memoryState.map((t) =>
         t.id === action.id ? { ...t, open: false } : t
       );
       break;
+      
     case 'REMOVE_TOAST':
       memoryState = memoryState.filter((t) => t.id !== action.id);
       break;
   }
-  listeners.forEach((listener) => listener(memoryState));
+  
+  // Notify all subscribed useToast hooks
+  listeners.forEach((listener) => listener([...memoryState]));
 }
 
 interface ToastOptions {
@@ -57,10 +72,14 @@ interface ToastOptions {
   variant?: 'default' | 'destructive' | 'warning' | 'success';
 }
 
+/**
+ * Primary Toast Trigger
+ * Can be called from anywhere (even outside React components).
+ */
 export function toast({ title, description, variant = 'default' }: ToastOptions) {
   const id = genId();
 
-  // Map shadcn variants to our semantic types
+  // Map semantic types
   let type: ToastType = 'success';
   if (variant === 'destructive') type = 'error';
   else if (variant === 'warning') type = 'warning';
@@ -76,20 +95,32 @@ export function toast({ title, description, variant = 'default' }: ToastOptions)
 
   dispatch({ type: 'ADD_TOAST', toast: newToast });
 
-  // Auto dismiss logic
-  setTimeout(() => {
+  // Auto-dismiss logic
+  const dismissTimer = setTimeout(() => {
     dispatch({ type: 'DISMISS_TOAST', id });
+    
+    // Physical removal from DOM after animation completes
     setTimeout(() => {
       dispatch({ type: 'REMOVE_TOAST', id });
-    }, 400); // Wait for exit animation
+    }, 500); 
   }, TOAST_DURATION);
 
   return {
     id,
-    dismiss: () => dispatch({ type: 'DISMISS_TOAST', id }),
+    dismiss: () => {
+      clearTimeout(dismissTimer);
+      dispatch({ type: 'DISMISS_TOAST', id });
+      setTimeout(() => {
+        dispatch({ type: 'REMOVE_TOAST', id });
+      }, 500);
+    },
   };
 }
 
+/**
+ * useToast Hook
+ * Connects React components to the global toast dispatcher.
+ */
 export function useToast() {
   const [state, setState] = React.useState<Toast[]>(memoryState);
 
@@ -99,7 +130,7 @@ export function useToast() {
       const index = listeners.indexOf(setState);
       if (index > -1) listeners.splice(index, 1);
     };
-  }, [state]);
+  }, []);
 
   return {
     toasts: state,
