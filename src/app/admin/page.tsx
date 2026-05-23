@@ -354,6 +354,26 @@ export default function AdminPage() {
     } finally { setIsUploading(false); }
   };
 
+  const handleSaveEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    try {
+      await saveEvent({ ...eventForm, id: editingEvent?.id });
+      setIsEventDialogOpen(false);
+      toast({ title: "Event Saved" });
+    } finally { setIsUploading(false); }
+  };
+
+  const handleSaveBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    try {
+      await saveBanner({ ...bannerForm });
+      setIsBannerDialogOpen(false);
+      toast({ title: "Banner Added" });
+    } finally { setIsUploading(false); }
+  };
+
   const handleStatusUpdate = async () => {
     if (!selectedOrderId || !pendingOrderStatus) return;
     setIsSavingStatus(true);
@@ -392,6 +412,8 @@ export default function AdminPage() {
       if (deleteTarget.type === 'game') await deleteGame(deleteTarget.id);
       if (deleteTarget.type === 'product') await deleteProduct(deleteTarget.id);
       if (deleteTarget.type === 'user') await deleteUserFn(deleteTarget.id);
+      if (deleteTarget.type === 'event') await deleteEvent(deleteTarget.id);
+      if (deleteTarget.type === 'banner') await deleteBanner(deleteTarget.id);
       toast({ title: "Deleted Successfully" });
       setIsDeleteDialogOpen(false);
     } finally { setDeleteTarget(null); }
@@ -434,7 +456,7 @@ export default function AdminPage() {
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={allOrders.filter(o => o.status === 'pending').length} />
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Megaphone} label="Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
+        <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} badge={allUsers.filter(u => u.role === 'admin').length} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
@@ -826,29 +848,82 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* Events & Banners View */}
           {activeView === 'events' && (
-            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-               <div className="flex justify-between items-center">
-                  <h3 className="text-2xl font-headline font-bold uppercase tracking-tight">Active Events</h3>
-                  <Button onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }} className="rounded-xl h-12 gap-2"><Plus size={18} /> New Event</Button>
+            <div className="space-y-12 animate-in fade-in duration-700">
+               {/* Header Controls */}
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                     <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Active Events</h3>
+                     <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Manage banners, time-limited sales, and community updates.</p>
+                  </div>
+                  <div className="flex gap-4">
+                     <Button 
+                       variant="outline"
+                       onClick={() => { setBannerForm({ imageUrl: "", linkTo: "" }); setIsBannerDialogOpen(true); }}
+                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95"
+                     >
+                        <Plus size={18} /> New Banner
+                     </Button>
+                     <Button 
+                       onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }}
+                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all"
+                     >
+                        <Megaphone size={18} /> Create Event
+                     </Button>
+                  </div>
                </div>
+
+               {/* Events Grid */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {events.map(e => (
-                    <Card key={e.id} className="rounded-[2rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900 group">
-                       <div className="aspect-video relative">
-                          <Image src={e.thumbnailUrl} alt="" fill className="object-cover" />
-                          <Badge className="absolute top-4 left-4 bg-primary text-white border-none">{e.type}</Badge>
+                    <Card key={e.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900 group">
+                       <div className="aspect-[16/10] relative">
+                          <Image src={e.thumbnailUrl} alt={e.title} fill className="object-cover" unoptimized />
+                          <div className="absolute top-4 left-4">
+                             <Badge className="bg-green-500 text-white border-none font-bold text-[8px] uppercase px-2 py-0.5">LIVE</Badge>
+                          </div>
+                          <div className="absolute top-4 right-4 flex gap-2">
+                             <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-blue-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                <Edit size={14} />
+                             </button>
+                             <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                <Trash2 size={14} />
+                             </button>
+                          </div>
                        </div>
-                       <div className="p-6 space-y-4">
-                          <h4 className="font-bold text-xl uppercase truncate">{e.title}</h4>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{e.shortDescription}</p>
-                          <div className="flex gap-2">
-                             <Button className="flex-1 rounded-xl h-11" variant="outline" onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }}>Edit</Button>
-                             <Button size="icon" className="w-11 h-11 rounded-xl text-red-500" variant="ghost" onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }}><Trash2 size={16}/></Button>
+                       <div className="p-6 md:p-8 space-y-4">
+                          <h4 className="font-headline font-bold text-xl uppercase truncate text-slate-900 dark:text-white">{e.title}</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.5rem]">{e.shortDescription}</p>
+                          <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest pt-2">
+                             <Clock size={14} />
+                             <span>ENDS {e.expiresAt ? format(new Date(e.expiresAt), "MMM d, HH:mm").toUpperCase() : "SOON"}</span>
                           </div>
                        </div>
                     </Card>
                   ))}
+               </div>
+
+               {/* Slider Banners Section */}
+               <div className="space-y-6 pt-12">
+                  <h4 className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.3em]">Slider Banners</h4>
+                  <div className="flex flex-wrap gap-4">
+                     {banners.map(b => (
+                        <div key={b.id} className="relative w-40 md:w-64 aspect-[3/1] rounded-2xl md:rounded-[1.5rem] overflow-hidden group shadow-lg">
+                           <Image src={b.imageUrl} alt="" fill className="object-cover" unoptimized />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
+                                 <Trash2 size={16} />
+                              </button>
+                           </div>
+                        </div>
+                     ))}
+                     {banners.length === 0 && (
+                        <div className="py-12 px-20 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[2rem] flex flex-col items-center gap-4 opacity-30 italic text-xs font-bold uppercase">
+                           No banners added
+                        </div>
+                     )}
+                  </div>
                </div>
             </div>
           )}
@@ -1079,6 +1154,72 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
+        <DialogContent className="max-w-xl w-[95%] rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+           <div className="h-2 bg-primary w-full" />
+           <DialogHeader className="p-10 pb-0">
+              <DialogTitle className="text-3xl font-headline font-bold uppercase tracking-tight">
+                {editingEvent ? 'Edit Event' : 'Create Live Event'}
+              </DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleSaveEvent} className="p-10 space-y-8">
+              <div className="relative w-full aspect-video rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+                 {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Event Poster</span></>}
+                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'event')} />
+              </div>
+              <SettingInput label="Event Title" value={eventForm.title} onChange={v => setEventForm({ ...eventForm, title: v })} placeholder="Hacker Store 2.0" />
+              <SettingInput label="Short Description" value={eventForm.shortDescription} onChange={v => setEventForm({ ...eventForm, shortDescription: v })} placeholder="New legendary bundles are here!" />
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Event Type</Label>
+                 <Select value={eventForm.type} onValueChange={v => setEventForm({ ...eventForm, type: v as any })}>
+                    <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                       <SelectItem value="freefire_event" className="p-3 font-bold text-xs uppercase">Free Fire Event</SelectItem>
+                       <SelectItem value="general" className="p-3 font-bold text-xs uppercase">General Promotion</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                 <SettingInput label="Duration (Value)" value={eventForm.duration} type="number" onChange={v => setEventForm({ ...eventForm, duration: v })} placeholder="7" />
+                 <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Unit</Label>
+                    <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
+                       <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                       <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                          <SelectItem value="days" className="p-3 font-bold text-xs uppercase">Days</SelectItem>
+                          <SelectItem value="hours" className="p-3 font-bold text-xs uppercase">Hours</SelectItem>
+                          <SelectItem value="minutes" className="p-3 font-bold text-xs uppercase">Minutes</SelectItem>
+                       </SelectContent>
+                    </Select>
+                 </div>
+              </div>
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Detailed Content</Label>
+                 <Textarea value={eventForm.content} onChange={e => setEventForm({ ...eventForm, content: e.target.value })} placeholder="Write full event details here..." className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-6 font-medium shadow-inner" />
+              </div>
+              <Button type="submit" disabled={isUploading} className="w-full h-20 rounded-[2.5rem] font-black text-xl shadow-2xl uppercase tracking-widest bg-primary text-white">
+                {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Publish Event"}
+              </Button>
+           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">New Promotion Banner</DialogTitle></DialogHeader>
+           <form onSubmit={handleSaveBanner} className="space-y-6 mt-6">
+              <div className="relative w-full aspect-[21/9] rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+                 {bannerForm.imageUrl ? <Image src={bannerForm.imageUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300" /><span className="text-[10px] font-black uppercase text-slate-400 mt-2">Upload Banner</span></>}
+                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'banner')} />
+              </div>
+              <SettingInput label="Link To (Optional)" value={bannerForm.linkTo || ""} onChange={v => setBannerForm({ ...bannerForm, linkTo: v })} placeholder="#games or #accounts" />
+              <Button type="submit" disabled={isUploading || !bannerForm.imageUrl} className="w-full h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest bg-primary text-white">
+                {isUploading ? <Loader2 className="animate-spin" /> : "Add Banner"}
+              </Button>
+           </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isEnforceDialogOpen} onOpenChange={setIsEnforceDialogOpen}>
         <DialogContent className="max-w-md w-[95%] rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <div className="bg-red-600 p-8 text-white">
@@ -1255,7 +1396,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 disabled={isSaving} 
                 className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
              >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SAVE LOGIC"}
+                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SYNC ORDER STATUS"}
              </Button>
 
              <div className="pt-8 space-y-6">
