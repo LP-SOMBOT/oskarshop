@@ -160,7 +160,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
         setTimeLeft({ d: 0, h: 0, m: 0 });
       } else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60));
         const m = Math.floor((diff % (1000 * 60)) / (1000 * 60));
         setTimeLeft({ d, h, m });
       }
@@ -1595,7 +1595,7 @@ export default function AdminPage() {
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
            {/* Modal Header Gradient */}
-           <div className="h-32 bg-gradient-to-r from-[#0EA5E9] to-[#2563EB] relative shrink-0">
+           <div className="h-28 md:h-32 bg-gradient-to-r from-[#0EA5E9] to-[#2563EB] relative shrink-0">
               <button 
                 onClick={() => setIsUserManageOpen(false)}
                 className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
@@ -1605,7 +1605,7 @@ export default function AdminPage() {
               
               {/* Overlapping Avatar */}
               <div className="absolute -bottom-12 left-8">
-                 <div className="w-24 h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
+                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
                     ) : (
@@ -1615,19 +1615,19 @@ export default function AdminPage() {
               </div>
            </div>
 
-           <div className="p-8 pt-16 space-y-8">
+           <div className="p-6 md:p-8 pt-12 md:pt-16 space-y-6 md:space-y-8">
               {/* User Basic Info */}
               <div className="flex justify-between items-start">
-                 <div>
-                    <h3 className="text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white">{selectedUser?.name || "Gamer"}</h3>
-                    <p className="text-xs font-medium text-muted-foreground">{selectedUser?.email}</p>
+                 <div className="min-w-0 pr-2">
+                    <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
+                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground truncate">{selectedUser?.email}</p>
                     <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
                        <Smartphone size={12} />
-                       <span className="text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                       <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
                     </div>
                  </div>
                  <Badge className={cn(
-                   "rounded-full uppercase text-[8px] font-black tracking-widest px-3 py-1 border-none shadow-sm",
+                   "rounded-full uppercase text-[7px] md:text-[8px] font-black tracking-widest px-2 md:px-3 py-1 border-none shadow-sm shrink-0",
                    selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
                  )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
@@ -1635,27 +1635,27 @@ export default function AdminPage() {
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-widest">Balance</p>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                 <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
                     <div className="flex items-center gap-2">
-                       <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                       <p className="text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
+                       <Star className="w-4 h-4 md:w-5 md:h-5 text-amber-500 fill-amber-500" />
+                       <p className="text-2xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
                     </div>
                  </div>
-                 <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-widest">Role</p>
-                    <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase px-3 py-1 rounded-lg">
+                 <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
+                    <Badge className="bg-primary/10 text-primary border-none text-[8px] md:text-[10px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
                       {selectedUser?.role || 'user'}
                     </Badge>
                  </div>
               </div>
 
               {/* Role Management */}
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                  <div className="flex items-center gap-2 text-primary ml-1">
                     <LayoutGrid size={14} />
-                    <Label className="text-[10px] font-black uppercase tracking-widest">Role Management</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
                  </div>
                  <Select 
                     value={selectedUser?.role || 'user'} 
@@ -1665,7 +1665,7 @@ export default function AdminPage() {
                       toast({title: "Role Updated"});
                     }}
                  >
-                    <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-base shadow-inner">
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-base shadow-inner">
                        <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
@@ -1677,21 +1677,21 @@ export default function AdminPage() {
               </div>
 
               {/* Wallet Adjustments */}
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                  <div className="flex items-center gap-2 text-amber-500 ml-1">
                     <DollarSign size={14} />
-                    <Label className="text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
                  </div>
-                 <div className="flex gap-3">
+                 <div className="flex gap-2 md:gap-3">
                     <Input 
                       type="number" 
                       placeholder="Amt" 
                       value={pointAdjustment} 
                       onChange={e => setPointAdjustment(e.target.value)} 
-                      className="h-16 rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-6 text-lg focus:ring-2 focus:ring-primary" 
+                      className="h-12 md:h-16 rounded-xl md:rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-4 md:px-6 text-base md:text-lg focus:ring-2 focus:ring-primary" 
                     />
-                    <Button onClick={() => handleAdjustPoints('credit')} className="h-16 w-16 rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20 shrink-0"><ArrowUpCircle size={28} /></Button>
-                    <Button onClick={() => handleAdjustPoints('debit')} className="h-16 w-16 rounded-2xl bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={28} /></Button>
+                    <Button onClick={() => handleAdjustPoints('credit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20 shrink-0"><ArrowUpCircle size={24} className="md:size-7" /></Button>
+                    <Button onClick={() => handleAdjustPoints('debit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={24} className="md:size-7" /></Button>
                  </div>
               </div>
 
@@ -1706,17 +1706,17 @@ export default function AdminPage() {
                       toast({title: newBanned ? "User Terminated" : "User Restored"}); 
                     }} 
                     className={cn(
-                      "w-full h-18 rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3",
+                      "w-full h-14 md:h-18 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3",
                       selectedUser?.banned ? "bg-green-600 hover:bg-green-700" : "bg-red-50 hover:bg-red-600"
                     )}
                  >
                     {selectedUser?.banned ? (
-                      <><RefreshCw size={20} /> RESTORE ACCESS</>
+                      <><RefreshCw size={18} /> RESTORE ACCESS</>
                     ) : (
-                      <><Ban size={20} /> TERMINATE</>
+                      <><Ban size={18} /> TERMINATE</>
                     )}
                  </Button>
-                 <p className="text-[8px] text-center text-slate-300 uppercase font-black tracking-widest mt-6 opacity-40">
+                 <p className="text-[7px] md:text-[8px] text-center text-slate-300 uppercase font-black tracking-widest mt-4 md:mt-6 opacity-40">
                     JOINED: {selectedUser?.createdAt ? format(new Date(selectedUser.createdAt), 'MMM d, yyyy').toUpperCase() : 'N/A'}
                  </p>
               </div>
@@ -1725,60 +1725,64 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isGameDialogOpen} onOpenChange={setIsGameDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">{editingGame ? 'Edit Collection' : 'New Game Collection'}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingGame ? 'Edit Collection' : 'New Game Collection'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSaveGame} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
+                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
                     {gameForm.icon ? <Image src={gameForm.icon} alt="" fill className="object-cover" /> : <ImageIcon className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'game')} />
                  </div>
               </div>
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
+                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
                  <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
-                    <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Top-Up Items</SelectItem>
                        <SelectItem value="accounts" className="p-3 font-bold text-xs">Account Marketplace</SelectItem>
                     </SelectContent>
                  </Select>
               </div>
-              <Button type="submit" disabled={isUploading} className="w-full h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Save Collection"}</Button>
+              <Button type="submit" disabled={isUploading} className="w-full h-12 md:h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Save Collection"}</Button>
            </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent className="max-w-xl w-[95%] rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="max-w-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
            <div className="h-2 bg-primary w-full" />
-           <DialogHeader className="p-10 pb-0"><DialogTitle className="text-3xl font-headline font-bold uppercase tracking-tight">{editingProduct ? 'Edit Package' : 'New Inventory Package'}</DialogTitle></DialogHeader>
-           <form onSubmit={handleSaveProduct} className="p-10 space-y-8">
-              <div className="relative w-full aspect-video rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
-                 {productForm.thumbnail ? <Image src={productForm.thumbnail} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Media</span></>}
+           <DialogHeader className="p-6 md:p-10 pb-0">
+              <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
+                {editingProduct ? 'Edit Package' : 'New Inventory Package'}
+              </DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleSaveProduct} className="p-6 md:p-10 space-y-6 md:space-y-8">
+              <div className="relative w-full aspect-video rounded-2xl md:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+                 {productForm.thumbnail ? <Image src={productForm.thumbnail} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-10 h-10 md:w-12 md:h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Media</span></>}
                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'product')} />
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Package Title" value={productForm.title} onChange={v => setProductForm({ ...productForm, title: v })} placeholder="110 Diamonds" />
                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
                     <Select value={productForm.gameId} onValueChange={v => setProductForm({ ...productForm, gameId: v })}>
-                       <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue placeholder="Select Game" /></SelectTrigger>
+                       <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue placeholder="Select Game" /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                           {games.filter(g => g.category === 'top-up').map(g => <SelectItem key={g.id} value={g.id} className="p-3 font-bold uppercase text-xs">{g.title}</SelectItem>)}
                        </SelectContent>
                     </Select>
                  </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Standard Price ($)" type="number" value={productForm.price} onChange={v => setProductForm({ ...productForm, price: v })} placeholder="2.99" />
                  <SettingInput label="Discount Price ($)" type="number" value={productForm.discountedPrice} onChange={v => setProductForm({ ...productForm, discountedPrice: v })} placeholder="1.99" />
               </div>
               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
+                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
                  <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
-                    <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Standard Delivery</SelectItem>
                        <SelectItem value="booyah-pass" className="p-3 font-bold text-xs">Booyah Pass (Direct WhatsApp)</SelectItem>
@@ -1786,7 +1790,7 @@ export default function AdminPage() {
                  </Select>
               </div>
               {productForm.category === 'booyah-pass' && <SettingInput label="Admin WhatsApp for Direct Sale" value={productForm.whatsappNumber || ""} onChange={v => setProductForm({ ...productForm, whatsappNumber: v })} placeholder="252613982172" />}
-              <Button type="submit" disabled={isUploading} className="w-full h-20 rounded-[2.5rem] font-black text-xl shadow-2xl uppercase tracking-widest active:scale-95 transition-all">
+              <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest active:scale-95 transition-all">
                 {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Package"}
               </Button>
            </form>
@@ -1794,36 +1798,36 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-        <DialogContent className="max-xl w-[95%] rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="max-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
            <div className="h-2 bg-primary w-full" />
-           <DialogHeader className="p-10 pb-0">
-              <DialogTitle className="text-3xl font-headline font-bold uppercase tracking-tight">
+           <DialogHeader className="p-6 md:p-10 pb-0">
+              <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
                 {editingEvent ? 'Edit Event' : 'Create Live Event'}
               </DialogTitle>
            </DialogHeader>
-           <form onSubmit={handleSaveEvent} className="p-10 space-y-8">
-              <div className="relative w-full aspect-video rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
-                 {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Event Poster</span></>}
+           <form onSubmit={handleSaveEvent} className="p-6 md:p-10 space-y-6 md:space-y-8">
+              <div className="relative w-full aspect-video rounded-2xl md:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+                 {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-10 h-10 md:w-12 md:h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Event Poster</span></>}
                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'event')} />
               </div>
               <SettingInput label="Event Title" value={eventForm.title} onChange={v => setEventForm({ ...eventForm, title: v })} placeholder="Hacker Store 2.0" />
               <SettingInput label="Short Description" value={eventForm.shortDescription} onChange={v => setEventForm({ ...eventForm, shortDescription: v })} placeholder="New legendary bundles are here!" />
               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Event Type</Label>
+                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Event Type</Label>
                  <Select value={eventForm.type} onValueChange={v => setEventForm({ ...eventForm, type: v as any })}>
-                    <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                        <SelectItem value="freefire_event" className="p-3 font-bold text-xs uppercase">Free Fire Event</SelectItem>
                        <SelectItem value="general" className="p-3 font-bold text-xs uppercase">General Promotion</SelectItem>
                     </SelectContent>
                  </Select>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Duration (Value)" value={eventForm.duration} type="number" onChange={v => setEventForm({ ...eventForm, duration: v })} placeholder="7" />
                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Unit</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Unit</Label>
                     <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
-                       <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                       <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                           <SelectItem value="days" className="p-3 font-bold text-xs uppercase">Days</SelectItem>
                           <SelectItem value="hours" className="p-3 font-bold text-xs uppercase">Hours</SelectItem>
@@ -1833,10 +1837,10 @@ export default function AdminPage() {
                  </div>
               </div>
               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Detailed Content</Label>
-                 <Textarea value={eventForm.content} onChange={e => setEventForm({ ...eventForm, content: e.target.value })} placeholder="Write full event details here..." className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-6 font-medium shadow-inner" />
+                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Detailed Content</Label>
+                 <Textarea value={eventForm.content} onChange={e => setEventForm({ ...eventForm, content: e.target.value })} placeholder="Write full event details here..." className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[120px] md:min-h-[150px] p-4 md:p-6 font-medium shadow-inner" />
               </div>
-              <Button type="submit" disabled={isUploading} className="w-full h-20 rounded-[2.5rem] font-black text-xl shadow-2xl uppercase tracking-widest bg-primary text-white">
+              <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest bg-primary text-white">
                 {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Publish Event"}
               </Button>
            </form>
@@ -1844,15 +1848,15 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">New Promotion Banner</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">New Promotion Banner</DialogTitle></DialogHeader>
            <form onSubmit={handleSaveBanner} className="space-y-6 mt-6">
-              <div className="relative w-full aspect-[21/9] rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+              <div className="relative w-full aspect-[21/9] rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
                  {bannerForm.imageUrl ? <Image src={bannerForm.imageUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300" /><span className="text-[10px] font-black uppercase text-slate-400 mt-2">Upload Banner</span></>}
                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'banner')} />
               </div>
               <SettingInput label="Link To (Optional)" value={bannerForm.linkTo || ""} onChange={v => setBannerForm({ ...bannerForm, linkTo: v })} placeholder="#games or #accounts" />
-              <Button type="submit" disabled={isUploading || !bannerForm.imageUrl} className="w-full h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest bg-primary text-white">
+              <Button type="submit" disabled={isUploading || !bannerForm.imageUrl} className="w-full h-12 md:h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest bg-primary text-white">
                 {isUploading ? <Loader2 className="animate-spin" /> : "Add Banner"}
               </Button>
            </form>
@@ -1860,11 +1864,11 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
+                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
                     {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
@@ -1872,29 +1876,29 @@ export default function AdminPage() {
               <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => setPaymentMethodForm(f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
               <SettingInput label="USSD Template" value={paymentMethodForm.ussdTemplate} onChange={v => setPaymentMethodForm(f => ({ ...f, ussdTemplate: v }))} placeholder="*712*613982172*$#" />
               <p className="text-[9px] font-bold text-slate-400 italic leading-relaxed">Use $ as a placeholder for the price (e.g. *711*613982172*$#)</p>
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+              <div className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                  <Label className="font-bold text-sm">Active</Label>
                  <Switch checked={paymentMethodForm.active} onCheckedChange={v => setPaymentMethodForm(f => ({ ...f, active: v }))} />
               </div>
-              <Button type="submit" disabled={isUploading} className="w-full h-14 rounded-2xl font-bold uppercase tracking-widest shadow-lg bg-primary">Save Method</Button>
+              <Button type="submit" disabled={isUploading} className="w-full h-12 md:h-14 rounded-2xl font-bold uppercase tracking-widest shadow-lg bg-primary">Save Method</Button>
            </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isEnforceDialogOpen} onOpenChange={setIsEnforceDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
-           <div className="bg-red-600 p-8 text-white">
-              <DialogTitle className="text-2xl font-headline font-bold uppercase tracking-tight">Security Penalty</DialogTitle>
-              <p className="text-white/60 text-[10px] font-bold uppercase mt-1">Enforcing policy for Listing #{selectedAccount?.id.toUpperCase()}</p>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
+           <div className="bg-red-600 p-6 md:p-8 text-white">
+              <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Security Penalty</DialogTitle>
+              <p className="text-white/60 text-[9px] md:text-[10px] font-bold uppercase mt-1">Enforcing policy for Listing #{selectedAccount?.id.toUpperCase()}</p>
            </div>
-           <div className="p-8 space-y-6">
+           <div className="p-6 md:p-8 space-y-5 md:space-y-6">
               <div className="grid grid-cols-2 gap-3">
                  {['delete', 'holding', 'approved', 'pending'].map(act => (
-                   <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act as any)} className={cn("rounded-xl h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600' : '')}>{act}</Button>
+                   <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act as any)} className={cn("rounded-xl h-10 md:h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600' : '')}>{act}</Button>
                  ))}
               </div>
-              <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="Reason for penalty..." className="rounded-2xl dark:bg-slate-800 border-none min-h-[120px] shadow-inner font-medium p-4" />
-              <Button onClick={async () => { await enforceAccountAction(selectedAccount!.id, enforceAction, enforceMessage); setIsEnforceDialogOpen(false); setSelectedAccountId(null); setEnforceMessage(""); }} disabled={isSavingStatus || !enforceMessage} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest shadow-2xl">
+              <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="Reason for penalty..." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
+              <Button onClick={async () => { await enforceAccountAction(selectedAccount!.id, enforceAction, enforceMessage); setIsEnforceDialogOpen(false); setSelectedAccountId(null); setEnforceMessage(""); }} disabled={isSavingStatus || !enforceMessage} className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest shadow-2xl">
                  Apply Enforcement
               </Button>
            </div>
@@ -1902,13 +1906,13 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="max-sm rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
-           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-6"><AlertCircle size={40} /></div>
-           <DialogTitle className="text-2xl font-headline font-bold">Ma hubtaa?</DialogTitle>
-           <DialogDescription className="text-xs uppercase font-black text-slate-400 mt-2">Action cannot be undone.</DialogDescription>
-           <div className="flex gap-3 mt-10">
-              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-14 font-bold" disabled={isDeleting}>Maya</Button>
-              <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
+        <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
+           <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
+           <DialogTitle className="text-xl md:text-2xl font-headline font-bold">Ma hubtaa?</DialogTitle>
+           <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Action cannot be undone.</DialogDescription>
+           <div className="flex gap-3 mt-6 md:mt-10">
+              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
+              <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
               </Button>
            </div>
@@ -2449,7 +2453,7 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
   return (
     <div className="space-y-2">
        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">{label}</Label>
-       <Input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="h-16 rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all" />
+       <Input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all" />
     </div>
   );
 }
