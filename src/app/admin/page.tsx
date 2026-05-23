@@ -315,6 +315,15 @@ export default function AdminPage() {
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
+  
+  // Settings Form States
+  const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
+  const [economyForm, setEconomyForm] = useState({ paymentNumber: "", listingFeeWeekly: 1.00, listingFeeMonthly: 3.00 });
+  const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
+  const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
+  const [termsForm, setTermsForm] = useState({ en: "", so: "" });
+  const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
+
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
