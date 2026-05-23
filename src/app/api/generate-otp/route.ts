@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { adminDb, isFirebaseAdminAvailable } from '@/lib/firebaseAdmin';
 
 /**
  * API Route to generate and store OTP.
@@ -8,7 +8,15 @@ import { adminDb } from '@/lib/firebaseAdmin';
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    if (!isFirebaseAdminAvailable || !adminDb) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Firebase Admin not configured. Please set environment variables.' 
+      }, { status: 500 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { email } = body;
 
     if (!email) {
       return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 });
@@ -37,6 +45,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, otp });
   } catch (error: any) {
     console.error('Generate OTP Error:', error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      message: error.message || 'Internal server error' 
+    }, { status: 500 });
   }
 }

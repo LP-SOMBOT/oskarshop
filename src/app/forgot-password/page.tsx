@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Mail, Lock, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import emailjs from '@emailjs/browser';
 import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview Rebuilt Password Reset Flow using Next.js API Routes and EmailJS.
+ * Hardened to handle non-JSON server responses gracefully.
  */
 
 export default function ForgotPasswordPage() {
@@ -37,6 +38,12 @@ export default function ForgotPasswordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server returned an unexpected response. Please ensure Firebase Admin environment variables are set.");
+      }
+
       const data = await res.json();
 
       if (!data.success) {
@@ -46,18 +53,26 @@ export default function ForgotPasswordPage() {
       }
 
       // Step B: Send Email via EmailJS
+      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error("EmailJS keys are missing. Please configure them in your environment variables.");
+      }
+
       await emailjs.send(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        serviceId,
+        templateId,
         { to_email: email, otp_code: data.otp },
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+        publicKey
       );
 
       toast({ title: "Code Sent!", description: "Check your email inbox." });
       setStep('verify');
     } catch (err: any) {
-      console.error(err);
-      setError("Failed to send code. Please try again.");
+      console.error('Request OTP Error:', err);
+      setError(err.message || "Failed to send code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +93,12 @@ export default function ForgotPasswordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword }),
       });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server returned an unexpected response.");
+      }
+
       const data = await res.json();
 
       if (!data.success) {
@@ -89,7 +110,8 @@ export default function ForgotPasswordPage() {
       toast({ title: "Success!", description: "Password updated. Redirecting..." });
       setTimeout(() => router.push('/login'), 2000);
     } catch (err: any) {
-      setError("Verification failed. Please try again.");
+      console.error('Verify OTP Error:', err);
+      setError(err.message || "Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -114,8 +136,9 @@ export default function ForgotPasswordPage() {
               </div>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                  <AlertCircle size={16} /> {error}
+                <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-600 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
+                  <span className="leading-relaxed">{error}</span>
                 </div>
               )}
 
@@ -152,8 +175,9 @@ export default function ForgotPasswordPage() {
               </div>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-xs font-bold">
-                  <AlertCircle size={16} /> {error}
+                <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-600 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" /> 
+                  <span className="leading-relaxed">{error}</span>
                 </div>
               )}
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, isFirebaseAdminAvailable } from '@/lib/firebaseAdmin';
 
 /**
  * API Route to verify OTP and reset password.
@@ -8,7 +8,15 @@ import { adminDb, adminAuth } from '@/lib/firebaseAdmin';
 
 export async function POST(request: Request) {
   try {
-    const { email, otp, newPassword } = await request.json();
+    if (!isFirebaseAdminAvailable || !adminDb || !adminAuth) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Firebase Admin not configured. Please set environment variables.' 
+      }, { status: 500 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { email, otp, newPassword } = body;
 
     if (!email || !otp || !newPassword) {
       return NextResponse.json({ success: false, message: 'Missing mandatory data' }, { status: 400 });
@@ -44,7 +52,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'User record not found.' }, { status: 404 });
     }
 
-    const uid = Object.keys(userSnapshot.val())[0];
+    const userData = userSnapshot.val();
+    const uid = Object.keys(userData)[0];
 
     // Update Firebase Auth password
     await adminAuth.updateUser(uid, { password: newPassword });
@@ -55,6 +64,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: 'Password updated successfully.' });
   } catch (error: any) {
     console.error('Verify OTP Error:', error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      success: false, 
+      message: error.message || 'Internal server error' 
+    }, { status: 500 });
   }
 }
