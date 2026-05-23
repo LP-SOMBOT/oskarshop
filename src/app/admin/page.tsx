@@ -157,8 +157,9 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
     const update = () => {
       const now = Date.now();
       const diff = expiresAt - now;
-      if (diff <= 0) setTimeLeft({ d: 0, h: 0, m: 0 });
-      else {
+      if (diff <= 0) {
+        setTimeLeft({ d: 0, h: 0, m: 0 });
+      } else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
         const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -1051,10 +1052,7 @@ export default function AdminPage() {
 
           {activeView === 'users' && (
             <div className="space-y-8 animate-in fade-in duration-700">
-               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                  <div className="space-y-2">
-                     <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs lg:text-sm">Search users, update roles, and manage reward points.</p>
-                  </div>
+               <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
                   <div className="relative w-full lg:w-96">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <Input 
