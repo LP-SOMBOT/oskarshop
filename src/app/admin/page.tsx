@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -65,7 +66,9 @@ import {
   Target as TargetIcon,
   Copy,
   ArrowLeft,
-  Link as LinkIcon
+  Link as LinkIcon,
+  PlusCircle,
+  PencilLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,7 +156,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
         const totalHours = Math.floor(diff / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft({ d, h: totalHours, m });
+        setTimeLeft({ d, totalHours, m });
       }
     };
     update();
@@ -167,7 +170,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
   return (
     <div className="flex flex-col items-start text-left">
       <span className="text-[11px] font-black text-primary uppercase tracking-tight">
-        {timeLeft.d}D {timeLeft.h}H {timeLeft.m}M
+        {timeLeft.d}D {timeLeft.totalHours}H {timeLeft.m}M
       </span>
       <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">
         ENDS {format(new Date(expiresAt), "MMM d").toUpperCase()}
@@ -785,81 +788,119 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Inventory Management View and other sections... (Keeping existing logic) */}
+          {/* Inventory Management View */}
           {activeView === 'inventory' && (
-            <div className="space-y-10 animate-in fade-in duration-700">
-               <Tabs defaultValue="products" className="w-full">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                     <TabsList className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm h-14 w-full md:w-auto">
-                        <TabsTrigger value="games" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">Collections</TabsTrigger>
-                        <TabsTrigger value="products" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">Diamond Packages</TabsTrigger>
-                        <TabsTrigger value="banners" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white">Promo Banners</TabsTrigger>
+            <div className="space-y-12 animate-in fade-in duration-700">
+               <Tabs defaultValue="games" className="w-full">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                     <TabsList className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm h-14 w-full md:w-auto border border-gray-100 dark:border-white/5">
+                        <TabsTrigger value="games" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Collections</TabsTrigger>
+                        <TabsTrigger value="products" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Diamond Packages</TabsTrigger>
+                        <TabsTrigger value="banners" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Promo Banners</TabsTrigger>
                      </TabsList>
-                     <div className="flex gap-4">
-                        <Button onClick={() => handleOpenGameDialog()} className="rounded-xl h-14 gap-2 font-black shadow-lg shadow-primary/20">+ ADD COLLECTION</Button>
-                        <Button onClick={() => handleOpenProductDialog()} variant="secondary" className="rounded-xl h-14 gap-2 font-black">+ NEW PACKAGE</Button>
-                     </div>
                   </div>
 
-                  <TabsContent value="games">
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <TabsContent value="games" className="space-y-10 mt-0">
+                     <div className="space-y-2">
+                        <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Game Collections</h3>
+                        <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Manage parent games and their top-up packages.</p>
+                     </div>
+                     
+                     <div className="pt-2">
+                        <Button 
+                          onClick={() => handleOpenGameDialog()} 
+                          className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all"
+                        >
+                          <PlusCircle size={20} /> New Game
+                        </Button>
+                     </div>
+
+                     <div className="grid grid-cols-1 gap-4 max-w-4xl">
                         {games.map(g => (
-                          <Card key={g.id} className="p-6 rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 group">
-                             <div className="flex items-center gap-4 mb-6">
-                                <div className="w-16 h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border dark:border-white/5">
-                                   {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-4 text-slate-300" />}
+                          <Card key={g.id} className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 flex items-center justify-between group hover:shadow-md transition-all">
+                             <div className="flex items-center gap-6">
+                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border border-gray-100 dark:border-white/5 shadow-inner">
+                                   {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-6 text-slate-300" />}
                                 </div>
                                 <div className="min-w-0">
-                                   <h4 className="font-bold text-lg uppercase tracking-tight truncate">{g.title}</h4>
-                                   <Badge variant="outline" className="text-[8px] font-black uppercase">{g.category}</Badge>
+                                   <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">{g.title}</h4>
+                                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{g.category}</p>
                                 </div>
                              </div>
-                             <div className="flex gap-2">
-                                <Button className="flex-1 rounded-xl h-12 gap-2" variant="outline" onClick={() => handleOpenGameDialog(g)}><Edit size={14}/> Edit</Button>
-                                <Button size="icon" className="w-12 h-12 rounded-xl text-red-500 hover:bg-red-50" variant="ghost" onClick={() => { setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}><Trash2 size={16}/></Button>
+                             <div className="flex flex-col gap-2">
+                                <button 
+                                  onClick={() => handleOpenGameDialog(g)}
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors"
+                                >
+                                  <PencilLine size={20} />
+                                </button>
+                                <button 
+                                  onClick={() => { setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 size={20} />
+                                </button>
                              </div>
                           </Card>
                         ))}
                      </div>
                   </TabsContent>
 
-                  <TabsContent value="products">
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+                  <TabsContent value="products" className="space-y-10 mt-0">
+                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="space-y-2">
+                           <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Diamond Packages</h3>
+                           <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Inventory list for specific game denominations.</p>
+                        </div>
+                        <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 uppercase tracking-widest">+ NEW PACKAGE</Button>
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
                         {products.map(p => (
-                          <Card key={p.id} className="p-6 rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 group">
-                             <div className="relative aspect-video rounded-2xl overflow-hidden mb-6 bg-slate-100 dark:bg-slate-800">
-                                {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" /> : <Package className="m-auto absolute inset-0 text-slate-300 w-12 h-12" />}
-                                <div className="absolute top-2 right-2 flex flex-col gap-1">
-                                   <button onClick={() => handleOpenProductDialog(p)} className="p-2 bg-white/90 backdrop-blur-md rounded-xl text-primary shadow-sm hover:scale-105 active:scale-95 transition-transform"><Edit size={16} /></button>
-                                   <button onClick={() => { setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }} className="p-2 bg-red-500/90 backdrop-blur-md rounded-xl text-white shadow-sm hover:scale-105 active:scale-95 transition-transform"><Trash2 size={16} /></button>
+                          <Card key={p.id} className="p-6 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 group hover:-translate-y-2 transition-all">
+                             <div className="relative aspect-square rounded-[2rem] overflow-hidden mb-6 bg-slate-100 dark:bg-slate-800 shadow-inner">
+                                {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" unoptimized /> : <Package className="m-auto absolute inset-0 text-slate-300 w-12 h-12" />}
+                                <div className="absolute top-3 right-3 flex flex-col gap-2">
+                                   <button onClick={() => handleOpenProductDialog(p)} className="p-2.5 bg-white/90 backdrop-blur-md rounded-xl text-primary shadow-xl hover:scale-105 active:scale-95 transition-transform"><Edit size={16} /></button>
+                                   <button onClick={() => { setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }} className="p-2.5 bg-red-500/90 backdrop-blur-md rounded-xl text-white shadow-xl hover:scale-105 active:scale-95 transition-transform"><Trash2 size={16} /></button>
                                 </div>
                              </div>
-                             <h4 className="font-bold text-lg uppercase mb-2 truncate">{p.title}</h4>
-                             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                             <h4 className="font-headline font-bold text-xl uppercase mb-3 truncate px-2">{p.title}</h4>
+                             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-inner">
                                 <div className="flex flex-col">
-                                   <span className="text-xl font-black text-primary">${p.price}</span>
-                                   {p.discountedPrice && <span className="text-[10px] text-muted-foreground line-through opacity-40">${p.discountedPrice}</span>}
+                                   <span className="text-2xl font-black text-primary tracking-tighter">${p.price}</span>
+                                   {p.discountedPrice && <span className="text-[10px] text-muted-foreground line-through opacity-40 font-bold">${p.discountedPrice}</span>}
                                 </div>
-                                <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black">{games.find(g => g.id === p.gameId)?.title || "Game"}</Badge>
+                                <Badge className="bg-white/80 dark:bg-slate-900 text-slate-400 border-none text-[8px] font-black uppercase tracking-widest shadow-sm">
+                                   {games.find(g => g.id === p.gameId)?.title || "Game"}
+                                </Badge>
                              </div>
                           </Card>
                         ))}
                      </div>
                   </TabsContent>
 
-                  <TabsContent value="banners">
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  <TabsContent value="banners" className="space-y-10 mt-0">
+                     <div className="space-y-2">
+                        <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Promo Banners</h3>
+                        <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Carousel imagery for the store's homepage hero section.</p>
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
                         {banners.map(b => (
-                          <Card key={b.id} className="aspect-video relative rounded-[2.5rem] overflow-hidden group shadow-xl">
+                          <Card key={b.id} className="aspect-video relative rounded-[3rem] overflow-hidden group shadow-2xl border-none">
                              <Image src={b.imageUrl} alt="" fill className="object-cover" />
-                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                <Button variant="destructive" size="icon" className="w-12 h-12 rounded-full" onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }}><Trash2 size={20}/></Button>
+                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 backdrop-blur-sm">
+                                <Button variant="destructive" size="icon" className="w-16 h-16 rounded-full shadow-2xl" onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }}><Trash2 size={24}/></Button>
                              </div>
+                             {!b.active && <Badge className="absolute top-6 left-6 bg-red-500 text-white font-black">DISABLED</Badge>}
                           </Card>
                         ))}
-                        <button onClick={() => setIsBannerDialogOpen(true)} className="aspect-video rounded-[2.5rem] border-4 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center text-slate-300 hover:text-primary hover:border-primary/40 transition-all bg-white/50 dark:bg-slate-900/50">
-                           <ImageIcon size={48} />
-                           <span className="font-black uppercase tracking-widest text-sm mt-4">Add New Banner</span>
+                        <button onClick={() => setIsBannerDialogOpen(true)} className="aspect-video rounded-[3rem] border-4 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center text-slate-300 hover:text-primary hover:border-primary/40 transition-all bg-white/50 dark:bg-slate-900/50 group shadow-inner">
+                           <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                              <ImageIcon size={40} className="opacity-30 group-hover:opacity-100 transition-opacity" />
+                           </div>
+                           <span className="font-black uppercase tracking-widest text-[11px]">Add New Visual Banner</span>
                         </button>
                      </div>
                   </TabsContent>
@@ -1006,7 +1047,7 @@ export default function AdminPage() {
         </main>
       </div>
 
-      {/* Dialogs ... (Keeping Existing) */}
+      {/* Dialogs */}
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
         <DialogContent className="max-w-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
@@ -1577,18 +1618,6 @@ function InsightStat({ label, value, icon: Icon, isPrimary }: any) {
          "text-sm md:text-xl font-bold truncate",
          isPrimary ? "text-primary" : "text-slate-900 dark:text-white"
        )}>{value}</p>
-    </div>
-  );
-}
-
-function AssetStat({ icon: Icon, label, value }: any) {
-  return (
-    <div className="flex items-center gap-3">
-       <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary shadow-sm"><Icon size={18} /></div>
-       <div className="min-w-0">
-          <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-0.5">{label}</p>
-          <p className="text-base font-bold text-slate-900 dark:text-white leading-none">{value || 0}</p>
-       </div>
     </div>
   );
 }
