@@ -686,7 +686,51 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-8">
-                    <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                    {/* Mobile Card List */}
+                    <div className="grid grid-cols-1 gap-4 md:hidden">
+                       {topUpOrders.length === 0 ? (
+                         <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No orders found.</div>
+                       ) : (
+                         topUpOrders.map(o => (
+                           <Card key={o.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
+                              <div className="flex items-center justify-between">
+                                 <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{o.id.toUpperCase()}</p>
+                                 <StatusBadge status={o.status} />
+                              </div>
+                              <div className="space-y-1">
+                                 <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || "Guest"}</p>
+                                 <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{o.items?.[0]?.title || "Unknown Item"}</p>
+                              </div>
+                              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
+                                 <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
+                                    {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
+                                 </div>
+                                 <div className="min-w-0">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Unassigned"}</p>
+                                 </div>
+                              </div>
+                              <div className="flex gap-2 pt-2 border-t dark:border-white/5">
+                                 <button 
+                                   onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                   className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
+                                 >
+                                   <Eye size={16} /> View Insight
+                                 </button>
+                                 <button 
+                                   onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                   className="w-12 h-12 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
+                                 >
+                                   <Trash2 size={16} />
+                                 </button>
+                              </div>
+                           </Card>
+                         ))
+                       )}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
