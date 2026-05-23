@@ -259,6 +259,9 @@ export default function AdminPage() {
   // Expansion States
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
+  // Search States
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+
   // Dialog States
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -320,7 +323,13 @@ export default function AdminPage() {
   // Data Filtering
   const filteredOrders = useMemo(() => allOrders, [allOrders]);
   const filteredAccounts = useMemo(() => accountPosts.sort((a,b) => b.createdAt - a.createdAt), [accountPosts]);
-  const filteredUsers = useMemo(() => allUsers, [allUsers]);
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter(u => 
+      u.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      u.email?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      u.uid?.toLowerCase().includes(userSearchQuery.toLowerCase())
+    );
+  }, [allUsers, userSearchQuery]);
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
@@ -457,7 +466,7 @@ export default function AdminPage() {
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} badge={allUsers.filter(u => u.role === 'admin').length} />
+        <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} badge={1} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
       <div className="p-4 border-t dark:border-white/5">
@@ -929,54 +938,111 @@ export default function AdminPage() {
           )}
 
           {activeView === 'users' && (
-            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <h3 className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">User Directory</h3>
+            <div className="space-y-12 animate-in fade-in duration-700">
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-2">
+                     <h1 className="text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Community Control</h1>
+                     <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs lg:text-sm">Search users, update roles, and manage reward points.</p>
+                  </div>
+                  <div className="relative w-full md:w-96 lg:w-[500px]">
+                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                     <Input 
+                        placeholder="Search name, email, or UID..." 
+                        className="pl-12 h-14 lg:h-16 rounded-xl lg:rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold text-sm md:text-lg"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                     />
+                  </div>
                </div>
-               <Card className="rounded-2xl md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                  <Table>
-                     <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
-                        <TableRow className="border-none">
-                           <TableHead className="px-6 font-bold uppercase text-[10px] tracking-widest text-slate-400">Profile</TableHead>
-                           <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Email/Phone</TableHead>
-                           <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Points</TableHead>
-                           <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Role</TableHead>
-                           <TableHead className="text-right px-6 font-bold uppercase text-[10px] tracking-widest text-slate-400">Actions</TableHead>
+
+               <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden overflow-x-auto scrollbar-hide">
+                  <Table className="min-w-[1000px]">
+                     <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
+                        <TableRow className="border-none h-20">
+                           <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">User Identity</TableHead>
+                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Contact & Role</TableHead>
+                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Reward Balance</TableHead>
+                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Presence</TableHead>
+                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Status</TableHead>
+                           <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                         </TableRow>
                      </TableHeader>
                      <TableBody>
                         {filteredUsers.length === 0 ? (
-                          <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic">No users found.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
                         ) : (
-                          filteredUsers.map(u => (
-                            <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 hover:bg-slate-50/50 transition-colors">
-                               <TableCell className="px-6">
-                                  <div className="flex items-center gap-3">
-                                     <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 border-2 border-white shadow-sm">
-                                        {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
-                                     </div>
-                                     <div className="flex flex-col">
-                                        <span className="font-bold text-sm">{u.name}</span>
-                                        <span className="text-[10px] font-mono opacity-40 uppercase">{u.uid.substring(0,8)}...</span>
-                                     </div>
-                                  </div>
-                               </TableCell>
-                               <TableCell>
-                                  <div className="flex flex-col">
-                                     <span className="text-xs font-medium">{u.email}</span>
-                                     <span className="text-[10px] font-black text-primary">{u.phoneNumber || "---"}</span>
-                                  </div>
-                               </TableCell>
-                               <TableCell><Badge className="bg-amber-400 text-white border-none font-black text-[10px] px-3">{u.points || 0} PTS</Badge></TableCell>
-                               <TableCell><Badge variant="outline" className="text-[8px] font-black uppercase">{u.role}</Badge></TableCell>
-                               <TableCell className="text-right px-6">
-                                  <div className="flex justify-end gap-2">
-                                     <Button size="icon" variant="ghost" className="h-10 w-10 text-primary rounded-xl" onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }}><Edit size={16}/></Button>
-                                     <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 rounded-xl" onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}><Trash2 size={16}/></Button>
-                                  </div>
-                               </TableCell>
-                            </TableRow>
-                          ))
+                          filteredUsers.map(u => {
+                            const isOnline = u.lastActive && (Date.now() - u.lastActive) < 300000;
+                            return (
+                              <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
+                                 <TableCell className="px-10">
+                                    <div className="flex items-center gap-4">
+                                       <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
+                                          {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                       </div>
+                                       <div className="flex flex-col min-w-0">
+                                          <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
+                                          <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.email}</span>
+                                       </div>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                       <span className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
+                                       <Badge className={cn(
+                                         "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
+                                         u.role === 'admin' || u.role === 'super_admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
+                                       )}>
+                                         {u.role || "USER"}
+                                       </Badge>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                       <Star size={14} className="text-amber-500 fill-amber-500" />
+                                       <span className="font-headline font-bold text-lg md:text-2xl text-slate-900 dark:text-white">{u.points || 0}</span>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell>
+                                    <div className="flex flex-col">
+                                       <div className="flex items-center gap-1.5">
+                                          <div className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
+                                          <span className={cn("text-[10px] font-black uppercase tracking-widest", isOnline ? "text-green-600" : "text-slate-400")}>
+                                            {isOnline ? "Online" : "Offline"}
+                                          </span>
+                                       </div>
+                                       <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
+                                          {u.lastActive ? formatDistanceToNow(u.lastActive).toUpperCase() + " AGO" : "NEVER"}
+                                       </span>
+                                    </div>
+                                 </TableCell>
+                                 <TableCell className="text-center">
+                                    <Badge className={cn(
+                                      "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
+                                      u.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
+                                    )}>
+                                      {u.banned ? "Banned" : "Active"}
+                                    </Badge>
+                                 </TableCell>
+                                 <TableCell className="text-right px-10">
+                                    <div className="flex justify-end items-center gap-3">
+                                       <button 
+                                         onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
+                                         className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
+                                       >
+                                         <Edit size={18} />
+                                       </button>
+                                       <button 
+                                         onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
+                                         className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
+                                       >
+                                         <Trash2 size={18} />
+                                       </button>
+                                    </div>
+                                 </TableCell>
+                              </TableRow>
+                            );
+                          })
                         )}
                      </TableBody>
                   </Table>
