@@ -1125,13 +1125,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!postData || !buyerId) return;
     const updates: any = {};
     const reportTime = Date.now();
-    updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = confirmed ? 'accepted' : 'rejected';
+    
+    // Base updates for any response
     updates[`accountPosts/${postId}/sellerReported`] = true;
     updates[`accountPosts/${postId}/sellerReportedAt`] = reportTime;
+
     if (confirmed) {
       const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => (c as any).status === 'rejected');
       const otherClaimantsCount = Object.keys(postData.claimants || {}).length - 1;
+
       if (hasPreviousRejections || otherClaimantsCount > 0) {
+        updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'accepted';
         updates[`accountPosts/${postId}/status`] = 'holding';
         updates[`accountPosts/${postId}/conflict`] = true;
         updates[`accountPosts/${postId}/boughtBy`] = buyerId;
@@ -1142,11 +1146,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updates[`accountPosts/${postId}/boughtBy`] = buyerId;
         updates[`accountPosts/${postId}/holdingBy`] = buyerId;
         updates[`accountPosts/${postId}/completedAt`] = reportTime;
+        // This is safe because we aren't setting any specific claimant status in this branch
         updates[`accountPosts/${postId}/claimants`] = null; 
       }
-      toast({ title: "Response Recorded!", description: confirmed ? "Sale confirmed. Waiting for finalization." : "Claim rejected." });
-      broadcastNotification("Purchase Update! 🤑", confirmed ? "Seller has accepted your purchase claim!" : "Seller rejected your purchase claim.", buyerId);
+      toast({ title: "Response Recorded!", description: "Sale confirmed. Waiting for finalization." });
+      broadcastNotification("Purchase Update! 🤑", "Seller has accepted your purchase claim!", buyerId);
     } else {
+      // Rejection branch
+      updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'rejected';
       updates[`accountPosts/${postId}/status`] = 'holding';
       updates[`accountPosts/${postId}/conflict`] = true;
       toast({ title: "Claim Rejected", description: "This will be reviewed by an admin." });
