@@ -443,6 +443,9 @@ export default function AdminPage() {
       {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-900 border-none">
+          <SheetHeader className="sr-only">
+             <SheetTitle>Admin Menu</SheetTitle>
+          </SheetHeader>
           <SidebarContent isMobile={true} />
         </SheetContent>
       </Sheet>
@@ -1344,7 +1347,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 </div>
              </Card>
 
-             <Card className="p-8 rounded-[2.5rem] bg-slate-900 text-white border-none shadow-xl space-y-6">
+             <Card className="p-8 sm:p-10 rounded-[2.5rem] bg-slate-900 text-white border-none shadow-xl space-y-6">
                 <div className="flex items-center gap-3 text-amber-500">
                    <Clock size={24} />
                    <h4 className="font-headline font-bold text-lg uppercase">Auto Expiry</h4>
