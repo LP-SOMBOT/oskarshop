@@ -12,14 +12,12 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  sendPasswordResetEmail,
+  onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
-  onAuthStateChanged
+  getRedirectResult
 } from 'firebase/auth';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { 
   ref, 
   onValue, 
@@ -39,8 +37,6 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
 import { isStandalone } from './pwa-utils';
-import emailjs from '@emailjs/browser';
-import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY } from './emailjs-config';
 
 export const safeGet = (obj: any, path: string, fallback: any = "") => {
   return path.split('.').reduce((acc, key) => acc?.[key] ?? fallback, obj);
@@ -202,9 +198,15 @@ type StoreSettings = {
     offlineBody?: string;
     offlineImageUrl?: string;
   };
-  emailConfig?: {
-    senderEmail?: string;
-    appPassword?: string;
+  helpLinks?: {
+    tutorialUrl?: string;
+    whatsappNumber?: string;
+    tiktokUrl?: string;
+  };
+  emailjs?: {
+    serviceId?: string;
+    templateId?: string;
+    publicKey?: string;
   };
   config?: {
     shop?: {
@@ -258,9 +260,6 @@ type AppContextType = {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  handleForgotPassword: (email: string) => Promise<void>;
-  requestPasswordResetCode: (email: string) => Promise<boolean>;
-  verifyAndResetPassword: (email: string, otp: string, newPass: string) => Promise<boolean>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
   orders: Order[];
@@ -580,7 +579,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err: any) {
       console.error("Profile sync failed:", err);
-      setAuthError(`Profile sync error: ${err.message}`);
     }
   }, [rtdb]);
 
@@ -598,7 +596,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error: any) {
         console.error("Auth redirect error:", error);
-        setAuthError(`Authentication failed: ${error.message}`);
         setIsGlobalLoading(false);
       } finally {
         setIsGlobalLoading(false);
@@ -964,68 +961,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const requestPasswordResetCode = async (email: string) => {
-    if (!email) return false;
-    setIsGlobalLoading(true);
-    setAuthError(null);
-    try {
-      const functions = getFunctions();
-      const generateOtpFn = httpsCallable(functions, 'generateOtp');
-      const result: any = await generateOtpFn({ email });
-      
-      if (result.data?.success) {
-        // Dispatch via EmailJS directly from frontend
-        await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          { to_email: email, otp_code: result.data.otp },
-          EMAILJS_PUBLIC_KEY
-        );
-        toast({ title: "Code Sent!", description: `Check ${email} for your reset code.` });
-        return true;
-      } else {
-        setAuthError(result.data?.message || "Failed to generate OTP.");
-        return false;
-      }
-    } catch (e: any) {
-      console.error("RESET ERROR:", e);
-      setAuthError(e.message || "Something went wrong.");
-      return false;
-    } finally {
-      setIsGlobalLoading(false);
-    }
-  };
-
-  const verifyAndResetPassword = async (email: string, otp: string, newPass: string) => {
-    if (!email || !otp || !newPass) return false;
-    setIsGlobalLoading(true);
-    setAuthError(null);
-    try {
-      const functions = getFunctions();
-      const resetFn = httpsCallable(functions, 'verifyOtpAndResetPassword');
-      const result: any = await resetFn({ email, otp, newPassword: newPass });
-      
-      if (result.data?.success) {
-        toast({ title: "Reset Success!", description: "Login with your new password." });
-        return true;
-      } else {
-        setAuthError(result.data?.message || "Verification failed.");
-        return false;
-      }
-    } catch (e: any) {
-      console.error("VERIFY ERROR:", e);
-      setAuthError(e.message || "Verification failed.");
-      return false;
-    } finally {
-      setIsGlobalLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (email: string) => {
-    // Legacy support wrapper, UI now handles flow states
-    return requestPasswordResetCode(email);
-  };
-
   const logout = async () => {
     setIsGlobalLoading(true);
     try { 
@@ -1336,7 +1271,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, loginWithGoogle, handleForgotPassword, requestPasswordResetCode, verifyAndResetPassword, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
+      login, signup, loginWithGoogle, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,

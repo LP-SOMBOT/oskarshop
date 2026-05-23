@@ -10,15 +10,10 @@ import Link from "next/link";
 import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, Key, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import emailjs from '@emailjs/browser';
-import { 
-  EMAILJS_SERVICE_ID, 
-  EMAILJS_TEMPLATE_ID, 
-  EMAILJS_PUBLIC_KEY 
-} from "@/lib/emailjs-config";
 
 /**
- * @fileOverview Login Page with integrated Forgot Password overlay.
- * Uses EmailJS for client-side dispatch.
+ * @fileOverview Login Page with dynamic Recovery Protocol.
+ * Fetches EmailJS credentials from store settings.
  */
 
 export default function LoginPage() {
@@ -34,7 +29,7 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { login, loginWithGoogle, user, isGlobalLoading, authError, t } = useApp();
+  const { login, loginWithGoogle, user, isGlobalLoading, authError, t, storeSettings } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -61,6 +56,13 @@ export default function LoginPage() {
     setServerError(null);
 
     try {
+      // 1. Validate EmailJS Config
+      const ejConfig = storeSettings?.emailjs;
+      if (!ejConfig?.serviceId || !ejConfig?.templateId || !ejConfig?.publicKey) {
+        throw new Error("Password reset is temporarily unavailable. Please contact Oskar Shop support.");
+      }
+
+      // 2. Call Next.js API to generate OTP
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,8 +71,7 @@ export default function LoginPage() {
 
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error("Server configuration error. Please ensure Firebase Admin environment variables are set in the dashboard.");
+        throw new Error("Reset service encountered an error. Please try again later.");
       }
 
       const data = await res.json();
@@ -81,12 +82,12 @@ export default function LoginPage() {
         return;
       }
 
-      // Send Email via EmailJS
+      // 3. Send Email via EmailJS
       await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
+        ejConfig.serviceId,
+        ejConfig.templateId,
         { to_email: email, otp_code: data.otp },
-        EMAILJS_PUBLIC_KEY
+        ejConfig.publicKey
       );
 
       toast({ title: "Code Sent!", description: "Check your email inbox." });
