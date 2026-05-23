@@ -1,35 +1,23 @@
 "use client"
 
 import { useToast } from "@/hooks/use-toast"
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
+import { Toast } from "./toast"
+
+/**
+ * Toaster Container
+ * Positions notifications at Top-Right on Desktop and Top-Center on Mobile.
+ */
 
 export function Toaster() {
-  const { toasts } = useToast()
+  const { toasts, dismiss } = useToast()
 
   return (
-    <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
-        return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
-            </div>
-            {action}
-            <ToastClose />
-          </Toast>
-        )
-      })}
-      <ToastViewport />
-    </ToastProvider>
+    <div 
+      className="fixed top-0 left-0 right-0 z-[100006] pointer-events-none flex flex-col items-center sm:items-end p-4 sm:p-6 gap-3 sm:max-w-md sm:ml-auto"
+    >
+      {toasts.map((toast) => (
+        <Toast key={toast.id} toast={toast} onDismiss={dismiss} />
+      ))}
+    </div>
   )
 }
