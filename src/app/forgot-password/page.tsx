@@ -10,10 +10,15 @@ import { Mail, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide
 import Link from "next/link";
 import emailjs from '@emailjs/browser';
 import { toast } from "@/hooks/use-toast";
+import { 
+  EMAILJS_SERVICE_ID, 
+  EMAILJS_TEMPLATE_ID, 
+  EMAILJS_PUBLIC_KEY 
+} from "@/lib/emailjs-config";
 
 /**
- * @fileOverview Rebuilt Password Reset Flow using Next.js API Routes and EmailJS.
- * Hardened to handle non-JSON server responses gracefully.
+ * @fileOverview Hardened Password Reset Flow.
+ * Uses hardcoded EmailJS configuration for immediate reliability.
  */
 
 export default function ForgotPasswordPage() {
@@ -32,7 +37,7 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      // Step A: Call Next.js API to generate OTP
+      // Step A: Call Next.js API to generate OTP and store in RTDB
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,7 +46,7 @@ export default function ForgotPasswordPage() {
 
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server returned an unexpected response. Please ensure Firebase Admin environment variables are set.");
+        throw new Error("Server configuration error. Please ensure Firebase Admin environment variables are set in the dashboard.");
       }
 
       const data = await res.json();
@@ -52,20 +57,12 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      // Step B: Send Email via EmailJS
-      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
-
-      if (!serviceId || !templateId || !publicKey) {
-        throw new Error("EmailJS keys are missing. Please configure them in your environment variables.");
-      }
-
+      // Step B: Send Email via EmailJS using hardcoded keys
       await emailjs.send(
-        serviceId,
-        templateId,
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
         { to_email: email, otp_code: data.otp },
-        publicKey
+        EMAILJS_PUBLIC_KEY
       );
 
       toast({ title: "Code Sent!", description: "Check your email inbox." });
@@ -96,7 +93,7 @@ export default function ForgotPasswordPage() {
 
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server returned an unexpected response.");
+        throw new Error("Verification server error. Please try again later.");
       }
 
       const data = await res.json();

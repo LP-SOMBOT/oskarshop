@@ -1,6 +1,6 @@
 /**
  * EmailJS Configuration for Client-Side Dispatch
- * This allows oskar-shop to send emails on the Firebase Spark (free) plan.
+ * These keys are safe for frontend use by design.
  */
 
 export const EMAILJS_SERVICE_ID = 'service_c8dig2m';
