@@ -158,9 +158,9 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
       if (diff <= 0) setTimeLeft({ d: 0, h: 0, m: 0 });
       else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const totalHours = Math.floor(diff / (1000 * 60 * 60));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft({ d, totalHours, m });
+        setTimeLeft({ d, h, m });
       }
     };
     update();
@@ -174,7 +174,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
   return (
     <div className="flex flex-col items-start text-left">
       <span className="text-[11px] font-black text-primary uppercase tracking-tight">
-        {timeLeft.d}D {timeLeft.totalHours}H {timeLeft.m}M
+        {timeLeft.d}D {timeLeft.h}H {timeLeft.m}M
       </span>
       <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">
         ENDS {format(new Date(expiresAt), "MMM d").toUpperCase()}
@@ -1959,149 +1959,149 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
                          ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
                       </span>
-                   </div>
-                </div>
-                <div className="text-right">
-                   <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
-                      ${post.price.toFixed(2)}
-                   </p>
                 </div>
              </div>
-
-             <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
-
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
-                <InsightStat label="Level" value={post.level || "0"} icon={Star} />
-                <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
-                <InsightStat label="Wait" value={formatDistanceToNow(new Date(post.createdAt))} icon={Clock} />
-                <InsightStat label="Term" value={post.term || "Weekly"} icon={CalendarIcon} />
+             <div className="text-right">
+                <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                   ${post.price.toFixed(2)}
+                </p>
              </div>
           </div>
-       </Card>
 
-       {/* Stakeholder Hub */}
-       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
-          <div className="flex items-center justify-between">
-             <div className="flex items-center gap-4 text-primary">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                   <LinkIcon size={20} />
-                </div>
-                <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholder Hub</h4>
-             </div>
-             <Badge className="bg-primary text-white border-none rounded-full px-6 py-2 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
-                {claimants.length} LIVE REQUESTS
-             </Badge>
+          <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
+             <InsightStat label="Level" value={post.level || "0"} icon={Star} />
+             <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
+             <InsightStat label="Wait" value={formatDistanceToNow(new Date(post.createdAt))} icon={Clock} />
+             <InsightStat label="Term" value={post.term || "Weekly"} icon={CalendarIcon} />
           </div>
+       </div>
+    </Card>
 
-          <div className="space-y-6">
-             {/* Seller section */}
-             <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-6">
-                   <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
-                      {post.authorAvatar ? <Image src={post.authorAvatar} alt="" fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
-                   </div>
-                   <div className="min-w-0">
-                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Original Seller</p>
-                      <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
-                         {post.authorName || "Market User"}
-                      </h5>
-                      <div className="flex flex-wrap items-center gap-3 mt-2">
-                         <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase whitespace-nowrap">{post.phone}</span>
-                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white cursor-pointer" onClick={() => handleWhatsApp(post.phone)}>
-                               <MessageCircle size={12} />
-                            </div>
+    {/* Stakeholder Hub */}
+    <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
+       <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-primary">
+             <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                <LinkIcon size={20} />
+             </div>
+             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholder Hub</h4>
+          </div>
+          <Badge className="bg-primary text-white border-none rounded-full px-6 py-2 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
+             {claimants.length} LIVE REQUESTS
+          </Badge>
+       </div>
+
+       <div className="space-y-6">
+          {/* Seller section */}
+          <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+             <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
+                   {post.authorAvatar ? <Image src={post.authorAvatar} alt="" fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
+                </div>
+                <div className="min-w-0">
+                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Original Seller</p>
+                   <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                      {post.authorName || "Market User"}
+                   </h5>
+                   <div className="flex flex-wrap items-center gap-3 mt-2">
+                      <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full flex items-center gap-2">
+                         <span className="text-[10px] font-black uppercase whitespace-nowrap">{post.phone}</span>
+                         <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white cursor-pointer" onClick={() => handleWhatsApp(post.phone)}>
+                            <MessageCircle size={12} />
                          </div>
-                         {post.senderNumber && (
-                            <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight">
-                               NUMBER KA LACAGTA (SENDER): <span className="text-slate-900 ml-1">{post.senderNumber}</span>
-                            </div>
-                         )}
                       </div>
+                      {post.senderNumber && (
+                         <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight">
+                            NUMBER KA LACAGTA (SENDER): <span className="text-slate-900 ml-1">{post.senderNumber}</span>
+                         </div>
+                      )}
                    </div>
                 </div>
-                <div className="opacity-10 shrink-0 hidden md:block">
-                   <User size={48} />
-                </div>
              </div>
+             <div className="opacity-10 shrink-0 hidden md:block">
+                <User size={48} />
+             </div>
+          </div>
 
-             {/* Buyer Reports Section */}
-             {claimants.length === 0 ? (
-               <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
-                  <ShieldCheck size={48} className="mb-4" />
-                  <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
-               </div>
-             ) : (
-               <div className="space-y-4">
-                  {claimants.map((c: any) => (
-                    <div key={c.uid} className="p-6 md:p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:bg-slate-100/50">
-                       <div className="flex items-center gap-5 w-full sm:w-auto">
-                          <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 border-white dark:border-slate-700 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center">
-                             {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
-                          </div>
-                          <div className="min-w-0">
-                             <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
-                             <div className="flex items-center gap-2 mt-1">
-                                <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
-                             </div>
-                             <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase()} AGO</p>
-                          </div>
+          {/* Buyer Reports Section */}
+          {claimants.length === 0 ? (
+            <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
+               <ShieldCheck size={48} className="mb-4" />
+               <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+               {claimants.map((c: any) => (
+                 <div key={c.uid} className="p-6 md:p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:bg-slate-100/50">
+                    <div className="flex items-center gap-5 w-full sm:w-auto">
+                       <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 border-white dark:border-slate-700 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center">
+                          {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
                        </div>
-                       <div className="flex items-center gap-3 w-full sm:w-auto">
-                          <Button 
-                            variant="outline" 
-                            className="flex-1 sm:flex-none h-14 px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2"
-                            onClick={() => handleWhatsApp(c.whatsapp)}
-                          >
-                             <MessageCircle size={18} /> WhatsApp
-                          </Button>
-                          <Button 
-                            className="flex-1 sm:flex-none h-14 px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20"
-                            onClick={() => handleForceSold(c.uid)}
-                          >
-                             <Check size={18} /> FORCE SOLD
-                          </Button>
+                       <div className="min-w-0">
+                          <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
+                          <div className="flex items-center gap-2 mt-1">
+                             <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
+                          </div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase()} AGO</p>
                        </div>
                     </div>
-                  ))}
-               </div>
-             )}
-          </div>
-       </Card>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                       <Button 
+                         variant="outline" 
+                         className="flex-1 sm:flex-none h-14 px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2"
+                         onClick={() => handleWhatsApp(c.whatsapp)}
+                       >
+                          <MessageCircle size={18} /> WhatsApp
+                       </Button>
+                       <Button 
+                         className="flex-1 sm:flex-none h-14 px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20"
+                         onClick={() => handleForceSold(c.uid)}
+                       >
+                          <Check size={18} /> FORCE SOLD
+                       </Button>
+                    </div>
+                 </div>
+               ))}
+            </div>
+          )}
+       </div>
+    </Card>
 
-       {/* Lifecycle Control */}
-       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
-          <div className="flex items-center gap-4 text-amber-500">
-             <RefreshCw size={24} />
-             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Lifecycle Control</h4>
+    {/* Lifecycle Control */}
+    <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
+       <div className="flex items-center gap-4 text-amber-500">
+          <RefreshCw size={24} />
+          <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Lifecycle Control</h4>
+       </div>
+
+       <div className="space-y-8">
+          <div className="space-y-3">
+             <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
+             <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                   <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                   {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
+                     <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                   ))}
+                </SelectContent>
+             </Select>
           </div>
 
-          <div className="space-y-8">
-             <div className="space-y-3">
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
-                <Select value={status} onValueChange={setStatus}>
-                   <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                      <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                      {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
-                        <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
-                      ))}
-                   </SelectContent>
-                </Select>
-             </div>
-
-             <Button 
-                onClick={onUpdate} 
-                disabled={isSaving} 
-                className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
-             >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SAVE LOGIC"}
-             </Button>
-          </div>
-       </Card>
-    </div>
-  );
+          <Button 
+             onClick={onUpdate} 
+             disabled={isSaving} 
+             className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+          >
+             {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SAVE LOGIC"}
+          </Button>
+       </div>
+    </Card>
+  </div>
+);
 }
 
 // Helper Components
