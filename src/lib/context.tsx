@@ -15,7 +15,6 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth';
 import { 
@@ -942,21 +941,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || isStandalone();
-      
-      if (isMobileDevice) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          await ensureUserProfile(result.user);
-          toast({ title: "Authorized!", description: "Welcome back." });
-          router.replace('/');
-        }
+      const result = await signInWithPopup(auth, provider);
+      if (result && result.user) {
+        await ensureUserProfile(result.user);
+        toast({ title: "Authorized!", description: "Welcome back." });
+        router.replace('/');
       }
     } catch (error: any) {
       console.error("CRITICAL GOOGLE ERROR:", error);
       setAuthError(error.message);
+    } finally {
       setIsGlobalLoading(false);
     }
   };
