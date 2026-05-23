@@ -151,12 +151,9 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
       if (diff <= 0) setTimeLeft({ d: 0, h: 0, m: 0 });
       else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff / (1000 * 60 * 60))); // Continuous hours as per screenshot
-        const m = Math.floor((diff % (1000 * 60)) / 1000); // Minutes simplified
-        // The screenshot shows a high-impact format: X D XXX H XX M
-        const displayH = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + (d * 24);
-        const displayM = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft({ d, h: displayH, m: displayM });
+        const totalHours = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setTimeLeft({ d, h: totalHours, m });
       }
     };
     update();
@@ -168,7 +165,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
   if (!expiresAt) return <span className="text-[10px] text-slate-300 italic font-medium uppercase">Awaiting Live</span>;
 
   return (
-    <div className="flex flex-col items-end text-right">
+    <div className="flex flex-col items-start text-left">
       <span className="text-[11px] font-black text-primary uppercase tracking-tight">
         {timeLeft.d}D {timeLeft.h}H {timeLeft.m}M
       </span>
@@ -186,7 +183,9 @@ function WaitTime({ post }: { post: any }) {
   const [elapsed, setElapsed] = useState("None");
 
   useEffect(() => {
-    const claimTime = post.buyerReportedAt || (post.claimants ? Math.min(...Object.values(post.claimants).map((c: any) => c.timestamp)) : null);
+    const claimants = Object.values(post.claimants || {});
+    const claimTime = post.buyerReportedAt || (claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null);
+    
     if (!claimTime || post.sold) {
       setElapsed("None");
       return;
@@ -708,36 +707,33 @@ export default function AdminPage() {
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
-                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller</TableHead>
-                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Game & Info</TableHead>
+                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller Info</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Active Claims</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Wait Time</TableHead>
-                                <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Expiration</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Expiration</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Status</TableHead>
+                                <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                              </TableRow>
                           </TableHeader>
                           <TableBody>
                              {filteredAccounts.length === 0 ? (
-                               <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
+                               <TableRow><TableCell colSpan={7} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
                                filteredAccounts.map(p => (
                                  <TableRow 
                                     key={p.id} 
-                                    onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
-                                    className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                                    className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/50 transition-colors"
                                  >
                                     <TableCell className="px-10">
                                        <div className="flex items-center gap-4">
-                                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0">
+                                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200">U</div>}
                                           </div>
-                                          <span className="font-bold text-sm text-slate-900 dark:text-white">{p.authorName}</span>
-                                       </div>
-                                    </TableCell>
-                                    <TableCell>
-                                       <div className="flex flex-col">
-                                          <span className="font-bold text-sm text-slate-900 dark:text-white uppercase">{p.gameType} - LV {p.level}</span>
-                                          <span className="text-[10px] text-muted-foreground font-medium">${p.price}</span>
+                                          <div className="flex flex-col">
+                                            <span className="font-bold text-sm text-slate-900 dark:text-white uppercase truncate">{p.gameType} - LV {p.level}</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium">${p.price}</span>
+                                          </div>
                                        </div>
                                     </TableCell>
                                     <TableCell>
@@ -753,12 +749,29 @@ export default function AdminPage() {
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
                                              {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
-                                          <span className="text-xs font-bold text-slate-500">{p.processedBy?.name || "Unassigned"}</span>
+                                          <span className="text-xs font-bold text-slate-500 truncate max-w-[100px]">{p.processedBy?.name || "Oskarshopad..."}</span>
                                        </div>
                                     </TableCell>
                                     <TableCell><WaitTime post={p} /></TableCell>
-                                    <TableCell className="text-right px-10">
+                                    <TableCell>
                                        <MarketplaceExpiration expiresAt={p.expiresAt} status={p.status} />
+                                    </TableCell>
+                                    <TableCell><StatusBadge status={p.status} /></TableCell>
+                                    <TableCell className="text-right px-10">
+                                      <div className="flex justify-end items-center gap-3">
+                                        <button 
+                                          onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
+                                          className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
+                                        >
+                                          <Eye size={18} />
+                                        </button>
+                                        <button 
+                                          onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
+                                          className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
+                                        >
+                                          <Trash2 size={18} />
+                                        </button>
+                                      </div>
                                     </TableCell>
                                  </TableRow>
                                ))
