@@ -2033,37 +2033,56 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
             </div>
           ) : (
             <div className="space-y-4">
-               {claimants.map((c: any) => (
-                 <div key={c.uid} className="p-6 md:p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:bg-slate-100/50">
-                    <div className="flex items-center gap-5 w-full sm:w-auto">
-                       <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 border-white dark:border-slate-700 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center">
-                          {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
-                       </div>
-                       <div className="min-w-0">
-                          <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
-                          <div className="flex items-center gap-2 mt-1">
-                             <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
-                          </div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase() + " AGO"}</p>
-                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                       <Button 
-                         variant="outline" 
-                         className="flex-1 sm:flex-none h-14 px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2"
-                         onClick={() => handleWhatsApp(c.whatsapp)}
-                       >
-                          <MessageCircle size={18} /> WhatsApp
-                       </Button>
-                       <Button 
-                         className="flex-1 sm:flex-none h-14 px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20"
-                         onClick={() => handleForceSold(c.uid)}
-                       >
-                          <Check size={18} /> FORCE SOLD
-                       </Button>
-                    </div>
-                 </div>
-               ))}
+               {claimants.map((c: any) => {
+                 const claimStatus = c.status || 'pending';
+                 return (
+                   <div key={c.uid} className={cn(
+                     "p-6 md:p-8 rounded-[2.5rem] border flex flex-col sm:flex-row items-center justify-between gap-6 transition-all",
+                     claimStatus === 'accepted' ? "bg-green-50 border-green-200 dark:bg-green-950/20" : 
+                     claimStatus === 'rejected' ? "bg-red-50 border-red-200 dark:bg-red-950/20" : 
+                     "bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 hover:bg-slate-100/50"
+                   )}>
+                      <div className="flex items-center gap-5 w-full sm:w-auto">
+                         <div className={cn(
+                           "w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center",
+                           claimStatus === 'accepted' ? "border-green-500" : claimStatus === 'rejected' ? "border-red-500" : "border-white dark:border-slate-700"
+                         )}>
+                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
+                         </div>
+                         <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                               <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
+                               <Badge className={cn(
+                                 "text-[8px] font-black uppercase px-2 py-0 h-5 border-none shadow-sm",
+                                 claimStatus === 'accepted' ? "bg-green-500 text-white" : claimStatus === 'rejected' ? "bg-red-500 text-white" : "bg-amber-500 text-white"
+                               )}>
+                                 {claimStatus === 'accepted' ? 'SELLER CONFIRMED' : claimStatus === 'rejected' ? 'SELLER REJECTED' : 'AWAITING SELLER'}
+                               </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                               <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
+                            </div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase() + " AGO"}</p>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                         <Button 
+                           variant="outline" 
+                           className="flex-1 sm:flex-none h-14 px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2"
+                           onClick={() => handleWhatsApp(c.whatsapp)}
+                         >
+                            <MessageCircle size={18} /> WhatsApp
+                         </Button>
+                         <Button 
+                           className="flex-1 sm:flex-none h-14 px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20"
+                           onClick={() => handleForceSold(c.uid)}
+                         >
+                            <Check size={18} /> FORCE SOLD
+                         </Button>
+                      </div>
+                   </div>
+                 );
+               })}
             </div>
           )}
        </div>
