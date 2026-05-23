@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -1301,7 +1300,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 disabled={isSaving} 
                 className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
              >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Sync Order Status"}
+                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SAVE LOGIC"}
              </Button>
 
              <div className="pt-8 space-y-6">
@@ -1327,6 +1326,17 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce }: any) {
   if (!post) return null;
   const claimants = Object.values(post.claimants || {});
+  const { updateAccountPostStatus } = useApp();
+
+  const handleForceSold = (uid: string) => {
+    updateAccountPostStatus(post.id, 'sold', uid);
+    toast({ title: "Account assigned to buyer!" });
+  };
+
+  const handleWhatsApp = (num: string) => {
+    const formatted = formatWhatsAppNumber(num);
+    window.open(`https://wa.me/${formatted}`, '_blank');
+  };
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
@@ -1419,29 +1429,67 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
                          {post.authorName || "Market User"}
                       </h5>
-                      <div className="flex items-center gap-3 mt-2">
-                         <div className="bg-primary/10 text-primary px-4 py-1 rounded-full text-[10px] font-black uppercase">
-                            WhatsApp Support
-                         </div>
-                         <div className="flex items-center gap-2 text-primary font-bold text-xs">
-                            <span className="bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-lg border dark:border-white/5">{post.phone}</span>
-                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white">
-                               <MessageCircle size={14} />
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
+                         <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase whitespace-nowrap">{post.phone}</span>
+                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white cursor-pointer" onClick={() => handleWhatsApp(post.phone)}>
+                               <MessageCircle size={12} />
                             </div>
                          </div>
+                         {post.senderNumber && (
+                            <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight">
+                               NUMBER KA LACAGTA (SENDER): <span className="text-slate-900 ml-1">{post.senderNumber}</span>
+                            </div>
+                         )}
                       </div>
                    </div>
                 </div>
-                <div className="opacity-10 shrink-0">
+                <div className="opacity-10 shrink-0 hidden md:block">
                    <User size={48} />
                 </div>
              </div>
 
              {/* Buyer Reports Section */}
-             <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
-                <ShieldCheck size={48} className="mb-4" />
-                <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
-             </div>
+             {claimants.length === 0 ? (
+               <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
+                  <ShieldCheck size={48} className="mb-4" />
+                  <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
+               </div>
+             ) : (
+               <div className="space-y-4">
+                  {claimants.map((c: any) => (
+                    <div key={c.uid} className="p-6 md:p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 transition-all hover:bg-slate-100/50">
+                       <div className="flex items-center gap-5 w-full sm:w-auto">
+                          <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 border-white dark:border-slate-700 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center">
+                             {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
+                          </div>
+                          <div className="min-w-0">
+                             <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
+                             <div className="flex items-center gap-2 mt-1">
+                                <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
+                             </div>
+                             <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase()} AGO</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-3 w-full sm:w-auto">
+                          <Button 
+                            variant="outline" 
+                            className="flex-1 sm:flex-none h-14 px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2"
+                            onClick={() => handleWhatsApp(c.whatsapp)}
+                          >
+                             <MessageCircle size={18} /> WhatsApp
+                          </Button>
+                          <Button 
+                            className="flex-1 sm:flex-none h-14 px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20"
+                            onClick={() => handleForceSold(c.uid)}
+                          >
+                             <Check size={18} /> FORCE SOLD
+                          </Button>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+             )}
           </div>
        </Card>
 
@@ -1472,7 +1520,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 disabled={isSaving} 
                 className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
              >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Sync Changes"}
+                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SAVE LOGIC"}
              </Button>
           </div>
        </Card>
