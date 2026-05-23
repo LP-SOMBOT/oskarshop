@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     if (!isFirebaseAdminAvailable || !adminDb) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Firebase Admin not configured. Please set environment variables.' 
+        message: 'Firebase Admin not configured. Please set environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, and FIREBASE_DATABASE_URL in your dashboard.' 
       }, { status: 500 });
     }
 
