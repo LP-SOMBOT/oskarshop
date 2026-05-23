@@ -72,7 +72,8 @@ import {
   ImagePlus,
   Type,
   ExternalLink,
-  Wallet
+  Wallet,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -145,6 +146,7 @@ import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "dat
 
 /**
  * High-Fidelity Marketplace Countdown
+ * Correctly calculates 7 days for Weekly and 30 days for Monthly terms.
  */
 function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, status: string }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
@@ -185,16 +187,20 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
 
 /**
  * Wait Time Helper
+ * Tracks responsiveness of seller since earliest buyer claim.
  */
 function WaitTime({ post }: { post: any }) {
   const [elapsed, setElapsed] = useState("None");
+  const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     const claimants = Object.values(post.claimants || {});
-    const claimTime = post.buyerReportedAt || (claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null);
+    // Use the earliest claim timestamp as the start of the wait period
+    const claimTime = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
     
     if (!claimTime || post.sold) {
       setElapsed("None");
+      setIsUrgent(false);
       return;
     }
 
@@ -203,13 +209,25 @@ function WaitTime({ post }: { post: any }) {
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       setElapsed(`${h}h ${m}m`);
+      // If wait time is >= 24 hours and seller hasn't responded, flag as urgent
+      setIsUrgent(h >= 24 && !post.sellerReported);
     };
     update();
     const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
   }, [post]);
 
-  return <span className={cn("text-[10px] font-bold", elapsed === "None" ? "text-slate-200 italic" : "text-slate-500")}>{elapsed}</span>;
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn(
+        "text-[10px] font-bold", 
+        elapsed === "None" ? "text-slate-200 italic" : isUrgent ? "text-red-500" : "text-slate-500"
+      )}>
+        {elapsed}
+      </span>
+      {isUrgent && <AlertTriangle size={12} className="text-red-500 animate-pulse" />}
+    </div>
+  );
 }
 
 export default function AdminPage() {
@@ -747,10 +765,19 @@ export default function AdminPage() {
                              {accountPosts.length === 0 ? (
                                <TableRow><TableCell colSpan={8} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
-                               accountPosts.map(p => (
+                               accountPosts.map(p => {
+                                 // Check for critical wait time > 24h
+                                 const claimantsList = Object.values(p.claimants || {});
+                                 const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
+                                 const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !p.sellerReported && !p.sold;
+
+                                 return (
                                  <TableRow 
                                     key={p.id} 
-                                    className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/50 transition-colors"
+                                    className={cn(
+                                      "border-slate-50 dark:border-white/5 h-24 transition-colors",
+                                      isOverdue ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-slate-50/50"
+                                    )}
                                  >
                                     <TableCell className="px-10">
                                        <div className="flex items-center gap-3">
@@ -767,12 +794,15 @@ export default function AdminPage() {
                                        </div>
                                     </TableCell>
                                     <TableCell>
-                                       <Badge className={cn(
-                                         "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
-                                         Object.keys(p.claimants || {}).length > 0 ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
-                                       )}>
-                                         {Object.keys(p.claimants || {}).length} Claims
-                                       </Badge>
+                                       <div className="flex items-center gap-2">
+                                          <Badge className={cn(
+                                            "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
+                                            claimantsList.length > 0 ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
+                                          )}>
+                                            {claimantsList.length} Claims
+                                          </Badge>
+                                          {isOverdue && <Badge className="bg-red-500 text-white border-none text-[8px] font-black uppercase">STALLING</Badge>}
+                                       </div>
                                     </TableCell>
                                     <TableCell>
                                        <div className="flex items-center gap-3">
@@ -806,7 +836,8 @@ export default function AdminPage() {
                                       </div>
                                     </TableCell>
                                  </TableRow>
-                               ))
+                               );
+                               })
                              )}
                           </TableBody>
                        </Table>
@@ -1689,7 +1720,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="max-w-sm rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
+        <DialogContent className="max-sm rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-6"><AlertCircle size={40} /></div>
            <DialogTitle className="text-2xl font-headline font-bold">Ma hubtaa?</DialogTitle>
            <DialogDescription className="text-xs uppercase font-black text-slate-400 mt-2">Action cannot be undone.</DialogDescription>
@@ -1874,6 +1905,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
+  // Check for critical wait time > 24h
+  const earliestClaim = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
+  const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !post.sellerReported && !post.sold;
+
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
     toast({ title: "Account assigned to buyer!" });
@@ -1935,6 +1970,29 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
                   <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
                </div>
+            </div>
+         </Card>
+       )}
+
+       {/* Critical Stalling Warning Banner */}
+       {isStalling && (
+         <Card className="rounded-[3rem] border-none bg-red-600 text-white p-8 md:p-12 space-y-8 animate-in slide-in-from-top-4 duration-700 shadow-2xl shadow-red-500/20">
+            <div className="flex items-center gap-6">
+               <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0 animate-pulse">
+                  <ShieldAlert size={40} className="md:size-12 text-white" />
+               </div>
+               <div>
+                  <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight leading-none">Seller Non-Responsive</h2>
+                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Has not responded to purchase claims for over 24 hours.</p>
+               </div>
+            </div>
+            <div className="flex gap-4">
+               <Button onClick={onEnforce} className="bg-white text-red-600 hover:bg-slate-100 font-black uppercase tracking-widest px-8 h-14 rounded-2xl shadow-xl">
+                  Take Penalty Action
+               </Button>
+               <Button variant="ghost" onClick={() => handleWhatsApp(post.phone)} className="text-white border-2 border-white/20 hover:bg-white/10 font-bold px-8 h-14 rounded-2xl">
+                  Contact Seller
+               </Button>
             </div>
          </Card>
        )}
