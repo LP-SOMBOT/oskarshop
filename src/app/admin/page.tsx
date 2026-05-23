@@ -1106,47 +1106,133 @@ export default function AdminPage() {
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
         <DialogContent className="max-w-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
-           <div className="h-32 bg-gradient-to-r from-primary to-blue-600 relative shrink-0">
-              <div className="absolute -bottom-12 left-8 group">
-                 <div className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
-                    {selectedUser?.photoURL ? <Image src={selectedUser.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={32} /></div>}
+           
+           {/* Modal Header Gradient */}
+           <div className="h-32 bg-gradient-to-r from-[#0EA5E9] to-[#2563EB] relative shrink-0">
+              <button 
+                onClick={() => setIsUserManageOpen(false)}
+                className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
+              >
+                 <XCircle size={20} />
+              </button>
+              
+              {/* Overlapping Avatar */}
+              <div className="absolute -bottom-12 left-8">
+                 <div className="w-24 h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
+                    {selectedUser?.photoURL ? (
+                      <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
+                    )}
                  </div>
               </div>
            </div>
+
            <div className="p-8 pt-16 space-y-8">
+              {/* User Basic Info */}
               <div className="flex justify-between items-start">
                  <div>
-                    <h3 className="text-2xl font-headline font-bold tracking-tight">{selectedUser?.name}</h3>
+                    <h3 className="text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white">{selectedUser?.name || "Gamer"}</h3>
                     <p className="text-xs font-medium text-muted-foreground">{selectedUser?.email}</p>
+                    <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
+                       <Smartphone size={12} />
+                       <span className="text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                    </div>
                  </div>
-                 <Badge variant={selectedUser?.banned ? "destructive" : "outline"} className="rounded-lg uppercase text-[8px] font-black tracking-widest px-3 py-1">
+                 <Badge className={cn(
+                   "rounded-full uppercase text-[8px] font-black tracking-widest px-3 py-1 border-none shadow-sm",
+                   selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
+                 )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
                  </Badge>
               </div>
+
+              {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-4">
-                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 shadow-inner">
-                    <p className="text-[9px] font-black uppercase text-slate-400 mb-1">Balance</p>
+                 <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-widest">Balance</p>
                     <div className="flex items-center gap-2">
-                       <Star className="w-4 h-4 text-amber-500" fill="currentColor" />
-                       <p className="text-2xl font-headline font-bold">{selectedUser?.points || 0}</p>
+                       <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                       <p className="text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
                     </div>
                  </div>
-                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 shadow-inner">
-                    <p className="text-[9px] font-black uppercase text-slate-400 mb-1">Role</p>
-                    <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase">{selectedUser?.role}</Badge>
+                 <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[9px] font-black uppercase text-slate-400 mb-2 tracking-widest">Role</p>
+                    <Badge className="bg-primary/10 text-primary border-none text-[10px] font-black uppercase px-3 py-1 rounded-lg">
+                      {selectedUser?.role || 'user'}
+                    </Badge>
                  </div>
               </div>
+
+              {/* Role Management */}
+              <div className="space-y-3">
+                 <div className="flex items-center gap-2 text-primary ml-1">
+                    <LayoutGrid size={14} />
+                    <Label className="text-[10px] font-black uppercase tracking-widest">Role Management</Label>
+                 </div>
+                 <Select 
+                    value={selectedUser?.role || 'user'} 
+                    onValueChange={(val: any) => {
+                      manageUser(selectedUser.uid, { role: val });
+                      setSelectedUser({...selectedUser, role: val});
+                      toast({title: "Role Updated"});
+                    }}
+                 >
+                    <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-base shadow-inner">
+                       <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
+                       <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
+                       <SelectItem value="staff" className="rounded-xl p-4 font-bold text-xs uppercase">staff member</SelectItem>
+                       <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+
+              {/* Wallet Adjustments */}
               <div className="space-y-4">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Wallet Adjustments</Label>
+                 <div className="flex items-center gap-2 text-amber-500 ml-1">
+                    <DollarSign size={14} />
+                    <Label className="text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
+                 </div>
                  <div className="flex gap-3">
-                    <Input type="number" placeholder="Amt" value={pointAdjustment} onChange={e => setPointAdjustment(e.target.value)} className="h-14 rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-6" />
-                    <Button onClick={() => handleAdjustPoints('credit')} className="h-14 w-14 rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shrink-0"><ArrowUpCircle size={24} /></Button>
-                    <Button onClick={() => handleAdjustPoints('debit')} className="h-14 w-14 rounded-2xl bg-red-500 hover:bg-red-600 shadow-lg shrink-0"><ArrowDownCircle size={24} /></Button>
+                    <Input 
+                      type="number" 
+                      placeholder="Amt" 
+                      value={pointAdjustment} 
+                      onChange={e => setPointAdjustment(e.target.value)} 
+                      className="h-16 rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-6 text-lg focus:ring-2 focus:ring-primary" 
+                    />
+                    <Button onClick={() => handleAdjustPoints('credit')} className="h-16 w-16 rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20 shrink-0"><ArrowUpCircle size={28} /></Button>
+                    <Button onClick={() => handleAdjustPoints('debit')} className="h-16 w-16 rounded-2xl bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={28} /></Button>
                  </div>
               </div>
-              <Button variant={selectedUser?.banned ? "default" : "destructive"} onClick={async () => { await manageUser(selectedUser.uid, { banned: !selectedUser.banned }); setSelectedUser({...selectedUser, banned: !selectedUser.banned}); toast({title:selectedUser.banned?"Unbanned":"Banned"}); }} className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl">
-                 {selectedUser?.banned ? "Unban User" : "Terminate Account"}
-              </Button>
+
+              {/* Actions Footer */}
+              <div className="pt-2">
+                 <Button 
+                    variant={selectedUser?.banned ? "default" : "destructive"} 
+                    onClick={async () => { 
+                      const newBanned = !selectedUser.banned;
+                      await manageUser(selectedUser.uid, { banned: newBanned }); 
+                      setSelectedUser({...selectedUser, banned: newBanned}); 
+                      toast({title: newBanned ? "User Terminated" : "User Restored"}); 
+                    }} 
+                    className={cn(
+                      "w-full h-18 rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3",
+                      selectedUser?.banned ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"
+                    )}
+                 >
+                    {selectedUser?.banned ? (
+                      <><RefreshCw size={20} /> RESTORE ACCESS</>
+                    ) : (
+                      <><Ban size={20} /> TERMINATE</>
+                    )}
+                 </Button>
+                 <p className="text-[8px] text-center text-slate-300 uppercase font-black tracking-widest mt-6 opacity-40">
+                    JOINED: {selectedUser?.createdAt ? format(new Date(selectedUser.createdAt), 'MMM d, yyyy').toUpperCase() : 'N/A'}
+                 </p>
+              </div>
            </div>
         </DialogContent>
       </Dialog>
