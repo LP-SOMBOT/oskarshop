@@ -256,6 +256,9 @@ export default function AdminPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
+  // Expansion States
+  const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
+
   // Dialog States
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -329,9 +332,9 @@ export default function AdminPage() {
     setIsGameDialogOpen(true);
   };
 
-  const handleOpenProductDialog = (p?: any) => {
+  const handleOpenProductDialog = (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "" } : { title: "", gameId: "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
+    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
     setIsProductDialogOpen(true);
   };
 
@@ -729,34 +732,96 @@ export default function AdminPage() {
                   </Button>
                </div>
 
-               <div className="grid grid-cols-1 gap-4 max-w-4xl">
-                  {games.map(g => (
-                    <Card key={g.id} className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 flex items-center justify-between group hover:shadow-md transition-all">
-                       <div className="flex items-center gap-4 sm:gap-6 min-w-0">
-                          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border border-gray-100 dark:border-white/5 shadow-inner">
-                             {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-6 text-slate-300" />}
-                          </div>
-                          <div className="min-w-0">
-                             <h4 className="font-headline font-bold text-sm sm:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">{g.title}</h4>
-                             <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{g.category}</p>
-                          </div>
-                       </div>
-                       <div className="flex flex-col gap-2 shrink-0">
-                          <button 
-                            onClick={() => handleOpenGameDialog(g)}
-                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors"
-                          >
-                            <PencilLine size={20} />
-                          </button>
-                          <button 
-                            onClick={() => { setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}
-                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                       </div>
-                    </Card>
-                  ))}
+               <div className="grid grid-cols-1 gap-6 max-w-4xl">
+                  {games.map(g => {
+                    const isExpanded = expandedGameId === g.id;
+                    const gameItems = products.filter(p => p.gameId === g.id);
+                    
+                    return (
+                      <Card 
+                        key={g.id} 
+                        className={cn(
+                          "rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 overflow-hidden transition-all duration-300",
+                          isExpanded && "ring-2 ring-primary shadow-2xl"
+                        )}
+                      >
+                         {/* Card Header */}
+                         <div 
+                           onClick={() => setExpandedGameId(isExpanded ? null : g.id)}
+                           className="p-4 md:p-8 flex items-center justify-between cursor-pointer group"
+                         >
+                            <div className="flex items-center gap-4 sm:gap-8 min-w-0">
+                               <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-3xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border border-gray-100 dark:border-white/5 shadow-inner">
+                                  {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-8 text-slate-300" />}
+                               </div>
+                               <div className="min-w-0">
+                                  <h4 className="font-headline font-bold text-base sm:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">{g.title}</h4>
+                                  <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{g.category}</p>
+                               </div>
+                            </div>
+                            <div className="flex flex-col gap-3 shrink-0">
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); handleOpenGameDialog(g); }}
+                                 className="text-blue-500 hover:scale-110 transition-transform"
+                               >
+                                 <PencilLine size={24} />
+                               </button>
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}
+                                 className="text-red-500 hover:scale-110 transition-transform"
+                               >
+                                 <Trash2 size={24} />
+                               </button>
+                            </div>
+                         </div>
+
+                         {/* Expanded Inventory Items */}
+                         {isExpanded && (
+                           <div className="px-4 md:px-8 pb-8 pt-4 border-t dark:border-white/5 animate-in slide-in-from-top-2 duration-300">
+                              <div className="flex justify-between items-center mb-6">
+                                 <h5 className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">Inventory Items</h5>
+                                 <button 
+                                   onClick={() => handleOpenProductDialog(null, g.id)}
+                                   className="text-[10px] md:text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5"
+                                 >
+                                    <Plus size={14} /> Add Item
+                                 </button>
+                              </div>
+
+                              <div className="space-y-3">
+                                 {gameItems.length === 0 ? (
+                                   <div className="py-8 text-center opacity-30 italic text-xs uppercase font-bold">No items added yet</div>
+                                 ) : (
+                                   gameItems.map(p => (
+                                     <div 
+                                       key={p.id}
+                                       onClick={() => handleOpenProductDialog(p)}
+                                       className="p-3 md:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex items-center justify-between group hover:bg-slate-100 transition-colors cursor-pointer"
+                                     >
+                                        <div className="flex items-center gap-3 md:gap-5">
+                                           <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl overflow-hidden relative shrink-0 shadow-sm border border-white">
+                                              {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200" />}
+                                           </div>
+                                           <div>
+                                              <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight">{p.title}</p>
+                                              <p className="text-[10px] md:text-sm font-black text-primary mt-0.5">${p.price}</p>
+                                           </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                           <button onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
+                                              <Trash2 size={16} />
+                                           </button>
+                                           <ChevronRight size={18} className="text-slate-300" />
+                                        </div>
+                                     </div>
+                                   ))
+                                 )}
+                              </div>
+                           </div>
+                         )}
+                      </Card>
+                    );
+                  })}
                </div>
             </div>
           )}
