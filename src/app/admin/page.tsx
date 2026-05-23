@@ -1175,7 +1175,7 @@ export default function AdminPage() {
                               <SettingInput label="EVC / Premier Payment Number" value={economyForm.paymentNumber} onChange={v => setEconomyForm(f => ({ ...f, paymentNumber: v }))} placeholder="613982172" />
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                                  <SettingInput label="Weekly Listing Fee ($)" type="number" value={economyForm.listingFeeWeekly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeWeekly: parseFloat(v) }))} placeholder="1.00" />
-                                 <SettingInput label="Monthly Listing Fee ($)" type="number" value={economyForm.listingFeeMonthly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeMonthly: parseFloat(v) }))} placeholder="3.00" />
+                                 <SettingInput label="Monthly Listing Fee ($)" type="number" value={economyForm.listingFeeWeekly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeMonthly: parseFloat(v) }))} placeholder="3.00" />
                               </div>
                               <Button onClick={syncEconomySettings} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-amber-500 hover:bg-amber-600">Update Economy</Button>
                            </div>
@@ -1513,7 +1513,7 @@ export default function AdminPage() {
            <DialogHeader><DialogTitle className="text-2xl font-headline font-bold">{editingGame ? 'Edit Collection' : 'New Game Collection'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSaveGame} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center group overflow-hidden">
+                 <div className="relative w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
                     {gameForm.icon ? <Image src={gameForm.icon} alt="" fill className="object-cover" /> : <ImageIcon className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'game')} />
                  </div>
@@ -2044,7 +2044,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                           <div className="flex items-center gap-2 mt-1">
                              <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
                           </div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase()} AGO</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase() + " AGO"}</p>
                        </div>
                     </div>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -2090,6 +2090,28 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 </SelectContent>
              </Select>
           </div>
+
+          {/* Manual Buyer Selection if Sold */}
+          {status === 'sold' && (
+             <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
+                <Select value={buyerId} onValueChange={setBuyerId}>
+                   <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                      <SelectValue placeholder="Select User..." />
+                   </SelectTrigger>
+                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                      <div className="max-h-[300px] overflow-y-auto">
+                         {allUsers.map((u: any) => (
+                           <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
+                              {u.name || "Unknown User"} ({u.phoneNumber || u.email})
+                           </SelectItem>
+                         ))}
+                      </div>
+                   </SelectContent>
+                </Select>
+                <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
+             </div>
+          )}
 
           <Button 
              onClick={onUpdate} 
