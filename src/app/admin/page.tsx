@@ -137,23 +137,26 @@ import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow } from "date-fns";
 
 /**
- * Advanced Countdown for Marketplace Expiry
+ * High-Fidelity Marketplace Countdown
  */
-function CountdownDisplay({ expiresAt, status }: { expiresAt?: number, status: string }) {
-  const [timeLeft, setTimeLeft] = useState("");
+function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, status: string }) {
+  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
 
   useEffect(() => {
-    if (!expiresAt || status === 'sold' || status === 'pending' || status === 'processing' || status === 'rejected') return;
+    if (!expiresAt || status === 'sold') return;
     
     const update = () => {
       const now = Date.now();
       const diff = expiresAt - now;
-      if (diff <= 0) setTimeLeft("EXPIRED");
+      if (diff <= 0) setTimeLeft({ d: 0, h: 0, m: 0 });
       else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft(`${d}d ${h}h ${m}m`);
+        const h = Math.floor((diff / (1000 * 60 * 60))); // Continuous hours as per screenshot
+        const m = Math.floor((diff % (1000 * 60)) / 1000); // Minutes simplified
+        // The screenshot shows a high-impact format: X D XXX H XX M
+        const displayH = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) + (d * 24);
+        const displayM = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setTimeLeft({ d, h: displayH, m: displayM });
       }
     };
     update();
@@ -161,14 +164,46 @@ function CountdownDisplay({ expiresAt, status }: { expiresAt?: number, status: s
     return () => clearInterval(interval);
   }, [expiresAt, status]);
 
-  if (status === 'sold') return <Badge variant="outline" className="text-[8px] text-green-500 border-green-200 uppercase font-black">Sold</Badge>;
-  if (!expiresAt) return <Badge variant="outline" className="text-[8px] opacity-40 uppercase font-black">Pending Approval</Badge>;
+  if (status === 'sold') return <Badge className="bg-slate-100 text-slate-400 border-none text-[8px] font-black uppercase">SOLD</Badge>;
+  if (!expiresAt) return <span className="text-[10px] text-slate-300 italic font-medium uppercase">Awaiting Live</span>;
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className={cn("text-[9px] font-bold uppercase", timeLeft === 'EXPIRED' ? "text-red-500" : "text-primary")}>{timeLeft}</span>
+    <div className="flex flex-col items-end text-right">
+      <span className="text-[11px] font-black text-primary uppercase tracking-tight">
+        {timeLeft.d}D {timeLeft.h}H {timeLeft.m}M
+      </span>
+      <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">
+        ENDS {format(new Date(expiresAt), "MMM d").toUpperCase()}
+      </span>
     </div>
   );
+}
+
+/**
+ * Wait Time Helper
+ */
+function WaitTime({ post }: { post: any }) {
+  const [elapsed, setElapsed] = useState("None");
+
+  useEffect(() => {
+    const claimTime = post.buyerReportedAt || (post.claimants ? Math.min(...Object.values(post.claimants).map((c: any) => c.timestamp)) : null);
+    if (!claimTime || post.sold) {
+      setElapsed("None");
+      return;
+    }
+
+    const update = () => {
+      const diff = Date.now() - claimTime;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setElapsed(`${h}h ${m}m`);
+    };
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, [post]);
+
+  return <span className={cn("text-[10px] font-bold", elapsed === "None" ? "text-slate-200 italic" : "text-slate-500")}>{elapsed}</span>;
 }
 
 export default function AdminPage() {
@@ -423,10 +458,10 @@ export default function AdminPage() {
         <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={allOrders.filter(o => o.status === 'pending').length} />
-        <SideNavItem icon={ShieldCheck} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
-        <SideNavItem icon={Package} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('inventory'); setIsMobileMenuOpen(false); }} />
+        <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
+        <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('events'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('users'); setIsMobileMenuOpen(false); }} />
+        <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('users'); setIsMobileMenuOpen(false); }} badge={allUsers.filter(u => u.role === 'admin').length} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveView('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
       <div className="p-4 border-t dark:border-white/5">
@@ -464,6 +499,9 @@ export default function AdminPage() {
              </h2>
           </div>
           <div className="flex items-center gap-4">
+             <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-500/10 px-4 py-1.5 rounded-full text-green-600 font-bold text-[10px] uppercase tracking-widest border border-green-100 dark:border-green-500/20">
+                <RefreshCw size={12} className="animate-spin" /> Live
+             </div>
              <Popover>
                <PopoverTrigger asChild>
                   <button className="relative p-2.5 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-500 hover:text-primary transition-all active:scale-90">
@@ -496,10 +534,6 @@ export default function AdminPage() {
                </PopoverContent>
              </Popover>
              <div className="flex items-center gap-3 pl-4 border-l dark:border-white/5">
-                <div className="text-right hidden sm:block">
-                   <p className="text-xs font-bold leading-none">{user.name}</p>
-                   <p className="text-[9px] font-black text-primary uppercase mt-1">Admin Session</p>
-                </div>
                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
                    {user.photoURL ? <Image src={user.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={20} /></div>}
                 </div>
@@ -632,7 +666,7 @@ export default function AdminPage() {
 
           {/* Marketplace Management */}
           {activeView === 'account-posts' && (
-            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                {selectedAccountId ? (
                  <AccountDetailView 
                    post={selectedAccount} 
@@ -647,69 +681,84 @@ export default function AdminPage() {
                    onEnforce={() => setIsEnforceDialogOpen(true)}
                  />
                ) : (
-                 <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                       <h3 className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Marketplace Listings</h3>
-                       <div className="flex items-center gap-3 w-full sm:w-auto">
-                          <Input placeholder="Search listings..." value={accountSearch} onChange={e => setAccountSearch(e.target.value)} className="h-12 rounded-xl dark:bg-slate-900 border-none shadow-sm" />
-                          <Select value={accountFilter} onValueChange={setAccountFilter}>
-                             <SelectTrigger className="w-[140px] h-12 rounded-xl dark:bg-slate-900 border-none">
-                                <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent className="rounded-xl border-none shadow-2xl">
-                                <SelectItem value="all" className="p-3 font-bold text-xs uppercase">All Listings</SelectItem>
-                                <SelectItem value="pending" className="p-3 font-bold text-xs uppercase">Pending</SelectItem>
-                                <SelectItem value="approved" className="p-3 font-bold text-xs uppercase">Live</SelectItem>
-                                <SelectItem value="holding" className="p-3 font-bold text-xs uppercase">Holding</SelectItem>
-                                <SelectItem value="sold" className="p-3 font-bold text-xs uppercase">Sold</SelectItem>
-                             </SelectContent>
-                          </Select>
+                 <div className="space-y-10">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                       <div className="relative flex-1 max-w-xl">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <Input placeholder="Search Seller or ID..." value={accountSearch} onChange={e => setAccountSearch(e.target.value)} className="h-12 rounded-xl bg-white dark:bg-slate-900 border-none shadow-sm pl-12 font-bold" />
+                       </div>
+                       <div className="flex flex-wrap gap-2">
+                          {['all', 'pending', 'holding', 'approved'].map((f) => (
+                            <button
+                              key={f}
+                              onClick={() => setAccountFilter(f)}
+                              className={cn(
+                                "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                                accountFilter === f 
+                                  ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                                  : "bg-white dark:bg-slate-900 text-slate-400 border-gray-100 dark:border-white/5 hover:bg-slate-50"
+                              )}
+                            >
+                              {f}
+                            </button>
+                          ))}
                        </div>
                     </div>
-                    <Card className="rounded-2xl md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                    <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
-                          <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
-                             <TableRow className="border-none">
-                                <TableHead className="px-6 font-bold uppercase text-[10px] tracking-widest text-slate-400">Seller</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Game Type</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Price</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Status</TableHead>
-                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Expiry</TableHead>
-                                <TableHead className="text-right px-6 font-bold uppercase text-[10px] tracking-widest text-slate-400">Actions</TableHead>
+                          <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
+                             <TableRow className="border-none h-16">
+                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Game & Info</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Active Claims</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Wait Time</TableHead>
+                                <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Expiration</TableHead>
                              </TableRow>
                           </TableHeader>
                           <TableBody>
                              {filteredAccounts.length === 0 ? (
-                               <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic">No account listings found.</TableCell></TableRow>
+                               <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
                                filteredAccounts.map(p => (
-                                 <TableRow key={p.id} className="border-slate-50 dark:border-white/5 hover:bg-slate-50/50 transition-colors">
-                                    <TableCell className="px-6">
-                                       <div className="flex items-center gap-3">
+                                 <TableRow 
+                                    key={p.id} 
+                                    onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
+                                    className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                                 >
+                                    <TableCell className="px-10">
+                                       <div className="flex items-center gap-4">
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0">
-                                             {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                             {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200">U</div>}
                                           </div>
-                                          <div className="flex flex-col">
-                                             <span className="font-bold text-sm">{p.authorName}</span>
-                                             <span className="text-[10px] opacity-40 uppercase font-black">{p.phone}</span>
-                                          </div>
+                                          <span className="font-bold text-sm text-slate-900 dark:text-white">{p.authorName}</span>
                                        </div>
                                     </TableCell>
-                                    <TableCell className="font-bold text-xs uppercase text-slate-500">{p.gameType}</TableCell>
-                                    <TableCell className="font-black text-primary">${p.price.toFixed(2)}</TableCell>
-                                    <TableCell><StatusBadge status={p.status} /></TableCell>
-                                    <TableCell><CountdownDisplay expiresAt={p.expiresAt} status={p.status} /></TableCell>
-                                    <TableCell className="text-right px-6">
-                                       <div className="flex justify-end gap-2">
-                                          <button 
-                                            onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
-                                            className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
-                                          >
-                                            <Eye size={18} />
-                                          </button>
-                                          <Button size="icon" variant="ghost" className="h-10 w-10 text-amber-500 rounded-xl" onClick={() => { setSelectedAccountId(p.id); setIsEnforceDialogOpen(true); }}><ShieldAlert size={16}/></Button>
-                                          <Button size="icon" variant="ghost" className="h-10 w-10 text-red-500 rounded-xl" onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}><Trash2 size={16}/></Button>
+                                    <TableCell>
+                                       <div className="flex flex-col">
+                                          <span className="font-bold text-sm text-slate-900 dark:text-white uppercase">{p.gameType} - LV {p.level}</span>
+                                          <span className="text-[10px] text-muted-foreground font-medium">${p.price}</span>
                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                       <Badge className={cn(
+                                         "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
+                                         Object.keys(p.claimants || {}).length > 0 ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
+                                       )}>
+                                         {Object.keys(p.claimants || {}).length} Claims
+                                       </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                       <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
+                                             {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                          </div>
+                                          <span className="text-xs font-bold text-slate-500">{p.processedBy?.name || "Unassigned"}</span>
+                                       </div>
+                                    </TableCell>
+                                    <TableCell><WaitTime post={p} /></TableCell>
+                                    <TableCell className="text-right px-10">
+                                       <MarketplaceExpiration expiresAt={p.expiresAt} status={p.status} />
                                     </TableCell>
                                  </TableRow>
                                ))
@@ -1169,7 +1218,7 @@ export default function AdminPage() {
 }
 
 /**
- * Full Page Order Management View (Rebuilt for Insight Screenshot)
+ * Full Page Order Management View
  */
 function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
   if (!order) return null;
@@ -1187,7 +1236,6 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
-       {/* Header */}
        <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-6">
              <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
@@ -1206,7 +1254,6 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </div>
 
-       {/* Main Detail Card */}
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
           <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
              <div>
@@ -1241,7 +1288,6 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       {/* Admin Handling Log */}
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
           <div className="flex items-center gap-4 text-primary">
              <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
@@ -1276,7 +1322,6 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       {/* Lifecycle Control */}
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
           <div className="flex items-center gap-4 text-amber-500">
              <RefreshCw size={24} />
@@ -1440,7 +1485,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 </div>
                 <div className="p-6 bg-white/5 rounded-3xl space-y-2">
                    <p className="text-[10px] font-black uppercase text-white/40 tracking-widest">Time Remaining</p>
-                   <CountdownDisplay expiresAt={post.expiresAt} status={post.status} />
+                   <MarketplaceExpiration expiresAt={post.expiresAt} status={post.status} />
                    <p className="text-[9px] font-bold text-white/60 italic pt-2">Listing will be hidden from market automatically after duration ends.</p>
                 </div>
              </Card>
@@ -1486,21 +1531,6 @@ function StatusBadge({ status }: { status: string }) {
     sold: "bg-slate-900 text-white"
   };
   return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
-}
-
-function DetailRow({ label, value, icon: Icon, isMono, isPrimary, isSuccess, isStatus }: any) {
-  return (
-    <div className="space-y-1">
-       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Icon size={12} /> {label}</p>
-       <p className={cn(
-         "text-sm font-bold truncate",
-         isMono && "font-mono text-xs",
-         isPrimary && "text-primary",
-         isSuccess && "text-green-600",
-         isStatus && "text-indigo-600"
-       )}>{value || "---"}</p>
-    </div>
-  );
 }
 
 function InsightStat({ label, value, icon: Icon, isPrimary }: any) {
