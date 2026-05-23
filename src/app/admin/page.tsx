@@ -281,6 +281,9 @@ export default function AdminPage() {
   // Expansion States
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
+  // Search States
+  const [userSearch, setUserSearch] = useState("");
+
   // Dialog States
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -375,6 +378,15 @@ export default function AdminPage() {
 
   // Orders View Specific - Only Top Up Items
   const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
+
+  const filteredUsers = useMemo(() => {
+    return allUsers.filter(u => 
+      u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.uid?.toLowerCase().includes(userSearch.toLowerCase())
+    );
+  }, [allUsers, userSearch]);
 
   const paymentMethods = useMemo(() => {
     if (!storeSettings?.paymentMethods) return [];
@@ -1038,15 +1050,72 @@ export default function AdminPage() {
           )}
 
           {activeView === 'users' && (
-            <div className="space-y-12 animate-in fade-in duration-700">
-               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-8 animate-in fade-in duration-700">
+               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                   <div className="space-y-2">
                      <h1 className="text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Community Control</h1>
                      <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs lg:text-sm">Search users, update roles, and manage reward points.</p>
                   </div>
+                  <div className="relative w-full lg:w-96">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Input 
+                      placeholder="Search users..." 
+                      className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                    />
+                  </div>
                </div>
 
-               <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden overflow-x-auto scrollbar-hide">
+               {/* Mobile View: Cards */}
+               <div className="grid grid-cols-1 gap-4 md:hidden">
+                  {filteredUsers.length === 0 ? (
+                    <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No users found</div>
+                  ) : (
+                    filteredUsers.map(u => {
+                      const isOnline = u.lastActive && (Date.now() - u.lastActive) < 300000;
+                      return (
+                        <Card key={u.uid} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
+                           <div className="flex items-center gap-4">
+                              <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
+                                 {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                              </div>
+                              <div className="min-w-0">
+                                 <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
+                                 <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
+                              </div>
+                           </div>
+                           <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5">
+                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance</p>
+                                 <div className="flex items-center gap-1.5">
+                                    <Star size={12} className="text-amber-500 fill-amber-500" />
+                                    <span className="font-bold text-sm">{u.points || 0}</span>
+                                 </div>
+                              </div>
+                              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5">
+                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Role</p>
+                                 <Badge className="text-[8px] font-black h-5 py-0 px-2 uppercase tracking-tighter">{u.role || 'user'}</Badge>
+                              </div>
+                           </div>
+                           <div className="flex items-center justify-between pt-2 border-t dark:border-white/5">
+                              <div className="flex items-center gap-2">
+                                 <div className={cn("w-2 h-2 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
+                                 <span className="text-[10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                 <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
+                                 <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
+                              </div>
+                           </div>
+                        </Card>
+                      )
+                    })
+                  )}
+               </div>
+
+               {/* Desktop View: Table */}
+               <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden overflow-x-auto scrollbar-hide">
                   <Table className="min-w-[1000px]">
                      <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                         <TableRow className="border-none h-20">
@@ -1059,10 +1128,10 @@ export default function AdminPage() {
                         </TableRow>
                      </TableHeader>
                      <TableBody>
-                        {allUsers.length === 0 ? (
+                        {filteredUsers.length === 0 ? (
                           <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
                         ) : (
-                          allUsers.map(u => {
+                          filteredUsers.map(u => {
                             const isOnline = u.lastActive && (Date.now() - u.lastActive) < 300000;
                             return (
                               <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
