@@ -39,6 +39,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
 import { isStandalone } from './pwa-utils';
+import emailjs from '@emailjs/browser';
+import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY } from './emailjs-config';
 
 export const safeGet = (obj: any, path: string, fallback: any = "") => {
   return path.split('.').reduce((acc, key) => acc?.[key] ?? fallback, obj);
@@ -539,7 +541,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
-  // Unified Profile Creation & Sync Utility
   const ensureUserProfile = useCallback(async (authUser: any) => {
     if (!rtdb || !authUser) return;
     try {
@@ -566,7 +567,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const updates: any = {
            lastActive: Date.now()
         };
-        // Safely update profile with Google details if missing
         if (!existingData.photoURL && authUser.photoURL) updates.photoURL = authUser.photoURL;
         if (!existingData.email && authUser.email) updates.email = authUser.email;
         
@@ -584,7 +584,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
-  // Global Auth Redirect Resolver - Crucial for Mobile Support
   useEffect(() => {
     if (!auth || !rtdb) return;
 
@@ -971,17 +970,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const functions = getFunctions();
-      const requestOtpFn = httpsCallable(functions, 'sendEmailOTP');
-      const result: any = await requestOtpFn({ email });
+      const generateOtpFn = httpsCallable(functions, 'generateOtp');
+      const result: any = await generateOtpFn({ email });
       
       if (result.data?.success) {
-        toast({ title: "Code Dispatched!", description: `Check ${email} for your security code.` });
+        // Dispatch via EmailJS directly from frontend
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          { to_email: email, otp_code: result.data.otp },
+          EMAILJS_PUBLIC_KEY
+        );
+        toast({ title: "Code Sent!", description: `Check ${email} for your reset code.` });
         return true;
+      } else {
+        setAuthError(result.data?.message || "Failed to generate OTP.");
+        return false;
       }
-      return false;
     } catch (e: any) {
-      console.log("CRITICAL RESET ERROR:", e);
-      setAuthError(e.message || "Failed to send reset code.");
+      console.error("RESET ERROR:", e);
+      setAuthError(e.message || "Something went wrong.");
       return false;
     } finally {
       setIsGlobalLoading(false);
@@ -994,17 +1002,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       const functions = getFunctions();
-      const resetFn = httpsCallable(functions, 'resetPasswordWithOtp');
+      const resetFn = httpsCallable(functions, 'verifyOtpAndResetPassword');
       const result: any = await resetFn({ email, otp, newPassword: newPass });
       
       if (result.data?.success) {
-        toast({ title: "Password Reset Success!", description: "You can now login with your new credentials." });
+        toast({ title: "Reset Success!", description: "Login with your new password." });
         return true;
+      } else {
+        setAuthError(result.data?.message || "Verification failed.");
+        return false;
       }
-      return false;
     } catch (e: any) {
-      console.log("CRITICAL VERIFY ERROR:", e);
-      setAuthError(e.message || "Failed to reset password.");
+      console.error("VERIFY ERROR:", e);
+      setAuthError(e.message || "Verification failed.");
       return false;
     } finally {
       setIsGlobalLoading(false);
@@ -1012,20 +1022,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleForgotPassword = async (email: string) => {
-    if (!email) {
-      toast({ variant: "destructive", title: "Required", description: "Please enter your email address." });
-      return;
-    }
-    setIsGlobalLoading(true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({ title: t('reset_password'), description: t('reset_email_sent') });
-    } catch (error: any) {
-      console.error("Forgot Pass Error:", error);
-      toast({ variant: "destructive", title: "Error", description: error.message });
-    } finally {
-      setIsGlobalLoading(false);
-    }
+    // Legacy support wrapper, UI now handles flow states
+    return requestPasswordResetCode(email);
   };
 
   const logout = async () => {

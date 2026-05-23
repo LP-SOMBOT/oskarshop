@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Mail, Lock, EyeOff, Eye, Loader2, Key, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, EyeOff, Eye, Loader2, Key, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * @fileOverview CLEAN REBUILD: Forgot Password Flow.
- * Error boundary removed per user request; technical errors are now logged to console.
+ * @fileOverview Forgot Password Flow with EmailJS direct dispatch.
  */
 
 type AuthMode = 'login' | 'forgot-request' | 'forgot-verify';
@@ -27,8 +26,9 @@ export default function LoginPage() {
   // OTP Reset State
   const [otpCode, setOtpCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const { login, loginWithGoogle, requestPasswordResetCode, verifyAndResetPassword, user, isGlobalLoading, t } = useApp();
+  const { login, loginWithGoogle, requestPasswordResetCode, verifyAndResetPassword, user, isGlobalLoading, authError, t } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -57,7 +57,9 @@ export default function LoginPage() {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    setIsSubmitting(true);
     const success = await requestPasswordResetCode(email);
+    setIsSubmitting(false);
     if (success) {
       setMode('forgot-verify');
     }
@@ -65,12 +67,34 @@ export default function LoginPage() {
 
   const handleVerifyAndReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpCode || !newPassword) return;
+    if (!otpCode || !newPassword || !confirmPassword) {
+      toast({ variant: "destructive", title: "Missing data", description: "Please fill all fields." });
+      return;
+    }
+
+    if (otpCode.length !== 6) {
+      toast({ variant: "destructive", title: "Invalid code", description: "OTP must be 6 digits." });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({ variant: "destructive", title: "Weak password", description: "Password must be at least 8 characters." });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({ variant: "destructive", title: "Mismatch", description: "Passwords do not match." });
+      return;
+    }
+
+    setIsSubmitting(true);
     const success = await verifyAndResetPassword(email, otpCode, newPassword);
+    setIsSubmitting(false);
     if (success) {
       setMode('login');
       setOtpCode("");
       setNewPassword("");
+      setConfirmPassword("");
     }
   };
 
@@ -96,7 +120,12 @@ export default function LoginPage() {
         )}
 
         <div className="max-w-md mx-auto h-full flex flex-col">
-          {/* Visual Error Boundary Removed as per request */}
+          {authError && (
+             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p className="text-xs font-bold leading-relaxed">{authError}</p>
+             </div>
+          )}
           
           {mode === 'login' && (
             <div className="space-y-6">
@@ -208,7 +237,7 @@ export default function LoginPage() {
               </button>
               <div className="space-y-4">
                 <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Request Reset Code</h2>
-                <p className="text-sm text-muted-foreground">Enter your registered email address. We'll send a 6-digit verification code to your email inbox.</p>
+                <p className="text-sm text-muted-foreground">Enter your registered email address. We'll send a 6-digit verification code to your email inbox via EmailJS.</p>
               </div>
               <form onSubmit={handleSendCode} className="space-y-6">
                 <div className="relative">
@@ -222,8 +251,8 @@ export default function LoginPage() {
                     className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white font-bold"
                   />
                 </div>
-                <Button type="submit" disabled={isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
-                  {isGlobalLoading ? <Loader2 className="animate-spin" /> : "Send Verification Code"}
+                <Button type="submit" disabled={isSubmitting} className="w-full h-14 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
+                  {isSubmitting ? <Loader2 className="animate-spin w-6 h-6" /> : "Send OTP"}
                 </Button>
               </form>
             </div>
@@ -233,9 +262,9 @@ export default function LoginPage() {
             <div className="space-y-8 animate-in zoom-in-95 duration-300">
               <div className="space-y-4">
                 <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Verify & Reset</h2>
-                <p className="text-sm text-muted-foreground">Check your inbox. We've sent a 6-digit code to <span className="font-bold text-gray-900">{email}</span>.</p>
+                <p className="text-sm text-muted-foreground">Resetting for: <span className="font-bold text-gray-900">{email}</span>. Check your inbox for the 6-digit code.</p>
               </div>
-              <form onSubmit={handleVerifyAndReset} className="space-y-6">
+              <form onSubmit={handleVerifyAndReset} className="space-y-5">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase text-gray-400 ml-5 tracking-widest">6-Digit OTP Code</Label>
                   <div className="relative">
@@ -257,9 +286,9 @@ export default function LoginPage() {
                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] w-5 h-5 z-10" />
                     <Input 
                       type={showPassword ? "text" : "password"}
-                      placeholder="Min 6 characters" 
+                      placeholder="Min 8 characters" 
                       required 
-                      minLength={6}
+                      minLength={8}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white font-bold"
@@ -267,8 +296,23 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20">
-                  {isGlobalLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm New Password</>}
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-5 tracking-widest">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5 z-10" />
+                    <Input 
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Repeat password" 
+                      required 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white font-bold"
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={isSubmitting} className="w-full h-14 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20">
+                  {isSubmitting ? <Loader2 className="animate-spin w-6 h-6" /> : <><CheckCircle2 className="mr-2" /> Reset Password</>}
                 </Button>
 
                 <button type="button" onClick={() => setMode('forgot-request')} className="w-full text-gray-400 text-xs font-bold hover:text-gray-600">
