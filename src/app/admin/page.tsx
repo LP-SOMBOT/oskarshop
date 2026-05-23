@@ -290,13 +290,6 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
 
-  // Search/Filters
-  const [orderSearch, setOrderSearch] = useState("");
-  const [orderFilter, setOrderFilter] = useState("all");
-  const [accountSearch, setAccountSearch] = useState("");
-  const [accountFilter, setAccountFilter] = useState("all");
-  const [userSearch, setUserSearch] = useState("");
-
   // Settings Forms
   const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
   const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
@@ -321,34 +314,10 @@ export default function AdminPage() {
     }
   }, [storeSettings]);
 
-  // Data Filtering
-  const filteredOrders = useMemo(() => {
-    return allOrders.filter(o => {
-      const matchesSearch = o.id.toLowerCase().includes(orderSearch.toLowerCase()) || 
-                           o.gameDetails?.playerName?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-                           o.gameDetails?.playerID?.toLowerCase().includes(orderSearch.toLowerCase());
-      const matchesFilter = orderFilter === "all" || o.status === orderFilter;
-      return matchesSearch && matchesFilter;
-    });
-  }, [allOrders, orderSearch, orderFilter]);
-
-  const filteredAccounts = useMemo(() => {
-    return accountPosts.filter(p => {
-      const matchesSearch = p.authorName?.toLowerCase().includes(accountSearch.toLowerCase()) || 
-                           p.gameType?.toLowerCase().includes(accountSearch.toLowerCase()) ||
-                           p.id.toLowerCase().includes(accountSearch.toLowerCase());
-      const matchesFilter = accountFilter === "all" || p.status === accountFilter;
-      return matchesSearch && matchesFilter;
-    }).sort((a,b) => b.createdAt - a.createdAt);
-  }, [accountPosts, accountSearch, accountFilter]);
-
-  const filteredUsers = useMemo(() => {
-    return allUsers.filter(u => 
-      u.name?.toLowerCase().includes(userSearch.toLowerCase()) || 
-      u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.uid.toLowerCase().includes(userSearch.toLowerCase())
-    );
-  }, [allUsers, userSearch]);
+  // Data Filtering (No UI search needed anymore as per request, keeping logic for state)
+  const filteredOrders = useMemo(() => allOrders, [allOrders]);
+  const filteredAccounts = useMemo(() => accountPosts.sort((a,b) => b.createdAt - a.createdAt), [accountPosts]);
+  const filteredUsers = useMemo(() => allUsers, [allUsers]);
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
@@ -467,7 +436,7 @@ export default function AdminPage() {
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
       <div className="p-4 border-t dark:border-white/5">
-        <button onClick={logout} className="w-full h-12 flex items-center gap-4 text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 px-4 font-bold text-sm">
+        <button onClick={logout} className="w-full h-12 flex items-center gap-4 text-red-500 rounded-xl hover:bg-red-950/20 px-4 font-bold text-sm">
           <LogOut size={20} /> {(isSidebarExpanded || isMobile) && "Logout"}
         </button>
       </div>
@@ -584,28 +553,6 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                       <div className="relative flex-1 max-w-xl">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <Input placeholder="Search ID or Player..." value={orderSearch} onChange={e => setOrderSearch(e.target.value)} className="h-12 rounded-xl bg-white dark:bg-slate-900 border-none shadow-sm pl-12 font-bold" />
-                       </div>
-                       <div className="flex flex-wrap gap-2">
-                          {['all', 'pending', 'processing', 'successful', 'cancelled'].map((f) => (
-                            <button
-                              key={f}
-                              onClick={() => setOrderFilter(f)}
-                              className={cn(
-                                "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                                orderFilter === f 
-                                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                                  : "bg-white dark:bg-slate-900 text-slate-400 hover:bg-slate-50"
-                              )}
-                            >
-                              {f}
-                            </button>
-                          ))}
-                       </div>
-                    </div>
                     <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -619,7 +566,7 @@ export default function AdminPage() {
                           </TableHeader>
                           <TableBody>
                              {filteredOrders.length === 0 ? (
-                               <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found matching criteria.</TableCell></TableRow>
+                               <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
                              ) : (
                                filteredOrders.map(o => (
                                  <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
@@ -685,28 +632,6 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-10">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                       <div className="relative flex-1 max-w-xl">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <Input placeholder="Search Seller or ID..." value={accountSearch} onChange={e => setAccountSearch(e.target.value)} className="h-12 rounded-xl bg-white dark:bg-slate-900 border-none shadow-sm pl-12 font-bold" />
-                       </div>
-                       <div className="flex flex-wrap gap-2">
-                          {['all', 'pending', 'holding', 'approved'].map((f) => (
-                            <button
-                              key={f}
-                              onClick={() => setAccountFilter(f)}
-                              className={cn(
-                                "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
-                                accountFilter === f 
-                                  ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
-                                  : "bg-white dark:bg-slate-900 text-slate-400 border-gray-100 dark:border-white/5 hover:bg-slate-50"
-                              )}
-                            >
-                              {f}
-                            </button>
-                          ))}
-                       </div>
-                    </div>
                     <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -793,23 +718,22 @@ export default function AdminPage() {
             <div className="space-y-12 animate-in fade-in duration-700">
                <Tabs defaultValue="games" className="w-full">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                     <TabsList className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm h-14 w-full md:w-auto border border-gray-100 dark:border-white/5">
-                        <TabsTrigger value="games" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Collections</TabsTrigger>
-                        <TabsTrigger value="products" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Diamond Packages</TabsTrigger>
-                        <TabsTrigger value="banners" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Promo Banners</TabsTrigger>
+                     <TabsList className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm h-14 w-full md:w-auto border border-gray-100 dark:border-white/5 overflow-x-auto scrollbar-hide">
+                        <TabsTrigger value="games" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all whitespace-nowrap">Collections</TabsTrigger>
+                        <TabsTrigger value="products" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all whitespace-nowrap">Diamond Packages</TabsTrigger>
+                        <TabsTrigger value="banners" className="rounded-xl px-10 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all whitespace-nowrap">Promo Banners</TabsTrigger>
                      </TabsList>
                   </div>
 
                   <TabsContent value="games" className="space-y-10 mt-0">
-                     <div className="space-y-2">
-                        <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Game Collections</h3>
-                        <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Manage parent games and their top-up packages.</p>
-                     </div>
-                     
-                     <div className="pt-2">
+                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                        <div className="space-y-2">
+                           <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Game Collections</h3>
+                           <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Manage parent games and their top-up packages.</p>
+                        </div>
                         <Button 
                           onClick={() => handleOpenGameDialog()} 
-                          className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all"
+                          className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
                         >
                           <PlusCircle size={20} /> New Game
                         </Button>
@@ -818,25 +742,25 @@ export default function AdminPage() {
                      <div className="grid grid-cols-1 gap-4 max-w-4xl">
                         {games.map(g => (
                           <Card key={g.id} className="p-4 md:p-6 rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 flex items-center justify-between group hover:shadow-md transition-all">
-                             <div className="flex items-center gap-6">
-                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border border-gray-100 dark:border-white/5 shadow-inner">
+                             <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl md:rounded-3xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border border-gray-100 dark:border-white/5 shadow-inner">
                                    {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-6 text-slate-300" />}
                                 </div>
                                 <div className="min-w-0">
-                                   <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">{g.title}</h4>
-                                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{g.category}</p>
+                                   <h4 className="font-headline font-bold text-sm sm:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">{g.title}</h4>
+                                   <p className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{g.category}</p>
                                 </div>
                              </div>
-                             <div className="flex flex-col gap-2">
+                             <div className="flex flex-col gap-2 shrink-0">
                                 <button 
                                   onClick={() => handleOpenGameDialog(g)}
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors"
+                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors"
                                 >
                                   <PencilLine size={20} />
                                 </button>
                                 <button 
                                   onClick={() => { setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                                 >
                                   <Trash2 size={20} />
                                 </button>
@@ -847,15 +771,15 @@ export default function AdminPage() {
                   </TabsContent>
 
                   <TabsContent value="products" className="space-y-10 mt-0">
-                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div className="space-y-2">
                            <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Diamond Packages</h3>
                            <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Inventory list for specific game denominations.</p>
                         </div>
-                        <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 uppercase tracking-widest">+ NEW PACKAGE</Button>
+                        <Button onClick={() => handleOpenProductDialog()} className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 uppercase tracking-widest w-full sm:w-auto">+ NEW PACKAGE</Button>
                      </div>
 
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 sm:gap-8">
                         {products.map(p => (
                           <Card key={p.id} className="p-6 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 group hover:-translate-y-2 transition-all">
                              <div className="relative aspect-square rounded-[2rem] overflow-hidden mb-6 bg-slate-100 dark:bg-slate-800 shadow-inner">
@@ -886,7 +810,7 @@ export default function AdminPage() {
                         <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Carousel imagery for the store's homepage hero section.</p>
                      </div>
 
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10">
                         {banners.map(b => (
                           <Card key={b.id} className="aspect-video relative rounded-[3rem] overflow-hidden group shadow-2xl border-none">
                              <Image src={b.imageUrl} alt="" fill className="object-cover" />
@@ -939,10 +863,6 @@ export default function AdminPage() {
             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <h3 className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">User Directory</h3>
-                  <div className="relative w-full sm:w-[350px]">
-                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                     <Input placeholder="Search users by name, email, uid..." value={userSearch} onChange={e => setUserSearch(e.target.value)} className="pl-12 h-12 rounded-xl dark:bg-slate-900 border-none shadow-sm font-bold" />
-                  </div>
                </div>
                <Card className="rounded-2xl md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                   <Table>
@@ -957,7 +877,7 @@ export default function AdminPage() {
                      </TableHeader>
                      <TableBody>
                         {filteredUsers.length === 0 ? (
-                          <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic">No users found matching search.</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic">No users found.</TableCell></TableRow>
                         ) : (
                           filteredUsers.map(u => (
                             <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 hover:bg-slate-50/50 transition-colors">
