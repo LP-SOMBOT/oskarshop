@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -62,7 +63,9 @@ import {
   XCircle,
   History,
   LayoutGrid,
-  Target as TargetIcon
+  Target as TargetIcon,
+  Copy,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -457,7 +460,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
-               {selectedOrderId ? "Order Details" : selectedAccountId ? "Account Details" : activeView.toUpperCase().replace('-', ' ')}
+               {selectedOrderId ? "Order Insight" : selectedAccountId ? "Account Details" : activeView.toUpperCase().replace('-', ' ')}
              </h2>
           </div>
           <div className="flex items-center gap-4">
@@ -541,6 +544,7 @@ export default function AdminPage() {
                    reason={cancellationReason}
                    setReason={setCancellationReason}
                    isSaving={isSavingStatus}
+                   onDelete={() => { setDeleteTarget({id: selectedOrderId, type:'order'}); setIsDeleteDialogOpen(true); }}
                  />
                ) : (
                  <div className="space-y-8">
@@ -1165,109 +1169,166 @@ export default function AdminPage() {
 }
 
 /**
- * Full Page Order Management View
+ * Full Page Order Management View (Rebuilt for Insight Screenshot)
  */
-function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving }: any) {
+function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
   if (!order) return null;
   const item = order.items?.[0];
-  const isAccount = item?.gameId === 'accounts' || order.gameId === 'accounts';
 
-  const triggerUssd = () => {
-    const template = order.gameDetails?.ussdTemplate || "*712*613982172*$#";
-    const code = template.replace('$', order.total.toString().replace('.', '*'));
-    window.location.href = `tel:${code.replace(/#/g, '%23')}`;
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(order.id.toUpperCase());
+    toast({ title: "Reference Copied" });
+  };
+
+  const handleWhatsApp = () => {
+    const num = formatWhatsAppNumber(order.gameDetails?.whatsappNumber || "252613982172");
+    window.open(`https://wa.me/${num}`, '_blank');
   };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20">
-       <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={onBack} className="rounded-2xl h-12 gap-2 text-slate-500 font-bold"><ChevronLeft size={20} /> Back to List</Button>
-          <div className="h-2 w-2 rounded-full bg-slate-300" />
-          <h3 className="font-headline font-bold text-2xl uppercase tracking-tighter text-primary">#{order.id.toUpperCase()}</h3>
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
+       {/* Header */}
+       <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-6">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <ArrowLeft size={18} />
+             </button>
+             <div>
+                <h3 className="font-headline font-bold text-xl uppercase tracking-tighter text-slate-900 dark:text-white">Order Insight</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">REF: #{order.id.toUpperCase()}</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-4">
+             <StatusBadge status={order.status} />
+             <button onClick={onDelete} className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl hover:bg-red-100 transition-colors">
+                <Trash2 size={18} />
+             </button>
+          </div>
        </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-8 flex items-center justify-between">
-                   <div className="flex items-center gap-5">
-                      <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-900 flex items-center justify-center relative overflow-hidden shadow-md">
-                         {item?.thumbnail ? <Image src={item.thumbnail} alt="" fill className="object-cover" /> : <Package className="text-slate-200 w-10 h-10" />}
-                      </div>
-                      <div>
-                         <h4 className="font-headline font-bold text-2xl uppercase">{item?.title || "Game Item"}</h4>
-                         <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">{order.paymentMethod}</p>
-                      </div>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Total Amount</p>
-                      <p className="text-4xl font-headline font-bold text-primary tracking-tighter">${order.total.toFixed(2)}</p>
-                   </div>
+       {/* Main Detail Card */}
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
+             <div>
+                <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white mb-2">
+                   {item?.title || "ACCOUNT: UNKNOWN"}
+                </h2>
+                <div className="flex items-center gap-4">
+                   <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
+                      {order.paymentMethod || "WHATSAPP DIRECT"}
+                   </Badge>
+                   <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
+                      ABOUT {formatDistanceToNow(new Date(order.createdAt))} AGO
+                   </span>
                 </div>
-                <div className="p-8 sm:p-10 grid grid-cols-1 sm:grid-cols-2 gap-10">
-                   <div className="space-y-6">
-                      <DetailRow label="Player Name" value={order.gameDetails?.playerName} icon={User} />
-                      <DetailRow label="Game ID / UID" value={order.gameDetails?.playerID} icon={Hash} isMono />
-                      <DetailRow label="Contact WA" value={order.gameDetails?.whatsappNumber} icon={MessageCircle} isPrimary />
-                   </div>
-                   <div className="space-y-6">
-                      <DetailRow label="Sender Number" value={order.gameDetails?.senderNumber} icon={CreditCard} isSuccess />
-                      <DetailRow label="Created At" value={format(new Date(order.createdAt), 'PPpp')} icon={Clock} />
-                      <DetailRow label="Current Status" value={order.status.toUpperCase()} icon={ShieldCheck} isStatus />
-                   </div>
-                </div>
-             </Card>
+             </div>
+             <div className="text-right">
+                <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                   ${order.total.toFixed(2)}
+                </p>
+             </div>
+          </div>
 
-             <Card className="p-8 sm:p-10 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 space-y-8">
-                <div className="flex items-center gap-4 text-primary">
-                   <Smartphone className="w-8 h-8" />
-                   <h4 className="font-headline font-bold text-xl uppercase">Verification Helper</h4>
+          <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
+             <InsightStat label="Player ID" value={order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary />
+             <InsightStat label="In-Game Name" value={order.gameDetails?.playerName || "N/A"} icon={User} />
+             <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} />
+             <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
+             <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
+          </div>
+       </Card>
+
+       {/* Admin Handling Log */}
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
+          <div className="flex items-center gap-4 text-primary">
+             <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                <ShieldCheck size={20} />
+             </div>
+             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
+          </div>
+
+          <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+             <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0">
+                   {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center font-bold text-slate-400 text-2xl">O</div>}
                 </div>
-                <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border dark:border-white/5 space-y-4">
-                   <p className="text-xs font-bold leading-relaxed text-muted-foreground uppercase tracking-wide">
-                      Click the button below to automatically dial the USSD code for this transaction amount on your device to verify payment.
-                   </p>
-                   <Button onClick={triggerUssd} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest gap-3 shadow-xl active:scale-95 transition-all">
-                      <CreditCard size={20} /> Verify Payment Dial
-                   </Button>
+                <div className="min-w-0">
+                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Handling Admin</p>
+                   <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                      {order.processedBy?.name || "Unassigned"}
+                   </h5>
+                   {order.processedAt && (
+                      <p className="text-[9px] font-black text-primary uppercase tracking-tighter mt-1">
+                         STATUS CHANGED AT {formatDistanceToNow(new Date(order.processedAt))} AGO
+                      </p>
+                   )}
                 </div>
-             </Card>
+             </div>
+             <div className="text-right shrink-0">
+                <p className="text-[10px] font-black text-muted-foreground uppercase opacity-40 mb-1">Resolved on</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                   {order.completedAt ? format(new Date(order.completedAt), "MMM d, HH:mm") : "PENDING..."}
+                </p>
+             </div>
+          </div>
+       </Card>
+
+       {/* Lifecycle Control */}
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
+          <div className="flex items-center gap-4 text-amber-500">
+             <RefreshCw size={24} />
+             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Lifecycle Control</h4>
           </div>
 
           <div className="space-y-8">
-             <Card className="p-8 sm:p-10 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 space-y-8">
-                <h4 className="font-headline font-bold text-xl uppercase tracking-tight text-slate-400">Process Action</h4>
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Update Status</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                         <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner focus:ring-primary"><SelectValue /></SelectTrigger>
-                         <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                            {['pending', 'processing', 'successful', 'cancelled'].map(s => (
-                              <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
-                            ))}
-                         </SelectContent>
-                      </Select>
-                   </div>
+             <div className="space-y-3">
+                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
+                <Select value={status} onValueChange={setStatus}>
+                   <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                      <SelectValue />
+                   </SelectTrigger>
+                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                      {['pending', 'processing', 'successful', 'cancelled'].map(s => (
+                        <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                      ))}
+                   </SelectContent>
+                </Select>
+             </div>
 
-                   {status === 'cancelled' && (
-                     <div className="space-y-2 animate-in slide-in-from-top-4">
-                        <Label className="text-[10px] font-black uppercase text-red-500 ml-1">Cancellation Reason</Label>
-                        <Textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Payment not verified..." className="rounded-2xl bg-red-50 dark:bg-red-950/20 border-none min-h-[120px] p-6 shadow-inner font-medium text-red-700" />
-                     </div>
-                   )}
+             <div className="space-y-3">
+                <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Reason for User</label>
+                <Textarea 
+                  value={reason} 
+                  onChange={e => setReason(e.target.value)} 
+                  placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
+                  className="rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
+                />
+             </div>
 
-                   <Button onClick={onUpdate} disabled={isSaving} className="w-full h-20 rounded-[2rem] font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary/20 bg-primary hover:bg-primary/90 active:scale-95 transition-all">
-                      {isSaving ? <Loader2 className="animate-spin" /> : "Apply Status"}
-                   </Button>
+             <Button 
+                onClick={onUpdate} 
+                disabled={isSaving} 
+                className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+             >
+                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Sync Order Status"}
+             </Button>
+
+             <div className="pt-8 space-y-6">
+                <p className="text-[10px] font-black text-center text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
+                <div className="grid grid-cols-2 gap-4">
+                   <button onClick={handleCopyId} className="h-14 rounded-full bg-slate-50 dark:bg-slate-800 border dark:border-white/5 font-black uppercase text-[11px] tracking-widest text-slate-500 hover:bg-slate-100 transition-colors">
+                      Copy ID
+                   </button>
+                   <button onClick={handleWhatsApp} className="h-14 rounded-full bg-slate-50 dark:bg-slate-800 border dark:border-white/5 font-black uppercase text-[11px] tracking-widest text-slate-500 hover:bg-slate-100 transition-colors">
+                      WhatsApp
+                   </button>
                 </div>
-             </Card>
-
-             <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10">
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] text-center">Protocol V2.0 Secured</p>
              </div>
           </div>
-       </div>
+       </Card>
     </div>
   );
 }
@@ -1438,6 +1499,21 @@ function DetailRow({ label, value, icon: Icon, isMono, isPrimary, isSuccess, isS
          isSuccess && "text-green-600",
          isStatus && "text-indigo-600"
        )}>{value || "---"}</p>
+    </div>
+  );
+}
+
+function InsightStat({ label, value, icon: Icon, isPrimary }: any) {
+  return (
+    <div className="space-y-2">
+       <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon size={14} className="opacity-40" />
+          <p className="text-[9px] font-black uppercase tracking-[0.2em]">{label}</p>
+       </div>
+       <p className={cn(
+         "text-sm md:text-xl font-bold truncate",
+         isPrimary ? "text-primary" : "text-slate-900 dark:text-white"
+       )}>{value}</p>
     </div>
   );
 }
