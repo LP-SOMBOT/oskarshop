@@ -67,7 +67,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
     if (showSold) return "Waa la iibiyay";
     if (showSuccess) return "Waa lagu guuleystay!";
     if (isOwner) return "Post-kaaga waaye";
-    if (showHolding) return "Account-ka waa la xajiyay";
+    if (showHolding) return "Account kaan hada lama heli karo";
     return "Laxariir Seller-ka";
   }, [showSold, showSuccess, isOwner, showHolding]);
 
@@ -225,7 +225,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                 <div className="hidden md:block">
                   <Button 
                     onClick={() => buyAccountPost(post)}
-                    disabled={isOwner || showSold || showSuccess || (showHolding && !isOwner && !isAdmin)}
+                    disabled={isOwner || showSold || showSuccess || showHolding}
                     className="w-full h-14 md:h-16 rounded-xl md:rounded-[2rem] text-lg md:text-xl font-bold shadow-xl shadow-primary/30 active:scale-95 transition-all"
                   >
                     {buyButtonText}
@@ -240,7 +240,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-t dark:border-white/5 z-50">
          <Button 
            onClick={() => buyAccountPost(post)}
-           disabled={isOwner || showSold || showSuccess || (showHolding && !isOwner && !isAdmin)}
+           disabled={isOwner || showSold || showSuccess || showHolding}
            className="w-full h-14 rounded-xl text-base font-bold shadow-lg"
          >
             {buyButtonText}
