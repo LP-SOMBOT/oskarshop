@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -162,7 +161,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
       } else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
         const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const m = Math.floor((diff % (1000 * 60)) / (1000 * 60));
         setTimeLeft({ d, h, m });
       }
     };
@@ -872,10 +871,6 @@ export default function AdminPage() {
           {activeView === 'inventory' && (
             <div className="space-y-12 animate-in fade-in duration-700">
                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                  <div className="space-y-2">
-                     <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Game Collections</h3>
-                     <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs">Manage parent games and their top-up packages.</p>
-                  </div>
                   <Button 
                     onClick={() => handleOpenGameDialog()} 
                     className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
@@ -1686,7 +1681,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-        <DialogContent className="max-w-xl w-[95%] rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="max-xl w-[95%] rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
            <div className="h-2 bg-primary w-full" />
            <DialogHeader className="p-10 pb-0">
               <DialogTitle className="text-3xl font-headline font-bold uppercase tracking-tight">
