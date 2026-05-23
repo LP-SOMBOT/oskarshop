@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     if (!isFirebaseAdminAvailable || !adminDb) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Firebase Admin not configured. Please set environment variables: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, and FIREBASE_DATABASE_URL in your dashboard.' 
+        message: 'Firebase Admin not configured. Please check your admin SDK settings.' 
       }, { status: 500 });
     }
 
@@ -23,10 +23,14 @@ export async function POST(request: Request) {
     }
 
     // 1. Verify user exists in /users/
+    // We use a manual search to avoid "Index not defined" errors in the database rules
     const usersRef = adminDb.ref('users');
-    const snapshot = await usersRef.orderByChild('email').equalTo(email).get();
+    const usersSnapshot = await usersRef.get();
+    const allUsers = usersSnapshot.val() || {};
+    
+    const userExists = Object.values(allUsers).some((u: any) => u.email === email);
 
-    if (!snapshot.exists()) {
+    if (!userExists) {
       return NextResponse.json({ success: false, message: 'No account found with that email.' }, { status: 404 });
     }
 

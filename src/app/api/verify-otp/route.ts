@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     if (!isFirebaseAdminAvailable || !adminDb || !adminAuth) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Firebase Admin not configured. Please set environment variables.' 
+        message: 'Firebase Admin not configured. Please check your admin SDK settings.' 
       }, { status: 500 });
     }
 
@@ -44,16 +44,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Code expired. Please request a new one.' }, { status: 400 });
     }
 
-    // Find user UID
+    // Find user UID using manual search to avoid index requirement
     const usersRef = adminDb.ref('users');
-    const userSnapshot = await usersRef.orderByChild('email').equalTo(email).get();
+    const usersSnapshot = await usersRef.get();
+    const allUsers = usersSnapshot.val() || {};
     
-    if (!userSnapshot.exists()) {
+    const userEntry = Object.entries(allUsers).find(([_, u]: any) => u.email === email);
+    
+    if (!userEntry) {
       return NextResponse.json({ success: false, message: 'User record not found.' }, { status: 404 });
     }
 
-    const userData = userSnapshot.val();
-    const uid = Object.keys(userData)[0];
+    const uid = userEntry[0];
 
     // Update Firebase Auth password
     await adminAuth.updateUser(uid, { password: newPassword });
