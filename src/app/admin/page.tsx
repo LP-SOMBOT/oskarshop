@@ -752,27 +752,12 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-10">
-                    {/* Pills Filters - Restored */}
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2">
-                       {['all', 'pending', 'holding', 'approved', 'sold'].map(f => (
-                          <button 
-                            key={f} 
-                            onClick={() => setAccountFilter(f as any)}
-                            className={cn(
-                              "px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all",
-                              accountFilter === f ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-white dark:bg-slate-900 text-slate-400 border border-gray-100 dark:border-white/5 hover:text-primary"
-                            )}
-                          >
-                             {f}
-                          </button>
-                       ))}
-                    </div>
-
                     <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
-                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller Info</TableHead>
+                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Game Info</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Active Claims</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Wait Time</TableHead>
@@ -783,7 +768,7 @@ export default function AdminPage() {
                           </TableHeader>
                           <TableBody>
                              {filteredAccounts.length === 0 ? (
-                               <TableRow><TableCell colSpan={7} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
+                               <TableRow><TableCell colSpan={8} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
                                filteredAccounts.map(p => (
                                  <TableRow 
@@ -791,14 +776,17 @@ export default function AdminPage() {
                                     className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/50 transition-colors"
                                  >
                                     <TableCell className="px-10">
-                                       <div className="flex items-center gap-4">
+                                       <div className="flex items-center gap-3">
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200">U</div>}
                                           </div>
-                                          <div className="flex flex-col">
-                                            <span className="font-bold text-sm text-slate-900 dark:text-white uppercase truncate">{p.gameType} - LV {p.level}</span>
-                                            <span className="text-[10px] text-muted-foreground font-medium">${p.price}</span>
-                                          </div>
+                                          <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                       </div>
+                                    </TableCell>
+                                    <TableCell>
+                                       <div className="flex flex-col">
+                                         <span className="font-bold text-sm text-slate-900 dark:text-white uppercase truncate">{p.gameType} - LV {p.level}</span>
+                                         <span className="text-[10px] text-muted-foreground font-medium">${p.price}</span>
                                        </div>
                                     </TableCell>
                                     <TableCell>
