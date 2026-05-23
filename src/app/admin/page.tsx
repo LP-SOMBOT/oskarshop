@@ -1053,7 +1053,6 @@ export default function AdminPage() {
             <div className="space-y-8 animate-in fade-in duration-700">
                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                   <div className="space-y-2">
-                     <h1 className="text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Community Control</h1>
                      <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-xs lg:text-sm">Search users, update roles, and manage reward points.</p>
                   </div>
                   <div className="relative w-full lg:w-96">
