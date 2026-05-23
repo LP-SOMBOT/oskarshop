@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -69,6 +70,7 @@ export default function AccountsView() {
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -112,6 +114,19 @@ export default function AccountsView() {
     if (!user) return [];
     return (accountPosts || []).filter(p => p.uid === user.uid || (orders || []).some(o => o.gameDetails?.postId === p.id && o.userId === user.uid));
   }, [accountPosts, user, orders]);
+
+  const handleDeleteFinal = async () => {
+    if (!deletingPostId) return;
+    setIsDeleting(true);
+    try {
+      await deleteAccountPost(deletingPostId);
+      setDeletingPostId(null);
+    } catch (error) {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (isInitialLoading) {
     return (
@@ -219,8 +234,10 @@ export default function AccountsView() {
             <DialogDescription className="text-xs sm:text-sm">Post-kan waa la tirtiri doonaa, dibna looma heli karo.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1">Maya</Button>
-             <Button variant="destructive" onClick={async () => { if(deletingPostId) { await deleteAccountPost(deletingPostId); setDeletingPostId(null); } }} className="rounded-xl flex-1 h-10 sm:h-12 order-1 sm:order-2">Haa, Tirtir</Button>
+             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10 sm:h-12 order-1 sm:order-2" disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
+             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

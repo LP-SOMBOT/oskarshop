@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useApp } from '@/lib/context';
@@ -49,6 +50,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { cn, formatWhatsAppNumber } from '@/lib/utils';
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function MyAccountsView() {
   const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, storeSettings, isInitialLoading } = useApp();
@@ -56,6 +58,7 @@ export default function MyAccountsView() {
   const [renewingPost, setRenewingPost] = useState<any>(null);
   const [renewTerm, setRenewTerm] = useState<'weekly' | 'monthly'>('weekly');
   const [hasTriggeredRenewUssd, setHasTriggeredRenewUssd] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const myPosts = useMemo(() => {
     if (!user) return [];
@@ -85,8 +88,15 @@ export default function MyAccountsView() {
 
   const handleDelete = async () => {
     if (!deletingId) return;
-    await deleteAccountPost(deletingId);
-    setDeletingId(null);
+    setIsDeleting(true);
+    try {
+      await deleteAccountPost(deletingId);
+      setDeletingId(null);
+    } catch (error) {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleRenewUssd = () => {
@@ -190,7 +200,7 @@ export default function MyAccountsView() {
         <DialogContent className="max-w-md w-[95vw] rounded-[2.5rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader className="mb-8">
              <DialogTitle className="text-2xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Renew Listing</DialogTitle>
-             <DialogDescription className="text-xs sm:text-sm font-bold text-slate-500">Muda cusub u door account-kaaga si uu marketplace-ka ugu soo laabto.</DialogDescription>
+             <DialogDescription className="text-xs sm:text-sm font-bold text-slate-50">Muda cusub u door account-kaaga si uu marketplace-ka ugu soo laabto.</DialogDescription>
            </DialogHeader>
            
            <div className="space-y-8">
@@ -226,8 +236,10 @@ export default function MyAccountsView() {
           <DialogTitle className="text-2xl font-headline font-bold mb-2">Ma hubtaa?</DialogTitle>
           <DialogDescription className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-widest">Post-kan dibna looma heli karo.</DialogDescription>
           <DialogFooter className="gap-3 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-14 font-bold order-2 sm:order-1">Maya</Button>
-             <Button variant="destructive" onClick={handleDelete} className="rounded-xl flex-1 h-14 font-black uppercase tracking-widest order-1 sm:order-2 shadow-lg shadow-red-500/20">Haa, Tirtir</Button>
+             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-14 font-bold order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="destructive" onClick={handleDelete} className="rounded-xl flex-1 h-14 font-black uppercase tracking-widest order-1 sm:order-2 shadow-lg shadow-red-500/20" disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
+             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

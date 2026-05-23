@@ -318,14 +318,7 @@ export default function AdminPage() {
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
-
-  // Settings Forms
-  const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
-  const [economyForm, setEconomyForm] = useState({ paymentNumber: "", listingFeeWeekly: 1.00, listingFeeMonthly: 3.00 });
-  const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
-  const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
-  const [termsForm, setTermsForm] = useState({ en: "", so: "" });
-  const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user?.isAdmin) router.replace('/');
@@ -489,6 +482,7 @@ export default function AdminPage() {
 
   const executeDelete = async () => {
     if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
       if (deleteTarget.type === 'order') await deleteOrder(deleteTarget.id);
       if (deleteTarget.type === 'account') await deleteAccountPost(deleteTarget.id);
@@ -500,7 +494,12 @@ export default function AdminPage() {
       if (deleteTarget.type === 'paymentMethod') await deletePaymentMethod(deleteTarget.id);
       toast({ title: "Deleted Successfully" });
       setIsDeleteDialogOpen(false);
-    } finally { setDeleteTarget(null); }
+    } catch (error) {
+      toast({ title: "Failed to delete from database", variant: "destructive" });
+    } finally { 
+      setDeleteTarget(null); 
+      setIsDeleting(false);
+    }
   };
 
   const handleImageUpload = async (file: File, target: string) => {
@@ -1791,8 +1790,10 @@ export default function AdminPage() {
            <DialogTitle className="text-2xl font-headline font-bold">Ma hubtaa?</DialogTitle>
            <DialogDescription className="text-xs uppercase font-black text-slate-400 mt-2">Action cannot be undone.</DialogDescription>
            <div className="flex gap-3 mt-10">
-              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-14 font-bold">Maya</Button>
-              <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20">Haa, Tirtir</Button>
+              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-14 font-bold" disabled={isDeleting}>Maya</Button>
+              <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
+              </Button>
            </div>
         </DialogContent>
       </Dialog>
