@@ -238,7 +238,7 @@ export default function AccountsView() {
             <DialogDescription className="text-xs sm:text-sm">Post-kan waa la tirtiri doonaa, dibna looma heli karo.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
              <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10 sm:h-12 order-1 sm:order-2" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
              </Button>
@@ -692,7 +692,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                                className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-slate-900 text-white hover:bg-black font-black text-xs md:text-2xl gap-3 shadow-2xl active:scale-95 transition-all uppercase tracking-widest"
                              >
                                 <Smartphone className="w-6 h-6 md:w-10 md:h-10" /> 
-                                {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'KU BIXI'} (DIAL)
+                                {language === 'so' ? `KU BIXI ${paymentMethods.find(m => m.id === selectedMethodId)?.name || ''}` : `${paymentMethods.find(m => m.id === selectedMethodId)?.name || 'PAY'} (DIAL)`}
                              </Button>
                            ) : (
                              <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
@@ -945,4 +945,3 @@ function FormInput({ label, value, onChange, placeholder, type = "text", classNa
     </div>
   );
 }
-
