@@ -5,17 +5,19 @@ import { ShieldAlert, ArrowRight, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 /**
  * SellerResponsiveGuard
  * 
- * PERSISTENT FULL-SCREEN OVERLAY
- * Visible when a seller has unanswered buyer claims older than 1 hour.
+ * PERSISTENT SELLER NAG SYSTEM
+ * Initial state: Blocking full-screen overlay.
+ * After click "Resolve Now": Sticky top banner warning that appears on all pages.
  * Cannot be ignored until resolved or admin clears it.
  */
 export default function SellerResponsiveGuard() {
   const { user, accountPosts, setActiveTab } = useApp();
+  const [isDismissed, setIsDismissed] = useState(false);
 
   const stallingPosts = useMemo(() => {
     if (!user) return [];
@@ -31,10 +33,49 @@ export default function SellerResponsiveGuard() {
     });
   }, [user, accountPosts]);
 
+  // Reset dismissal state if no more stalling posts, so it can pop up again if a new one arrives later
+  useEffect(() => {
+    if (stallingPosts.length === 0) {
+      setIsDismissed(false);
+    }
+  }, [stallingPosts.length]);
+
   if (stallingPosts.length === 0) return null;
 
+  const handleResolveClick = () => {
+    setIsDismissed(true);
+    setActiveTab('my-accounts');
+  };
+
+  // Top Warning Overlay (Banner Mode) - Appears on all pages after acknowledging the modal
+  if (isDismissed) {
+    return (
+      <div className="sticky top-0 z-[9999] bg-red-600 text-white p-2.5 px-4 flex items-center justify-between shadow-2xl animate-in slide-in-from-top-full duration-500 border-b border-red-500/50">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+             <AlertTriangle size={18} className="animate-pulse" />
+          </div>
+          <div className="min-w-0">
+             <p className="text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">Security Alert</p>
+             <p className="text-[9px] md:text-[11px] font-bold opacity-90 truncate">
+               {stallingPosts.length} stalling account(s) detected! Resolve immediately in My Accounts.
+             </p>
+          </div>
+        </div>
+        <Button 
+          size="sm" 
+          onClick={() => setActiveTab('my-accounts')}
+          className="bg-white text-red-600 hover:bg-slate-100 font-black h-8 px-6 rounded-full text-[10px] uppercase shadow-lg active:scale-95 transition-transform shrink-0 ml-4"
+        >
+          Resolve
+        </Button>
+      </div>
+    );
+  }
+
+  // Full Screen Modal (Initial Pop-up Mode)
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-500 overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-500 overflow-y-auto">
        <div className="max-w-2xl w-full bg-white dark:bg-slate-900 rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border-none ring-1 ring-red-500/20">
           {/* Danger Header */}
           <div className="bg-red-600 p-8 md:p-12 text-white relative overflow-hidden">
@@ -83,7 +124,7 @@ export default function SellerResponsiveGuard() {
 
              <div className="pt-4 flex flex-col gap-4">
                 <Button 
-                  onClick={() => setActiveTab('my-accounts')}
+                  onClick={handleResolveClick}
                   className="w-full h-16 md:h-20 rounded-2xl md:rounded-3xl bg-red-600 hover:bg-red-700 text-white font-black text-sm md:text-xl uppercase tracking-widest shadow-2xl shadow-red-500/20 active:scale-95 transition-all gap-3"
                 >
                    Resolve Now <ArrowRight size={24} />
