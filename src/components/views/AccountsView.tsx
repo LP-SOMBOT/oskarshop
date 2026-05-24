@@ -238,7 +238,7 @@ export default function AccountsView() {
             <DialogDescription className="text-xs sm:text-sm">Post-kan waa la tirtiri doonaa, dibna looma heli karo.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
              <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10 sm:h-12 order-1 sm:order-2" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
              </Button>
@@ -677,7 +677,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            <div className="flex justify-between items-center text-left">
                               <div>
                                  <p className="font-headline font-bold text-lg md:text-3xl text-slate-900 dark:text-white uppercase tracking-tight">{formData.gameType} Account</p>
-                                 <Badge className="bg-primary/10 text-primary border-none text-[8px] md:text-[10px] font-black uppercase mt-1.5">{formData.term} access</Badge>
+                                 <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase mt-1.5">{formData.term} access</Badge>
                               </div>
                               <p className="font-headline font-bold text-3xl md:text-6xl text-primary tracking-tighter">${listingFee.toFixed(2)}</p>
                            </div>
@@ -896,22 +896,22 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
            )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5 md:gap-2">
+        <div className="flex flex-wrap gap-2 md:gap-3">
            {post.gameType === 'bloodstrike' ? (
              <>
-                <AssetMiniBadge label="Evo" value={post.evoWeapons} color="bg-amber-500" />
-                <AssetMiniBadge label="Int" value={post.internalWeapons} color="bg-blue-500" />
-                <AssetMiniBadge label="Emo" value={post.emotes} color="bg-purple-500" />
-                <AssetMiniBadge label="Exe" value={post.executionEmotes} color="bg-red-500" />
-                <AssetMiniBadge label="Arr" value={post.arrivalEmotes} color="bg-indigo-500" />
+                <AssetMiniBadge label="Evo Weapons" value={post.evoWeapons} color="bg-amber-500" />
+                <AssetMiniBadge label="Internal Weapons" value={post.internalWeapons} color="bg-blue-500" />
+                <AssetMiniBadge label="Emotes" value={post.emotes} color="bg-purple-500" />
+                <AssetMiniBadge label="Execution Emotes" value={post.executionEmotes} color="bg-red-500" />
+                <AssetMiniBadge label="Arrival Emotes" value={post.arrivalEmotes} color="bg-indigo-500" />
              </>
            ) : (
              <>
-                <AssetMiniBadge label="Evo" value={post.evoWeapons} color="bg-amber-500" />
-                <AssetMiniBadge label="Wep" value={post.totalWeapons} color="bg-blue-500" />
-                <AssetMiniBadge label="Emo" value={post.emotes} color="bg-purple-500" />
-                <AssetMiniBadge label="Arr" value={post.arrivalEmotes} color="bg-indigo-500" />
-                <AssetMiniBadge label="Dhr" value={post.dharka} color="bg-pink-500" />
+                <AssetMiniBadge label="Evo Weapons" value={post.evoWeapons} color="bg-amber-500" />
+                <AssetMiniBadge label="Total Weapons" value={post.totalWeapons} color="bg-blue-500" />
+                <AssetMiniBadge label="Emotes" value={post.emotes} color="bg-purple-500" />
+                <AssetMiniBadge label="Arrival Emotes" value={post.arrivalEmotes} color="bg-indigo-500" />
+                <AssetMiniBadge label="Dharka" value={post.dharka} color="bg-pink-500" />
              </>
            )}
         </div>
@@ -933,10 +933,10 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
 function AssetMiniBadge({ label, value, color }: { label: string, value: number, color: string }) {
   if (!value && value !== 0) return null;
   return (
-    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 rounded-md px-1.5 py-0.5 border dark:border-white/5 shadow-sm shrink-0">
-      <div className={cn("w-1 h-1 rounded-full", color)} />
-      <span className="text-[7px] md:text-[9px] font-black uppercase text-muted-foreground">{label}:</span>
-      <span className="text-[8px] md:text-[10px] font-bold text-slate-900 dark:text-white">{value}</span>
+    <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-1.5 border dark:border-white/5 shadow-sm shrink-0 min-w-[80px] md:min-w-[100px]">
+      <div className={cn("w-1.5 h-1.5 rounded-full", color)} />
+      <span className="text-[8px] md:text-[10px] font-black uppercase text-muted-foreground tracking-wider">{label}:</span>
+      <span className="text-[10px] md:text-xs font-bold text-slate-900 dark:text-white ml-auto">{value}</span>
     </div>
   );
 }
