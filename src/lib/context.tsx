@@ -455,7 +455,7 @@ const translations: Record<Language, Record<string, string>> = {
     order_cancelled: "Dalabka waa la kansalay",
     admin_message: "Fariinta Admin-ka",
     buy_now: "IIBSO",
-    login_to_buy: "Galan si aad u iibsato",
+    login_to_buy: "Soo gal si aad u iibsato",
     select_game: "Dooro Game ka",
     active_events: "Event yada",
     take_advantage: "Ka faa'ideeyso intuusan dhamaan!",

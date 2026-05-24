@@ -95,7 +95,7 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
       <CardFooter className="p-3 md:p-5 pt-0">
         <Button 
           onClick={handleBuyNow} 
-          className="w-full rounded-xl md:rounded-2xl h-10 md:h-14 gap-1.5 md:gap-2 font-black shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 text-[10px] md:text-sm uppercase tracking-widest"
+          className="w-full rounded-xl md:rounded-2xl h-10 md:h-14 gap-1.5 md:gap-2 font-black shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 text-[8px] xs:text-[10px] md:text-sm uppercase tracking-tight md:tracking-widest"
         >
           <ShoppingCart className="w-3.5 h-3.5 md:w-5 md:h-5" /> {user ? t('buy_now') : t('login_to_buy')}
         </Button>
