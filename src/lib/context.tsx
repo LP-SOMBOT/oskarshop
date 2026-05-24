@@ -411,7 +411,8 @@ const translations: Record<Language, Record<string, string>> = {
     reset_email_sent: "Check your email for the reset link.",
     enter_reset_email: "Enter your email to receive a password reset link.",
     account_gallery: "Account Gallery (First image is thumbnail)",
-    upload_photos_prompt: "Add Account Photos"
+    upload_photos_prompt: "Add Account Photos",
+    game_identity: "Game Identity"
   },
   so: {
     home: "Hoyga",
@@ -475,7 +476,8 @@ const translations: Record<Language, Record<string, string>> = {
     reset_email_sent: "Ka hubi email-kaaga linkiga bedelaada.",
     enter_reset_email: "Geli email-kaaga si lagugu soo diro linkiga bedelaada.",
     account_gallery: "Soo Geli dhamaan Sawirada accounti-ga",
-    upload_photos_prompt: "Riix halkaan Si aad sawir usoo gelisid"
+    upload_photos_prompt: "Riix halkaan Si aad sawir usoo gelisid",
+    game_identity: "Xogta Game ka"
   }
 };
 

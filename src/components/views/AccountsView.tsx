@@ -470,7 +470,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      <Card className="p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-6 md:space-y-8">
                         <div className="flex items-center gap-3 text-primary mb-2">
                            <Layers size={18} />
-                           <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">Game Identity</h4>
+                           <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">{t('game_identity')}</h4>
                         </div>
                         <FormGroup label="Game Type">
                            <Select value={formData.gameType} onValueChange={v => setFormData({...formData, gameType: v as any})}>
