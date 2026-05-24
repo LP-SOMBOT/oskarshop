@@ -12,8 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import emailjs from '@emailjs/browser';
 
 /**
- * @fileOverview Login Page with dynamic Recovery Protocol.
- * Fetches EmailJS credentials from store settings.
+ * @fileOverview Login Page with Somali language default and responsive UI.
  */
 
 export default function LoginPage() {
@@ -56,23 +55,16 @@ export default function LoginPage() {
     setServerError(null);
 
     try {
-      // 1. Validate EmailJS Config
       const ejConfig = storeSettings?.emailjs;
       if (!ejConfig?.serviceId || !ejConfig?.templateId || !ejConfig?.publicKey) {
-        throw new Error("Password reset is temporarily unavailable. Please contact Oskar Shop support.");
+        throw new Error("Adeegga dib u habaynta password-ka si ku meel gaadh ah uma shaqaynayo.");
       }
 
-      // 2. Call Next.js API to generate OTP
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Reset service encountered an error. Please try again later.");
-      }
 
       const data = await res.json();
 
@@ -82,7 +74,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Send Email via EmailJS
       await emailjs.send(
         ejConfig.serviceId,
         ejConfig.templateId,
@@ -90,11 +81,10 @@ export default function LoginPage() {
         ejConfig.publicKey
       );
 
-      toast({ title: "Code Sent!", description: "Check your email inbox." });
+      toast({ title: "Code-ka waa la diray!", description: "Ka eeg email-kaaga." });
       setView('verify');
     } catch (err: any) {
-      console.error('Request OTP Error:', err);
-      setServerError(err.message || "Failed to send code. Please try again.");
+      setServerError(err.message || "Wuu ku guul darraystay diritaanka code-ka.");
     } finally {
       setIsSubmitting(false);
     }
@@ -102,9 +92,9 @@ export default function LoginPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length !== 6) { setServerError("OTP must be 6 digits."); return; }
-    if (newPassword.length < 8) { setServerError("Password must be at least 8 characters."); return; }
-    if (newPassword !== confirmPassword) { setServerError("Passwords do not match."); return; }
+    if (otp.length !== 6) { setServerError("Code-ku waa inuu ka koobnaadaa 6 nambar."); return; }
+    if (newPassword.length < 8) { setServerError("Password-ku waa inuu ka koobnaadaa ugu yaraan 8 xaraf."); return; }
+    if (newPassword !== confirmPassword) { setServerError("Password-yada isma laha."); return; }
 
     setIsSubmitting(true);
     setServerError(null);
@@ -124,11 +114,10 @@ export default function LoginPage() {
         return;
       }
 
-      toast({ title: "Success!", description: "Password updated. Redirecting..." });
+      toast({ title: "Guul!", description: "Password-ka waa la bedelay." });
       setTimeout(() => setView('login'), 2000);
     } catch (err: any) {
-      console.error('Verify OTP Error:', err);
-      setServerError("Verification failed. Please try again.");
+      setServerError("Xaqiijinta waa lagu guul darraystay.");
     } finally {
       setIsSubmitting(false);
     }
@@ -138,10 +127,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
       <div className="pt-10 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
         <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight">
-          OskarShop
+          Ku Soo dhawoow OskarShop
         </h1>
         <p className="text-xl sm:text-2xl font-headline text-white/80 mt-2 font-medium">
-          {view === 'login' ? 'Login?' : 'Reset Access'}
+          {view === 'login' ? 'Soo gal?' : 'Dib u helid'}
         </p>
       </div>
 
@@ -150,7 +139,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
-                {user ? "Authorizing access..." : "Synchronizing..."}
+                {user ? "Xaqiijinta galitaanka..." : "Isku xirka..."}
              </p>
           </div>
         )}
@@ -165,17 +154,17 @@ export default function LoginPage() {
           
           {view === 'login' && (
             <div className="space-y-6">
-              <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Log In</h2>
+              <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Soo gal</h2>
               <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
                 <div className="relative group">
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Mail className="w-5 h-5" /></div>
                   <Input 
                     type="email" 
-                    placeholder="Email address" 
+                    placeholder="Email-kaaga" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900"
+                    className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
                   />
                 </div>
 
@@ -183,11 +172,11 @@ export default function LoginPage() {
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Lock className="w-5 h-5" /></div>
                   <Input 
                     type={showPassword ? "text" : "password"} 
-                    placeholder="Enter Password" 
+                    placeholder="Password-kaaga" 
                     required 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900"
+                    className="h-14 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 p-1">
                     {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
@@ -196,17 +185,17 @@ export default function LoginPage() {
 
                 <div className="text-right">
                   <button type="button" onClick={() => setView('forgot')} className="text-blue-600 text-xs sm:text-sm font-bold hover:underline">
-                    {t('forgot_password')}
+                    Ma ilaawday password-ka?
                   </button>
                 </div>
 
-                <Button type="submit" disabled={isSubmitting || isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20">
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "LOG IN"}
+                <Button type="submit" disabled={isSubmitting || isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95">
+                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SOO GAL"}
                 </Button>
 
                 <div className="text-center pt-2 pb-6">
                   <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                    Don't have an account? <Link href="/signup" className="text-[#7C3AED] font-bold hover:underline ml-1">Sign Up</Link>
+                    Account ma haysatid? <Link href="/signup" className="text-[#7C3AED] font-bold hover:underline ml-1">Sameey account</Link>
                   </p>
                 </div>
               </form>
@@ -216,8 +205,8 @@ export default function LoginPage() {
           {view === 'forgot' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Forgot Password?</h2>
-                <p className="text-sm text-gray-500 font-medium">Enter your email and we'll send you a 6-digit verification code.</p>
+                <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Ma ilaawday password-ka?</h2>
+                <p className="text-sm text-gray-500 font-medium">Geli email-kaaga si aan kuugu soo dirno code-ka xaqiijinta.</p>
               </div>
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
@@ -225,20 +214,20 @@ export default function LoginPage() {
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Mail className="w-5 h-5" /></div>
                   <Input 
                     type="email" 
-                    placeholder="user@example.com" 
+                    placeholder="Email-kaaga" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold"
+                    className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold transition-all"
                   />
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Send Code"}
+                <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95">
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Dir Code-ka"}
                 </Button>
 
                 <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-4 w-full">
-                  <ArrowLeft size={16} /> Back to Login
+                  <ArrowLeft size={16} /> Ku laabo soo gal
                 </button>
               </form>
             </div>
@@ -247,8 +236,8 @@ export default function LoginPage() {
           {view === 'verify' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Verify Code</h2>
-                <p className="text-sm text-gray-500 font-medium">We sent a 6-digit code to <span className="font-bold text-[#7C3AED]">{email}</span></p>
+                <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Xaqiiji Code-ka</h2>
+                <p className="text-sm text-gray-500 font-medium">Waxaan code-ka u dirnay <span className="font-bold text-[#7C3AED]">{email}</span></p>
               </div>
 
               <form onSubmit={handleResetPassword} className="space-y-5">
@@ -266,10 +255,10 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">New Password</Label>
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password Cusub</Label>
                   <Input 
                     type="password" 
-                    placeholder="Min 8 characters" 
+                    placeholder="Ugu yaraan 8 xaraf" 
                     required 
                     minLength={8}
                     value={newPassword}
@@ -279,10 +268,10 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Confirm Password</Label>
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Xaqiiji Password-ka</Label>
                   <Input 
                     type="password" 
-                    placeholder="Repeat password" 
+                    placeholder="Ku celi password-ka" 
                     required 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -290,12 +279,12 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Reset Password</>}
+                <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest transition-all active:scale-95">
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Bedel Password-ka</>}
                 </Button>
 
                 <button type="button" onClick={() => setView('forgot')} className="w-full text-gray-400 text-xs font-bold hover:text-gray-600">
-                  Didn't receive the code? Resend
+                  Code-ka ma helin? Dib u dir
                 </button>
               </form>
             </div>

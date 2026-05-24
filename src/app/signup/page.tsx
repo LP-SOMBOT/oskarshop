@@ -11,6 +11,10 @@ import { User, Lock, Mail, Phone, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle }
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+/**
+ * @fileOverview Signup Page with Somali language default and responsive UI.
+ */
+
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,14 +37,14 @@ export default function SignupPage() {
     try {
       await signup(email, password, name, phone);
       toast({
-        title: "Account Created!",
-        description: "Welcome to Oskar Shop.",
+        title: "Account-ka waa la sameeyey!",
+        description: "Ku soo dhawoow Oskar Shop.",
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Signup Failed",
-        description: error.message || "Something went wrong.",
+        title: "Wuu ku guul darraystay",
+        description: error.message || "Waxbaa khaldamay.",
       });
     } finally {
       setIsSubmitting(false);
@@ -51,13 +55,13 @@ export default function SignupPage() {
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
       <div className="pt-8 pb-4 sm:pt-16 sm:pb-12 px-6 sm:px-10 shrink-0">
         <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-4 sm:mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
+          <ArrowLeft className="w-4 h-4" /> Dib u Noqo
         </Link>
         <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight mt-1 sm:mt-6">
-          Join <br /> Oskar Shop
+          Ku soo biir <br /> Oskar Shop
         </h1>
         <p className="text-xl sm:text-2xl font-headline text-white/80 mt-1 font-medium">
-          Sign Up
+          Is diwaangeli
         </p>
       </div>
 
@@ -66,20 +70,20 @@ export default function SignupPage() {
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
-                {user ? "Authorizing access..." : "Synchronizing..."}
+                {user ? "Xaqiijinta galitaanka..." : "Isku xirka..."}
              </p>
           </div>
         )}
 
         <div className="max-w-md mx-auto h-full flex flex-col">
           <h2 className="text-2xl sm:text-3xl font-headline font-bold mb-6 sm:mb-8 text-gray-900">
-            Create Account
+            Sameey Account
           </h2>
 
           {authError && (
             <Alert variant="destructive" className="mb-6 rounded-2xl animate-in slide-in-from-top-2">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertTitle>Khalad ayaa dhacay</AlertTitle>
               <AlertDescription className="text-xs font-medium">
                 {authError}
               </AlertDescription>
@@ -94,7 +98,7 @@ export default function SignupPage() {
               <Input 
                 id="name" 
                 type="text" 
-                placeholder="Full Name" 
+                placeholder="Magacaaga oo buuxa" 
                 required 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -109,7 +113,7 @@ export default function SignupPage() {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="Email address" 
+                placeholder="Email-kaaga" 
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -124,7 +128,7 @@ export default function SignupPage() {
               <Input 
                 id="phone" 
                 type="tel" 
-                placeholder="Phone Number" 
+                placeholder="Lambarkaaga" 
                 required 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -139,7 +143,7 @@ export default function SignupPage() {
               <Input 
                 id="password" 
                 type={showPassword ? "text" : "password"} 
-                placeholder="Password (min 6 chars)" 
+                placeholder="Password-ka (ugu yaraan 6 xaraf)" 
                 required 
                 minLength={6}
                 value={password}
@@ -160,12 +164,12 @@ export default function SignupPage() {
               disabled={isSubmitting || isGlobalLoading}
               className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 text-white mt-1"
             >
-              {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "CREATE ACCOUNT"}
+              {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SAMEEY ACCOUNT"}
             </Button>
 
             <div className="text-center pt-2 pb-10">
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                Already have an account? <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">Log In</Link>
+                Horey ma u lahayd account? <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">Soo gal</Link>
               </p>
             </div>
           </form>
