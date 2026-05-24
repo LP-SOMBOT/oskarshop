@@ -707,7 +707,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                                   disabled={isSubmitting} 
                                   className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-primary text-white font-black text-xs md:text-3xl gap-4 shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest"
                                 >
-                                   {isSubmitting ? <Loader2 className="animate-spin w-8 h-8 md:w-12 md:h-12" /> : "I'VE PAID (SUBMIT LISTING)"}
+                                   {isSubmitting ? <Loader2 className="animate-spin w-8 h-8 md:w-12 md:h-12" /> : (language === 'so' ? "Waan bixiyay" : "I'VE PAID (SUBMIT LISTING)")}
                                 </Button>
                              </div>
                            )}
