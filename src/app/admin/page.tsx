@@ -744,7 +744,7 @@ export default function AdminPage() {
                                  </div>
                                  <div className="min-w-0">
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Unassigned"}</p>
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Wali lama furin"}</p>
                                  </div>
                               </div>
                               <div className="flex gap-2 pt-2 border-t dark:border-white/5">
@@ -797,7 +797,7 @@ export default function AdminPage() {
                                              {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", o.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
-                                            {o.processedBy?.name || "Unassigned"}
+                                            {o.processedBy?.name || "Wali lama furin"}
                                           </span>
                                        </div>
                                     </TableCell>
@@ -984,7 +984,7 @@ export default function AdminPage() {
                                              {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
-                                            {p.processedBy?.name || "Unassigned"}
+                                            {p.processedBy?.name || "Wali lama furin"}
                                           </span>
                                        </div>
                                     </TableCell>
@@ -2187,7 +2187,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 <div className="min-w-0">
                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Handling Admin</p>
                    <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
-                      {order.processedBy?.name || "Unassigned"}
+                      {order.processedBy?.name || "Wali lama furin"}
                    </h5>
                    {order.processedAt && (
                       <p className="text-[9px] font-black text-primary uppercase tracking-tighter mt-1">
