@@ -2003,7 +2003,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isPromoDialogOpen} onOpenChange={setIsPromoDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+        <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader>
               <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Create Promo Voucher</DialogTitle>
               <DialogDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">Generate a unique code with custom discount</DialogDescription>
@@ -2247,7 +2247,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 disabled={isSaving} 
                 className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
              >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SYNC ORDER STATUS"}
+                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Order"}
              </Button>
 
              <div className="pt-8 space-y-6">
