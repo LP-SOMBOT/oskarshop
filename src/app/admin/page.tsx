@@ -1243,7 +1243,18 @@ export default function AdminPage() {
 
                               <div className="space-y-1">
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Promo Code</p>
-                                 <h4 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white truncate">{promo.code}</h4>
+                                 <div className="flex items-center gap-2">
+                                    <h4 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white truncate">{promo.code}</h4>
+                                    <button 
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(promo.code);
+                                        toast({ title: "Code Copied!", description: `${promo.code} is now in your clipboard.` });
+                                      }}
+                                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90"
+                                    >
+                                      <Copy size={16} />
+                                    </button>
+                                 </div>
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
@@ -1976,7 +1987,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+        <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">New Promotion Banner</DialogTitle></DialogHeader>
            <form onSubmit={handleSaveBanner} className="space-y-6 mt-6">
               <div className="relative w-full aspect-[21/9] rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
