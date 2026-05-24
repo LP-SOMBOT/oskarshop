@@ -16,7 +16,7 @@ import { useMemo, useState, useEffect } from "react";
  * Cannot be ignored until resolved or admin clears it.
  */
 export default function SellerResponsiveGuard() {
-  const { user, accountPosts, setActiveTab } = useApp();
+  const { user, accountPosts, setActiveTab, language } = useApp();
   const [isDismissed, setIsDismissed] = useState(false);
 
   const stallingPosts = useMemo(() => {
@@ -56,9 +56,13 @@ export default function SellerResponsiveGuard() {
              <AlertTriangle size={18} className="animate-pulse" />
           </div>
           <div className="min-w-0">
-             <p className="text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">Security Alert</p>
+             <p className="text-[10px] md:text-xs font-black uppercase tracking-widest leading-none">
+               {language === 'so' ? "Arin deg deg ah" : "Security Alert"}
+             </p>
              <p className="text-[9px] md:text-[11px] font-bold opacity-90 truncate">
-               {stallingPosts.length} stalling account(s) detected! Resolve immediately in My Accounts.
+               {language === 'so' 
+                 ? "Fadlan kajawaab account kaaga inta aanan Laga saarin listing Ga" 
+                 : `${stallingPosts.length} stalling account(s) detected! Resolve immediately in My Accounts.`}
              </p>
           </div>
         </div>
@@ -67,7 +71,7 @@ export default function SellerResponsiveGuard() {
           onClick={() => setActiveTab('my-accounts')}
           className="bg-white text-red-600 hover:bg-slate-100 font-black h-8 px-6 rounded-full text-[10px] uppercase shadow-lg active:scale-95 transition-transform shrink-0 ml-4"
         >
-          Resolve
+          {language === 'so' ? "Hadda xalli" : "Resolve"}
         </Button>
       </div>
     );
@@ -85,8 +89,12 @@ export default function SellerResponsiveGuard() {
                    <AlertTriangle size={40} className="animate-pulse" />
                 </div>
                 <div>
-                   <h2 className="text-3xl md:text-5xl font-headline font-bold uppercase tracking-tight leading-none">Security Alert</h2>
-                   <p className="text-white/60 text-[10px] md:text-sm font-black uppercase tracking-[0.2em] mt-2">Action Required Immediately</p>
+                   <h2 className="text-3xl md:text-5xl font-headline font-bold uppercase tracking-tight leading-none">
+                      {language === 'so' ? "Arin deg deg ah" : "Security Alert"}
+                   </h2>
+                   <p className="text-white/60 text-[10px] md:text-sm font-black uppercase tracking-[0.2em] mt-2">
+                      {language === 'so' ? "Fadlan xogta ka jawaab" : "Action Required Immediately"}
+                   </p>
                 </div>
              </div>
           </div>
@@ -94,16 +102,22 @@ export default function SellerResponsiveGuard() {
           <div className="p-8 md:p-12 space-y-8 md:space-y-12">
              <div className="space-y-4">
                 <p className="text-slate-900 dark:text-white text-base md:text-xl font-bold leading-relaxed">
-                   Waxaad haysataa {stallingPosts.length} account oo ay qof iibsadeen laakiin aadan wali ka jawaabin verification-ka muddo ka badan 1 saac.
+                   {language === 'so' 
+                    ? `Waxaad haysataa ${stallingPosts.length} account oo ay qof iibsadeen laakiin aadan wali ka jawaabin verification-ka muddo ka badan 1 saac.`
+                    : `You have ${stallingPosts.length} account(s) that buyers have claimed but you haven't responded to the verification for over 1 hour.`}
                 </p>
                 <p className="text-muted-foreground text-xs md:text-base font-medium">
-                   Fadlan si deg-deg ah ugu jawaab si aan account-kaaga looga saarin listing-ka ama aanan garka kugu soo xirin.
+                   {language === 'so'
+                    ? "Fadlan si deg-deg ah ugu jawaab si aan account-kaaga looga saarin listing-ka ama aanan garka kugu soo xirin."
+                    : "Please respond immediately to avoid removal from the marketplace or potential account suspension."}
                 </p>
              </div>
 
              {/* Problematic Accounts List */}
              <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1">Stalling Listings:</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 ml-1">
+                   {language === 'so' ? "Account-yada xallinta u baahan:" : "Stalling Listings:"}
+                </p>
                 <div className="grid grid-cols-1 gap-2">
                    {stallingPosts.map(p => (
                      <div key={p.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-between border dark:border-white/5">
@@ -127,7 +141,7 @@ export default function SellerResponsiveGuard() {
                   onClick={handleResolveClick}
                   className="w-full h-16 md:h-20 rounded-2xl md:rounded-3xl bg-red-600 hover:bg-red-700 text-white font-black text-sm md:text-xl uppercase tracking-widest shadow-2xl shadow-red-500/20 active:scale-95 transition-all gap-3"
                 >
-                   Resolve Now <ArrowRight size={24} />
+                   {language === 'so' ? "Hadda xalli" : "Resolve Now"} <ArrowRight size={24} />
                 </Button>
                 <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-widest">
                    Oskar Security Protocol Active
