@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -20,7 +21,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signup, user, isGlobalLoading, authError } = useApp();
   const router = useRouter();
@@ -33,6 +36,16 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Khalad",
+        description: "Password-yada isma laha. Fadlan mar kale isku day.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await signup(email, password, name, phone);
@@ -140,7 +153,7 @@ export default function SignupPage() {
               <Input 
                 id="password" 
                 type={showPassword ? "text" : "password"} 
-                placeholder="Password-ka (ugu yaraan 6 xaraf)" 
+                placeholder="Password-ka" 
                 required 
                 minLength={6}
                 value={password}
@@ -153,6 +166,29 @@ export default function SignupPage() {
                 className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7C3AED] transition-colors p-1"
               >
                 {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              </button>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
+                <Lock className="w-5 h-5" />
+              </div>
+              <Input 
+                id="confirmPassword" 
+                type={showConfirmPassword ? "text" : "password"} 
+                placeholder="Ku celi password-ka" 
+                required 
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="h-14 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+              />
+              <button 
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7C3AED] transition-colors p-1"
+              >
+                {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
               </button>
             </div>
 
