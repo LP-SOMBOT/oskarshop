@@ -233,7 +233,7 @@ export default function LoginPage() {
                 </Button>
 
                 <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-4 w-full">
-                  <ArrowLeft size={16} /> Ku laabo soo gal
+                  <ArrowLeft size={16} /> Dib U noqo
                 </button>
               </form>
             </div>
