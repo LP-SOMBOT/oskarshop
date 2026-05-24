@@ -238,7 +238,7 @@ export default function AccountsView() {
             <DialogDescription className="text-xs sm:text-sm">Post-kan waa la tirtiri doonaa, dibna looma heli karo.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
              <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10 sm:h-12 order-1 sm:order-2" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
              </Button>
@@ -538,8 +538,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                           </>
                         ) : (
                           <>
-                             <FormInput label="In-Game Name (Alias)" value={formData.accountName} onChange={v => setFormData({...formData, accountName: v})} placeholder="e.g. Ghost_01" />
-                             <FormInput label="Account ID" value={formData.accountId} onChange={v => setFormData({...formData, accountId: v})} placeholder="e.g. 982172" />
+                             <ProfileInput label="In-Game Name (Alias)" value={formData.accountName} onChange={v => setFormData({...formData, accountName: v})} placeholder="e.g. Ghost_01" />
+                             <ProfileInput label="Account ID" value={formData.accountId} onChange={v => setFormData({...formData, accountId: v})} placeholder="e.g. 982172" />
                           </>
                         )}
                      </Card>
@@ -896,9 +896,24 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
            )}
         </div>
 
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5">
-           <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-none rounded-lg px-2.5 md:px-4 py-1 md:py-2 text-[8px] md:text-[11px] font-black shadow-sm shrink-0">Evo: {post.evoWeapons || 0}</Badge>
-           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-amber-400 border-none rounded-lg px-2.5 md:px-4 py-1 md:py-2 text-[8px] md:text-[11px] font-black shadow-sm shrink-0">Emotes: {post.emotes || 0}</Badge>
+        <div className="flex flex-wrap gap-1.5 md:gap-2">
+           {post.gameType === 'bloodstrike' ? (
+             <>
+                <AssetMiniBadge label="Evo" value={post.evoWeapons} color="bg-amber-500" />
+                <AssetMiniBadge label="Int" value={post.internalWeapons} color="bg-blue-500" />
+                <AssetMiniBadge label="Emo" value={post.emotes} color="bg-purple-500" />
+                <AssetMiniBadge label="Exe" value={post.executionEmotes} color="bg-red-500" />
+                <AssetMiniBadge label="Arr" value={post.arrivalEmotes} color="bg-indigo-500" />
+             </>
+           ) : (
+             <>
+                <AssetMiniBadge label="Evo" value={post.evoWeapons} color="bg-amber-500" />
+                <AssetMiniBadge label="Wep" value={post.totalWeapons} color="bg-blue-500" />
+                <AssetMiniBadge label="Emo" value={post.emotes} color="bg-purple-500" />
+                <AssetMiniBadge label="Arr" value={post.arrivalEmotes} color="bg-indigo-500" />
+                <AssetMiniBadge label="Dhr" value={post.dharka} color="bg-pink-500" />
+             </>
+           )}
         </div>
 
         <div className="flex items-center justify-between pt-3 md:pt-6 border-t border-slate-50 dark:border-white/5 mt-auto">
@@ -912,6 +927,17 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
         </div>
       </div>
     </Card>
+  );
+}
+
+function AssetMiniBadge({ label, value, color }: { label: string, value: number, color: string }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 rounded-md px-1.5 py-0.5 border dark:border-white/5 shadow-sm shrink-0">
+      <div className={cn("w-1 h-1 rounded-full", color)} />
+      <span className="text-[7px] md:text-[9px] font-black uppercase text-muted-foreground">{label}:</span>
+      <span className="text-[8px] md:text-[10px] font-bold text-slate-900 dark:text-white">{value}</span>
+    </div>
   );
 }
 
@@ -944,6 +970,21 @@ function FormInput({ label, value, onChange, placeholder, type = "text", classNa
           highlight ? "bg-primary/5 text-primary" : "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
         )} 
        />
+    </div>
+  );
+}
+
+function ProfileInput({ label, value, onChange, type = "text", inputMode }: { label: string, value: string, onChange: (val: string) => void, type?: string, inputMode?: any }) {
+  return (
+    <div className="space-y-1.5 md:space-y-2">
+      <Label className="text-[10px] md:text-xs font-black uppercase tracking-[0.1em] md:tracking-[0.3em] text-muted-foreground ml-3 md:ml-6">{label}</Label>
+      <Input 
+        type={type} 
+        inputMode={inputMode} 
+        value={value} 
+        onChange={e => onChange(e.target.value)} 
+        className="h-10 md:h-16 lg:h-20 rounded-lg md:rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-8 font-bold text-xs md:text-lg lg:text-2xl focus-visible:ring-primary shadow-inner" 
+      />
     </div>
   );
 }
