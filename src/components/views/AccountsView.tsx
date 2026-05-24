@@ -655,7 +655,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                                      </div>
                                      <div className="flex-1 text-left min-w-0">
                                        <p className="font-bold text-sm md:text-xl dark:text-white truncate">{method.name}</p>
-                                       <p className="text-[8px] md:text-xs text-muted-foreground uppercase tracking-widest mt-1">Direct verification</p>
                                      </div>
                                      <RadioGroupItem value={method.id} id={method.id} className="dark:border-white/20 h-4 w-4 md:h-6 md:w-6" />
                                    </Label>
@@ -753,7 +752,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      </p>
                   </div>
 
-                  <div className="flex flex-col gap-3 md:gap-5 w-full max-w-md mx-auto">
+                  <div className="flex flex-col gap-3 md:gap-5 w-full max-md mx-auto">
                      <Button onClick={onComplete} className="h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-2xl shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest transition-transform active:scale-95">
                         Eeg Marketplace-ka
                      </Button>
