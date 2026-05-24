@@ -72,7 +72,8 @@ import {
   Type,
   ExternalLink,
   Wallet,
-  AlertTriangle
+  AlertTriangle,
+  Ticket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -241,6 +242,9 @@ export default function AdminPage() {
     games,
     products, 
     accountPosts,
+    promoCodes,
+    savePromoCode,
+    deletePromoCode,
     events,
     banners,
     adminNotifications,
@@ -270,7 +274,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   // View States
-  const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'events' | 'users' | 'settings'>('dashboard');
+  const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'events' | 'users' | 'settings' | 'promo-codes'>('dashboard');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -290,6 +294,7 @@ export default function AdminPage() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
   const [isPaymentMethodDialogOpen, setIsPaymentMethodDialogOpen] = useState(false);
+  const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [isUserManageOpen, setIsUserManageOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
@@ -314,6 +319,7 @@ export default function AdminPage() {
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
+  const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days" });
   
   // Settings Form States
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
@@ -458,6 +464,35 @@ export default function AdminPage() {
     } catch (err) {}
   };
 
+  const handleSavePromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoForm.code || !promoForm.discount || !promoForm.duration) return;
+    
+    const now = Date.now();
+    let durationMs = parseInt(promoForm.duration);
+    const unit = promoForm.durationUnit;
+    
+    if (unit === 'minutes') durationMs *= 60000;
+    else if (unit === 'hours') durationMs *= 3600000;
+    else if (unit === 'days') durationMs *= 86400000;
+    else if (unit === 'months') durationMs *= 2592000000;
+    else if (unit === 'years') durationMs *= 31536000000;
+
+    const expiresAt = now + durationMs;
+
+    await savePromoCode({
+      code: promoForm.code,
+      discount: parseInt(promoForm.discount),
+      expiresAt,
+      claimed: false,
+      usedBy: null,
+      expired: false
+    });
+
+    setIsPromoDialogOpen(false);
+    setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days" });
+  };
+
   const handleStatusUpdate = async () => {
     if (!selectedOrderId || !pendingOrderStatus) return;
     setIsSavingStatus(true);
@@ -500,6 +535,7 @@ export default function AdminPage() {
       if (deleteTarget.type === 'event') await deleteEvent(deleteTarget.id);
       if (deleteTarget.type === 'banner') await deleteBanner(deleteTarget.id);
       if (deleteTarget.type === 'paymentMethod') await deletePaymentMethod(deleteTarget.id);
+      if (deleteTarget.type === 'promoCode') await deletePromoCode(deleteTarget.id);
       toast({ title: "Deleted Successfully" });
       setIsDeleteDialogOpen(false);
     } catch (error) {
@@ -565,6 +601,7 @@ export default function AdminPage() {
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
+        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
@@ -1166,6 +1203,84 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* Promo Codes Management */}
+          {activeView === 'promo-codes' && (
+            <div className="space-y-12 animate-in fade-in duration-700">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  <div>
+                     <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight">Voucher Protocol</h2>
+                     <p className="text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60">Generate and track promo code redemption</p>
+                  </div>
+                  <Button 
+                    onClick={() => setIsPromoDialogOpen(true)}
+                    className="rounded-2xl h-14 md:h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                  >
+                    <PlusCircle size={20} /> New Promo Code
+                  </Button>
+               </div>
+
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {promoCodes.length === 0 ? (
+                    <div className="col-span-full py-24 text-center opacity-30 italic text-xs font-bold uppercase border-2 border-dashed rounded-[3rem]">No promo codes active</div>
+                  ) : (
+                    promoCodes.map(promo => {
+                      const isExpired = promo.expiresAt < Date.now();
+                      const status = promo.claimed ? 'Claimed' : isExpired ? 'Expired' : 'Unclaimed';
+                      const badgeColor = promo.claimed ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+
+                      return (
+                        <Card key={promo.code} className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group">
+                           <div className="p-6 md:p-8 space-y-6">
+                              <div className="flex items-center justify-between">
+                                 <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shadow-inner">
+                                    <Ticket size={20} />
+                                 </div>
+                                 <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", badgeColor)}>
+                                    {status}
+                                 </Badge>
+                              </div>
+
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Promo Code</p>
+                                 <h4 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white truncate">{promo.code}</h4>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                 <div className="space-y-1">
+                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Discount</p>
+                                    <p className="font-bold text-lg text-primary">{promo.discount}% OFF</p>
+                                 </div>
+                                 <div className="space-y-1 text-right">
+                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Expires</p>
+                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">{format(new Date(promo.expiresAt), 'MMM d, HH:mm')}</p>
+                                 </div>
+                              </div>
+
+                              {promo.claimed && (
+                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5">
+                                   <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Used By (UID)</p>
+                                   <p className="text-[9px] font-mono font-bold truncate text-purple-600">{promo.usedBy || 'System Redemption'}</p>
+                                </div>
+                              )}
+
+                              <div className="pt-4 border-t dark:border-white/5">
+                                 <Button 
+                                   variant="ghost" 
+                                   onClick={() => { setDeleteTarget({id: promo.code, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
+                                   className="w-full rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
+                                 >
+                                    <Trash2 size={14} className="mr-2" /> Delete Voucher
+                                 </Button>
+                              </div>
+                           </div>
+                        </Card>
+                      );
+                    })
+                  )}
+               </div>
+            </div>
+          )}
+
           {activeView === 'users' && (
             <div className="space-y-8 animate-in fade-in duration-700">
                <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
@@ -1628,7 +1743,7 @@ export default function AdminPage() {
                  </div>
                  <Badge className={cn(
                    "rounded-full uppercase text-[7px] md:text-[8px] font-black tracking-widest px-2 md:px-3 py-1 border-none shadow-sm shrink-0",
-                   selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
+                   selectedUser?.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
                  )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
                  </Badge>
@@ -1706,7 +1821,7 @@ export default function AdminPage() {
                       toast({title: newBanned ? "User Terminated" : "User Restored"}); 
                     }} 
                     className={cn(
-                      "w-full h-14 md:h-18 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3",
+                      "w-full h-14 md:h-18 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3",
                       selectedUser?.banned ? "bg-green-600 hover:bg-green-700" : "bg-red-50 hover:bg-red-600"
                     )}
                  >
@@ -1790,7 +1905,7 @@ export default function AdminPage() {
                  </Select>
               </div>
               {productForm.category === 'booyah-pass' && <SettingInput label="Admin WhatsApp for Direct Sale" value={productForm.whatsappNumber || ""} onChange={v => setProductForm({ ...productForm, whatsappNumber: v })} placeholder="252613982172" />}
-              <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest active:scale-95 transition-all">
+              <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest active:scale-[0.98] transition-all">
                 {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Package"}
               </Button>
            </form>
@@ -1858,6 +1973,40 @@ export default function AdminPage() {
               <SettingInput label="Link To (Optional)" value={bannerForm.linkTo || ""} onChange={v => setBannerForm({ ...bannerForm, linkTo: v })} placeholder="#games or #accounts" />
               <Button type="submit" disabled={isUploading || !bannerForm.imageUrl} className="w-full h-12 md:h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest bg-primary text-white">
                 {isUploading ? <Loader2 className="animate-spin" /> : "Add Banner"}
+              </Button>
+           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPromoDialogOpen} onOpenChange={setIsPromoDialogOpen}>
+        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+           <DialogHeader>
+              <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Create Promo Voucher</DialogTitle>
+              <DialogDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">Generate a unique code with custom discount</DialogDescription>
+           </DialogHeader>
+           <form onSubmit={handleSavePromo} className="space-y-6 mt-6">
+              <SettingInput label="Voucher Code" value={promoForm.code} onChange={v => setPromoForm({...promoForm, code: v})} placeholder="e.g. DEVL26%OFF" />
+              <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
+              
+              <div className="grid grid-cols-2 gap-4">
+                 <SettingInput label="Duration Value" value={promoForm.duration} type="number" onChange={v => setPromoForm({...promoForm, duration: v})} placeholder="e.g. 7" />
+                 <div className="space-y-2">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
+                    <Select value={promoForm.durationUnit} onValueChange={v => setPromoForm({...promoForm, durationUnit: v})}>
+                       <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                       <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                          <SelectItem value="minutes" className="p-3 font-bold uppercase text-[10px]">Minutes</SelectItem>
+                          <SelectItem value="hours" className="p-3 font-bold uppercase text-[10px]">Hours</SelectItem>
+                          <SelectItem value="days" className="p-3 font-bold uppercase text-[10px]">Days</SelectItem>
+                          <SelectItem value="months" className="p-3 font-bold uppercase text-[10px]">Months</SelectItem>
+                          <SelectItem value="years" className="p-3 font-bold uppercase text-[10px]">Years</SelectItem>
+                       </SelectContent>
+                    </Select>
+                 </div>
+              </div>
+
+              <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-[0.1em] shadow-xl active:scale-[0.98]">
+                 Deploy Voucher Code
               </Button>
            </form>
         </DialogContent>
@@ -1990,6 +2139,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
              <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} />
              <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
+             {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
           </div>
        </Card>
 

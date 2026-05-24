@@ -77,6 +77,7 @@ type Order = {
     name: string;
     photoURL?: string;
   };
+  promoCode?: string;
 };
 
 type AccountPost = {
@@ -179,6 +180,16 @@ type PaymentMethod = {
   active: boolean;
 };
 
+type PromoCode = {
+  code: string;
+  discount: number; // percentage
+  createdAt: number;
+  expiresAt: number;
+  usedBy: string | null;
+  claimed: boolean;
+  expired: boolean;
+};
+
 type StoreSettings = {
   isLive: boolean;
   announcementTicker?: string;
@@ -267,11 +278,12 @@ type AppContextType = {
   products: GamePackage[];
   allUsers: UserProfile[];
   accountPosts: AccountPost[];
+  promoCodes: PromoCode[];
   notifications: AppNotification[];
   adminNotifications: AppNotification[];
   events: GameEvent[];
   banners: Banner[];
-  createOrder: (paymentMethod: string, gameDetails: any, directItem: CartItem) => Promise<void>;
+  createOrder: (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => Promise<void>;
   postAccount: (data: Partial<AccountPost>) => Promise<void>;
   updateAccountPost: (postId: string, data: Partial<AccountPost>) => Promise<void>;
   renewAccountPost: (postId: string, term: 'weekly' | 'monthly') => Promise<void>;
@@ -299,6 +311,9 @@ type AppContextType = {
   deleteBanner: (id: string) => Promise<void>;
   savePaymentMethod: (method: Partial<PaymentMethod>) => Promise<void>;
   deletePaymentMethod: (id: string) => Promise<void>;
+  savePromoCode: (promo: Partial<PromoCode>) => Promise<void>;
+  deletePromoCode: (code: string) => Promise<void>;
+  checkPromoCode: (code: string) => Promise<number>;
   storeSettings: StoreSettings;
   updateStoreSettings: (settings: any) => Promise<void>;
   updateAdminSettings: (settings: any) => Promise<void>;
@@ -516,13 +531,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     events: false,
     banners: false,
     allUsers: false,
-    games: false
+    games: false,
+    promoCodes: false
   });
 
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => getCache(SETTINGS_CACHE_KEY, {}));
   const [games, setGames] = useState<Game[]>(() => getCache(GAMES_CACHE_KEY, []));
   const [products, setProducts] = useState<GamePackage[]>(() => getCache(PRODUCTS_CACHE_KEY, []));
   const [accountPosts, setAccountPosts] = useState<AccountPost[]>([]);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [events, setEvents] = useState<GameEvent[]>(() => getCache(EVENTS_CACHE_KEY, []));
   const [banners, setBanners] = useState<Banner[]>(() => getCache(BANNERS_CACHE_KEY, []));
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -708,6 +725,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const gamesRef = ref(rtdb, 'games');
     const productsRef = ref(rtdb, 'products');
     const accPostsRef = ref(rtdb, 'accountPosts');
+    const promoCodesRef = ref(rtdb, 'promo_codes');
     const eventsRef = ref(rtdb, 'events');
     const bannersRef = ref(rtdb, 'banners');
     const usersRef = ref(rtdb, 'users');
@@ -743,6 +761,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSyncStatus(prev => ({ ...prev, accPosts: true }));
     });
 
+    onValue(promoCodesRef, (s) => {
+      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
+      setPromoCodes(data);
+      setSyncStatus(prev => ({ ...prev, promoCodes: true }));
+    });
+
     onValue(eventsRef, (s) => {
       const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })).sort((a, b) => b.createdAt - a.createdAt) : [];
       setEvents(data);
@@ -766,7 +790,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      off(settingsRef); off(gamesRef); off(productsRef); off(accPostsRef); off(eventsRef); off(bannersRef); off(usersRef);
+      off(settingsRef); off(gamesRef); off(productsRef); off(accPostsRef); off(promoCodesRef); off(eventsRef); off(bannersRef); off(usersRef);
     };
   }, [rtdb, syncStatus.settings, storeSettings.isLive, storeSettings.appStatus?.offline, showPushNotification]);
 
@@ -974,7 +998,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     router.push(`/checkout?id=${item.id}`);
   };
 
-  const createOrder = async (paymentMethod: string, gameDetails: any, directItem: CartItem) => {
+  const createOrder = async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
     if (!rtdb || !user) return;
     const counterRef = ref(rtdb, 'settings/orderCounter');
     let sequenceId = 10;
@@ -986,9 +1010,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (result.committed) sequenceId = result.snapshot.val();
     } catch (e) { sequenceId = Date.now(); }
     const orderId = `iibinta${sequenceId}`;
-    const newOrder: Order = { id: orderId, userId: user.uid, items: [directItem], total: directItem.price, status: 'pending', createdAt: Date.now(), paymentMethod, gameDetails };
+    const newOrder: Order = { id: orderId, userId: user.uid, items: [directItem], total: directItem.price, status: 'pending', createdAt: Date.now(), paymentMethod, gameDetails, promoCode };
     
     await set(ref(rtdb, `orders/${orderId}`), newOrder);
+
+    if (promoCode) {
+      await update(ref(rtdb, `promo_codes/${promoCode}`), {
+        claimed: true,
+        usedBy: user.uid
+      });
+    }
+
     await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`);
   };
 
@@ -1260,6 +1292,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deletePaymentMethod = async (id: string) => { if (!rtdb) return; await remove(ref(rtdb, `settings/paymentMethods/${id}`)); toast({ title: "Payment Method Removed" }); };
+  
+  const savePromoCode = async (promo: Partial<PromoCode>) => {
+    if (!rtdb || !promo.code) return;
+    await set(ref(rtdb, `promo_codes/${promo.code}`), {
+      ...promo,
+      createdAt: Date.now(),
+      claimed: false,
+      usedBy: null,
+      expired: false
+    });
+    toast({ title: "Promo Code Created!" });
+  };
+
+  const deletePromoCode = async (code: string) => {
+    if (!rtdb) return;
+    await remove(ref(rtdb, `promo_codes/${code}`));
+    toast({ title: "Promo Code Deleted" });
+  };
+
+  const checkPromoCode = async (code: string): Promise<number> => {
+    if (!rtdb || !user) throw new Error("Connection error");
+    const promoSnap = await get(ref(rtdb, `promo_codes/${code}`));
+    if (!promoSnap.exists()) throw new Error("Invalid code");
+    
+    const data = promoSnap.val() as PromoCode;
+    if (data.claimed) throw new Error("Code already claimed");
+    if (data.expiresAt < Date.now()) throw new Error("Code expired");
+    if (data.usedBy === user.uid) throw new Error("You have already used this code");
+    
+    return data.discount;
+  };
+
   const updateStoreSettings = async (s: any) => update(ref(rtdb, 'settings'), s);
   
   const updateAdminSettings = async (s: any) => update(ref(rtdb, 'admin_settings'), s);
@@ -1272,9 +1336,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, loginWithGoogle, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, notifications, adminNotifications, events, banners,
+      login, signup, loginWithGoogle, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
-      updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, storeSettings, updateStoreSettings, updateAdminSettings,
+      updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
       acceptTerms, language, setLanguage, userProfile, t

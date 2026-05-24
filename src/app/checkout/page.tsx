@@ -19,7 +19,8 @@ import {
   Copy,
   Lock,
   Tag,
-  DollarSign
+  DollarSign,
+  Ticket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 
 function CheckoutContent() {
-  const { products, games, createOrder, setGlobalLoading, setActiveTab, user, loading, storeSettings } = useApp();
+  const { products, games, createOrder, setGlobalLoading, setActiveTab, user, loading, storeSettings, checkPromoCode } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get('id');
@@ -44,6 +45,12 @@ function CheckoutContent() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
   
+  // Promo Code States
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState<number>(0);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+
   const [gameDetails, setGameDetails] = useState({
     playerID: "",
     playerName: "",
@@ -74,11 +81,18 @@ function CheckoutContent() {
 
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const discountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
-  const hasDiscount = useMemo(() => discountedPrice > 0 && discountedPrice < basePrice, [discountedPrice, basePrice]);
+  const hasStoreDiscount = useMemo(() => discountedPrice > 0 && discountedPrice < basePrice, [discountedPrice, basePrice]);
+
+  const subtotal = useMemo(() => {
+    return hasStoreDiscount ? discountedPrice : basePrice;
+  }, [hasStoreDiscount, discountedPrice, basePrice]);
 
   const total = useMemo(() => {
-    return hasDiscount ? discountedPrice : basePrice;
-  }, [hasDiscount, discountedPrice, basePrice]);
+    if (appliedPromoCode && promoDiscount > 0) {
+      return subtotal * (1 - promoDiscount / 100);
+    }
+    return subtotal;
+  }, [subtotal, appliedPromoCode, promoDiscount]);
   
   const gameTitle = game?.title?.toLowerCase() || "";
   const isFreeFire = gameTitle.includes("free fire");
@@ -93,6 +107,23 @@ function CheckoutContent() {
       router.push('/');
     }
   }, [productId, isSuccess, router, user, loading]);
+
+  const handleApplyPromo = async () => {
+    if (!promoCodeInput.trim()) return;
+    setIsValidatingPromo(true);
+    try {
+      const discount = await checkPromoCode(promoCodeInput.trim());
+      setAppliedPromoCode(promoCodeInput.trim());
+      setPromoDiscount(discount);
+      toast({ title: "Promo Applied!", description: `You saved ${discount}% extra!` });
+    } catch (err: any) {
+      toast({ title: "Invalid Code", description: err.message, variant: "destructive" });
+      setAppliedPromoCode(null);
+      setPromoDiscount(0);
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +199,7 @@ Fadlan ila soo xiriir.`;
       category: isFreeFire ? "Free Fire" : isBloodStrike ? "Blood Strike" : "General"
     };
 
-    createOrder(selectedMethod?.name || "Mobile Payment", finalDetails, purchaseItem);
+    createOrder(selectedMethod?.name || "Mobile Payment", finalDetails, purchaseItem, appliedPromoCode || undefined);
     
     setTimeout(() => {
       setIsProcessing(false);
@@ -403,6 +434,28 @@ Fadlan ila soo xiriir.`;
               </RadioGroup>
             )}
 
+            {/* Promo Code Entry */}
+            <div className="mb-6 md:mb-8 space-y-3">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2">
+                <Ticket size={12} /> Dooro Promo Code (Hadaad haysato)
+              </Label>
+              <div className="flex gap-2">
+                 <Input 
+                  placeholder="Geli code-ka..." 
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                  className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"
+                 />
+                 <Button 
+                   onClick={handleApplyPromo}
+                   disabled={!promoCodeInput || isValidatingPromo}
+                   className="h-12 md:h-14 px-6 md:px-10 rounded-xl md:rounded-2xl font-black uppercase text-xs"
+                 >
+                    {isValidatingPromo ? <Loader2 className="animate-spin" /> : "Apply"}
+                 </Button>
+              </div>
+            </div>
+
             {/* Price Detail Summary Block */}
             <div className="bg-gray-50 dark:bg-slate-800/40 p-4 md:p-8 rounded-2xl md:rounded-[2rem] mb-6 md:mb-8 border border-gray-100 dark:border-white/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -411,22 +464,31 @@ Fadlan ila soo xiriir.`;
               <div className="flex flex-col gap-3 relative z-10">
                 <div className="flex justify-between items-center text-sm md:text-lg">
                    <span className="text-muted-foreground dark:text-slate-400 font-medium">Base Price:</span>
-                   <span className={cn("font-bold text-slate-900 dark:text-white", hasDiscount && "line-through opacity-40")}>${basePrice.toFixed(2)}</span>
+                   <span className={cn("font-bold text-slate-900 dark:text-white", hasStoreDiscount && "line-through opacity-40")}>${basePrice.toFixed(2)}</span>
                 </div>
-                {hasDiscount && (
+                {hasStoreDiscount && (
                   <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2">
                      <div className="flex items-center gap-2">
                         <Tag size={16} className="text-green-500" />
-                        <span className="text-muted-foreground dark:text-slate-400 font-medium">Promo Discount:</span>
+                        <span className="text-muted-foreground dark:text-slate-400 font-medium">Store Discount:</span>
                      </div>
                      <span className="font-bold text-green-500">-${(basePrice - discountedPrice).toFixed(2)}</span>
+                  </div>
+                )}
+                {appliedPromoCode && (
+                  <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-left-2 text-primary">
+                     <div className="flex items-center gap-2">
+                        <Ticket size={16} />
+                        <span className="font-bold uppercase tracking-tight">Promo ({appliedPromoCode}):</span>
+                     </div>
+                     <span className="font-black">-{promoDiscount}%</span>
                   </div>
                 )}
                 <div className="h-px bg-slate-200 dark:bg-white/5 my-1" />
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">Final Total:</span>
-                    {hasDiscount && (
+                    {(hasStoreDiscount || appliedPromoCode) && (
                       <Badge className="bg-primary/10 text-primary border-none text-[7px] md:text-[10px] font-black uppercase tracking-tighter md:tracking-normal px-1.5 md:px-2 py-0.5">Applied</Badge>
                     )}
                   </div>
@@ -483,12 +545,12 @@ Fadlan ila soo xiriir.`;
                   <span className="truncate">Player ID:</span>
                   <span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.playerID}</span>
                 </div>
-                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2">
-                  <span className="truncate">Method:</span>
-                  <span className="font-bold text-foreground dark:text-slate-200 shrink-0">
-                    {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'N/A'}
-                  </span>
-                </div>
+                {appliedPromoCode && (
+                  <div className="text-[10px] md:text-[13px] text-primary flex justify-between items-center gap-2">
+                    <span className="truncate font-bold">Promo Applied:</span>
+                    <span className="font-black shrink-0">{appliedPromoCode} (-{promoDiscount}%)</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">
