@@ -181,6 +181,7 @@ type PaymentMethod = {
 };
 
 type PromoCode = {
+  id: string;
   code: string;
   discount: number; // percentage
   createdAt: number;
@@ -312,7 +313,7 @@ type AppContextType = {
   savePaymentMethod: (method: Partial<PaymentMethod>) => Promise<void>;
   deletePaymentMethod: (id: string) => Promise<void>;
   savePromoCode: (promo: Partial<PromoCode>) => Promise<void>;
-  deletePromoCode: (code: string) => Promise<void>;
+  deletePromoCode: (id: string) => Promise<void>;
   checkPromoCode: (code: string) => Promise<number>;
   storeSettings: StoreSettings;
   updateStoreSettings: (settings: any) => Promise<void>;
@@ -1308,10 +1309,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toast({ title: "Promo Code Created!" });
   };
 
-  const deletePromoCode = async (code: string) => {
+  const deletePromoCode = async (id: string) => {
     if (!rtdb) return;
-    const standardizedCode = code.trim().toUpperCase();
-    await remove(ref(rtdb, `promo_codes/${standardizedCode}`));
+    await remove(ref(rtdb, `promo_codes/${id}`));
     toast({ title: "Promo Code Deleted" });
   };
 

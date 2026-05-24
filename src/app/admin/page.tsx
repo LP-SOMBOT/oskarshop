@@ -481,7 +481,7 @@ export default function AdminPage() {
     const expiresAt = now + durationMs;
 
     await savePromoCode({
-      code: promoForm.code,
+      code: promoForm.code.trim().toUpperCase(),
       discount: parseInt(promoForm.discount),
       expiresAt,
       claimed: false,
@@ -1229,7 +1229,7 @@ export default function AdminPage() {
                       const badgeColor = promo.claimed ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
 
                       return (
-                        <Card key={promo.code} className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group">
+                        <Card key={promo.id} className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group">
                            <div className="p-6 md:p-8 space-y-6">
                               <div className="flex items-center justify-between">
                                  <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shadow-inner">
@@ -1266,7 +1266,7 @@ export default function AdminPage() {
                               <div className="pt-4 border-t dark:border-white/5">
                                  <Button 
                                    variant="ghost" 
-                                   onClick={() => { setDeleteTarget({id: promo.code, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
+                                   onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
                                    className="w-full rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
                                  >
                                     <Trash2 size={14} className="mr-2" /> Delete Voucher
@@ -1329,7 +1329,7 @@ export default function AdminPage() {
                            <div className="flex items-center justify-between pt-2 border-t dark:border-white/5">
                               <div className="flex items-center gap-2">
                                  <div className={cn("w-2 h-2 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
-                                 <span className="text-[10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
+                                 <span className="text-10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
                               </div>
                               <div className="flex gap-2">
                                  <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
@@ -1985,7 +1985,15 @@ export default function AdminPage() {
               <DialogDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">Generate a unique code with custom discount</DialogDescription>
            </DialogHeader>
            <form onSubmit={handleSavePromo} className="space-y-6 mt-6">
-              <SettingInput label="Voucher Code" value={promoForm.code} onChange={v => setPromoForm({...promoForm, code: v})} placeholder="e.g. DEVL26%OFF" />
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Code</Label>
+                 <Input 
+                   placeholder="e.g. DEVL26%OFF" 
+                   value={promoForm.code} 
+                   onChange={e => setPromoForm({...promoForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
+                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase" 
+                 />
+              </div>
               <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
