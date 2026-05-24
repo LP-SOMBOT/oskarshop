@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -204,7 +203,7 @@ export default function ProfileView() {
 function ProfileGroup({ title, children }: { title: string, children: React.ReactNode }) {
   return (
     <div className="space-y-3 md:space-y-5 flex flex-col">
-       <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.3em] ml-4 md:ml-8">{title}</p>
+       {title && <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.3em] ml-4 md:ml-8">{title}</p>}
        <Card className="rounded-[2rem] md:rounded-[3rem] lg:rounded-[4rem] border-none shadow-sm overflow-hidden glass flex-1">
           <div className="divide-y divide-slate-50 dark:divide-white/5 h-full"> {children} </div>
        </Card>
