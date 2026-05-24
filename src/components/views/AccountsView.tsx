@@ -288,7 +288,7 @@ export default function AccountsView() {
 }
 
 function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: any, onCancel: () => void, onComplete: () => void }) {
-  const { postAccount, updateAccountPost, storeSettings, user, enhancedUser, t } = useApp();
+  const { postAccount, updateAccountPost, storeSettings, user, enhancedUser, t, language } = useApp();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasTriggeredUssd, setHasTriggeredUssd] = useState(false);
@@ -454,10 +454,10 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                         )}>
                            <ImageIcon size={formData.imageUrls.length === 0 ? 32 : 24} className="text-slate-300 group-hover:text-primary transition-colors" />
                            <p className={cn(
-                             "font-black uppercase tracking-widest mt-2 transition-colors group-hover:text-primary",
+                             "font-black uppercase tracking-widest mt-2 transition-colors group-hover:text-primary text-center px-4",
                              formData.imageUrls.length === 0 ? "text-[10px] md:text-sm" : "text-[8px]"
                            )}>
-                             {formData.imageUrls.length === 0 ? "Add Account Photos" : "Add More"}
+                             {formData.imageUrls.length === 0 ? t('upload_photos_prompt') : (language === 'so' ? 'Ku dar' : 'Add More')}
                            </p>
                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
                            {isSubmitting && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center z-20"><Loader2 className="animate-spin text-primary" /></div>}
@@ -621,7 +621,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                           </Button>
                         ) : (
                           <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
-                             <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl md:rounded-[2.5rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-xs md:text-xl flex items-center justify-center gap-3 md:gap-4 shadow-inner">
+                             <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl rounded-[2.5rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-xs md:text-xl flex items-center justify-center gap-3 md:gap-4 shadow-inner">
                                 <CheckCircle2 size={24} className="md:size-8" /> Waa lagu wacay! Dialed.
                              </div>
                              <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] bg-primary text-white font-black text-sm md:text-2xl gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest">
