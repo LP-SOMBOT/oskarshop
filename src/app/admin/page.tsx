@@ -162,8 +162,8 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
         setTimeLeft({ d: 0, h: 0, m: 0 });
       } else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60));
-        const m = Math.floor((diff % (1000 * 60)) / (1000 * 60));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         setTimeLeft({ d, h, m });
       }
     };
@@ -827,6 +827,7 @@ export default function AdminPage() {
                    isSaving={isSavingStatus}
                    onDelete={() => { setDeleteTarget({id:selectedAccountId, type:'account'}); setIsDeleteDialogOpen(true); }}
                    onEnforce={() => setIsEnforceDialogOpen(true)}
+                   enforceAccountAction={enforceAccountAction}
                    issueSellerWarning={issueSellerWarning}
                    suspendSeller={suspendSeller}
                    dismissAccountWarning={dismissAccountWarning}
@@ -1631,7 +1632,7 @@ export default function AdminPage() {
                                     <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg"><Monitor className="w-7 h-7" /></div>
                                     <div>
                                        <p className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Maintenance Mode</p>
-                                       <p className="text-xs md:text-sm font-medium text-red-700 dark:text-red-400">Lock entire store for maintenance</p>
+                                       <p className="text-xs text-sm font-medium text-red-700 dark:text-red-400">Lock entire store for maintenance</p>
                                     </div>
                                  </div>
                                  <Switch checked={appStatusForm.offline} onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} className="scale-125" />
@@ -2043,7 +2044,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isEnforceDialogOpen} onOpenChange={setIsEnforceDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
+        <DialogContent className="max-md w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <div className="bg-red-600 p-6 md:p-8 text-white">
               <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Security Penalty</DialogTitle>
               <p className="text-white/60 text-[9px] md:text-[10px] font-bold uppercase mt-1">Enforcing policy for Listing #{selectedAccount?.id.toUpperCase()}</p>
@@ -2246,7 +2247,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 /**
  * Full Page Account Listing Management View
  */
-function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, issueSellerWarning, suspendSeller, dismissAccountWarning }: any) {
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning }: any) {
   if (!post) return null;
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
@@ -2320,30 +2321,82 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
          </Card>
        )}
 
-       {/* Critical Stalling Warning Banner */}
+       {/* Critical Stalling Warning Banner (Penalty Hub) */}
        {isStalling && (
-         <Card className="rounded-[3rem] border-none bg-red-600 text-white p-8 md:p-12 space-y-8 animate-in slide-in-from-top-4 duration-700 shadow-2xl shadow-red-500/20">
+         <Card className="rounded-[3rem] border-none bg-red-600 text-white p-6 md:p-10 space-y-8 animate-in slide-in-from-top-4 duration-700 shadow-2xl shadow-red-500/20">
             <div className="flex items-center gap-6">
-               <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0 animate-pulse">
-                  <ShieldAlert size={40} className="md:size-12 text-white" />
+               <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 animate-pulse">
+                  <ShieldAlert size={32} className="md:size-10 text-white" />
                </div>
                <div>
-                  <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight leading-none">Seller Non-Responsive</h2>
-                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Has not responded to purchase claims for over 1 hour.</p>
+                  <h2 className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight leading-none">Seller Stalling</h2>
+                  <p className="text-white/80 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">PENALTY ACTION REQUIRED</p>
                </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <Button onClick={() => issueSellerWarning(post.uid, post.id, "Muddo ka badan 1 saac ayaadan uga jawaabin verification-ka account-kaaga.")} className="bg-amber-500 text-white hover:bg-amber-600 font-black uppercase tracking-widest h-14 rounded-2xl">
-                  Issue Warning
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+               <Button 
+                onClick={() => enforceAccountAction(post.id, 'approved', 'Listing reset by admin due to lack of seller response.')} 
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-black uppercase text-[10px] h-12 rounded-xl"
+               >
+                  Reset & Approve
                </Button>
-               <Button onClick={() => suspendSeller(post.uid, 3)} className="bg-white text-red-600 hover:bg-slate-100 font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl">
-                  Suspend (3D)
+               
+               <Button 
+                onClick={() => onDelete()} 
+                className="bg-red-800 hover:bg-red-900 text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Delete Account
                </Button>
-               <Button variant="ghost" onClick={() => dismissAccountWarning(post.id)} className="text-white border-2 border-white/20 hover:bg-white/10 font-bold h-14 rounded-2xl">
+
+               <Button 
+                onClick={() => suspendSeller(post.uid, 3)} 
+                className="bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Suspend Seller (3D)
+               </Button>
+
+               <Button 
+                onClick={() => issueSellerWarning(post.uid, post.id, "Muddo ka badan 1 saac ayaadan uga jawaabin verification-ka account-kaaga. Fadlan deg-deg ugu jawaab.")} 
+                className="bg-amber-500 hover:bg-amber-600 text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Send Warning
+               </Button>
+
+               <Button 
+                variant="ghost" 
+                onClick={() => dismissAccountWarning(post.id)} 
+                className="text-white/60 hover:text-white border border-white/10 font-bold uppercase text-[10px] h-12 rounded-xl"
+               >
                   Dismiss Overlay
                </Button>
+
+               <Button 
+                onClick={() => handleForceSold("")} 
+                variant="outline"
+                className="bg-white text-red-600 hover:bg-slate-50 font-black uppercase text-[10px] h-12 rounded-xl border-none"
+               >
+                  Force Sold (None)
+               </Button>
             </div>
+
+            {claimants.length > 0 && (
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Penalty: Force Sold to Claimant</p>
+                 <div className="flex flex-wrap gap-2">
+                    {claimants.map((c: any) => (
+                      <Button 
+                        key={c.uid} 
+                        size="sm" 
+                        onClick={() => handleForceSold(c.uid)}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold text-[9px] h-10 px-4 rounded-xl shadow-md border-none"
+                      >
+                         Assign to {c.name.split(' ')[0]}
+                      </Button>
+                    ))}
+                 </div>
+              </div>
+            )}
          </Card>
        )}
 
