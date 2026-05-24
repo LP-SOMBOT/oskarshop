@@ -413,7 +413,10 @@ const translations: Record<Language, Record<string, string>> = {
     account_gallery: "Account Gallery (First image is thumbnail)",
     upload_photos_prompt: "Add Account Photos",
     game_identity: "Game Identity",
-    marketplace: "Marketplace"
+    marketplace: "Marketplace",
+    game_type: "Game Type",
+    login_method: "Login Method",
+    account_age: "Account Age"
   },
   so: {
     home: "Hoyga",
@@ -479,7 +482,10 @@ const translations: Record<Language, Record<string, string>> = {
     account_gallery: "Soo Geli dhamaan Sawirada accounti-ga",
     upload_photos_prompt: "Riix halkaan Si aad sawir usoo gelisid",
     game_identity: "Xogta Game ka",
-    marketplace: "Suuqa account yada"
+    marketplace: "Suuqa account yada",
+    game_type: "Dooro nooca Game ka",
+    login_method: "Qaabka lagu Soo galo",
+    account_age: "Geli da' da account tiga"
   }
 };
 

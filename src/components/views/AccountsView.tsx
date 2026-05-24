@@ -456,7 +456,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            <ImageIcon size={formData.imageUrls.length === 0 ? 32 : 24} className="text-slate-300 group-hover:text-primary transition-colors" />
                            <p className={cn(
                              "font-black uppercase tracking-widest mt-2 transition-colors group-hover:text-primary text-center px-4",
-                             formData.imageUrls.length === 0 ? "text-[10px] md:text-sm" : "text-[8px]"
+                             formData.imageUrls.length === 0 ? t('upload_photos_prompt') : (language === 'so' ? 'Ku dar' : 'Add More')
                            )}>
                              {formData.imageUrls.length === 0 ? t('upload_photos_prompt') : (language === 'so' ? 'Ku dar' : 'Add More')}
                            </p>
@@ -473,7 +473,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            <Layers size={18} />
                            <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">{t('game_identity')}</h4>
                         </div>
-                        <FormGroup label="Game Type">
+                        <FormGroup label={t('game_type')}>
                            <Select value={formData.gameType} onValueChange={v => setFormData({...formData, gameType: v as any})}>
                               <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-lg focus:ring-2 focus:ring-primary shadow-inner">
                                  <SelectValue />
@@ -484,7 +484,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                               </SelectContent>
                            </Select>
                         </FormGroup>
-                        <FormGroup label="Login Method">
+                        <FormGroup label={t('login_method')}>
                            <Select value={formData.platform} onValueChange={v => setFormData({...formData, platform: v})}>
                               <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-lg focus:ring-2 focus:ring-primary shadow-inner">
                                  <SelectValue />
@@ -508,7 +508,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                                   </SelectContent>
                               </Select>
                             </FormGroup>
-                            <FormInput label="Account Age" value={formData.age} onChange={v => setFormData({...formData, age: v})} placeholder="e.g. 2 years" />
+                            <FormInput label={t('account_age')} value={formData.age} onChange={v => setFormData({...formData, age: v})} placeholder="e.g. 2 years" />
                           </>
                         ) : (
                           <>
@@ -826,7 +826,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
   );
 }
 
-function FormGroup({ label, children, icon: Icon }: { label: string, children: React.ReactNode, icon?: any }) {
+function FormGroup({ label, children, icon: Icon }: { label: string | any, children: React.ReactNode, icon?: any }) {
   return (
     <div className="space-y-2 md:space-y-3">
        <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
@@ -838,7 +838,7 @@ function FormGroup({ label, children, icon: Icon }: { label: string, children: R
   );
 }
 
-function FormInput({ label, value, onChange, placeholder, type = "text", className, highlight, icon: Icon }: { label: string, value: string, onChange: (v: string) => void, placeholder: string, type?: string, className?: string, highlight?: boolean, icon?: any }) {
+function FormInput({ label, value, onChange, placeholder, type = "text", className, highlight, icon: Icon }: { label: string | any, value: string, onChange: (v: string) => void, placeholder: string, type?: string, className?: string, highlight?: boolean, icon?: any }) {
   return (
     <div className={cn("space-y-2 md:space-y-3", className)}>
        <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
