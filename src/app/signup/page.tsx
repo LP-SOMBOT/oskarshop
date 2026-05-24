@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -70,14 +69,14 @@ export default function SignupPage() {
         <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Dib u Noqo
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-headline font-bold text-white leading-tight mt-2">
+        <h1 className="text-xl sm:text-3xl font-headline font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
           Iska diwaan geli OskarShop
         </h1>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl relative">
+      <div className="flex-1 bg-white rounded-t-[3.5rem] px-6 py-10 sm:p-10 shadow-2xl relative flex flex-col">
         {(isGlobalLoading || user) && (
-          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
+          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
                 {user ? "Xaqiijinta galitaanka..." : "Isku xirka..."}
@@ -85,8 +84,8 @@ export default function SignupPage() {
           </div>
         )}
 
-        <div className="max-w-md mx-auto h-full flex flex-col">
-          <h2 className="text-2xl sm:text-3xl font-headline font-bold mb-6 sm:mb-8 text-gray-900">
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col justify-center">
+          <h2 className="text-xl sm:text-3xl font-headline font-bold mb-6 text-gray-900">
             Sameey Account
           </h2>
 
@@ -200,7 +199,7 @@ export default function SignupPage() {
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SAMEEY ACCOUNT"}
             </Button>
 
-            <div className="text-center pt-2 pb-10">
+            <div className="text-center pt-2 pb-6">
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
                 Horey ma u lahayd account? <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">Soo gal</Link>
               </p>

@@ -135,9 +135,9 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-5 sm:p-10 shadow-2xl relative">
+      <div className="flex-1 bg-white rounded-t-[3.5rem] px-6 py-10 sm:p-10 shadow-2xl relative flex flex-col">
         {(isGlobalLoading || user) && (
-          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
+          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
                 {user ? "Xaqiijinta galitaanka..." : "Isku xirka..."}
@@ -145,7 +145,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="max-w-md mx-auto h-full flex flex-col">
+        <div className="max-w-md mx-auto w-full flex-1 flex flex-col justify-center">
           {(authError || serverError) && (
              <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -194,7 +194,7 @@ export default function LoginPage() {
                   {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SOO GAL"}
                 </Button>
 
-                <div className="text-center pt-2 pb-4 space-y-4">
+                <div className="text-center pt-2 pb-4">
                   <Link href="/signup" className="block w-full">
                     <Button 
                       type="button" 
