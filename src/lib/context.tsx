@@ -416,7 +416,8 @@ const translations: Record<Language, Record<string, string>> = {
     marketplace: "Marketplace",
     game_type: "Game Type",
     login_method: "Login Method",
-    account_age: "Account Age"
+    account_age: "Account Age",
+    selling_price: "Selling Price ($)"
   },
   so: {
     home: "Hoyga",
@@ -485,7 +486,8 @@ const translations: Record<Language, Record<string, string>> = {
     marketplace: "Suuqa account yada",
     game_type: "Dooro nooca Game ka",
     login_method: "Qaabka lagu Soo galo",
-    account_age: "Geli da' da account tiga"
+    account_age: "Geli da' da account tiga",
+    selling_price: "Qiimaha aad Ku rabtid ( $ )"
   }
 };
 
