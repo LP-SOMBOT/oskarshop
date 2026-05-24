@@ -37,13 +37,17 @@ import {
   Layers,
   Sparkles,
   Trophy,
-  History
+  History,
+  Lock,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { cn, formatWhatsAppNumber } from '@/lib/utils';
@@ -234,7 +238,7 @@ export default function AccountsView() {
             <DialogDescription className="text-xs sm:text-sm">Post-kan waa la tirtiri doonaa, dibna looma heli karo.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-10 sm:h-12 order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
              <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10 sm:h-12 order-1 sm:order-2" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
              </Button>
@@ -292,6 +296,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
   const { postAccount, updateAccountPost, storeSettings, user, enhancedUser, t, language } = useApp();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedMethodId, setSelectedMethodId] = useState<string>("");
   const [hasTriggeredUssd, setHasTriggeredUssd] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -316,6 +321,19 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     senderNumber: editingPost?.senderNumber || ''
   });
 
+  const paymentMethods = useMemo(() => {
+    if (!storeSettings.paymentMethods) return [];
+    return Object.entries(storeSettings.paymentMethods)
+      .map(([id, m]) => ({ ...m, id }))
+      .filter(m => m.active);
+  }, [storeSettings.paymentMethods]);
+
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !selectedMethodId) {
+      setSelectedMethodId(paymentMethods[0].id);
+    }
+  }, [paymentMethods, selectedMethodId]);
+
   const isFreeFire = formData.gameType === 'freefire';
 
   const listingFee = useMemo(() => {
@@ -332,10 +350,18 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
   };
 
   const handleTriggerUssd = () => {
-    const paymentNum = storeSettings.paymentNumber || "613982172";
-    const formattedFee = listingFee.toString().replace('.', '*');
-    const ussdCode = `*712*${paymentNum}*${formattedFee}#`;
-    window.location.href = `tel:${ussdCode.replace(/#/g, '%23')}`;
+    const method = paymentMethods.find(m => m.id === selectedMethodId);
+    if (!method) return;
+
+    const formattedPrice = listingFee.toFixed(2).replace('.', '*');
+    const ussd = method.ussdTemplate.replace('$', formattedPrice);
+    
+    toast({
+      title: "Opening Dialer",
+      description: `Please complete the ${method.name} transaction.`,
+    });
+    
+    window.location.href = `tel:${ussd.replace(/#/g, '%23')}`;
     setHasTriggeredUssd(true);
   };
 
@@ -584,65 +610,126 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
              )}
 
              {step === 2 && (
-               <div className="space-y-6 sm:space-y-12 animate-in fade-in slide-in-from-right-4 duration-700 text-center max-w-xl mx-auto">
-                  <div className="relative mx-auto w-24 h-24 md:w-40 md:h-40">
-                     <div className="absolute inset-0 bg-amber-400 rounded-full blur-[60px] opacity-20 animate-pulse" />
-                     <div className="relative w-full h-full bg-white dark:bg-slate-900 rounded-[1.5rem] md:rounded-[3rem] flex items-center justify-center text-amber-500 shadow-2xl border border-slate-100 dark:border-white/5 ring-4 ring-amber-50 dark:ring-amber-500/10">
-                        <CreditCard className="w-10 h-10 md:w-20 md:h-20" />
+               <div className="space-y-6 sm:space-y-12 animate-in fade-in slide-in-from-right-4 duration-700 text-center max-w-2xl mx-auto">
+                  <div className="relative mx-auto w-24 h-24 md:w-32 md:h-32">
+                     <div className="absolute inset-0 bg-primary/20 rounded-full blur-[60px] animate-pulse" />
+                     <div className="relative w-full h-full bg-white dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center text-primary shadow-2xl border border-slate-100 dark:border-white/5">
+                        <CreditCard className="w-10 h-10 md:w-14 md:h-14" />
                      </div>
                   </div>
                   
-                  <div className="space-y-3 md:space-y-6">
-                     <h3 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white leading-tight">Qarashka Xajinta</h3>
-                     <p className="text-xs md:text-xl text-muted-foreground font-medium leading-relaxed">
-                        Fadlan bixi qarashka soo gelinta account-ka si marketplace-ka loogu daro. Qiimuhu waa <span className="text-primary font-black">${listingFee.toFixed(2)}</span>
+                  <div className="space-y-3 md:space-y-4">
+                     <h3 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white leading-tight">{t('pay_listing_fee_title')}</h3>
+                     <p className="text-[11px] md:text-lg text-muted-foreground font-medium leading-relaxed max-w-md mx-auto">
+                        {t('pay_listing_fee_desc')} <span className="text-primary font-black ml-1">${listingFee.toFixed(2)}</span>
                      </p>
                   </div>
 
-                  <Card className="p-6 md:p-12 rounded-[2rem] md:rounded-[4rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative border border-slate-100 dark:border-white/5">
-                     <div className="absolute top-0 left-0 right-0 h-2 bg-primary" />
-                     
-                     <div className="space-y-6 md:space-y-10">
-                        <div className="flex justify-between items-center text-[10px] md:text-base font-black uppercase tracking-widest text-muted-foreground border-b dark:border-white/5 pb-4 md:pb-6">
-                           <span>Description</span>
-                           <span>Amount</span>
-                        </div>
-                        
-                        <div className="flex justify-between items-center text-left">
-                           <div>
-                              <p className="font-headline font-bold text-lg md:text-3xl text-slate-900 dark:text-white uppercase tracking-tight">{formData.gameType} Listing</p>
-                              <Badge className="bg-primary/10 text-primary border-none text-[8px] md:text-[10px] font-black uppercase mt-1 md:mt-2">{formData.term} access</Badge>
+                  <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 md:gap-10">
+                     {/* Method Selection Card */}
+                     <Card className="rounded-[1.5rem] md:rounded-[3rem] shadow-xl border-none p-1 md:p-2 bg-white dark:bg-slate-900">
+                       <div className="p-5 md:p-10 space-y-6">
+                          <p className="text-left text-[10px] md:text-xs font-black uppercase text-slate-400 tracking-widest ml-1">Dooro qaabka aad u bixinayso</p>
+                          
+                          {paymentMethods.length === 0 ? (
+                            <div className="py-12 opacity-40 italic font-bold">No payment methods configured.</div>
+                          ) : (
+                            <RadioGroup value={selectedMethodId} onValueChange={setSelectedMethodId} className="space-y-3 md:space-y-4">
+                               {paymentMethods.map((method) => (
+                                 <div 
+                                   key={method.id}
+                                   onClick={() => setSelectedMethodId(method.id)}
+                                   className={cn(
+                                     "flex items-center justify-between p-4 md:p-6 border-2 rounded-2xl md:rounded-[2rem] cursor-pointer transition-all active:scale-[0.98]",
+                                     selectedMethodId === method.id 
+                                       ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-lg shadow-primary/5' 
+                                       : 'border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                   )}
+                                 >
+                                   <Label htmlFor={method.id} className="flex items-center gap-4 md:gap-6 cursor-pointer w-full">
+                                     <div className={cn(
+                                       "w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-[1.25rem] flex items-center justify-center transition-colors relative overflow-hidden shrink-0",
+                                       selectedMethodId === method.id ? "bg-primary text-white shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                     )}>
+                                       {method.icon ? <Image src={method.icon} alt={method.name} fill className="object-cover" unoptimized /> : <Smartphone className="w-6 h-6 md:w-8 md:h-8" />}
+                                     </div>
+                                     <div className="flex-1 text-left min-w-0">
+                                       <p className="font-bold text-sm md:text-xl dark:text-white truncate">{method.name}</p>
+                                       <p className="text-[8px] md:text-xs text-muted-foreground uppercase tracking-widest mt-1">Direct verification</p>
+                                     </div>
+                                     <RadioGroupItem value={method.id} id={method.id} className="dark:border-white/20 h-4 w-4 md:h-6 md:w-6" />
+                                   </Label>
+                                 </div>
+                               ))}
+                            </RadioGroup>
+                          )}
+                       </div>
+                     </Card>
+
+                     {/* Summary and USSD Block */}
+                     <Card className="rounded-[1.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative">
+                        <div className="absolute top-0 left-0 right-0 h-2 bg-primary" />
+                        <div className="p-6 md:p-10 space-y-8">
+                           <div className="flex justify-between items-center text-[10px] md:text-sm font-black uppercase tracking-widest text-muted-foreground border-b dark:border-white/5 pb-4 md:pb-6">
+                              <span>Listing Type</span>
+                              <span>Total Fee</span>
                            </div>
-                           <p className="font-headline font-bold text-3xl md:text-6xl text-primary tracking-tighter">${listingFee.toFixed(2)}</p>
-                        </div>
+                           
+                           <div className="flex justify-between items-center text-left">
+                              <div>
+                                 <p className="font-headline font-bold text-lg md:text-3xl text-slate-900 dark:text-white uppercase tracking-tight">{formData.gameType} Account</p>
+                                 <Badge className="bg-primary/10 text-primary border-none text-[8px] md:text-[10px] font-black uppercase mt-1.5">{formData.term} access</Badge>
+                              </div>
+                              <p className="font-headline font-bold text-3xl md:text-6xl text-primary tracking-tighter">${listingFee.toFixed(2)}</p>
+                           </div>
 
-                        {!hasTriggeredUssd ? (
-                          <Button onClick={handleTriggerUssd} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] bg-slate-900 text-white hover:bg-black font-black text-sm md:text-xl gap-3 shadow-2xl active:scale-95 transition-all uppercase tracking-widest">
-                             <Smartphone size={24} className="md:size-8" /> KU BIXI EVC / PREMIER
-                          </Button>
-                        ) : (
-                          <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
-                             <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl rounded-[2.5rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-xs md:text-xl flex items-center justify-center gap-3 md:gap-4 shadow-inner">
-                                <CheckCircle2 size={24} className="md:size-8" /> Waa lagu wacay! Dialed.
-                             </div>
-                             <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] bg-primary text-white font-black text-sm md:text-2xl gap-3 shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest">
-                                {isSubmitting ? <Loader2 className="animate-spin w-8 h-8" /> : "I'VE PAID (SUBMIT LISTING)"}
+                           <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
+
+                           {!hasTriggeredUssd ? (
+                             <Button 
+                               onClick={handleTriggerUssd} 
+                               disabled={!selectedMethodId}
+                               className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-slate-900 text-white hover:bg-black font-black text-xs md:text-2xl gap-3 shadow-2xl active:scale-95 transition-all uppercase tracking-widest"
+                             >
+                                <Smartphone className="w-6 h-6 md:w-10 md:h-10" /> 
+                                {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'KU BIXI'} (DIAL)
                              </Button>
-                          </div>
-                        )}
-                        
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl md:rounded-2xl border dark:border-white/5 flex gap-3 text-left">
-                           <Info className="text-primary shrink-0 w-4 h-4 md:w-5 md:h-5 mt-0.5" />
-                           <p className="text-[8px] md:text-xs text-muted-foreground italic leading-relaxed">
-                              Admin-ka ayaa hubin doona payment-kaaga ka hor inta aan post-ga la fasaxin. Waxay qaadataa inta badan 5-15 daqiiqo.
-                           </p>
+                           ) : (
+                             <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
+                                <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl md:rounded-[2rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-[10px] md:text-2xl flex items-center justify-center gap-3 md:gap-5 shadow-inner">
+                                   <CheckCircle2 className="w-6 h-6 md:w-12 md:h-12" /> Waa lagu wacay! Dialed Successfully.
+                                </div>
+                                <Button 
+                                  onClick={handleSubmit} 
+                                  disabled={isSubmitting} 
+                                  className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-primary text-white font-black text-xs md:text-3xl gap-4 shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest"
+                                >
+                                   {isSubmitting ? <Loader2 className="animate-spin w-8 h-8 md:w-12 md:h-12" /> : "I'VE PAID (SUBMIT LISTING)"}
+                                </Button>
+                             </div>
+                           )}
+                           
+                           <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-2xl md:rounded-[2.5rem] border dark:border-white/5 flex gap-4 text-left">
+                              <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                 <Info className="text-primary w-6 h-6 md:w-8 md:h-8" />
+                              </div>
+                              <p className="text-[9px] md:text-sm text-muted-foreground italic leading-relaxed font-medium">
+                                 Admin-ka ayaa hubin doona payment-kaaga ka hor inta aan post-ga la fasaxin. Waxay qaadataa inta badan 5-15 daqiiqo gudahood.
+                              </p>
+                           </div>
                         </div>
-                     </div>
-                  </Card>
+                     </Card>
+                  </div>
 
-                  <Button variant="ghost" onClick={() => setStep(1)} className="text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white uppercase text-[10px] md:text-sm tracking-widest">
-                     <ArrowLeft size={16} className="mr-2" /> Back to Account Details
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 md:gap-6 justify-center">
+                     <Button 
+                       variant="ghost" 
+                       onClick={() => setStep(1)} 
+                       className="text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white uppercase text-[10px] md:text-sm tracking-widest h-12 md:h-16 px-8 rounded-xl md:rounded-2xl"
+                     >
+                        <ArrowLeft size={16} className="mr-2" /> Back to Account Details
+                     </Button>
+                  </div>
                </div>
              )}
 
@@ -858,3 +945,4 @@ function FormInput({ label, value, onChange, placeholder, type = "text", classNa
     </div>
   );
 }
+

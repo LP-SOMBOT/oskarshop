@@ -420,7 +420,9 @@ const translations: Record<Language, Record<string, string>> = {
     selling_price: "Selling Price ($)",
     listing_duration: "Listing Duration",
     whatsapp_number_support: "WhatsApp for Support",
-    sender_number_label: "Enter sender's number"
+    sender_number_label: "Enter sender's number",
+    pay_listing_fee_title: "Pay Listing Fee",
+    pay_listing_fee_desc: "Please pay the account listing fee to proceed."
   },
   so: {
     home: "Hoyga",
@@ -493,7 +495,9 @@ const translations: Record<Language, Record<string, string>> = {
     selling_price: "Qiimaha aad Ku rabtid ( $ )",
     listing_duration: "Dooro Term ka",
     whatsapp_number_support: "Geli WhatsApp kaga",
-    sender_number_label: "Geli number ka lacagta kasoo direesid"
+    sender_number_label: "Geli number ka lacagta kasoo direesid",
+    pay_listing_fee_title: "Bixin qarashka",
+    pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa"
   }
 };
 
