@@ -601,7 +601,7 @@ export default function AdminPage() {
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} />
+        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} badge={promoCodes.filter(p => !p.claimed).length} />
         <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
@@ -1427,7 +1427,7 @@ export default function AdminPage() {
                                  <TableCell className="text-center">
                                     <Badge className={cn(
                                       "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
-                                      u.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
+                                      u.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
                                     )}>
                                       {u.banned ? "Banned" : "Active"}
                                     </Badge>
@@ -1460,11 +1460,6 @@ export default function AdminPage() {
 
           {activeView === 'settings' && (
             <div className="max-w-5xl mx-auto space-y-6 sm:space-y-12 pb-20 sm:pb-24">
-               <div className="space-y-2">
-                  <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight">Advanced Controls</h2>
-                  <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest">Fine-tune your store's identity, visibility, and marketplace logic.</p>
-               </div>
-
                <Accordion type="single" collapsible className="space-y-4 sm:space-y-6">
                   {/* Brand Identity */}
                   <AccordionItem value="branding" className="border-none">
