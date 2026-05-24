@@ -475,6 +475,35 @@ const translations: Record<Language, Record<string, string>> = {
   }
 };
 
+const getFriendlyAuthError = (err: any, lang: Language): string => {
+  const code = err.code || "";
+  const isSo = lang === 'so';
+
+  switch (code) {
+    case 'auth/invalid-email':
+      return isSo ? "Email-ka aad gelisay ma saxna." : "The email address you entered is invalid.";
+    case 'auth/user-not-found':
+    case 'auth/user-disabled':
+      return isSo ? "Account-kan ma jiro ama waa la xiray." : "Account not found or has been disabled.";
+    case 'auth/wrong-password':
+      return isSo ? "Password-ka aad gelisay waa khalad." : "Incorrect password. Please try again.";
+    case 'auth/email-already-in-use':
+      return isSo ? "Email-kan horay ayaa loo isticmaalay." : "This email is already in use.";
+    case 'auth/weak-password':
+      return isSo ? "Password-ku waa inuu ka koobnaadaa ugu yaraan 6 xaraf." : "Password should be at least 6 characters.";
+    case 'auth/network-request-failed':
+      return isSo ? "Khalad dhinaca internet-ka ah. Hubi khadkaaga." : "Network error. Please check your connection.";
+    case 'auth/too-many-requests':
+      return isSo ? "Isku dayo badan ayaa dhacay. Fadlan sug waxyar." : "Too many attempts. Please try again later.";
+    case 'auth/invalid-credential':
+      return isSo ? "Email-ka ama Password-ka waa khalad." : "Invalid email or password.";
+    case 'auth/operation-not-allowed':
+      return isSo ? "Adeeggan hadda lama oggola." : "Operation not allowed.";
+    default:
+      return isSo ? "Khalad aan la aqoon ayaa dhacay. Fadlan mar kale isku day." : "An unexpected error occurred. Please try again.";
+  }
+};
+
 const getCache = (key: string, fallback: any = null) => {
   if (typeof window === 'undefined') return fallback;
   try {
@@ -901,7 +930,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try { 
       await signInWithEmailAndPassword(auth, e, p); 
     } catch (err: any) {
-      setAuthError(err.message);
+      const friendly = getFriendlyAuthError(err, language);
+      setAuthError(friendly);
       throw err;
     } finally { setIsGlobalLoading(false); }
   };
@@ -929,7 +959,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile);
       setCache(USER_CACHE_KEY, profile);
     } catch (err: any) {
-      setAuthError(err.message);
+      const friendly = getFriendlyAuthError(err, language);
+      setAuthError(friendly);
       throw err;
     } finally { setIsGlobalLoading(false); }
   };
