@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, CheckCircle2, ShieldCheck, KeyRound } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import emailjs from '@emailjs/browser';
 
@@ -130,7 +130,7 @@ export default function LoginPage() {
           Ku Soo dhawoow OskarShop
         </h1>
         <p className="text-lg sm:text-2xl font-headline text-white/80 mt-1 font-medium">
-          {view === 'login' ? 'Soo gal' : 'Bedel password kaaga'}
+          {view === 'login' ? 'Soo gal' : view === 'forgot' ? 'Bedel password kaaga' : 'Xaqiijinta Account-ka'}
         </p>
       </div>
 
@@ -212,7 +212,7 @@ export default function LoginPage() {
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-2">
                 <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Ma ilaawday password-ka?</h2>
-                <p className="text-sm text-gray-500 font-medium">Geli email-kaaga si aan kuugu soo dirno code-ka xaqiijinta.</p>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed">Geli email-kaaga si aan kuugu soo dirno code-ka xaqiijinta ee 6-da nambar ah.</p>
               </div>
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
@@ -228,27 +228,32 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95">
+                <Button type="submit" disabled={isSubmitting} className="w-full h-14 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase tracking-wide">
                   {isSubmitting ? <Loader2 className="animate-spin" /> : "Dir Code-ka"}
                 </Button>
 
-                <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-4 w-full">
-                  <ArrowLeft size={16} /> Dib U noqo
+                <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-4 w-full group">
+                  <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Dib U noqo
                 </button>
               </form>
             </div>
           )}
 
           {view === 'verify' && (
-            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-              <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900">Xaqiiji Code-ka</h2>
-                <p className="text-sm text-gray-500 font-medium">Waxaan code-ka u dirnay <span className="font-bold text-[#7C3AED]">{email}</span></p>
+            <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#7C3AED] mb-2">
+                  <ShieldCheck className="w-7 h-7" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-headline font-bold text-gray-900 leading-tight">Xaqiiji Code-ka</h2>
+                <p className="text-sm sm:text-base text-gray-500 font-medium leading-relaxed">
+                  Waxaan code-ka u dirnay <span className="font-bold text-[#7C3AED] block sm:inline">{email}</span>
+                </p>
               </div>
 
-              <form onSubmit={handleResetPassword} className="space-y-5">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">6-Digit Code</Label>
+              <form onSubmit={handleResetPassword} className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">6-Digit Verification Code</Label>
                   <Input 
                     type="text" 
                     placeholder="000000" 
@@ -256,42 +261,60 @@ export default function LoginPage() {
                     maxLength={6}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="h-14 text-center text-2xl tracking-[0.5em] rounded-full bg-gray-50 border-gray-100 font-black"
+                    className="h-16 sm:h-20 text-center text-3xl sm:text-4xl tracking-[0.4em] sm:tracking-[0.6em] rounded-3xl bg-gray-50 border-gray-100 focus:border-[#7C3AED] focus:bg-white font-black text-gray-900 shadow-inner transition-all"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password Cusub</Label>
-                  <Input 
-                    type="password" 
-                    placeholder="Ugu yaraan 8 xaraf" 
-                    required 
-                    minLength={8}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-14 px-6 rounded-full bg-gray-50 border-gray-100 font-bold"
-                  />
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password Cusub</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
+                      <Input 
+                        type="password" 
+                        placeholder="Ugu yaraan 8 xaraf" 
+                        required 
+                        minLength={8}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="h-14 pl-14 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Xaqiiji Password-ka</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-5 h-5" />
+                      <Input 
+                        type="password" 
+                        placeholder="Ku celi password-ka" 
+                        required 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="h-14 pl-14 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold shadow-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Xaqiiji Password-ka</Label>
-                  <Input 
-                    type="password" 
-                    placeholder="Ku celi password-ka" 
-                    required 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-14 px-6 rounded-full bg-gray-50 border-gray-100 font-bold"
-                  />
+                <div className="pt-4 space-y-4">
+                  <Button type="submit" disabled={isSubmitting} className="w-full h-14 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest transition-all active:scale-95 group">
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2 w-5 h-5" /> Bedel Password-ka</>}
+                  </Button>
+
+                  <button 
+                    type="button" 
+                    onClick={() => { setOtp(""); setServerError(null); handleRequestOtp(new Event('submit') as any); }} 
+                    className="w-full text-gray-400 text-xs sm:text-sm font-bold hover:text-[#7C3AED] transition-colors"
+                  >
+                    Code-ka ma helin? <span className="underline decoration-dotted">Dib u dir</span>
+                  </button>
+
+                  <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-gray-400 text-sm font-bold w-full hover:text-gray-600 transition-colors">
+                    <ArrowLeft size={16} /> Dib U noqo
+                  </button>
                 </div>
-
-                <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest transition-all active:scale-95">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Bedel Password-ka</>}
-                </Button>
-
-                <button type="button" onClick={() => setView('forgot')} className="w-full text-gray-400 text-xs font-bold hover:text-gray-600">
-                  Code-ka ma helin? Dib u dir
-                </button>
               </form>
             </div>
           )}
