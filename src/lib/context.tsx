@@ -14,7 +14,7 @@ import {
   updateProfile,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
   getRedirectResult
 } from 'firebase/auth';
 import { 
@@ -599,6 +599,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
+  // Handle Redirect Result on App Initialization
   useEffect(() => {
     if (!auth || !rtdb) return;
 
@@ -612,8 +613,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           router.replace('/');
         }
       } catch (error: any) {
-        console.error("Auth redirect error:", error);
-        setIsGlobalLoading(false);
+        console.error("Google redirect error:", error);
+        // Do not toast for cancelled-popup-request as it's common on load
+        if (error.code !== 'auth/cancelled-popup-request') {
+           setAuthError(error.message);
+        }
       } finally {
         setIsGlobalLoading(false);
       }
@@ -962,21 +966,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
-    setIsGlobalLoading(true);
     setAuthError(null);
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      if (result && result.user) {
-        await ensureUserProfile(result.user);
-        toast({ title: "Authorized!", description: "Welcome back." });
-        router.replace('/');
-      }
+      provider.setCustomParameters({ prompt: 'select_account' });
+      provider.addScope('email');
+      provider.addScope('profile');
+      // Using redirect for full mobile and PWA compatibility
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      console.error("CRITICAL GOOGLE ERROR:", error);
+      console.error("Google initiation error:", error);
       setAuthError(error.message);
-    } finally {
-      setIsGlobalLoading(false);
     }
   };
 
