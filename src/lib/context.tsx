@@ -1015,7 +1015,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await set(ref(rtdb, `orders/${orderId}`), newOrder);
 
     if (promoCode) {
-      await update(ref(rtdb, `promo_codes/${promoCode}`), {
+      const standardizedCode = promoCode.trim().toUpperCase();
+      await update(ref(rtdb, `promo_codes/${standardizedCode}`), {
         claimed: true,
         usedBy: user.uid
       });
@@ -1295,8 +1296,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   
   const savePromoCode = async (promo: Partial<PromoCode>) => {
     if (!rtdb || !promo.code) return;
-    await set(ref(rtdb, `promo_codes/${promo.code}`), {
+    const standardizedCode = promo.code.trim().toUpperCase();
+    await set(ref(rtdb, `promo_codes/${standardizedCode}`), {
       ...promo,
+      code: standardizedCode,
       createdAt: Date.now(),
       claimed: false,
       usedBy: null,
@@ -1307,13 +1310,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deletePromoCode = async (code: string) => {
     if (!rtdb) return;
-    await remove(ref(rtdb, `promo_codes/${code}`));
+    const standardizedCode = code.trim().toUpperCase();
+    await remove(ref(rtdb, `promo_codes/${standardizedCode}`));
     toast({ title: "Promo Code Deleted" });
   };
 
   const checkPromoCode = async (code: string): Promise<number> => {
     if (!rtdb || !user) throw new Error("Connection error");
-    const promoSnap = await get(ref(rtdb, `promo_codes/${code}`));
+    const standardizedCode = code.trim().toUpperCase();
+    const promoSnap = await get(ref(rtdb, `promo_codes/${standardizedCode}`));
     if (!promoSnap.exists()) throw new Error("Invalid code");
     
     const data = promoSnap.val() as PromoCode;

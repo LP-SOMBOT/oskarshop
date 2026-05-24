@@ -112,8 +112,9 @@ function CheckoutContent() {
     if (!promoCodeInput.trim()) return;
     setIsValidatingPromo(true);
     try {
-      const discount = await checkPromoCode(promoCodeInput.trim());
-      setAppliedPromoCode(promoCodeInput.trim());
+      const standardizedInput = promoCodeInput.trim().toUpperCase();
+      const discount = await checkPromoCode(standardizedInput);
+      setAppliedPromoCode(standardizedInput);
       setPromoDiscount(discount);
       toast({ title: "Promo Applied!", description: `You saved ${discount}% extra!` });
     } catch (err: any) {
