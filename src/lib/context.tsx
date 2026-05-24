@@ -1026,7 +1026,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (result.committed) sequenceId = result.snapshot.val();
     } catch (e) { sequenceId = Date.now(); }
     const orderId = `iibinta${sequenceId}`;
-    const newOrder: Order = { id: orderId, userId: user.uid, items: [directItem], total: directItem.price, status: 'pending', createdAt: Date.now(), paymentMethod, gameDetails, promoCode };
+    
+    // Construct order object carefully to avoid undefined properties
+    const newOrder: any = { 
+      id: orderId, 
+      userId: user.uid, 
+      items: [directItem], 
+      total: directItem.price, 
+      status: 'pending', 
+      createdAt: Date.now(), 
+      paymentMethod, 
+      gameDetails 
+    };
+    
+    if (promoCode) newOrder.promoCode = promoCode;
     
     await set(ref(rtdb, `orders/${orderId}`), newOrder);
 
