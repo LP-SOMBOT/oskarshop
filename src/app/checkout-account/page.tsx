@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, Suspense } from "react";
@@ -176,7 +175,7 @@ function CheckoutAccountContent() {
                   <div className="p-4 sm:p-5 bg-blue-50 dark:bg-blue-500/5 rounded-xl sm:rounded-2xl border border-blue-100 dark:border-blue-500/20 flex gap-2.5 sm:gap-3">
                      <AlertCircle className="text-blue-500 shrink-0 w-4 h-4 sm:w-5 sm:h-5 mt-0.5" />
                      <p className="text-[10px] sm:text-[11px] font-medium text-blue-800 dark:text-blue-300 leading-relaxed">
-                        Markaad taabato badhanka hoose, waxaa laguu weecin doonaa WhatsApp-ka seller-ka si aad ula dhamaystirto iibsiga. Account-ka waxaa laguu xajin doonaa kaliya markaad soo sheegto inaad iibsatay.
+                        Markaad taabato badhanka hoose, waxaa si toos ah Laguu geeyn doonaa WhatsApp-ka iibiyaha si aad ula heshiisid. Fadlan halkaan Ku Soo laabo si aad inoogu xaqiijisid inaad iibsatay Iyo in kale, Mahadsanid!
                      </p>
                   </div>
                </div>
