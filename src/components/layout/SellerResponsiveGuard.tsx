@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useApp } from "@/lib/context";
-import { ShieldAlert, ArrowRight, MessageCircle, AlertTriangle, Clock } from "lucide-react";
+import { ShieldAlert, ArrowRight, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
