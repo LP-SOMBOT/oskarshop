@@ -559,8 +559,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      <div className="flex items-center gap-3 text-indigo-500 mb-8 md:mb-12">
                         <TargetIcon size={20} />
                         <div>
-                           <h4 className="font-headline font-bold text-base md:text-2xl uppercase tracking-tight">Premium Assets</h4>
-                           <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-widest mt-0.5">Xaqiiji waxyaabaha uu leeyahay</p>
+                           <h4 className="font-headline font-bold text-base md:text-2xl uppercase tracking-tight">{t('premium_assets')}</h4>
+                           <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-widest mt-0.5">{t('verify_assets_desc')}</p>
                         </div>
                      </div>
                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-8 lg:gap-12">
@@ -847,8 +847,8 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
            </button>
            {(isOwner || isAdmin) && (
              <>
-                <Button size="icon" variant="ghost" className="h-7 w-7 md:h-10 md:w-10 text-blue-500 rounded-lg md:rounded-2xl" onClick={onEdit}><Edit className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7 md:h-10 md:w-10 text-red-500 rounded-lg md:rounded-2xl" onClick={onDelete}><Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
+                <Button size="icon" variant="ghost" className="h-7 h-7 md:h-10 md:w-10 text-blue-500 rounded-lg md:rounded-2xl" onClick={onEdit}><Edit className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
+                <Button size="icon" variant="ghost" className="h-7 h-7 md:h-10 md:w-10 text-red-500 rounded-lg md:rounded-2xl" onClick={onDelete}><Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
              </>
            )}
         </div>

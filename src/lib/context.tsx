@@ -422,7 +422,9 @@ const translations: Record<Language, Record<string, string>> = {
     whatsapp_number_support: "WhatsApp for Support",
     sender_number_label: "Enter sender's number",
     pay_listing_fee_title: "Pay Listing Fee",
-    pay_listing_fee_desc: "Please pay the account listing fee to proceed."
+    pay_listing_fee_desc: "Please pay the account listing fee to proceed.",
+    premium_assets: "Premium Assets",
+    verify_assets_desc: "Confirm the account features"
   },
   so: {
     home: "Hoyga",
@@ -497,7 +499,9 @@ const translations: Record<Language, Record<string, string>> = {
     whatsapp_number_support: "Geli WhatsApp kaga",
     sender_number_label: "Geli number ka lacagta kasoo direesid",
     pay_listing_fee_title: "Bixin qarashka",
-    pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa"
+    pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa",
+    premium_assets: "Waxyabaha account tiga yaalo",
+    verify_assets_desc: "U geli Si saxan iskana hubi"
   }
 };
 
