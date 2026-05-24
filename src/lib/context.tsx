@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -121,6 +122,7 @@ type AccountPost = {
   adminMessage?: string;
   hiddenFromMarket?: boolean;
   sellerSeenDeletionAt?: number;
+  warningDismissedAt?: number;
   claimants?: Record<string, {
     uid: string;
     name: string;
@@ -232,6 +234,13 @@ type StoreSettings = {
   };
 };
 
+type UserWarning = {
+  id: string;
+  postId: string;
+  message: string;
+  timestamp: number;
+};
+
 type UserProfile = {
   uid: string;
   email: string;
@@ -246,6 +255,8 @@ type UserProfile = {
   phoneNumber?: string;
   banned?: boolean;
   termsAccepted?: boolean;
+  suspendedUntil?: number;
+  warnings?: Record<string, UserWarning>;
 };
 
 type BannedInfo = {
@@ -294,6 +305,9 @@ type AppContextType = {
   reportAccountOutcome: (postId: string, outcome: 'bought' | 'not_bought') => Promise<void>;
   respondToSaleReport: (postId: string, confirmed: boolean, buyerId?: string) => Promise<void>;
   enforceAccountAction: (postId: string, action: 'delete' | 'holding' | 'approved' | 'pending', message: string) => Promise<void>;
+  issueSellerWarning: (uid: string, postId: string, message: string) => Promise<void>;
+  suspendSeller: (uid: string, days: number) => Promise<void>;
+  dismissAccountWarning: (postId: string) => Promise<void>;
   markDeletionAsSeen: (postId: string) => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
   manageUser: (uid: string, updates: Partial<UserProfile>) => Promise<void>;
@@ -514,7 +528,7 @@ const getFriendlyAuthError = (err: any, lang: Language): string => {
       return isSo ? "Email-ka aad gelisay ma saxna." : "The email address you entered is invalid.";
     case 'auth/user-not-found':
     case 'auth/user-disabled':
-      return isSo ? "Account-kan ma jiro ama waa la xiray." : "Account not found or has been disabled.";
+      return isSo ? "Account-ken ma jiro ama waa la xiray." : "Account not found or has been disabled.";
     case 'auth/wrong-password':
       return isSo ? "Password-ka aad gelisay waa khalad." : "Incorrect password. Please try again.";
     case 'auth/email-already-in-use':
@@ -1071,7 +1085,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const renewAccountPost = async (postId: string, term: 'weekly' | 'monthly') => {
     if (!rtdb) return;
-    await update(ref(rtdb, `accountPosts/${postId}`), { term, expiresAt: null, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, buyerReportedAt: null, sellerReported: false, sellerReportedAt: null, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null });
+    await update(ref(rtdb, `accountPosts/${postId}`), { term, expiresAt: null, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, buyerReportedAt: null, sellerReported: false, sellerReportedAt: null, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null, warningDismissedAt: null });
     toast({ title: "Renewal Initiated!", description: "Waiting for admin to verify renewal payment." });
   };
 
@@ -1139,6 +1153,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
       updates.expiresAt = now + duration;
       updates.createdAt = now;
+      updates.warningDismissedAt = null;
     }
     await update(ref(rtdb, `accountPosts/${postId}`), updates);
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
@@ -1147,6 +1162,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
        const title = status === 'approved' ? "Post Approved! ✅" : status === 'rejected' ? "Post Rejected ❌" : "Listing Update 🎮";
        broadcastNotification(title, `Your account listing #${postId.toUpperCase()} is now ${status}.`, postData.uid);
     }
+  };
+
+  const issueSellerWarning = async (uid: string, postId: string, message: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    const warningRef = push(ref(rtdb, `users/${uid}/warnings`));
+    await set(warningRef, {
+      id: warningRef.key,
+      postId,
+      message,
+      timestamp: Date.now()
+    });
+    await broadcastNotification("Formal Warning Issued! ⚠️", `Security alert for Listing #${postId.toUpperCase()}: ${message}`, uid);
+    toast({ title: "Warning Issued" });
+  };
+
+  const suspendSeller = async (uid: string, days: number) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    const suspensionEnd = Date.now() + (days * 24 * 60 * 60 * 1000);
+    await update(ref(rtdb, `users/${uid}`), { suspendedUntil: suspensionEnd });
+    await broadcastNotification("Account Suspended! 🚫", `Your selling privileges are blocked for ${days} days due to security violations.`, uid);
+    toast({ title: `Seller suspended for ${days} days` });
+  };
+
+  const dismissAccountWarning = async (postId: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    await update(ref(rtdb, `accountPosts/${postId}`), { warningDismissedAt: Date.now() });
+    const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
+    const postData = postSnap.val();
+    if (postData?.uid) {
+      await broadcastNotification("Warning Dismissed! ✅", `Responsive guard for Listing #${postId.toUpperCase()} has been cleared.`, postData.uid);
+    }
+    toast({ title: "Warning Dismissed" });
   };
 
   const reportAccountOutcome = async (postId: string, outcome: 'bought' | 'not_bought') => {
@@ -1159,14 +1206,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (outcome === 'not_bought') {
       const updates: any = {};
-      // "Like nothing happened": Remove claimant and delete the order entirely
       if (postData.claimants?.[user.uid]) {
         updates[`accountPosts/${postId}/claimants/${user.uid}`] = null;
       }
       if (targetOrder) {
         updates[`orders/${targetOrder.id}`] = null;
       }
-      // If this was the only claimant, reset report status
       const otherClaimants = Object.keys(postData.claimants || {}).filter(uid => uid !== user.uid);
       if (otherClaimants.length === 0) {
         updates[`accountPosts/${postId}/buyerReported`] = false;
@@ -1246,7 +1291,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       conflict: false, 
       buyerReported: false, 
       buyerReportedAt: null, 
-      claimants: null 
+      claimants: null,
+      warningDismissedAt: Date.now()
     };
 
     if (action === 'delete') { 
@@ -1401,7 +1447,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
       login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
-      createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
+      createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,

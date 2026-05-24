@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -208,10 +209,10 @@ function WaitTime({ post }: { post: any }) {
     const update = () => {
       const diff = Date.now() - claimTime;
       const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
+      const m = Math.floor((diff % (3600000) / 60000));
       setElapsed(`${h}h ${m}m`);
       // If wait time is >= 1 hour and seller hasn't responded, flag as urgent
-      setIsUrgent(h >= 1 && !post.sellerReported);
+      setIsUrgent(h >= 1 && !post.sellerReported && !post.warningDismissedAt);
     };
     update();
     const interval = setInterval(update, 60000);
@@ -252,6 +253,9 @@ export default function AdminPage() {
     updateOrderStatus,
     updateAccountPostStatus,
     enforceAccountAction,
+    issueSellerWarning,
+    suspendSeller,
+    dismissAccountWarning,
     deleteUser: deleteUserFn,
     manageUser,
     saveGame,
@@ -823,6 +827,9 @@ export default function AdminPage() {
                    isSaving={isSavingStatus}
                    onDelete={() => { setDeleteTarget({id:selectedAccountId, type:'account'}); setIsDeleteDialogOpen(true); }}
                    onEnforce={() => setIsEnforceDialogOpen(true)}
+                   issueSellerWarning={issueSellerWarning}
+                   suspendSeller={suspendSeller}
+                   dismissAccountWarning={dismissAccountWarning}
                  />
                ) : (
                  <div className="space-y-10">
@@ -834,7 +841,7 @@ export default function AdminPage() {
                          accountPosts.map(p => {
                            const claimantsList = Object.values(p.claimants || {});
                            const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
-                           const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold;
+                           const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
                            return (
                              <Card 
@@ -921,7 +928,7 @@ export default function AdminPage() {
                                accountPosts.map(p => {
                                  const claimantsList = Object.values(p.claimants || {});
                                  const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
-                                 const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold;
+                                 const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
                                  return (
                                  <TableRow 
@@ -2239,14 +2246,14 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 /**
  * Full Page Account Listing Management View
  */
-function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce }: any) {
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, issueSellerWarning, suspendSeller, dismissAccountWarning }: any) {
   if (!post) return null;
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
   // Check for critical wait time > 1h
   const earliestClaim = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
-  const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold;
+  const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
@@ -2325,12 +2332,16 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Has not responded to purchase claims for over 1 hour.</p>
                </div>
             </div>
-            <div className="flex gap-4">
-               <Button onClick={onEnforce} className="bg-white text-red-600 hover:bg-slate-100 font-black uppercase tracking-widest px-8 h-14 rounded-2xl shadow-xl">
-                  Take Penalty Action
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <Button onClick={() => issueSellerWarning(post.uid, post.id, "Muddo ka badan 1 saac ayaadan uga jawaabin verification-ka account-kaaga.")} className="bg-amber-500 text-white hover:bg-amber-600 font-black uppercase tracking-widest h-14 rounded-2xl">
+                  Issue Warning
                </Button>
-               <Button variant="ghost" onClick={() => handleWhatsApp(post.phone)} className="text-white border-2 border-white/20 hover:bg-white/10 font-bold px-8 h-14 rounded-2xl">
-                  Contact Seller
+               <Button onClick={() => suspendSeller(post.uid, 3)} className="bg-white text-red-600 hover:bg-slate-100 font-black uppercase tracking-widest h-14 rounded-2xl shadow-xl">
+                  Suspend (3D)
+               </Button>
+               <Button variant="ghost" onClick={() => dismissAccountWarning(post.id)} className="text-white border-2 border-white/20 hover:bg-white/10 font-bold h-14 rounded-2xl">
+                  Dismiss Overlay
                </Button>
             </div>
          </Card>

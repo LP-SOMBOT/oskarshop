@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -97,8 +98,10 @@ export default function AccountsView() {
           return true;
         }
 
+        // HIDDEN logic: Hide sold accounts from public feed (non-owners/non-admins)
+        if (p.sold === true || p.status === 'sold') return false;
+
         if (p.status !== 'approved') return false;
-        if (p.sold === true) return false;
         if (p.hiddenFromMarket === true) return false;
 
         const isExpired = p.expiresAt ? p.expiresAt < now : false;
@@ -921,9 +924,9 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
              <p className="text-[8px] md:text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-0.5 md:mb-1 opacity-60">Price Value</p>
              <p className="text-xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${parseFloat(post.price?.toString() || '0').toFixed(2)}</p>
            </div>
-           <Button className="rounded-lg md:rounded-[1.5rem] h-9 md:h-14 px-3 md:px-8 font-black text-[10px] md:text-base shadow-xl shadow-primary/20 gap-1 md:gap-2 uppercase tracking-wide shrink-0">
+           <button className="rounded-lg md:rounded-[1.5rem] h-9 md:h-14 px-3 md:px-8 font-black text-[10px] md:text-base shadow-xl shadow-primary/20 gap-1 md:gap-2 uppercase tracking-wide shrink-0 bg-primary text-white hover:bg-primary/90">
              Details <ArrowRight className="w-3.5 h-3.5 md:w-5 md:h-5" />
-           </Button>
+           </button>
         </div>
       </div>
     </Card>
