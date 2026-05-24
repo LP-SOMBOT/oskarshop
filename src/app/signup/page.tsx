@@ -65,8 +65,8 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
-      <div className="pt-10 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
-        <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-6 transition-colors">
+      <div className="pt-8 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
+        <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-4 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Dib u Noqo
         </Link>
         <h1 className="text-xl sm:text-3xl font-headline font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
@@ -74,7 +74,7 @@ export default function SignupPage() {
         </h1>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[3.5rem] px-6 py-10 sm:p-10 shadow-2xl relative flex flex-col">
+      <div className="flex-1 bg-white rounded-t-[3.5rem] px-6 py-8 sm:p-10 shadow-2xl relative flex flex-col items-center justify-center">
         {(isGlobalLoading || user) && (
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
@@ -84,7 +84,7 @@ export default function SignupPage() {
           </div>
         )}
 
-        <div className="max-w-md mx-auto w-full flex-1 flex flex-col justify-center">
+        <div className="max-w-md w-full">
           <h2 className="text-xl sm:text-3xl font-headline font-bold mb-6 text-gray-900">
             Sameey Account
           </h2>
@@ -99,7 +99,7 @@ export default function SignupPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleSignup} className="space-y-4 sm:space-y-5">
+          <form onSubmit={handleSignup} className="space-y-4">
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
                 <User className="w-5 h-5" />
@@ -111,7 +111,7 @@ export default function SignupPage() {
                 required 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
             </div>
 
@@ -126,7 +126,7 @@ export default function SignupPage() {
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
             </div>
 
@@ -141,7 +141,7 @@ export default function SignupPage() {
                 required 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="h-14 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
             </div>
 
@@ -157,7 +157,7 @@ export default function SignupPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-14 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
               <button 
                 type="button"
@@ -180,7 +180,7 @@ export default function SignupPage() {
                 minLength={6}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-14 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
               <button 
                 type="button"
@@ -194,12 +194,12 @@ export default function SignupPage() {
             <Button 
               type="submit" 
               disabled={isSubmitting || isGlobalLoading}
-              className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 text-white mt-1"
+              className="w-full h-12 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 text-white mt-2"
             >
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SAMEEY ACCOUNT"}
             </Button>
 
-            <div className="text-center pt-2 pb-6">
+            <div className="text-center pt-2 pb-4">
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
                 Horey ma u lahayd account? <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">Soo gal</Link>
               </p>
