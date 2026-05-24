@@ -128,16 +128,47 @@ function CheckoutContent() {
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!gameDetails.senderNumber) {
-      toast({ title: "Fadlan buuxi number-ka", description: "Geli number-ka lacagta aad ka soo dirtay.", variant: "destructive" });
+
+    // Validation logic
+    if (gameDetails.playerName.trim().length < 4) {
+      toast({ title: "Magaca wuu gaabanyahay", description: "Magaca game-ka waa inuu ugu yaraan ka koobnaadaa 4 xaraf.", variant: "destructive" });
       return;
     }
+
+    if (gameDetails.playerID.length < 5) {
+      toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah (ugu yaraan 5 nambar).", variant: "destructive" });
+      return;
+    }
+
+    const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
+    if (cleanWhatsapp.length < 9) {
+      toast({ title: "WhatsApp No. khaldan", description: "WhatsApp number-ka waa inuu ka koobnaadaa ugu yaraan 9 nambar.", variant: "destructive" });
+      return;
+    }
+
+    const cleanSender = gameDetails.senderNumber.replace(/\D/g, '');
+    if (cleanSender.length < 9) {
+      toast({ title: "Lacag Diraha khaldan", description: "Number-ka lacagta laga soo diray waa inuu ka koobnaadaa ugu yaraan 9 nambar.", variant: "destructive" });
+      return;
+    }
+
     setStep(2);
   };
 
   const handleBooyahRedirect = () => {
-    if (!gameDetails.playerID || !gameDetails.whatsappNumber || !gameDetails.senderNumber) {
-      toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
+    // Re-use validation logic
+    if (gameDetails.playerName.trim().length < 4) {
+      toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" });
+      return;
+    }
+    if (gameDetails.playerID.length < 5) {
+      toast({ title: "Game ID khaldan", variant: "destructive" });
+      return;
+    }
+    const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
+    const cleanSender = gameDetails.senderNumber.replace(/\D/g, '');
+    if (cleanWhatsapp.length < 9 || cleanSender.length < 9) {
+      toast({ title: "Fadlan geli number-ada saxda ah (9+ nambar)", variant: "destructive" });
       return;
     }
     
