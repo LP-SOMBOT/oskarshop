@@ -107,11 +107,6 @@ export default function SellerResponsiveGuard() {
                     ? `Waxaa jiro ${stallingPosts.length} account oo qof dhahay Waan iibsaday, adigana kama aadan jawaabin mudo 1 saac ah, fadlan kajawaab sida ugu dhaqsiyaha badan, Oskar team ayaa WhatsApp ka kaala Soo xariireen, hadii aadan ka jawaabin mudo 24 saacad guduhod account kaaga waala Ga Saari doonnaa.`
                     : `You have ${stallingPosts.length} account(s) that buyers have claimed but you haven't responded to the verification for over 1 hour.`}
                 </p>
-                <p className="text-muted-foreground text-xs md:text-base font-medium">
-                   {language === 'so'
-                    ? "Fadlan si deg-deg ah ugu jawaab si aan account-kaaga looga saarin listing-ka ama aanan garka kugu soo xirin."
-                    : "Please respond immediately to avoid removal from the marketplace or potential account suspension."}
-                </p>
              </div>
 
              {/* Problematic Accounts List */}
