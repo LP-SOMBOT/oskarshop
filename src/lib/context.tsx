@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -370,7 +369,7 @@ const translations: Record<Language, Record<string, string>> = {
     store_marketplace: "Store & Marketplace",
     support_center: "Support Center",
     global_settings: "Global Settings",
-    app_tutorial: "App Tutorial",
+    app_tutorial: "How to use",
     whatsapp_support: "WhatsApp Support",
     tiktok: "Oskar TikTok",
     points: "POINTS",
@@ -432,7 +431,7 @@ const translations: Record<Language, Record<string, string>> = {
     store_marketplace: "Bakhaarka & Suuqa",
     support_center: "Xarunta Caawinta",
     global_settings: "Settings-ka Guud",
-    app_tutorial: "Barashada App-ka",
+    app_tutorial: "Sida loo isticmaalo app-ka",
     whatsapp_support: "WhatsApp Caawinaad",
     tiktok: "Oskar TikTok",
     points: "PTS",
