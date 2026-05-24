@@ -577,7 +577,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
 
                   <div className="pt-4 md:pt-10">
                      <Button onClick={handleNext} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-3xl shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.1em] active:scale-95 transition-all">
-                        Hagaag, Next Step <ChevronRight size={28} className="ml-2 md:ml-4" />
+                        {language === 'so' ? "Horeye usoco" : "Continue"} <ChevronRight size={28} className="ml-2 md:ml-4" />
                      </Button>
                   </div>
                </div>
