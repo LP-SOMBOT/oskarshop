@@ -429,7 +429,7 @@ const translations: Record<Language, Record<string, string>> = {
     light_mode: "U bedel cadaan",
     update_profile: "Cusbooneysii Profile",
     store_marketplace: "Bakhaarka & Suuqa",
-    support_center: "Xarunta Caawinta",
+    support_center: "Caawinaad",
     global_settings: "Settings-ka Guud",
     app_tutorial: "Sida loo isticmaalo app-ka",
     whatsapp_support: "WhatsApp Caawinaad",
