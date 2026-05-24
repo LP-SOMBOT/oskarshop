@@ -14,7 +14,8 @@ import {
   XCircle,
   ShieldAlert,
   CreditCard,
-  MessageCircle
+  MessageCircle,
+  Ticket
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +139,10 @@ function OrderCard({ order }: { order: any }) {
                  <DetailRow icon={CreditCard} label={t('sender_no')} value={order.gameDetails?.senderNumber} color="text-green-600" />
                  <DetailRow icon={MessageCircle} label={t('whatsapp')} value={order.gameDetails?.whatsappNumber} />
                </>
+             )}
+             
+             {order.promoCode && (
+               <DetailRow icon={Ticket} label="Promo Code" value={order.promoCode} color="text-primary font-black" />
              )}
              
              <div className="pt-3 md:pt-4 border-t border-slate-200/50 dark:border-white/5 flex justify-between items-center">
