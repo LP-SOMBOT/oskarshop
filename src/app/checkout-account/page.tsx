@@ -165,9 +165,11 @@ function CheckoutAccountContent() {
                   <div className="space-y-1 sm:space-y-2">
                      <Label className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">WhatsApp-kaaga</Label>
                      <Input 
+                      type="tel"
+                      inputMode="numeric"
                       placeholder="Geli WhatsApp number-kaaga" 
                       value={whatsappNumber}
-                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
                       className="h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 sm:px-6 font-bold shadow-inner text-sm sm:text-base"
                      />
                   </div>
