@@ -8,31 +8,28 @@ import {
   useDatabase
 } from '@/firebase';
 import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult
-} from 'firebase/auth';
-import { 
-  ref, 
-  onValue, 
-  push, 
-  set, 
-  query, 
-  orderByChild, 
-  equalTo,
   update,
-  remove,
+  ref,
+  onValue,
+  push,
+  set,
+  query,
+  orderByChild,
+  equalTo,
   limitToLast,
   increment,
   off,
   get,
-  runTransaction
+  runTransaction,
+  remove
 } from 'firebase/database';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  onAuthStateChanged
+} from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
 import { isStandalone } from './pwa-utils';
@@ -270,7 +267,6 @@ type AppContextType = {
   setGlobalLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
   orders: Order[];
@@ -598,33 +594,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error("Profile sync failed:", err);
     }
   }, [rtdb]);
-
-  // Handle Redirect Result on App Initialization
-  useEffect(() => {
-    if (!auth || !rtdb) return;
-
-    const resolveRedirect = async () => {
-      try {
-        setIsGlobalLoading(true);
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          await ensureUserProfile(result.user);
-          toast({ title: "Authorized!", description: "Welcome to Oskar Shop." });
-          router.replace('/');
-        }
-      } catch (error: any) {
-        console.error("Google redirect error:", error);
-        // Do not toast for cancelled-popup-request as it's common on load
-        if (error.code !== 'auth/cancelled-popup-request') {
-           setAuthError(error.message);
-        }
-      } finally {
-        setIsGlobalLoading(false);
-      }
-    };
-
-    resolveRedirect();
-  }, [auth, rtdb, router, ensureUserProfile]);
 
   useEffect(() => {
     if (!auth) return;
@@ -963,21 +932,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAuthError(err.message);
       throw err;
     } finally { setIsGlobalLoading(false); }
-  };
-
-  const loginWithGoogle = async () => {
-    setAuthError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      provider.addScope('email');
-      provider.addScope('profile');
-      // Using redirect for full mobile and PWA compatibility
-      await signInWithRedirect(auth, provider);
-    } catch (error: any) {
-      console.error("Google initiation error:", error);
-      setAuthError(error.message);
-    }
   };
 
   const logout = async () => {
@@ -1341,7 +1295,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, loginWithGoogle, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
+      login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
