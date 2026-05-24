@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -103,7 +104,7 @@ export default function SellerResponsiveGuard() {
              <div className="space-y-4">
                 <p className="text-slate-900 dark:text-white text-base md:text-xl font-bold leading-relaxed">
                    {language === 'so' 
-                    ? `Waxaad haysataa ${stallingPosts.length} account oo ay qof iibsadeen laakiin aadan wali ka jawaabin verification-ka muddo ka badan 1 saac.`
+                    ? `Waxaa jiro ${stallingPosts.length} account oo qof dhahay Waan iibsaday, adigana kama aadan jawaabin mudo 1 saac ah, fadlan kajawaab sida ugu dhaqsiyaha badan, Oskar team ayaa WhatsApp ka kaala Soo xariireen, hadii aadan ka jawaabin mudo 24 saacad guduhod account kaaga waala Ga Saari doonnaa.`
                     : `You have ${stallingPosts.length} account(s) that buyers have claimed but you haven't responded to the verification for over 1 hour.`}
                 </p>
                 <p className="text-muted-foreground text-xs md:text-base font-medium">
