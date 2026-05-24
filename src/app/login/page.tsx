@@ -126,11 +126,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
       <div className="pt-10 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
-        <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight">
+        <h1 className="text-2xl sm:text-4xl font-headline font-bold text-white whitespace-nowrap">
           Ku Soo dhawoow OskarShop
         </h1>
-        <p className="text-xl sm:text-2xl font-headline text-white/80 mt-2 font-medium">
-          {view === 'login' ? 'Soo gal?' : 'Dib u helid'}
+        <p className="text-lg sm:text-2xl font-headline text-white/80 mt-1 font-medium">
+          {view === 'login' ? 'Soo gal' : 'Bedel password kaaga'}
         </p>
       </div>
 
