@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -422,7 +423,7 @@ const translations: Record<Language, Record<string, string>> = {
     ranking: "Darajo",
     my_accounts: "Account-yadayda",
     sell_account: "iibi/iibso account",
-    leaderboard: "Kala horeynta",
+    leaderboard: "Leaderboard",
     logout: "Ka Bax",
     language: "Luqadda",
     dark_mode: "Habka Mugdiga",
