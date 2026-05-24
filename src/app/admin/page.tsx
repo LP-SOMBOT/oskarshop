@@ -466,31 +466,21 @@ export default function AdminPage() {
 
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!promoForm.code || !promoForm.discount || !promoForm.duration) return;
-    
-    const now = Date.now();
-    let durationMs = parseInt(promoForm.duration);
-    const unit = promoForm.durationUnit;
-    
-    if (unit === 'minutes') durationMs *= 60000;
-    else if (unit === 'hours') durationMs *= 3600000;
-    else if (unit === 'days') durationMs *= 86400000;
-    else if (unit === 'months') durationMs *= 2592000000;
-    else if (unit === 'years') durationMs *= 31536000000;
-
-    const expiresAt = now + durationMs;
-
-    await savePromoCode({
-      code: promoForm.code.trim().toUpperCase(),
-      discount: parseInt(promoForm.discount),
-      expiresAt,
-      claimed: false,
-      usedBy: null,
-      expired: false
-    });
-
-    setIsPromoDialogOpen(false);
-    setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days" });
+    if (!promoCodeInput.trim()) return;
+    setIsGlobalLoading(true);
+    try {
+      const standardizedInput = promoCodeInput.trim().toUpperCase();
+      const discount = await checkPromoCode(standardizedInput);
+      setAppliedPromoCode(standardizedInput);
+      setPromoDiscount(discount);
+      toast({ title: "Promo Applied!", description: `You saved ${discount}% extra!` });
+    } catch (err: any) {
+      toast({ title: "Invalid Code", description: err.message, variant: "destructive" });
+      setAppliedPromoCode(null);
+      setPromoDiscount(0);
+    } finally {
+      setIsGlobalLoading(false);
+    }
   };
 
   const handleStatusUpdate = async () => {
@@ -752,7 +742,7 @@ export default function AdminPage() {
                                    onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
                                    className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
                                  >
-                                   <Eye size={16} /> View Insight
+                                   <Eye size={16} /> View
                                  </button>
                                  <button 
                                    onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
@@ -2561,7 +2551,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              disabled={isSaving} 
              className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
           >
-             {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "SAVE LOGIC"}
+             {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Order"}
           </Button>
        </div>
     </Card>
