@@ -53,16 +53,13 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
-      <div className="pt-8 pb-4 sm:pt-16 sm:pb-12 px-6 sm:px-10 shrink-0">
-        <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-4 sm:mb-6 transition-colors">
+      <div className="pt-10 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
+        <Link href="/login" className="inline-flex items-center gap-2 text-white/80 font-bold hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Dib u Noqo
         </Link>
-        <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight mt-1 sm:mt-6">
-          Ku soo biir <br /> Oskar Shop
+        <h1 className="text-3xl sm:text-4xl font-headline font-bold text-white leading-tight mt-2">
+          Iska diwaan geli <br /> OskarShop
         </h1>
-        <p className="text-xl sm:text-2xl font-headline text-white/80 mt-1 font-medium">
-          Is diwaangeli
-        </p>
       </div>
 
       <div className="flex-1 bg-white rounded-t-[3rem] sm:rounded-t-[3.5rem] p-6 sm:p-10 shadow-2xl relative">
