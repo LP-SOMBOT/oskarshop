@@ -717,7 +717,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                                  <Info className="text-primary w-6 h-6 md:w-8 md:h-8" />
                               </div>
                               <p className="text-[9px] md:text-sm text-muted-foreground italic leading-relaxed font-medium">
-                                 Admin-ka ayaa hubin doona payment-kaaga ka hor inta aan post-ga la fasaxin. Waxay qaadataa inta badan 5-15 daqiiqo gudahood.
+                                 Dalabkaaga waxey qaadan kartaa 1-24 saac, Fadlan dulqaadka badi, Mahadsanid!.
                               </p>
                            </div>
                         </div>
