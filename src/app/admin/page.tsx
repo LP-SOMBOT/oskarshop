@@ -1206,11 +1206,7 @@ export default function AdminPage() {
           {/* Promo Codes Management */}
           {activeView === 'promo-codes' && (
             <div className="space-y-12 animate-in fade-in duration-700">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                  <div>
-                     <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight">Voucher Protocol</h2>
-                     <p className="text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60">Generate and track promo code redemption</p>
-                  </div>
+               <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
                   <Button 
                     onClick={() => setIsPromoDialogOpen(true)}
                     className="rounded-2xl h-14 md:h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
@@ -1864,7 +1860,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isGameDialogOpen} onOpenChange={setIsGameDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+        <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingGame ? 'Edit Collection' : 'New Game Collection'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSaveGame} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
@@ -1968,9 +1964,9 @@ export default function AdminPage() {
                     <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                          <SelectItem value="days" className="p-3 font-bold text-xs uppercase">Days</SelectItem>
-                          <SelectItem value="hours" className="p-3 font-bold text-xs uppercase">Hours</SelectItem>
-                          <SelectItem value="minutes" className="p-3 font-bold text-xs uppercase">Minutes</SelectItem>
+                          <SelectItem value="days" className="p-3 font-bold uppercase text-xs uppercase">Days</SelectItem>
+                          <SelectItem value="hours" className="p-3 font-bold uppercase text-xs uppercase">Hours</SelectItem>
+                          <SelectItem value="minutes" className="p-3 font-bold uppercase text-xs uppercase">Minutes</SelectItem>
                        </SelectContent>
                     </Select>
                  </div>
