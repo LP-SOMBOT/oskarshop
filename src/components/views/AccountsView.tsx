@@ -696,8 +696,11 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                              </Button>
                            ) : (
                              <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
-                                <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl md:rounded-[2rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-[10px] md:text-2xl flex items-center justify-center gap-3 md:gap-5 shadow-inner">
-                                   <CheckCircle2 className="w-6 h-6 md:w-12 md:h-12" /> Waa lagu wacay! Dialed Successfully.
+                                <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl md:rounded-[2rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-[10px] md:text-xl lg:text-2xl flex flex-col items-center justify-center gap-3 md:gap-5 shadow-inner">
+                                   <CheckCircle2 className="w-6 h-6 md:w-12 md:h-12" />
+                                   <p className="text-center px-4">
+                                      Iska hubi Number Kan <span className="text-slate-900 dark:text-white font-black underline decoration-primary/30">({storeSettings.paymentNumber || "613982172"})</span> inaad Ku dirtay Lacag dhan <span className="text-primary font-black underline decoration-primary/30">(${listingFee.toFixed(2)})</span>.
+                                   </p>
                                 </div>
                                 <Button 
                                   onClick={handleSubmit} 
