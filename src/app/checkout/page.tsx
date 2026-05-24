@@ -340,9 +340,11 @@ Fadlan ila soo xiriir.`;
                   <Input 
                     placeholder={isBooyahPass ? "Geli ID Ga game kugu qoran" : (isFreeFire ? "Geli ID-Ga game ka kugu qoran" : "Geli ID game ka kugu qoran")}
                     required 
+                    type="tel"
+                    inputMode="numeric"
                     className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner"
                     value={gameDetails.playerID}
-                    onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value})}
+                    onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value.replace(/\D/g, '')})}
                   />
                 </div>
 
