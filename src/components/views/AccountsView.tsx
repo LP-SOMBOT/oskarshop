@@ -560,7 +560,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
 
                   {/* Final Listing Settings */}
                   <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-                     <FormGroup label="Listing Duration">
+                     <FormGroup label={t('listing_duration')}>
                         <Select value={formData.term} onValueChange={v => setFormData({...formData, term: v as any})}>
                            <SelectTrigger className="h-12 md:h-20 rounded-xl md:rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-xl shadow-inner">
                               <SelectValue />
@@ -571,8 +571,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            </SelectContent>
                         </Select>
                      </FormGroup>
-                     <FormInput label="WhatsApp for Support" value={formData.phone} type="tel" onChange={v => setFormData({...formData, phone: v})} placeholder="e.g. 613982172" />
-                     <FormInput label="Enter sender's number" value={formData.senderNumber} type="tel" onChange={v => setFormData({...formData, senderNumber: v})} placeholder="e.g. 613982172" icon={CreditCard} />
+                     <FormInput label={t('whatsapp_number_support')} value={formData.phone} type="tel" onChange={v => setFormData({...formData, phone: v})} placeholder="e.g. 613982172" />
+                     <FormInput label={t('sender_number_label')} value={formData.senderNumber} type="tel" onChange={v => setFormData({...formData, senderNumber: v})} placeholder="e.g. 613982172" icon={CreditCard} />
                   </Card>
 
                   <div className="pt-4 md:pt-10">

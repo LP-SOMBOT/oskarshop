@@ -417,7 +417,10 @@ const translations: Record<Language, Record<string, string>> = {
     game_type: "Game Type",
     login_method: "Login Method",
     account_age: "Account Age",
-    selling_price: "Selling Price ($)"
+    selling_price: "Selling Price ($)",
+    listing_duration: "Listing Duration",
+    whatsapp_number_support: "WhatsApp for Support",
+    sender_number_label: "Enter sender's number"
   },
   so: {
     home: "Hoyga",
@@ -487,7 +490,10 @@ const translations: Record<Language, Record<string, string>> = {
     game_type: "Dooro nooca Game ka",
     login_method: "Qaabka lagu Soo galo",
     account_age: "Geli da' da account tiga",
-    selling_price: "Qiimaha aad Ku rabtid ( $ )"
+    selling_price: "Qiimaha aad Ku rabtid ( $ )",
+    listing_duration: "Dooro Term ka",
+    whatsapp_number_support: "Geli WhatsApp kaga",
+    sender_number_label: "Geli number ka lacagta kasoo direesid"
   }
 };
 
