@@ -61,7 +61,8 @@ export default function AccountsView() {
     setActiveTab, 
     isInitialLoading, 
     setIsPostingAccount,
-    deleteAccountPost 
+    deleteAccountPost,
+    t 
   } = useApp();
   
   const router = useRouter();
@@ -154,7 +155,7 @@ export default function AccountsView() {
   return (
     <div className="min-h-screen pb-24 page-transition bg-slate-50 dark:bg-transparent">
       <header className="sticky top-0 z-50 bg-white dark:bg-slate-950/80 dark:backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-white/5 h-16 flex items-center justify-between px-4 md:hidden">
-        <h1 className="text-lg font-headline font-bold text-slate-900 dark:text-white tracking-tight">Marketplace</h1>
+        <h1 className="text-lg font-headline font-bold text-slate-900 dark:text-white tracking-tight">{t('marketplace')}</h1>
         <button onClick={() => setIsActivityModalOpen(true)} className="relative p-2 text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-full">
            <Activity className="w-5 h-5" />
            {myActivity.some(p => p.status === 'pending' || p.status === 'holding') && (
