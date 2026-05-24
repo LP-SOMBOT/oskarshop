@@ -186,7 +186,7 @@ export default function ProfileView() {
                   </div>
                </div>
                <div className="space-y-4 md:space-y-6">
-                  <ProfileInput label="Full Display Name" value={editData.name} onChange={val => setEditData({...editData, name: val})} />
+                  <ProfileInput label="Magacaaga" value={editData.name} onChange={val => setEditData({...editData, name: val})} />
                   <ProfileInput label="In-Game Alias" value={editData.gameName} onChange={val => setEditData({...editData, gameName: val})} />
                   <ProfileInput label="Game UID / Player ID" value={editData.gameUid} type="tel" inputMode="numeric" onChange={val => setEditData({...editData, gameUid: val.replace(/\D/g, '')})} />
                </div>
