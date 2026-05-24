@@ -1227,6 +1227,7 @@ export default function AdminPage() {
                       const isExpired = promo.expiresAt < Date.now();
                       const status = promo.claimed ? 'Claimed' : isExpired ? 'Expired' : 'Unclaimed';
                       const badgeColor = promo.claimed ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+                      const claimedUser = promo.claimed ? allUsers.find(u => u.uid === promo.usedBy) : null;
 
                       return (
                         <Card key={promo.id} className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group">
@@ -1257,9 +1258,21 @@ export default function AdminPage() {
                               </div>
 
                               {promo.claimed && (
-                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5">
-                                   <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Used By (UID)</p>
-                                   <p className="text-[9px] font-mono font-bold truncate text-purple-600">{promo.usedBy || 'System Redemption'}</p>
+                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
+                                   <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden relative shrink-0">
+                                      {claimedUser?.photoURL ? (
+                                        <Image src={claimedUser.photoURL} alt="" fill className="object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
+                                          <User size={14} />
+                                        </div>
+                                      )}
+                                   </div>
+                                   <div className="min-w-0 flex-1">
+                                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Claimed By</p>
+                                      <p className="text-[10px] font-bold text-slate-900 dark:text-white truncate">{claimedUser?.name || 'Unknown User'}</p>
+                                      <p className="text-[8px] text-muted-foreground truncate">{claimedUser?.email || promo.usedBy}</p>
+                                   </div>
                                 </div>
                               )}
 
@@ -1940,7 +1953,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Duration (Value)" value={eventForm.duration} type="number" onChange={v => setEventForm({ ...eventForm, duration: v })} placeholder="7" />
                  <div className="space-y-2">
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Unit</Label>
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Unit</Label>
                     <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
