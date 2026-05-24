@@ -210,8 +210,8 @@ function WaitTime({ post }: { post: any }) {
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       setElapsed(`${h}h ${m}m`);
-      // If wait time is >= 24 hours and seller hasn't responded, flag as urgent
-      setIsUrgent(h >= 24 && !post.sellerReported);
+      // If wait time is >= 1 hour and seller hasn't responded, flag as urgent
+      setIsUrgent(h >= 1 && !post.sellerReported);
     };
     update();
     const interval = setInterval(update, 60000);
@@ -466,21 +466,9 @@ export default function AdminPage() {
 
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!promoCodeInput.trim()) return;
-    setIsGlobalLoading(true);
-    try {
-      const standardizedInput = promoCodeInput.trim().toUpperCase();
-      const discount = await checkPromoCode(standardizedInput);
-      setAppliedPromoCode(standardizedInput);
-      setPromoDiscount(discount);
-      toast({ title: "Promo Applied!", description: `You saved ${discount}% extra!` });
-    } catch (err: any) {
-      toast({ title: "Invalid Code", description: err.message, variant: "destructive" });
-      setAppliedPromoCode(null);
-      setPromoDiscount(0);
-    } finally {
-      setIsGlobalLoading(false);
-    }
+    await savePromoCode(promoForm);
+    setIsPromoDialogOpen(false);
+    setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days" });
   };
 
   const handleStatusUpdate = async () => {
@@ -846,7 +834,7 @@ export default function AdminPage() {
                          accountPosts.map(p => {
                            const claimantsList = Object.values(p.claimants || {});
                            const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
-                           const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !p.sellerReported && !p.sold;
+                           const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold;
 
                            return (
                              <Card 
@@ -933,7 +921,7 @@ export default function AdminPage() {
                                accountPosts.map(p => {
                                  const claimantsList = Object.values(p.claimants || {});
                                  const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
-                                 const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !p.sellerReported && !p.sold;
+                                 const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold;
 
                                  return (
                                  <TableRow 
@@ -2055,8 +2043,8 @@ export default function AdminPage() {
            </div>
            <div className="p-6 md:p-8 space-y-5 md:space-y-6">
               <div className="grid grid-cols-2 gap-3">
-                 {['delete', 'holding', 'approved', 'pending'].map(act => (
-                   <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act as any)} className={cn("rounded-xl h-10 md:h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600' : '')}>{act}</Button>
+                 {(['delete', 'holding', 'approved', 'pending'] as const).map(act => (
+                   <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act)} className={cn("rounded-xl h-10 md:h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600' : '')}>{act}</Button>
                  ))}
               </div>
               <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="Reason for penalty..." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
@@ -2256,9 +2244,9 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
-  // Check for critical wait time > 24h
+  // Check for critical wait time > 1h
   const earliestClaim = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
-  const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 86400000 && !post.sellerReported && !post.sold;
+  const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold;
 
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
@@ -2334,7 +2322,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                </div>
                <div>
                   <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight leading-none">Seller Non-Responsive</h2>
-                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Has not responded to purchase claims for over 24 hours.</p>
+                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Has not responded to purchase claims for over 1 hour.</p>
                </div>
             </div>
             <div className="flex gap-4">

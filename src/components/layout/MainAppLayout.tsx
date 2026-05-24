@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -6,6 +5,7 @@ import Header from "./Header";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import OfflinePage from "./OfflinePage";
+import SellerResponsiveGuard from "./SellerResponsiveGuard";
 import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +32,9 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
     <div className="flex min-h-screen bg-background">
       {!isSpecialFlow && <DesktopSidebar />}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        <SellerResponsiveGuard />
+
         {!isSpecialFlow && (
           <div className="md:hidden">
             <Header />

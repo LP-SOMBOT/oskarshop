@@ -1156,11 +1156,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postData = postSnap.val();
     if (!postData) return;
     const targetOrder = orders.find(o => o.gameDetails?.postId === postId && o.userId === user.uid);
+
     if (outcome === 'not_bought') {
       const updates: any = {};
-      if (postData.claimants?.[user.uid]) updates[`accountPosts/${postId}/claimants/${user.uid}`] = null;
-      if (targetOrder) { updates[`orders/${targetOrder.id}/buyerOutcome`] = outcome; updates[`orders/${targetOrder.id}/status`] = 'cancelled'; }
+      // "Like nothing happened": Remove claimant and delete the order entirely
+      if (postData.claimants?.[user.uid]) {
+        updates[`accountPosts/${postId}/claimants/${user.uid}`] = null;
+      }
+      if (targetOrder) {
+        updates[`orders/${targetOrder.id}`] = null;
+      }
+      // If this was the only claimant, reset report status
+      const otherClaimants = Object.keys(postData.claimants || {}).filter(uid => uid !== user.uid);
+      if (otherClaimants.length === 0) {
+        updates[`accountPosts/${postId}/buyerReported`] = false;
+        updates[`accountPosts/${postId}/buyerReportedAt`] = null;
+      }
+      
       if (Object.keys(updates).length > 0) await update(ref(rtdb), updates);
+      toast({ title: "Deal Cancelled", description: "Listing reset successfully." });
     } else {
       const reportTime = Date.now();
       const claimantInfo = { uid: user.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending' };
@@ -1182,13 +1196,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updates: any = {};
     const reportTime = Date.now();
     
-    // Base updates for any response
     updates[`accountPosts/${postId}/sellerReported`] = true;
     updates[`accountPosts/${postId}/sellerReportedAt`] = reportTime;
 
     if (confirmed) {
-      const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => (c as any).status === 'rejected');
       const otherClaimantsCount = Object.keys(postData.claimants || {}).length - 1;
+      const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => (c as any).status === 'rejected');
 
       if (hasPreviousRejections || otherClaimantsCount > 0) {
         updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'accepted';
@@ -1202,13 +1215,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updates[`accountPosts/${postId}/boughtBy`] = buyerId;
         updates[`accountPosts/${postId}/holdingBy`] = buyerId;
         updates[`accountPosts/${postId}/completedAt`] = reportTime;
-        // This is safe because we aren't setting any specific claimant status in this branch
         updates[`accountPosts/${postId}/claimants`] = null; 
       }
       toast({ title: "Response Recorded!", description: "Sale confirmed. Waiting for finalization." });
       broadcastNotification("Purchase Update! 🤑", "Seller has accepted your purchase claim!", buyerId);
     } else {
-      // Rejection branch
       updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'rejected';
       updates[`accountPosts/${postId}/status`] = 'holding';
       updates[`accountPosts/${postId}/conflict`] = true;
@@ -1228,11 +1239,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postSnap = await get(postRef);
     const postData = postSnap.val();
     if (!postData) return;
-    const updates: any = { adminMessage: message, sellerReported: true, conflict: false, buyerReported: false, buyerReportedAt: null, claimants: null };
-    if (action === 'delete') { updates.status = 'rejected'; updates.hiddenFromMarket = true; updates.sold = false; }
-    else { updates.status = action; updates.hiddenFromMarket = false; }
+    
+    const updates: any = { 
+      adminMessage: message, 
+      sellerReported: true, 
+      conflict: false, 
+      buyerReported: false, 
+      buyerReportedAt: null, 
+      claimants: null 
+    };
+
+    if (action === 'delete') { 
+      updates.status = 'rejected'; 
+      updates.hiddenFromMarket = true; 
+      updates.sold = false; 
+    } else { 
+      updates.status = action; 
+      updates.hiddenFromMarket = false; 
+    }
+
     await update(postRef, updates);
-    broadcastNotification("Admin Action Taken 👮", message, postData.uid);
+    broadcastNotification("Security Penalty Enforcement 👮", message, postData.uid);
     toast({ title: `Action "${action}" Applied` });
   };
 
