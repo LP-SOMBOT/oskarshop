@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -7,7 +6,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCircle, Smartphone, Gamepad2, Loader2, Sparkles, Camera } from 'lucide-react';
+import { UserCircle, Smartphone, Loader2, Sparkles, Camera } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { uploadToImgbb } from '@/lib/imgbb';
@@ -27,7 +26,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
   const [formData, setFormData] = useState({
     name: "",
     phoneNumber: "",
-    gameUid: "",
     gameName: "",
     photoURL: ""
   });
@@ -43,13 +41,12 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
       }
 
       // Check for missing mandatory info
-      const isMissingInfo = !userProfile?.phoneNumber || !userProfile?.gameUid || !userProfile?.name;
+      const isMissingInfo = !userProfile?.phoneNumber || !userProfile?.name;
       
       if (isMissingInfo) {
         setFormData({
           name: userProfile?.name || user?.displayName || "",
           phoneNumber: userProfile?.phoneNumber || "",
-          gameUid: userProfile?.gameUid || "",
           gameName: userProfile?.gameName || "",
           photoURL: userProfile?.photoURL || user?.photoURL || ""
         });
@@ -82,7 +79,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phoneNumber || !formData.gameUid) {
+    if (!formData.name || !formData.phoneNumber) {
       toast({ 
         variant: "destructive", 
         title: "Missing Information", 
@@ -165,14 +162,14 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                    accept="image/*" 
                    onChange={handlePhotoUpload} 
                  />
-                 <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mt-2">Tap to upload photo</p>
+                 <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mt-2">Taabo si aad u bedeshid Sawirka</p>
               </div>
 
               {/* Tighter Form Fields to prevent scrolling */}
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
-                    <UserCircle size={10} /> Full Name
+                    <UserCircle size={10} /> Magacaaga
                   </Label>
                   <Input 
                     placeholder="Enter your name" 
@@ -196,19 +193,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                     required
                   />
                 </div>
-
-                <div className="space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
-                    <Gamepad2 size={10} /> Game ID / UID
-                  </Label>
-                  <Input 
-                    placeholder="e.g. 982172" 
-                    value={formData.gameUid} 
-                    onChange={e => setFormData({...formData, gameUid: e.target.value.replace(/\D/g, '')})}
-                    className="h-10 sm:h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
-                    required
-                  />
-                </div>
               </div>
 
               <Button 
@@ -216,7 +200,7 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                 disabled={isSaving}
                 className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm sm:text-base shadow-xl shadow-primary/20 transition-all active:scale-95 uppercase tracking-widest"
               >
-                {isSaving ? <Loader2 className="animate-spin" /> : "Save & Access"}
+                {isSaving ? <Loader2 className="animate-spin" /> : "Save"}
               </Button>
               
               <p className="text-[8px] text-center text-slate-300 dark:text-slate-700 uppercase tracking-widest leading-relaxed">
