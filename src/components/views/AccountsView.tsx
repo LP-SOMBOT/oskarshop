@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -181,7 +180,7 @@ export default function AccountsView() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <button onClick={() => setIsActivityModalOpen(true)} className="hidden md:flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-sm text-slate-400 hover:text-primary transition-colors border border-gray-50 dark:border-white/5">
+              <button onClick={() => setIsActivityModalOpen(true)} className="hidden md:flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-sm text-slate-400 hover:text-primary transition-colors border border-gray-100 dark:border-white/5">
                  <Activity className="w-7 h-7 lg:w-8 lg:h-8" />
               </button>
            </div>
@@ -289,7 +288,7 @@ export default function AccountsView() {
 }
 
 function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: any, onCancel: () => void, onComplete: () => void }) {
-  const { postAccount, updateAccountPost, storeSettings, user, enhancedUser } = useApp();
+  const { postAccount, updateAccountPost, storeSettings, user, enhancedUser, t } = useApp();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasTriggeredUssd, setHasTriggeredUssd] = useState(false);
@@ -433,7 +432,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   {/* Hero Gallery Section */}
                   <div className="space-y-4">
-                     <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Account Gallery (First image is thumbnail)</p>
+                     <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">{t('account_gallery')}</p>
                      
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
                         {formData.imageUrls.map((url, idx) => (
@@ -809,7 +808,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5">
            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-none rounded-lg px-2.5 md:px-4 py-1 md:py-2 text-[8px] md:text-[11px] font-black shadow-sm shrink-0">Evo: {post.evoWeapons || 0}</Badge>
-           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-none rounded-lg px-2.5 md:px-4 py-1 md:py-2 text-[8px] md:text-[11px] font-black shadow-sm shrink-0">Emotes: {post.emotes || 0}</Badge>
+           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-amber-400 border-none rounded-lg px-2.5 md:px-4 py-1 md:py-2 text-[8px] md:text-[11px] font-black shadow-sm shrink-0">Emotes: {post.emotes || 0}</Badge>
         </div>
 
         <div className="flex items-center justify-between pt-3 md:pt-6 border-t border-slate-50 dark:border-white/5 mt-auto">

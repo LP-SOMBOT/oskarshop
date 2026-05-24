@@ -409,7 +409,8 @@ const translations: Record<Language, Record<string, string>> = {
     forgot_password: "Forgot Password?",
     reset_password: "Reset Password",
     reset_email_sent: "Check your email for the reset link.",
-    enter_reset_email: "Enter your email to receive a password reset link."
+    enter_reset_email: "Enter your email to receive a password reset link.",
+    account_gallery: "Account Gallery (First image is thumbnail)"
   },
   so: {
     home: "Hoyga",
@@ -471,7 +472,8 @@ const translations: Record<Language, Record<string, string>> = {
     forgot_password: "Ma ilaawday password-ka?",
     reset_password: "Bedel Password-ka",
     reset_email_sent: "Ka hubi email-kaaga linkiga bedelaada.",
-    enter_reset_email: "Geli email-kaaga si lagugu soo diro linkiga bedelaada."
+    enter_reset_email: "Geli email-kaaga si lagugu soo diro linkiga bedelaada.",
+    account_gallery: "Soo Geli dhamaan Sawirada accounti-ga"
   }
 };
 
@@ -1130,7 +1132,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const respondToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
+  const reportToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
     if (!rtdb || !user) return;
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
@@ -1173,6 +1175,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await broadcastAdminNotification("Conflict Detected! ⚠️", `Seller rejected buyer claim for account #${postId.toUpperCase()}.`);
     }
     await update(ref(rtdb), updates);
+  };
+
+  const respondToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
+    return reportToSaleReport(postId, confirmed, buyerId);
   };
 
   const enforceAccountAction = async (postId: string, action: 'delete' | 'holding' | 'approved' | 'pending', message: string) => {
