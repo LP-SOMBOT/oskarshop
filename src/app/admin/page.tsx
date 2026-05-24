@@ -1943,7 +1943,7 @@ export default function AdminPage() {
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Unit</Label>
                     <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
-                       <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                       <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                           <SelectItem value="days" className="p-3 font-bold uppercase text-xs uppercase">Days</SelectItem>
                           <SelectItem value="hours" className="p-3 font-bold uppercase text-xs uppercase">Hours</SelectItem>
@@ -2097,6 +2097,13 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
     window.open(`https://wa.me/${num}`, '_blank');
   };
 
+  const handleCopyPlayerId = () => {
+    if (order.gameDetails?.playerID) {
+      navigator.clipboard.writeText(order.gameDetails.playerID);
+      toast({ title: "Player ID Copied" });
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
        <div className="flex items-center justify-between px-2">
@@ -2142,10 +2149,39 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-             <InsightStat label="Player ID" value={order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary />
+             <InsightStat 
+                label="Player ID" 
+                value={order.gameDetails?.playerID || "N/A"} 
+                icon={Gamepad2} 
+                isPrimary 
+                action={
+                  order.gameDetails?.playerID && (
+                    <button 
+                      onClick={handleCopyPlayerId}
+                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  )
+                }
+             />
              <InsightStat label="In-Game Name" value={order.gameDetails?.playerName || "N/A"} icon={User} />
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
-             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} />
+             <InsightStat 
+                label="WhatsApp" 
+                value={order.gameDetails?.whatsappNumber || "N/A"} 
+                icon={MessageCircle} 
+                action={
+                  order.gameDetails?.whatsappNumber && (
+                    <button 
+                      onClick={handleWhatsApp}
+                      className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"
+                    >
+                      <MessageCircle size={14} />
+                    </button>
+                  )
+                }
+             />
              <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
@@ -2649,17 +2685,20 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
 }
 
-function InsightStat({ label, value, icon: Icon, isPrimary }: any) {
+function InsightStat({ label, value, icon: Icon, isPrimary, action }: any) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 group/stat">
        <div className="flex items-center gap-2 text-muted-foreground">
           <Icon size={14} className="opacity-40" />
           <p className="text-[9px] font-black uppercase tracking-[0.2em]">{label}</p>
        </div>
-       <p className={cn(
-         "text-sm md:text-xl font-bold truncate",
-         isPrimary ? "text-primary" : "text-slate-900 dark:text-white"
-       )}>{value}</p>
+       <div className="flex items-center gap-2">
+         <p className={cn(
+           "text-sm md:text-xl font-bold truncate min-w-0 flex-1",
+           isPrimary ? "text-primary" : "text-slate-900 dark:text-white"
+         )} title={value}>{value}</p>
+         {action && <div className="shrink-0">{action}</div>}
+       </div>
     </div>
   );
 }
