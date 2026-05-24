@@ -479,7 +479,7 @@ const translations: Record<Language, Record<string, string>> = {
     platform: "Platform",
     final_amount: "Wadarta Guud",
     verifying_payment: "Lacagta ayaa la hubinayaa...",
-    delivering_diamonds: "Dheemanka ayaa laguu soo dirayaa...",
+    delivering_diamonds: "Dalabkaaga waala hubinooyaa",
     delivered_success: "Si guul ah ayaa loo gudbiyey!",
     order_cancelled: "Dalabka waa la kansalay",
     admin_message: "Fariinta Admin-ka",
