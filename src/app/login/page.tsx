@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, Key, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import emailjs from '@emailjs/browser';
 
@@ -28,7 +28,7 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { login, user, isGlobalLoading, authError, t, storeSettings } = useApp();
+  const { login, user, isGlobalLoading, authError, storeSettings } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -194,12 +194,6 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="text-center pt-4 pb-6 space-y-4">
-                  <div className="flex items-center gap-4 py-2">
-                    <div className="h-px flex-1 bg-gray-100" />
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ma haysatid Account?</span>
-                    <div className="h-px flex-1 bg-gray-100" />
-                  </div>
-                  
                   <Link href="/signup" className="block w-full">
                     <Button 
                       type="button" 
