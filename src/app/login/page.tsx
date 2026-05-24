@@ -189,14 +189,26 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                <Button type="submit" disabled={isSubmitting || isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95">
+                <Button type="submit" disabled={isSubmitting || isGlobalLoading} className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase">
                   {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SOO GAL"}
                 </Button>
 
-                <div className="text-center pt-2 pb-6">
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                    Account ma haysatid? <Link href="/signup" className="text-[#7C3AED] font-bold hover:underline ml-1">Sameey account</Link>
-                  </p>
+                <div className="text-center pt-4 pb-6 space-y-4">
+                  <div className="flex items-center gap-4 py-2">
+                    <div className="h-px flex-1 bg-gray-100" />
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ma haysatid Account?</span>
+                    <div className="h-px flex-1 bg-gray-100" />
+                  </div>
+                  
+                  <Link href="/signup" className="block w-full">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full h-14 sm:h-16 rounded-full text-base sm:text-lg font-bold border-2 border-[#7C3AED]/10 text-[#7C3AED] hover:bg-[#7C3AED]/5 hover:border-[#7C3AED]/20 transition-all active:scale-95"
+                    >
+                      SAMEEY ACCOUNT
+                    </Button>
+                  </Link>
                 </div>
               </form>
             </div>
