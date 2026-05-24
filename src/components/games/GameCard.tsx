@@ -69,26 +69,14 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
         </div>
         
         <div className="flex flex-col mt-auto bg-slate-50 dark:bg-slate-800/50 p-2 md:p-4 rounded-xl border border-slate-100 dark:border-white/5 shadow-inner">
-          {hasValidDiscount ? (
-            <div className="space-y-1">
-               <div className="flex items-center gap-2">
-                 <span className="text-[10px] md:text-xs text-muted-foreground line-through font-bold opacity-40">Was ${numPrice.toFixed(2)}</span>
-                 <div className="h-3 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
-                 <span className="text-[8px] md:text-[10px] font-black text-red-500 uppercase tracking-widest">PROMO</span>
-               </div>
-               <div className="flex items-center justify-between">
-                  <span className="text-xl md:text-3xl font-headline font-bold text-primary tracking-tighter">${numDiscounted.toFixed(2)}</span>
-                  <div className="p-1 bg-primary/10 rounded-lg text-primary animate-pulse">
-                    <Tag size={12} className="md:w-4 md:h-4" />
-                  </div>
-               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-               <span className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">${numPrice.toFixed(2)}</span>
-               <span className="text-[8px] md:text-[10px] font-black text-muted-foreground uppercase opacity-40 tracking-widest">Standard</span>
-            </div>
-          )}
+          <div className="flex items-center justify-center">
+             <span className={cn(
+               "text-xl md:text-3xl font-headline font-bold tracking-tighter",
+               hasValidDiscount ? "text-primary" : "text-slate-900 dark:text-white"
+             )}>
+               ${displayPrice.toFixed(2)}
+             </span>
+          </div>
         </div>
       </CardContent>
       
