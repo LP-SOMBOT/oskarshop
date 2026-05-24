@@ -200,11 +200,32 @@ function CheckoutAccountContent() {
                 </div>
              </div>
 
-             <div className="space-y-2 sm:space-y-3 px-2">
+             <div className="space-y-4 sm:space-y-6 px-2">
                 <h2 className="text-2xl sm:text-4xl font-headline font-bold">Kala hadal WhatsApp!</h2>
-                <p className="text-xs sm:text-base text-muted-foreground font-medium max-w-xs sm:max-w-sm mx-auto leading-relaxed">
-                  Fadlan kala hadal seller-ka WhatsApp-ka. Markaad soo laabato, fadlan noo sheeg hadaad iibsatay si account-ka laguu xajiyo.
-                </p>
+                <div className="space-y-4">
+                  <p className="text-xs sm:text-base text-muted-foreground font-medium max-w-xs sm:max-w-sm mx-auto leading-relaxed">
+                    Fadlan number kaan <span className="font-bold text-primary">{post?.phone}</span> Kala hadal, ama Riix halkaan:
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-full border-primary/20 text-primary font-bold h-11 px-8 mx-auto gap-2 shadow-sm"
+                    onClick={() => {
+                      if (!post) return;
+                      let msg = "";
+                      if (post.gameType === 'bloodstrike') {
+                        msg = `Asc, waxaan rabaa inaan iibsado account-kaaga Blood Strike Soo dhigte website ka OskarShop. Level: ${post.level}, Qiimaha: $${post.price}, Diyaar miyaa tahay?`;
+                      } else {
+                        msg = `Asc, waxaan rabaa inaan iibsado account-kaaga Free Fire Soo dhigte website ka OskarShop. Level: ${post.level}, Qiimaha: $${post.price}, Diyaar miyaa tahay?`;
+                      }
+                      const encoded = encodeURIComponent(msg);
+                      const formattedPhone = formatWhatsAppNumber(post.phone);
+                      window.open(`https://wa.me/${formattedPhone}?text=${encoded}`, '_blank');
+                    }}
+                  >
+                    <MessageCircle size={18} /> LA XARIIR
+                  </Button>
+                </div>
              </div>
 
              {outcome === 'bought' || hasBought ? (
