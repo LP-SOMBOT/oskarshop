@@ -440,7 +440,9 @@ const translations: Record<Language, Record<string, string>> = {
     pay_listing_fee_title: "Pay Listing Fee",
     pay_listing_fee_desc: "Please pay the account listing fee to proceed.",
     premium_assets: "Premium Assets",
-    verify_assets_desc: "Confirm the account features"
+    verify_assets_desc: "Confirm the account features",
+    contact_number: "Contact Number",
+    phone_digits_error: "Contact number must be at least 9 digits."
   },
   so: {
     home: "Hoyga",
@@ -517,7 +519,9 @@ const translations: Record<Language, Record<string, string>> = {
     pay_listing_fee_title: "Bixi Qarashka",
     pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa",
     premium_assets: "Waxyabaha account tiga yaalo",
-    verify_assets_desc: "U geli Si saxan iskana hubi"
+    verify_assets_desc: "U geli Si saxan iskana hubi",
+    contact_number: "Lambarka xiriirka",
+    phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar."
   }
 };
 

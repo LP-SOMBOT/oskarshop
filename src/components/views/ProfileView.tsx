@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -22,7 +23,8 @@ import {
   Sun,
   Globe,
   ScrollText,
-  ShieldCheck as AccountIcon
+  ShieldCheck as AccountIcon,
+  Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,15 +46,32 @@ export default function ProfileView() {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [editData, setEditData] = useState({ name: "", gameName: "", gameUid: "", photoURL: "" });
+  const [editData, setEditData] = useState({ name: "", phoneNumber: "", gameUid: "", photoURL: "" });
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
-    if (user) setEditData({ name: user.name || "", gameName: user.gameName || "", gameUid: user.gameUid || "", photoURL: user.photoURL || "" });
+    if (user) setEditData({ 
+      name: user.name || "", 
+      phoneNumber: user.phoneNumber || "", 
+      gameUid: user.gameUid || "", 
+      photoURL: user.photoURL || "" 
+    });
   }, [user, loading, router]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    const cleanPhone = editData.phoneNumber.replace(/\D/g, '');
+    if (cleanPhone.length < 9) {
+      toast({ 
+        title: language === 'so' ? "Lambar khaldan" : "Invalid Number",
+        description: t('phone_digits_error'), 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setIsSaving(true);
     try { await updateUserProfile(editData); setIsEditModalOpen(false); } finally { setIsSaving(false); }
   };
@@ -186,9 +205,16 @@ export default function ProfileView() {
                   </div>
                </div>
                <div className="space-y-4 md:space-y-6">
-                  <ProfileInput label="Magacaaga" value={editData.name} onChange={val => setEditData({...editData, name: val})} />
-                  <ProfileInput label="In-Game Alias" value={editData.gameName} onChange={val => setEditData({...editData, gameName: val})} />
-                  <ProfileInput label="Game UID / Player ID" value={editData.gameUid} type="tel" inputMode="numeric" onChange={val => setEditData({...editData, gameUid: val.replace(/\D/g, '')})} />
+                  <ProfileInput label="Magacaaga" value={editData.name} onChange={val => setEditData({...editData, name: val})} required />
+                  <ProfileInput 
+                    label={t('contact_number')} 
+                    value={editData.phoneNumber} 
+                    type="tel" 
+                    inputMode="numeric" 
+                    onChange={val => setEditData({...editData, phoneNumber: val.replace(/\D/g, '')})} 
+                    required
+                  />
+                  <ProfileInput label="Game UID / Player ID" value={editData.gameUid} type="tel" inputMode="numeric" onChange={val => setEditData({...editData, gameUid: val.replace(/\D/g, '')})} required />
                </div>
                <Button type="submit" disabled={isSaving} className="w-full h-12 md:h-20 rounded-xl md:rounded-[2.5rem] font-black text-xs md:text-xl shadow-2xl shadow-primary/20 active:scale-95 transition-transform uppercase tracking-widest">
                  {isSaving ? <Loader2 className="animate-spin w-5 h-5 md:w-8 md:h-8" /> : "Apply Profile Updates"}
@@ -234,7 +260,7 @@ function ProfileOption({ icon: Icon, label, onClick, variant, subLabel }: { icon
   );
 }
 
-function ProfileInput({ label, value, onChange, type = "text", inputMode }: { label: string, value: string, onChange: (val: string) => void, type?: string, inputMode?: any }) {
+function ProfileInput({ label, value, onChange, type = "text", inputMode, required }: { label: string, value: string, onChange: (val: string) => void, type?: string, inputMode?: any, required?: boolean }) {
   return (
     <div className="space-y-1.5 md:space-y-2">
       <Label className="text-[10px] md:text-xs font-black uppercase tracking-[0.1em] md:tracking-[0.3em] text-muted-foreground ml-3 md:ml-6">{label}</Label>
@@ -242,6 +268,7 @@ function ProfileInput({ label, value, onChange, type = "text", inputMode }: { la
         type={type} 
         inputMode={inputMode} 
         value={value} 
+        required={required}
         onChange={e => onChange(e.target.value)} 
         className="h-10 md:h-16 lg:h-20 rounded-lg md:rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-8 font-bold text-xs md:text-lg lg:text-2xl focus-visible:ring-primary shadow-inner" 
       />
