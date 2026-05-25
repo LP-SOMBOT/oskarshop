@@ -14,7 +14,7 @@ import emailjs from '@emailjs/browser';
 
 /**
  * @fileOverview Login Page with Somali language default.
- * Now uses Number and Password.
+ * Now uses Number and Password with mandatory +252 prefix.
  */
 
 export default function LoginPage() {
@@ -43,7 +43,8 @@ export default function LoginPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await login(phone, password);
+      // Prepend fixed country code
+      await login("+252" + phone, password);
     } catch (error: any) {
       console.error("Login Error:", error);
     } finally {
@@ -62,8 +63,8 @@ export default function LoginPage() {
         throw new Error("Adeegga dib u habaynta password-ka si ku meel gaadh ah uma shaqaynayo.");
       }
 
-      // Note: Backend still expects "email" parameter which we synthetic generate
-      const syntheticEmail = `${phone.replace(/\D/g, "")}@oskarshop.app`;
+      // Enforce +252 prefix for synthetic identity
+      const syntheticEmail = `252${phone.replace(/\D/g, "")}@oskarshop.app`;
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,9 +79,6 @@ export default function LoginPage() {
         return;
       }
 
-      // For phone-based auth, we might still send OTP via email if they had one, 
-      // but here we just follow the synthetic pattern. 
-      // In a real app, this would be an SMS.
       toast({ title: "Verification code ready!", description: "Check your alerts." });
       setView('verify');
     } catch (err: any) {
@@ -100,7 +98,7 @@ export default function LoginPage() {
     setServerError(null);
 
     try {
-      const syntheticEmail = `${phone.replace(/\D/g, "")}@oskarshop.app`;
+      const syntheticEmail = `252${phone.replace(/\D/g, "")}@oskarshop.app`;
       const res = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,14 +156,17 @@ export default function LoginPage() {
               <h2 className="text-xl sm:text-3xl font-headline font-bold text-gray-900">Soo gal</h2>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Smartphone className="w-5 h-5" /></div>
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                    <Smartphone className="w-5 h-5 text-[#7C3AED]" />
+                    <span className="font-bold text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                  </div>
                   <Input 
                     type="tel" 
                     placeholder="Numbarkaaga" 
                     required 
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                    className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
                   />
                 </div>
 
@@ -218,14 +219,17 @@ export default function LoginPage() {
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
                 <div className="relative group">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Smartphone className="w-5 h-5" /></div>
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                    <Smartphone className="w-5 h-5 text-[#7C3AED]" />
+                    <span className="font-bold text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                  </div>
                   <Input 
                     type="tel" 
                     placeholder="Numbarkaaga" 
                     required 
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold transition-all"
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                    className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold transition-all"
                   />
                 </div>
 
@@ -248,7 +252,7 @@ export default function LoginPage() {
                 </div>
                 <h2 className="text-lg sm:text-3xl font-headline font-bold text-gray-900 leading-tight">Xaqiiji Code-ka</h2>
                 <p className="text-[10px] sm:text-base text-gray-500 font-medium leading-relaxed">
-                  Waxaan code-ka u dirnay <span className="font-bold text-[#7C3AED] block sm:inline truncate max-w-full">{phone}</span>
+                  Waxaan code-ka u dirnay <span className="font-bold text-[#7C3AED] block sm:inline truncate max-w-full">+252 {phone}</span>
                 </p>
               </div>
 

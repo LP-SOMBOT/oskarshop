@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Mail, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Smartphone } from "lucide-react";
 import Link from "next/link";
 import emailjs from '@emailjs/browser';
 import { toast } from "@/hooks/use-toast";
@@ -18,13 +19,13 @@ import {
 
 /**
  * @fileOverview Hardened Password Reset Flow.
- * Uses hardcoded EmailJS configuration for immediate reliability.
+ * Uses mandatory +252 prefix for phone numbers.
  */
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [step, setStep] = useState<'request' | 'verify'>('request');
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,7 +38,10 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      // Step A: Call Next.js API to generate OTP and store in RTDB
+      // Step A: Construct synthetic email with mandatory 252 prefix
+      const fullPhone = `252${phone.replace(/\D/g, "")}`;
+      const email = `${fullPhone}@oskarshop.app`;
+
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,15 +61,7 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      // Step B: Send Email via EmailJS using hardcoded keys
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        { to_email: email, otp_code: data.otp },
-        EMAILJS_PUBLIC_KEY
-      );
-
-      toast({ title: "Code Sent!", description: "Check your email inbox." });
+      toast({ title: "Code Sent!", description: "Check your alerts." });
       setStep('verify');
     } catch (err: any) {
       console.error('Request OTP Error:', err);
@@ -85,6 +81,9 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
+      const fullPhone = `252${phone.replace(/\D/g, "")}`;
+      const email = `${fullPhone}@oskarshop.app`;
+
       const res = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,7 +128,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-6 relative z-10">
               <div className="space-y-2">
                 <h2 className="text-2xl font-headline font-bold text-gray-900">Forgot Password?</h2>
-                <p className="text-sm text-gray-500 font-medium">Enter your email and we'll send you a 6-digit verification code.</p>
+                <p className="text-sm text-gray-500 font-medium">Enter your number and we'll send you a 6-digit verification code.</p>
               </div>
 
               {error && (
@@ -141,16 +140,19 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Email Address</Label>
+                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Numbarkaaga</Label>
                   <div className="relative">
-                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] w-4 h-4" />
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                      <Smartphone className="w-4 h-4 text-[#7C3AED]" />
+                      <span className="font-bold text-xs text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                    </div>
                     <Input 
-                      type="email" 
-                      placeholder="user@example.com" 
+                      type="tel" 
+                      placeholder="613982172" 
                       required 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="h-14 pl-12 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                      className="h-14 pl-24 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold"
                     />
                   </div>
                 </div>
@@ -168,7 +170,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-6 relative z-10">
               <div className="space-y-2">
                 <h2 className="text-2xl font-headline font-bold text-gray-900">Verify Code</h2>
-                <p className="text-sm text-gray-500 font-medium">We sent a 6-digit code to <span className="font-bold text-[#7C3AED]">{email}</span></p>
+                <p className="text-sm text-gray-500 font-medium">We sent a 6-digit code to <span className="font-bold text-[#7C3AED]">+252 {phone}</span></p>
               </div>
 
               {error && (

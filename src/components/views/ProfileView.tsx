@@ -49,12 +49,19 @@ export default function ProfileView() {
   const [editData, setEditData] = useState({ name: "", phoneNumber: "", photoURL: "" });
 
   useEffect(() => {
-    if (!loading && !user) router.push('/login');
-    if (user) setEditData({ 
-      name: user.name || "", 
-      phoneNumber: user.phoneNumber || "", 
-      photoURL: user.photoURL || "" 
-    });
+    if (!loading && !user) {
+      router.push('/login');
+      return;
+    }
+    if (user) {
+      const rawPhone = user.phoneNumber || "";
+      const cleanPhone = rawPhone.replace("+252", "").replace(/\D/g, "");
+      setEditData({ 
+        name: user.name || "", 
+        phoneNumber: cleanPhone, 
+        photoURL: user.photoURL || "" 
+      });
+    }
   }, [user, loading, router]);
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -72,7 +79,14 @@ export default function ProfileView() {
     }
 
     setIsSaving(true);
-    try { await updateUserProfile(editData); setIsEditModalOpen(false); } finally { setIsSaving(false); }
+    try { 
+      // Prepend country code prefix
+      await updateUserProfile({
+        ...editData,
+        phoneNumber: "+252" + cleanPhone
+      }); 
+      setIsEditModalOpen(false); 
+    } finally { setIsSaving(false); }
   };
 
   const handlePhotoUpload = async (file: File) => {
@@ -205,14 +219,25 @@ export default function ProfileView() {
                </div>
                <div className="space-y-4 md:space-y-6">
                   <ProfileInput label="Magacaaga" value={editData.name} onChange={val => setEditData({...editData, name: val})} required />
-                  <ProfileInput 
-                    label={t('contact_number')} 
-                    value={editData.phoneNumber} 
-                    type="tel" 
-                    inputMode="numeric" 
-                    onChange={val => setEditData({...editData, phoneNumber: val.replace(/\D/g, '')})} 
-                    required
-                  />
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label className="text-[10px] md:text-xs font-black uppercase tracking-[0.1em] md:tracking-[0.3em] text-muted-foreground ml-3 md:ml-6">
+                      {language === 'so' ? 'Whatsapp number kaaga' : 'WhatsApp Number'}
+                    </Label>
+                    <div className="relative">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                        <Smartphone className="w-4 h-4 md:w-6 md:h-6 text-[#7C3AED]" />
+                        <span className="font-bold text-xs md:text-lg text-gray-400 border-r border-gray-200 pr-3">+252</span>
+                      </div>
+                      <Input 
+                        type="tel" 
+                        inputMode="numeric" 
+                        value={editData.phoneNumber} 
+                        onChange={val => setEditData({...editData, phoneNumber: val.target.value.replace(/\D/g, '').substring(0, 9)})} 
+                        required
+                        className="h-10 md:h-16 lg:h-20 rounded-lg md:rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-none pl-28 md:pl-44 pr-8 font-bold text-xs md:text-lg lg:text-2xl focus-visible:ring-primary shadow-inner" 
+                      />
+                    </div>
+                  </div>
                </div>
                <Button type="submit" disabled={isSaving} className="w-full h-12 md:h-20 rounded-xl md:rounded-[2.5rem] font-black text-xs md:text-xl shadow-2xl shadow-primary/20 active:scale-95 transition-transform uppercase tracking-widest">
                  {isSaving ? <Loader2 className="animate-spin w-5 h-5 md:w-8 md:h-8" /> : t('save')}

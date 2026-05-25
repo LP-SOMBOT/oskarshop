@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
  * @fileOverview Signup Page with Somali language default.
- * Now simplified to Name, Phone Number, and Password.
+ * Now simplified to Name, Phone Number, and Password with mandatory +252 prefix.
  */
 
 export default function SignupPage() {
@@ -57,7 +57,8 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
     try {
-      await signup(phone, password, name);
+      // Prepend country code
+      await signup("+252" + phone, password, name);
       toast({
         title: "Account-ka waa la sameeyey!",
         description: "Ku soo dhawoow Oskar Shop.",
@@ -122,8 +123,9 @@ export default function SignupPage() {
             </div>
 
             <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
-                <Smartphone className="w-5 h-5" />
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                <Smartphone className="w-5 h-5 text-[#7C3AED]" />
+                <span className="font-bold text-gray-400 border-r border-gray-200 pr-2">+252</span>
               </div>
               <Input 
                 id="phone" 
@@ -131,8 +133,8 @@ export default function SignupPage() {
                 placeholder="Numbarkaaga" 
                 required 
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
             </div>
 

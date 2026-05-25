@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -16,6 +17,7 @@ import { uploadToImgbb } from '@/lib/imgbb';
  * 
  * Ensures that all users complete their mandatory profile details before accessing the app.
  * Optimized for mobile with an ultra-compact layout to prevent scrolling on all screens.
+ * Enforces +252 prefix for WhatsApp numbers.
  */
 export default function ProfileCompletionGuard({ children }: { children: React.ReactNode }) {
   const { user, userProfile, isInitialLoading, loading, updateUserProfile } = useApp();
@@ -44,9 +46,12 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
       const isMissingInfo = !userProfile?.phoneNumber || !userProfile?.name;
       
       if (isMissingInfo) {
+        const rawPhone = userProfile?.phoneNumber || "";
+        const cleanPhone = rawPhone.replace("+252", "").replace(/\D/g, "");
+        
         setFormData({
           name: userProfile?.name || user?.displayName || "",
-          phoneNumber: userProfile?.phoneNumber || "",
+          phoneNumber: cleanPhone,
           gameName: userProfile?.gameName || "",
           photoURL: userProfile?.photoURL || user?.photoURL || ""
         });
@@ -88,9 +93,18 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
       return;
     }
 
+    if (formData.phoneNumber.length < 9) {
+      toast({ variant: "destructive", title: "Invalid Number", description: "WhatsApp number must be at least 9 digits." });
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updateUserProfile(formData);
+      // Prepend fixed country code
+      await updateUserProfile({
+        ...formData,
+        phoneNumber: "+252" + formData.phoneNumber.replace(/\D/g, "")
+      });
       if (user) {
         localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
       }
@@ -184,14 +198,19 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
                     <Smartphone size={10} /> WhatsApp No
                   </Label>
-                  <Input 
-                    type="tel"
-                    placeholder="e.g. 613982172" 
-                    value={formData.phoneNumber} 
-                    onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
-                    className="h-10 sm:h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
-                    required
-                  />
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                      <span className="font-bold text-[10px] text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                    </div>
+                    <Input 
+                      type="tel"
+                      placeholder="613982172" 
+                      value={formData.phoneNumber} 
+                      onChange={(e) => setFormData({...formData, phoneNumber: e.target.value.replace(/\D/g, '').substring(0, 9)})}
+                      className="h-10 sm:h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 

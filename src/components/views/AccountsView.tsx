@@ -307,7 +307,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     platform: editingPost?.platform || 'Google',
     level: editingPost?.level?.toString() || '',
     price: editingPost?.price?.toString() || '',
-    phone: editingPost?.phone || '',
+    phone: editingPost?.phone ? editingPost.phone.replace("+252", "") : '',
     imageUrls: editingPost?.imageUrls || (editingPost?.thumbnailUrl ? [editingPost.thumbnailUrl] : []),
     evoWeapons: editingPost?.evoWeapons?.toString() || '',
     totalWeapons: editingPost?.totalWeapons?.toString() || '',
@@ -321,7 +321,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     accountId: editingPost?.accountId || '',
     accountName: editingPost?.accountName || '',
     internalWeapons: editingPost?.internalWeapons?.toString() || '',
-    senderNumber: editingPost?.senderNumber || ''
+    senderNumber: editingPost?.senderNumber ? editingPost.senderNumber.replace("+252", "") : ''
   });
 
   const paymentMethods = useMemo(() => {
@@ -397,6 +397,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     try {
       const payload = {
         ...formData,
+        phone: "+252" + formData.phone.replace(/\D/g, ""),
+        senderNumber: "+252" + formData.senderNumber.replace(/\D/g, ""),
         thumbnailUrl: formData.imageUrls[0] || '', 
         level: parseInt(formData.level || '0'),
         price: parseFloat(formData.price || '0'),
@@ -624,8 +626,40 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            </SelectContent>
                         </Select>
                      </FormGroup>
-                     <FormInput label={t('whatsapp_number_support')} value={formData.phone} type="tel" onChange={v => setFormData({...formData, phone: v.replace(/\D/g, '')})} placeholder="e.g. 613982172" />
-                     <FormInput label={t('sender_number_label')} value={formData.senderNumber} type="tel" onChange={v => setFormData({...formData, senderNumber: v.replace(/\D/g, '')})} placeholder="e.g. 613982172" icon={CreditCard} />
+                     <div className="space-y-2 md:space-y-3">
+                        <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
+                           {t('whatsapp_number_support')}
+                        </label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                            <span className="font-bold text-[10px] md:text-sm text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                          </div>
+                          <Input 
+                            type="tel" 
+                            placeholder="613982172" 
+                            value={formData.phone} 
+                            onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
+                            className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none pl-16 md:pl-24 pr-4 bg-slate-50 dark:bg-slate-800 font-bold text-xs md:text-lg shadow-inner focus:ring-2 focus:ring-primary" 
+                          />
+                        </div>
+                     </div>
+                     <div className="space-y-2 md:space-y-3">
+                        <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
+                           <CreditCard size={12} className="text-primary/60" /> {t('sender_number_label')}
+                        </label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                            <span className="font-bold text-[10px] md:text-sm text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                          </div>
+                          <Input 
+                            type="tel" 
+                            placeholder="613982172" 
+                            value={formData.senderNumber} 
+                            onChange={e => setFormData({...formData, senderNumber: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
+                            className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none pl-16 md:pl-24 pr-4 bg-slate-50 dark:bg-slate-800 font-bold text-xs md:text-lg shadow-inner focus:ring-2 focus:ring-primary" 
+                          />
+                        </div>
+                     </div>
                   </Card>
 
                   <div className="pt-4 md:pt-10">
