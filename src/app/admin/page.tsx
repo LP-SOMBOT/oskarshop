@@ -845,26 +845,26 @@ export default function AdminPage() {
           )}
 
           {activeView === 'leaderboard' && (
-            <div className="space-y-12 animate-in fade-in duration-700">
-               <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-                  <div className="relative p-6 md:p-12 space-y-12">
+            <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700">
+               <Card className="rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                  <div className="relative p-4 sm:p-8 md:p-12 space-y-8 md:space-y-12">
                      {/* Background Decorative Accent */}
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 bg-slate-50 dark:bg-slate-800/40 p-6 md:p-10 rounded-[2.5rem] border dark:border-white/5">
-                        <div className="flex items-center gap-6">
-                           <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary shadow-inner">
-                              <Trophy size={40} className="md:size-12" />
+                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5">
+                        <div className="flex items-center gap-4 sm:gap-6">
+                           <div className="w-12 h-12 sm:w-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl sm:rounded-3xl flex items-center justify-center text-primary shadow-inner shrink-0">
+                              <Trophy size={28} className="sm:size-10 md:size-12" />
                            </div>
                            <div>
-                              <h3 className="font-headline font-bold text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white">Leaderboard Rewards</h3>
-                              <p className="text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-1">Control active discount incentives</p>
+                              <h3 className="font-headline font-bold text-lg sm:text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white">Leaderboard Rewards</h3>
+                              <p className="text-[9px] sm:text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-0.5 sm:mt-1">Control active discount incentives</p>
                            </div>
                         </div>
                         
-                        <div className="flex flex-col items-center gap-3 bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[200px]">
-                           <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
-                           <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[160px] sm:min-w-[200px]">
+                           <Label className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
+                           <div className="flex items-center gap-3 sm:gap-4">
                               <span className={cn("text-xs font-bold uppercase", leaderboardForm.rewardsActive ? "text-green-500" : "text-slate-400")}>
                                  {leaderboardForm.rewardsActive ? 'Active' : 'Closed'}
                               </span>
@@ -889,13 +889,13 @@ export default function AdminPage() {
                                     setIsSavingStatus(false);
                                   }
                                 }} 
-                                className="scale-125"
+                                className="scale-110 sm:scale-125"
                               />
                            </div>
                         </div>
                      </div>
 
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-10">
                         <RewardControl 
                           rank={1} 
                           value={leaderboardForm.rewards.rank1} 
@@ -2319,33 +2319,33 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
   const desc = rank === 1 ? "Highest tier discount" : rank === 2 ? "Mid tier discount" : "Entry tier discount";
   
   return (
-    <div className="group relative bg-slate-50 dark:bg-slate-800/40 p-6 md:p-10 rounded-[2.5rem] border dark:border-white/5 space-y-6 md:space-y-8 transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-800">
-       <div className="flex items-center gap-5">
+    <div className="group relative bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5 space-y-6 md:space-y-8 transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-800">
+       <div className="flex items-center gap-4 sm:gap-5">
           <div className={cn(
-            "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-4xl shadow-sm border border-white dark:border-white/5",
+            "w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl md:text-4xl shadow-sm border border-white dark:border-white/5 shrink-0",
             rank === 1 ? "bg-yellow-500/10" : rank === 2 ? "bg-slate-300/10" : "bg-amber-600/10"
           )}>
             {icon}
           </div>
-          <div>
-            <span className="block font-headline font-bold text-base md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">{label}</span>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1">{desc}</p>
+          <div className="min-w-0">
+            <span className="block font-headline font-bold text-sm sm:text-base md:text-xl uppercase tracking-tight text-slate-900 dark:text-white truncate">{label}</span>
+            <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-0.5 sm:mt-1 truncate">{desc}</p>
           </div>
        </div>
        
-       <div className="flex bg-white dark:bg-slate-900 p-2 rounded-2xl md:rounded-[1.5rem] shadow-inner border border-slate-100 dark:border-white/5">
+       <div className="flex bg-white dark:bg-slate-900 p-1.5 sm:p-2 rounded-xl sm:rounded-[1.5rem] shadow-inner border border-slate-100 dark:border-white/5">
           <Input 
             type="number" 
             value={value} 
             placeholder="0"
             onChange={(e) => onChange(e.target.value)} 
-            className="flex-1 h-12 md:h-16 border-none bg-transparent font-black px-6 text-xl md:text-3xl focus-visible:ring-0 placeholder:opacity-20" 
+            className="flex-1 h-10 sm:h-12 md:h-16 border-none bg-transparent font-black px-3 sm:px-6 text-lg sm:text-xl md:text-3xl focus-visible:ring-0 placeholder:opacity-20" 
           />
           <Button 
             onClick={onSave} 
-            className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+            className="h-10 sm:h-12 md:h-16 px-4 sm:px-6 md:px-10 rounded-lg sm:rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform text-[10px] sm:text-xs md:text-sm"
           >
-             <Save size={20} /> <span className="hidden lg:inline">Keydi</span>
+             <Save size={16} className="sm:size-5" /> <span className="hidden lg:inline">Keydi</span>
           </Button>
        </div>
     </div>
