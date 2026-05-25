@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useApp } from '@/lib/context';
@@ -266,7 +265,10 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
   }, [post.sold, post.boughtBy, allUsers, post.claimants]);
 
   useEffect(() => {
-    if (!post.expiresAt) return;
+    if (!post.expiresAt || post.sold) {
+      if (post.sold) setTimeLeft("N/A");
+      return;
+    }
     const updateCountdown = () => {
       const now = Date.now();
       const diff = post.expiresAt - now;
@@ -281,7 +283,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
     updateCountdown();
     const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
-  }, [post.expiresAt]);
+  }, [post.expiresAt, post.sold]);
 
   useEffect(() => {
     if (post.sellerSeenDeletionAt) {
@@ -355,7 +357,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t dark:border-white/5">
                   <StatusInfo icon={Calendar} label="Posted" value={post.createdAt ? format(new Date(post.createdAt), 'MMM d') : '...'} />
                   <StatusInfo icon={Star} label="Level" value={post.level || '0'} />
-                  <StatusInfo icon={Clock} label="Expires" value={timeLeft || 'N/A'} color={isExpired ? "text-red-500" : "text-amber-500"} />
+                  <StatusInfo icon={Clock} label="Expires" value={timeLeft || 'N/A'} color={isExpired && !post.sold ? "text-red-500" : "text-amber-500"} />
                   <StatusInfo icon={DollarSign} label="Value" value={`$${post.price || 0}`} color="text-primary" />
                </div>
 
