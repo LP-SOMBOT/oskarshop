@@ -213,7 +213,6 @@ function RankListItem({ user, rank }: { user: UserProfile, rank: number }) {
           </Avatar>
           <div className="min-w-0">
              <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{user.name}</p>
-             <p className="text-[8px] md:text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40 leading-none mt-1">Player Profile</p>
           </div>
        </div>
        <div className="flex flex-col items-end gap-1">
