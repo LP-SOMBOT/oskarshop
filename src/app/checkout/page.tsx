@@ -371,7 +371,7 @@ function CheckoutContent() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
-              <Button variant="ghost" onClick={() => setStep(1)} className="order-2 sm:order-1 flex-1 h-11 md:h-14 rounded-xl md:rounded-2xl gap-2 font-bold dark:text-slate-300 text-xs md:text-base"><ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" /> Back</Button>
+              <Button variant="ghost" onClick={() => setStep(1)} className="order-2 sm:order-1 flex-1 h-11 md:h-14 rounded-xl md:rounded-2xl gap-2 font-bold dark:text-slate-300 text-xs md:text-base"><ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" /> {language === 'so' ? 'Dib U noqo' : 'Back'}</Button>
               <Button onClick={handlePaymentInitiation} disabled={paymentMethods.length === 0} className="order-1 sm:order-2 flex-[2] h-12 md:h-16 rounded-xl md:rounded-2xl text-sm md:text-xl font-bold shadow-xl shadow-primary/20 active:scale-[0.98] transition-all">Ku bixi {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'lacagta'}</Button>
             </div>
           </CardContent>
