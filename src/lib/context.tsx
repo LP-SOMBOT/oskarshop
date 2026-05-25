@@ -501,7 +501,8 @@ const translations: Record<Language, Record<string, string>> = {
     pending: "Pending",
     holding: "Holding",
     rejected: "Rejected",
-    sold: "Sold"
+    sold: "Sold",
+    listing_flagged_fallback: "Listing was flagged by security. Penalty enforcement applied."
   },
   so: {
     home: "Hoyga",
@@ -614,10 +615,10 @@ const translations: Record<Language, Record<string, string>> = {
     finalized_sale_title: "Finalized Sale",
     final_buyer_label: "Final Buyer",
     sold_at_label: "Sold at",
-    admin_response_title: "Admin Response",
-    urgent_notice_label: "Urgent Notice",
-    read_decision_btn: "I have read the decision",
-    auto_delete_prefix: "Auto-Deleting record in:",
+    admin_response_title: "Jawaabta Maamulka",
+    urgent_notice_label: "Ogeysiis Degdeg ah",
+    read_decision_btn: "Waan akhriyay go'aanka",
+    auto_delete_prefix: "Record-ka waxaa si toos ah loo tirtiri doonaa:",
     purchase_claims_title: "Purchase Claims",
     verify_buyer_desc: "Xaqiiji qofka kaa iibsaday account-ka",
     requests_count_label: "Requests",
@@ -633,7 +634,8 @@ const translations: Record<Language, Record<string, string>> = {
     pending: "Wali",
     holding: "Hada lama heli karo",
     rejected: "Lama aqbalin",
-    sold: "Waa la iibiyay"
+    sold: "Waa la iibiyay",
+    listing_flagged_fallback: "Listing-ka waxaa calaamadeeyay nabad-sugidda. Waxaa lagu amray ganaax."
   }
 };
 

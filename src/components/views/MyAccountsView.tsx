@@ -406,7 +406,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                         <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">{t('urgent_notice_label')}</span>
                      </div>
                      <p className="text-xs md:text-lg font-medium leading-relaxed italic text-slate-300 border-l-2 border-red-500/50 pl-4 py-1">
-                        "{post.adminMessage || "Listing was flagged by security. Penalty enforcement applied."}"
+                        "{post.adminMessage || t('listing_flagged_fallback')}"
                      </p>
                      
                      {!post.sellerSeenDeletionAt ? (
