@@ -366,7 +366,7 @@ const LANG_CACHE_KEY = 'oskar_lang_cache';
 const translations: Record<Language, Record<string, string>> = {
   en: {
     home: "Home",
-    games: "Games",
+    games: "Shop",
     accounts: "Accounts",
     orders: "Orders",
     profile: "Profile",
@@ -443,7 +443,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   so: {
     home: "Hoyga",
-    games: "Ciyaaraha",
+    games: "Adeego",
     accounts: "Suuqa",
     orders: "Dalabaadka",
     profile: "Profile",
