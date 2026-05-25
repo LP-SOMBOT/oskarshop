@@ -406,7 +406,7 @@ export default function AdminPage() {
 
   const [leaderboardForm, setLeaderboardForm] = useState({
     rewardsActive: true,
-    rewards: { rank1: "0", rank2: "0", rank3: "0" } as any
+    rewards: { rank1: "", rank2: "", rank3: "" } as any
   });
 
   const [pointAdjustment, setPointAdjustment] = useState("");
@@ -459,9 +459,9 @@ export default function AdminPage() {
       setLeaderboardForm({
         rewardsActive: lb.rewardsActive,
         rewards: {
-          rank1: lb.rewards?.rank1?.toString() || "0",
-          rank2: lb.rewards?.rank2?.toString() || "0",
-          rank3: lb.rewards?.rank3?.toString() || "0",
+          rank1: lb.rewards?.rank1?.toString() || "",
+          rank2: lb.rewards?.rank2?.toString() || "",
+          rank3: lb.rewards?.rank3?.toString() || "",
         }
       });
     }
@@ -846,42 +846,52 @@ export default function AdminPage() {
 
           {activeView === 'leaderboard' && (
             <div className="space-y-12 animate-in fade-in duration-700">
-               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                  <div className="p-6 md:p-10 space-y-10">
-                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b dark:border-white/5 pb-8">
-                        <div className="flex items-center gap-4 text-primary">
-                           <Trophy size={32} />
+               <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                  <div className="relative p-6 md:p-12 space-y-12">
+                     {/* Background Decorative Accent */}
+                     <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
+
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8 bg-slate-50 dark:bg-slate-800/40 p-6 md:p-10 rounded-[2.5rem] border dark:border-white/5">
+                        <div className="flex items-center gap-6">
+                           <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary shadow-inner">
+                              <Trophy size={40} className="md:size-12" />
+                           </div>
                            <div>
-                              <h3 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight">Leaderboard Rewards</h3>
-                              <p className="text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60">Control discount tiers for top players</p>
+                              <h3 className="font-headline font-bold text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white">Leaderboard Rewards</h3>
+                              <p className="text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-1">Control active discount incentives</p>
                            </div>
                         </div>
-                        <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl border dark:border-white/5">
-                           <Label className="font-bold text-sm">Rewards Active</Label>
-                           <Switch 
-                             checked={leaderboardForm.rewardsActive} 
-                             onCheckedChange={async (v) => {
-                               const updatedForm = { ...leaderboardForm, rewardsActive: v };
-                               setLeaderboardForm(updatedForm);
-                               setIsSavingStatus(true);
-                               try {
-                                 // Convert to numbers before saving
-                                 const savePayload = {
-                                   rewardsActive: v,
-                                   rewards: {
-                                     rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
-                                     rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
-                                     rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
-                                   }
-                                 };
-                                 await updateStoreSettings({ leaderboard: savePayload });
-                                 toast({ title: v ? "Rewards Enabled" : "Rewards Disabled" });
-                               } finally {
-                                 setIsSavingStatus(false);
-                               }
-                             }} 
-                             className="scale-110"
-                           />
+                        
+                        <div className="flex flex-col items-center gap-3 bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[200px]">
+                           <Label className="font-black text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
+                           <div className="flex items-center gap-4">
+                              <span className={cn("text-xs font-bold uppercase", leaderboardForm.rewardsActive ? "text-green-500" : "text-slate-400")}>
+                                 {leaderboardForm.rewardsActive ? 'Active' : 'Closed'}
+                              </span>
+                              <Switch 
+                                checked={leaderboardForm.rewardsActive} 
+                                onCheckedChange={async (v) => {
+                                  const updatedForm = { ...leaderboardForm, rewardsActive: v };
+                                  setLeaderboardForm(updatedForm);
+                                  setIsSavingStatus(true);
+                                  try {
+                                    const savePayload = {
+                                      rewardsActive: v,
+                                      rewards: {
+                                        rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
+                                        rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
+                                        rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
+                                      }
+                                    };
+                                    await updateStoreSettings({ leaderboard: savePayload });
+                                    toast({ title: v ? "Rewards Enabled" : "Rewards Disabled" });
+                                  } finally {
+                                    setIsSavingStatus(false);
+                                  }
+                                }} 
+                                className="scale-125"
+                              />
+                           </div>
                         </div>
                      </div>
 
@@ -1965,7 +1975,7 @@ export default function AdminPage() {
                  <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
                     <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
                     <div className="flex items-center gap-2">
-                       <Star className="w-4 h-4 md:w-5 md:h-5 text-amber-500 fill-amber-500" />
+                       <Star className="w-4 h-4 md:size-5 text-amber-500 fill-amber-500" />
                        <p className="text-2xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
                     </div>
                  </div>
@@ -2306,22 +2316,36 @@ export default function AdminPage() {
 function RewardControl({ rank, value, onChange, onSave }: { rank: number, value: string, onChange: (v: string) => void, onSave: () => void }) {
   const icon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
   const label = rank === 1 ? "Top 1 Reward (%)" : rank === 2 ? "Top 2 Reward (%)" : "Top 3 Reward (%)";
+  const desc = rank === 1 ? "Highest tier discount" : rank === 2 ? "Mid tier discount" : "Entry tier discount";
   
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/50 p-6 md:p-8 rounded-[2rem] border dark:border-white/5 space-y-4">
-       <div className="flex items-center gap-3 mb-2">
-          <div className="text-2xl md:text-3xl">{icon}</div>
-          <span className="font-bold text-sm md:text-base">{label}</span>
+    <div className="group relative bg-slate-50 dark:bg-slate-800/40 p-6 md:p-10 rounded-[2.5rem] border dark:border-white/5 space-y-6 md:space-y-8 transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-800">
+       <div className="flex items-center gap-5">
+          <div className={cn(
+            "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-4xl shadow-sm border border-white dark:border-white/5",
+            rank === 1 ? "bg-yellow-500/10" : rank === 2 ? "bg-slate-300/10" : "bg-amber-600/10"
+          )}>
+            {icon}
+          </div>
+          <div>
+            <span className="block font-headline font-bold text-base md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">{label}</span>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1">{desc}</p>
+          </div>
        </div>
-       <div className="flex gap-2">
+       
+       <div className="flex bg-white dark:bg-slate-900 p-2 rounded-2xl md:rounded-[1.5rem] shadow-inner border border-slate-100 dark:border-white/5">
           <Input 
             type="number" 
             value={value} 
+            placeholder="0"
             onChange={(e) => onChange(e.target.value)} 
-            className="h-12 md:h-14 rounded-xl md:rounded-2xl border-none bg-white dark:bg-slate-900 font-bold px-4 md:px-6 shadow-inner text-base md:text-lg focus:ring-2 focus:ring-primary" 
+            className="flex-1 h-12 md:h-16 border-none bg-transparent font-black px-6 text-xl md:text-3xl focus-visible:ring-0 placeholder:opacity-20" 
           />
-          <Button onClick={onSave} className="h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary">
-             <Save size={18} /> <span className="hidden sm:inline">Keydi</span>
+          <Button 
+            onClick={onSave} 
+            className="h-12 md:h-16 px-6 md:px-10 rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+          >
+             <Save size={20} /> <span className="hidden lg:inline">Keydi</span>
           </Button>
        </div>
     </div>
@@ -2757,7 +2781,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                    <div key={c.uid} className={cn(
                      "p-6 md:p-8 rounded-[2.5rem] border flex flex-col sm:flex-row items-center justify-between gap-6 transition-all",
                      claimStatus === 'accepted' ? "bg-green-50 border-green-200 dark:bg-green-950/20" : 
-                     claimStatus === 'rejected' ? "bg-red-50 border-red-200 dark:bg-red-950/20" : 
+                     claimStatus === 'rejected' ? "bg-red-50 border-red-200 dark:bg-green-950/20" : 
                      "bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 hover:bg-slate-100/50"
                    )}>
                       <div className="flex items-center gap-5 w-full sm:w-auto">
