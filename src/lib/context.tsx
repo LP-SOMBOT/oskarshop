@@ -1156,18 +1156,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateAccountPostStatus = async (postId: string, status: string, boughtBy?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
-    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
+    const updates: any = { 
+      status, 
+      processedBy: { 
+        uid: enhancedUser.uid, 
+        name: enhancedUser.name || "Admin", 
+        photoURL: enhancedUser.photoURL || "" 
+      }, 
+      processedAt: Date.now() 
+    };
+    
     if (boughtBy) updates.boughtBy = boughtBy;
-    if (status === 'sold') { updates.sold = true; updates.completedAt = Date.now(); }
+    if (status === 'sold') { 
+      updates.sold = true; 
+      updates.completedAt = Date.now(); 
+    }
+    
     if (status === 'approved') {
       const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
       const postData = postSnap.val();
       const now = Date.now();
       const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
+      
+      // FORCE RESET TO NEW STATE (excluding term)
       updates.expiresAt = now + duration;
       updates.createdAt = now;
       updates.warningDismissedAt = null;
+      updates.holdingBy = null;
+      updates.boughtBy = null;
+      updates.buyerReported = false;
+      updates.buyerReportedAt = null;
+      updates.sellerReported = false;
+      updates.sellerReportedAt = null;
+      updates.conflict = false;
+      updates.claimants = null;
+      updates.adminMessage = null;
+      updates.hiddenFromMarket = false;
+      updates.sellerSeenDeletionAt = null;
+      updates.sold = false;
     }
+    
     await update(ref(rtdb, `accountPosts/${postId}`), updates);
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
@@ -1315,6 +1343,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else { 
       updates.status = action; 
       updates.hiddenFromMarket = false; 
+    }
+
+    // FORCE RESET TO NEW STATE IF APPROVED
+    if (action === 'approved') {
+       const now = Date.now();
+       const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
+       
+       updates.expiresAt = now + duration;
+       updates.createdAt = now;
+       updates.sellerReported = false; // Reset security flag
+       updates.sold = false;
+       updates.holdingBy = null;
+       updates.boughtBy = null;
+       updates.claimants = null;
+       updates.adminMessage = null;
+       updates.sellerSeenDeletionAt = null;
     }
 
     await update(postRef, updates);
