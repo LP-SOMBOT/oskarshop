@@ -492,23 +492,31 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
             </div>
           )}
 
-          <div className="pt-8 border-t dark:border-white/5 flex flex-wrap gap-3">
+          <div className="pt-8 border-t dark:border-white/5 space-y-4">
              {!post.sold && post.status === 'approved' && (
-                <Button 
-                  onClick={onMarkAsSold}
-                  className="h-12 md:h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-green-600/20 px-8"
-                >
-                   <CheckCircle2 className="w-4 h-4" /> Mark as Sold
+                <div className="space-y-2">
+                   <p className="text-[9px] md:text-[11px] font-bold text-green-600 uppercase tracking-wide ml-1">
+                      Hadii la iibsaday account kaan fadlan Riix halkaan hoose
+                   </p>
+                   <Button 
+                     onClick={onMarkAsSold}
+                     className="h-12 md:h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-green-600/20 px-8"
+                   >
+                      <CheckCircle2 className="w-4 h-4" /> Waala gatay
+                   </Button>
+                </div>
+             )}
+             
+             <div className="flex flex-wrap gap-3">
+                {!post.sold && isExpired && !isRejected && (
+                  <Button onClick={onRenew} className="h-12 md:h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 px-8">
+                     <RefreshCw className="w-4 h-4" /> Renew Listing
+                  </Button>
+                )}
+                <Button variant="ghost" className="h-12 md:h-14 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 font-black text-xs uppercase tracking-widest gap-2 px-6" onClick={onDelete}>
+                   <Trash2 className="w-4 h-4" /> Delete record
                 </Button>
-             )}
-             {!post.sold && isExpired && !isRejected && (
-               <Button onClick={onRenew} className="h-12 md:h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 px-8">
-                  <RefreshCw className="w-4 h-4" /> Renew Listing
-               </Button>
-             )}
-             <Button variant="ghost" className="h-12 md:h-14 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 font-black text-xs uppercase tracking-widest gap-2 px-6" onClick={onDelete}>
-                <Trash2 className="w-4 h-4" /> Delete record
-             </Button>
+             </div>
           </div>
        </div>
     </Card>
