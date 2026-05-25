@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -316,7 +315,7 @@ function CheckoutContent() {
                       <div className={cn("w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-2xl flex items-center justify-center transition-colors relative overflow-hidden shrink-0", selectedMethodId === method.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400")}>
                         {method.icon ? <Image src={method.icon} alt={method.name} fill className="object-cover" unoptimized /> : <Smartphone className="w-4 h-4 md:w-6 md:h-6" />}
                       </div>
-                      <div className="flex-1 min-w-0"><p className="font-bold text-sm md:text-lg dark:text-white truncate">{method.name}</p><p className="text-[8px] md:text-xs text-muted-foreground dark:text-slate-500 font-medium">Fast mobile payment</p></div>
+                      <div className="flex-1 min-0"><p className="font-bold text-sm md:text-lg dark:text-white truncate">{method.name}</p><p className="text-[8px] md:text-xs text-muted-foreground dark:text-slate-500 font-medium">Fast mobile payment</p></div>
                       <RadioGroupItem value={method.id} id={method.id} className="dark:border-white/20 h-4 w-4 md:h-5 md:w-5" />
                     </Label>
                   </div>
@@ -410,6 +409,16 @@ function CheckoutContent() {
           <div className="grid grid-cols-1 gap-2.5 md:gap-5 w-full max-w-[280px] md:max-w-sm">{!isBooyahPass && (<Button className="h-12 md:h-18 rounded-xl md:rounded-[2rem] font-bold text-sm md:text-xl shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => { setActiveTab('orders'); router.push('/#orders'); }}>Eeg Dalabkaaga</Button>)}<Button variant="ghost" className="h-11 md:h-14 rounded-xl text-xs md:text-base text-muted-foreground dark:text-slate-500 font-bold" onClick={() => router.push('/')}>Ku laabo Home-ka</Button></div>
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <div className="container mx-auto px-4 py-8 md:py-12 max-w-4xl min-h-screen">
+      <Suspense fallback={<Skeleton className="h-[600px] w-full rounded-[2.5rem]" />}>
+        <CheckoutContent />
+      </Suspense>
     </div>
   );
 }
