@@ -200,7 +200,7 @@ function WaitTime({ post }: { post: any }) {
     // Use the earliest claim timestamp as the start of the wait period
     const claimTime = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
     
-    if (!claimTime || post.sold) {
+    if (!claimTime || post.sold || post.sellerReported) {
       setElapsed("None");
       setIsUrgent(false);
       return;
@@ -2279,9 +2279,12 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
-  // Check for critical wait time > 1h
   const earliestClaim = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
   const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+
+  // Dedicated Wait logic
+  const isWaiting = earliestClaim && !post.sellerReported && !post.sold;
+  const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
 
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
@@ -2467,9 +2470,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              <InsightStat label="Level" value={post.level || "0"} icon={Star} />
              <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
              <InsightStat 
-                label={earliestClaim ? "Wait" : "Age"} 
-                value={formatDistanceToNow(new Date(earliestClaim || post.createdAt))} 
+                label="Wait" 
+                value={waitValue} 
                 icon={Clock} 
+                isPrimary={isWaiting}
              />
              <InsightStat label="Term" value={post.term || "Weekly"} icon={CalendarIcon} />
           </div>
