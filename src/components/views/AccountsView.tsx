@@ -349,6 +349,30 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
       toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
       return;
     }
+
+    // Validation: Phone and Sender Number must be at least 9 digits
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    const cleanSender = formData.senderNumber.replace(/\D/g, '');
+    const isSo = language === 'so';
+
+    if (cleanPhone.length < 9) {
+      toast({ 
+        title: isSo ? "WhatsApp No. khaldan" : "Invalid WhatsApp No.", 
+        description: isSo ? "WhatsApp number-ka waa inuu ka koobnaadaa ugu yaraan 9 nambar." : "WhatsApp number must be at least 9 digits.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (cleanSender.length < 9) {
+      toast({ 
+        title: isSo ? "Lacag Diraha khaldan" : "Invalid Sender No.", 
+        description: isSo ? "Number-ka lacagta laga soo diray waa inuu ka koobnaadaa ugu yaraan 9 nambar." : "Sender number must be at least 9 digits.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setStep(2);
   };
 
@@ -552,8 +576,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            <Star size={18} />
                            <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">Level & Pricing</h4>
                         </div>
-                        <FormInput label="ACCOUNT LEVEL" value={formData.level} type="number" onChange={v => setFormData({...formData, level: v})} placeholder="e.g. 65" />
-                        <FormInput label={t('selling_price')} value={formData.price} type="number" onChange={v => setFormData({...formData, price: v})} placeholder="e.g. 50" highlight />
+                        <FormInput label="ACCOUNT LEVEL" value={formData.level} type="number" onChange={v => setFormData({...formData, level: v.replace(/\D/g, '')})} placeholder="e.g. 65" />
+                        <FormInput label={t('selling_price')} value={formData.price} type="number" onChange={v => setFormData({...formData, price: v.replace(/[^\d.]/g, '')})} placeholder="e.g. 50" highlight />
                      </Card>
                   </div>
 
@@ -569,19 +593,19 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-8 lg:gap-12">
                         {isFreeFire ? (
                           <>
-                            <FormInput label="Evo Guns" icon={Sword} value={formData.evoWeapons} type="number" onChange={v => setFormData({...formData, evoWeapons: v})} placeholder="0" />
-                            <FormInput label="Total Weapons" icon={Target} value={formData.totalWeapons} type="number" onChange={v => setFormData({...formData, totalWeapons: v})} placeholder="0" />
-                            <FormInput label="Emotes" icon={Zap} value={formData.emotes} type="number" onChange={v => setFormData({...formData, emotes: v})} placeholder="0" />
-                            <FormInput label="Arrival Emotes" icon={Star} value={formData.arrivalEmotes} type="number" onChange={v => setFormData({...formData, arrivalEmotes: v})} placeholder="0" />
-                            <FormInput label="Dharka" icon={ShoppingBag} value={formData.dharka} type="number" onChange={v => setFormData({...formData, dharka: v})} placeholder="0" />
+                            <FormInput label="Evo Guns" icon={Sword} value={formData.evoWeapons} type="number" onChange={v => setFormData({...formData, evoWeapons: v.replace(/\D/g, '')})} placeholder="0" />
+                            <FormInput label="Total Weapons" icon={Target} value={formData.totalWeapons} type="number" onChange={v => setFormData({...formData, totalWeapons: v.replace(/\D/g, '')})} placeholder="0" />
+                            <FormInput label="Emotes" icon={Zap} value={formData.emotes} type="number" onChange={v => setFormData({...formData, emotes: v.replace(/\D/g, '')})} placeholder="0" />
+                            <FormInput label="Arrival Emotes" icon={Star} value={formData.arrivalEmotes} type="number" onChange={v => setFormData({...formData, arrivalEmotes: v.replace(/\D/g, '')})} placeholder="0" />
+                            <FormInput label="Dharka" icon={ShoppingBag} value={formData.dharka} type="number" onChange={v => setFormData({...formData, dharka: v.replace(/\D/g, '')})} placeholder="0" />
                           </>
                         ) : (
                           <>
-                             <FormInput label="Evo Weapons" icon={Sword} value={formData.evoWeapons} type="number" onChange={v => setFormData({...formData, evoWeapons: v})} placeholder="0" />
-                             <FormInput label="Internal Weapons" icon={Target} value={formData.internalWeapons} type="number" onChange={v => setFormData({...formData, internalWeapons: v})} placeholder="0" />
-                             <FormInput label="Emotes" icon={Zap} value={formData.emotes} type="number" onChange={v => setFormData({...formData, emotes: v})} placeholder="0" />
-                             <FormInput label="Execution Emotes" icon={Bomb} value={formData.executionEmotes} type="number" onChange={v => setFormData({...formData, executionEmotes: v})} placeholder="0" />
-                             <FormInput label="Arrival Emotes" icon={Star} value={formData.arrivalEmotes} type="number" onChange={v => setFormData({...formData, arrivalEmotes: v})} placeholder="0" />
+                             <FormInput label="Evo Weapons" icon={Sword} value={formData.evoWeapons} type="number" onChange={v => setFormData({...formData, evoWeapons: v.replace(/\D/g, '')})} placeholder="0" />
+                             <FormInput label="Internal Weapons" icon={Target} value={formData.internalWeapons} type="number" onChange={v => setFormData({...formData, internalWeapons: v.replace(/\D/g, '')})} placeholder="0" />
+                             <FormInput label="Emotes" icon={Zap} value={formData.emotes} type="number" onChange={v => setFormData({...formData, emotes: v.replace(/\D/g, '')})} placeholder="0" />
+                             <FormInput label="Execution Emotes" icon={Bomb} value={formData.executionEmotes} type="number" onChange={v => setFormData({...formData, executionEmotes: v.replace(/\D/g, '')})} placeholder="0" />
+                             <FormInput label="Arrival Emotes" icon={Star} value={formData.arrivalEmotes} type="number" onChange={v => setFormData({...formData, arrivalEmotes: v.replace(/\D/g, '')})} placeholder="0" />
                           </>
                         )}
                      </div>
@@ -600,8 +624,8 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                            </SelectContent>
                         </Select>
                      </FormGroup>
-                     <FormInput label={t('whatsapp_number_support')} value={formData.phone} type="tel" onChange={v => setFormData({...formData, phone: v})} placeholder="e.g. 613982172" />
-                     <FormInput label={t('sender_number_label')} value={formData.senderNumber} type="tel" onChange={v => setFormData({...formData, senderNumber: v})} placeholder="e.g. 613982172" icon={CreditCard} />
+                     <FormInput label={t('whatsapp_number_support')} value={formData.phone} type="tel" onChange={v => setFormData({...formData, phone: v.replace(/\D/g, '')})} placeholder="e.g. 613982172" />
+                     <FormInput label={t('sender_number_label')} value={formData.senderNumber} type="tel" onChange={v => setFormData({...formData, senderNumber: v.replace(/\D/g, '')})} placeholder="e.g. 613982172" icon={CreditCard} />
                   </Card>
 
                   <div className="pt-4 md:pt-10">
