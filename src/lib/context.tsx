@@ -296,6 +296,7 @@ type AppContextType = {
   updateAccountPost: (postId: string, data: Partial<AccountPost>) => Promise<void>;
   renewAccountPost: (postId: string, term: 'weekly' | 'monthly') => Promise<void>;
   deleteAccountPost: (postId: string) => Promise<void>;
+  markAccountAsSold: (postId: string) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
   buyAccountPost: (post: AccountPost) => void;
   markNotificationsAsRead: (notifId?: string) => Promise<void>;
@@ -1090,6 +1091,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteAccountPost = async (pid: string) => { if (!rtdb) return; await remove(ref(rtdb, `accountPosts/${pid}`)); toast({ title: "Post Deleted" }); };
+  
+  const markAccountAsSold = async (postId: string) => {
+    if (!rtdb || !user) return;
+    await update(ref(rtdb, `accountPosts/${postId}`), {
+      sold: true,
+      status: 'sold',
+      completedAt: Date.now()
+    });
+    toast({ title: "Account marked as sold!" });
+  };
+
   const deleteOrder = async (oid: string) => { if (!rtdb) return; await remove(ref(rtdb, `orders/${oid}`)); toast({ title: "Order Deleted" }); };
 
   const buyAccountPost = (post: AccountPost) => {
@@ -1447,7 +1459,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
       login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
-      createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning, markDeletionAsSeen,
+      createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, markAccountAsSold, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,

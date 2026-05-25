@@ -53,7 +53,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function MyAccountsView() {
-  const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, storeSettings, isInitialLoading } = useApp();
+  const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, markAccountAsSold, storeSettings, isInitialLoading } = useApp();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renewingPost, setRenewingPost] = useState<any>(null);
   const [renewTerm, setRenewTerm] = useState<'weekly' | 'monthly'>('weekly');
@@ -191,6 +191,7 @@ export default function MyAccountsView() {
               onRespond={(buyerId, confirmed) => respondToSaleReport(post.id, confirmed, buyerId)}
               onRenew={() => setRenewingPost(post)}
               onSeen={() => markDeletionAsSeen(post.id)}
+              onMarkAsSold={() => markAccountAsSold(post.id)}
             />
           ))}
         </div>
@@ -231,7 +232,7 @@ export default function MyAccountsView() {
       </Dialog>
 
       <Dialog open={!!deletingId} onOpenChange={(v) => !v && setDeletingId(null)}>
-        <DialogContent className="max-w-sm w-[90vw] rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
+        <DialogContent className="max-sm rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-6"><Trash2 size={40}/></div>
           <DialogTitle className="text-2xl font-headline font-bold mb-2">Ma hubtaa?</DialogTitle>
           <DialogDescription className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-widest">Post-kan dibna looma heli karo.</DialogDescription>
@@ -247,7 +248,7 @@ export default function MyAccountsView() {
   );
 }
 
-function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen }: { post: any, onDelete: () => void, onRespond: (buyerId: string, conf: boolean) => void, onRenew: () => void, onSeen: () => void }) {
+function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMarkAsSold }: { post: any, onDelete: () => void, onRespond: (buyerId: string, conf: boolean) => void, onRenew: () => void, onSeen: () => void, onMarkAsSold: () => void }) {
   const isExpired = post.expiresAt ? post.expiresAt < Date.now() : false;
   const isRejected = post.status === 'rejected';
   const [timeLeft, setTimeLeft] = useState("");
@@ -492,6 +493,14 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen }: { po
           )}
 
           <div className="pt-8 border-t dark:border-white/5 flex flex-wrap gap-3">
+             {!post.sold && post.status === 'approved' && (
+                <Button 
+                  onClick={onMarkAsSold}
+                  className="h-12 md:h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-green-600/20 px-8"
+                >
+                   <CheckCircle2 className="w-4 h-4" /> Mark as Sold
+                </Button>
+             )}
              {!post.sold && isExpired && !isRejected && (
                <Button onClick={onRenew} className="h-12 md:h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 px-8">
                   <RefreshCw className="w-4 h-4" /> Renew Listing
