@@ -791,7 +791,10 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
-    if (!post.expiresAt || (!isOwner && !isAdmin)) return;
+    if (!post.expiresAt || (!isOwner && !isAdmin) || post.sold || post.status === 'sold') {
+      setTimeLeft("");
+      return;
+    }
     const updateTime = () => {
       const now = Date.now();
       const diff = post.expiresAt - now;
@@ -807,7 +810,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
     updateTime();
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
-  }, [post.expiresAt, isOwner, isAdmin]);
+  }, [post.expiresAt, isOwner, isAdmin, post.sold, post.status]);
   
   return (
     <Card 
