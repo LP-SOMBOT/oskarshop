@@ -151,7 +151,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -164,6 +165,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
 function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, status: string }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
@@ -263,7 +265,7 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 50 : undefined,
+    zIndex: isDragging ? 100 : undefined,
   };
 
   return (
@@ -272,15 +274,15 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
       style={style}
       className={cn(
         "p-3 md:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex items-center justify-between group hover:bg-slate-100 transition-colors cursor-pointer",
-        isDragging && "opacity-50 border-primary ring-2 ring-primary/20 shadow-2xl"
+        isDragging && "opacity-50 border-primary ring-2 ring-primary/20 shadow-2xl scale-[1.02]"
       )}
       onClick={onEdit}
     >
-      <div className="flex items-center gap-3 md:gap-5">
+      <div className="flex items-center gap-3 md:gap-5 min-w-0">
         <div 
           {...attributes} 
           {...listeners}
-          className="p-2 text-slate-300 hover:text-primary transition-colors cursor-grab active:cursor-grabbing"
+          className="p-2 text-slate-300 hover:text-primary transition-colors cursor-grab active:cursor-grabbing shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical size={20} />
@@ -288,14 +290,14 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
         <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl overflow-hidden relative shrink-0 shadow-sm border border-white">
           {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" unoptimized /> : <div className="w-full h-full bg-slate-200" />}
         </div>
-        <div>
-          <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight">{p.title}</p>
+        <div className="min-w-0">
+          <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight truncate">{p.title}</p>
           <p className="text-[10px] md:text-sm font-black text-primary mt-0.5">${p.price}</p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <button 
-          onClick={onDelete} 
+          onClick={(e) => { e.stopPropagation(); onDelete(e); }} 
           className="p-2 text-slate-300 hover:text-red-500 transition-colors"
         >
           <Trash2 size={16} />
@@ -406,9 +408,15 @@ export default function AdminPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -589,7 +597,7 @@ export default function AdminPage() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const gameItems = products.filter(p => p.gameId === gameId);
+    const gameItems = products.filter(p => p.gameId === gameId).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
     const oldIndex = gameItems.findIndex(p => p.id === active.id);
     const newIndex = gameItems.findIndex(p => p.id === over.id);
 
@@ -1123,7 +1131,7 @@ export default function AdminPage() {
                <div className="grid grid-cols-1 gap-6 max-w-4xl">
                   {games.map(g => {
                     const isExpanded = expandedGameId === g.id;
-                    const gameItems = products.filter(p => p.gameId === g.id);
+                    const gameItems = products.filter(p => p.gameId === g.id).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
                     
                     return (
                       <Card 
@@ -1182,6 +1190,7 @@ export default function AdminPage() {
                                      sensors={sensors}
                                      collisionDetection={closestCenter}
                                      onDragEnd={(e) => handleDragEnd(e, g.id)}
+                                     modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
                                    >
                                      <SortableContext
                                        items={gameItems.map(p => p.id)}
@@ -1193,7 +1202,7 @@ export default function AdminPage() {
                                              key={p.id} 
                                              p={p} 
                                              onEdit={() => handleOpenProductDialog(p)}
-                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
+                                             onDelete={(e) => { setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
                                            />
                                          ))}
                                        </div>
