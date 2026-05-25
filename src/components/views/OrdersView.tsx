@@ -15,7 +15,8 @@ import {
   ShieldAlert,
   CreditCard,
   MessageCircle,
-  Ticket
+  Ticket,
+  Trophy
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,15 @@ function OrderCard({ order }: { order: any }) {
                </>
              )}
              
+             {order.rankDiscount > 0 && (
+               <DetailRow 
+                 icon={Trophy} 
+                 label={t('rank_reward')} 
+                 value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} 
+                 color="text-primary font-black" 
+               />
+             )}
+             
              {order.promoCode && (
                <DetailRow icon={Ticket} label="Promo Code" value={order.promoCode} color="text-primary font-black" />
              )}
@@ -163,7 +173,7 @@ function OrderCard({ order }: { order: any }) {
                </div>
              )}
              {order.status === 'successful' && (
-               <div className="p-4 sm:p-5 lg:p-6 bg-green-50 dark:bg-green-500/10 rounded-xl sm:rounded-[1.5rem] flex gap-3 md:gap-4 items-center text-green-700 dark:text-green-400 text-xs sm:text-sm lg:text-base font-black border border-green-100 dark:border-green-500/20 shadow-sm uppercase tracking-wider">
+               <div className="p-4 sm:p-5 lg:p-6 bg-green-50 dark:bg-green-500/10 rounded-xl sm:rounded-[1.5rem] flex gap-3 md:gap-4 items-center text-green-700 dark:text-green-400 text-xs sm:text-sm lg:text-base font-black border border-green-100 dark:border-confirm_reactivate_btn shadow-sm uppercase tracking-wider">
                   <CheckCircle2 size={20} className="shrink-0" /> <p>{t('delivered_success')}</p>
                </div>
              )}

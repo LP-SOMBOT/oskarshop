@@ -76,6 +76,8 @@ type Order = {
     photoURL?: string;
   };
   promoCode?: string;
+  rank?: number;
+  rankDiscount?: number;
 };
 
 type AccountPost = {
@@ -593,7 +595,7 @@ const translations: Record<Language, Record<string, string>> = {
     level_label: "Level",
     expires_label: "Expires",
     price_label: "Qiimaha",
-    sold_confirmation_prompt: "Hadii la iibsaday account kaan fadlan Riix halkaan hoose",
+    sold_confirmation_prompt: "Hadii la iibsatay account kaan fadlan Riix halkaan hoose",
     mark_as_sold_btn: "Waala gatay",
     delete_record_btn: "Delete record",
     renew_listing_btn: "Renew Listing",
@@ -1247,6 +1249,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       paymentMethod, 
       gameDetails 
     };
+
+    if (userProfile?.leaderboardRank && userProfile?.leaderboardDiscount) {
+      newOrder.rank = userProfile.leaderboardRank;
+      newOrder.rankDiscount = userProfile.leaderboardDiscount;
+    }
     
     if (promoCode) newOrder.promoCode = promoCode;
     
