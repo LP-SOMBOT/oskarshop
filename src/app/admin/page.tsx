@@ -2169,39 +2169,10 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-             <InsightStat 
-                label="Player ID" 
-                value={order.gameDetails?.playerID || "N/A"} 
-                icon={Gamepad2} 
-                isPrimary 
-                action={
-                  order.gameDetails?.playerID && (
-                    <button 
-                      onClick={handleCopyPlayerId}
-                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
-                    >
-                      <Copy size={14} />
-                    </button>
-                  )
-                }
-             />
+             <InsightStat label="Player ID" value={order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={ order.gameDetails?.playerID && ( <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> ) } />
              <InsightStat label="In-Game Name" value={order.gameDetails?.playerName || "N/A"} icon={User} />
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
-             <InsightStat 
-                label="WhatsApp" 
-                value={order.gameDetails?.whatsappNumber || "N/A"} 
-                icon={MessageCircle} 
-                action={
-                  order.gameDetails?.whatsappNumber && (
-                    <button 
-                      onClick={handleWhatsApp}
-                      className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"
-                    >
-                      <MessageCircle size={14} />
-                    </button>
-                  )
-                }
-             />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={ order.gameDetails?.whatsappNumber && ( <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> ) } />
              <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
@@ -2495,7 +2466,11 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
              <InsightStat label="Level" value={post.level || "0"} icon={Star} />
              <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
-             <InsightStat label="Wait" value={formatDistanceToNow(new Date(post.createdAt))} icon={Clock} />
+             <InsightStat 
+                label={earliestClaim ? "Wait" : "Age"} 
+                value={formatDistanceToNow(new Date(earliestClaim || post.createdAt))} 
+                icon={Clock} 
+             />
              <InsightStat label="Term" value={post.term || "Weekly"} icon={CalendarIcon} />
           </div>
        </div>
