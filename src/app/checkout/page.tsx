@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -209,7 +210,7 @@ function CheckoutContent() {
     );
   }
 
-  const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : "🥉";
+  const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -299,7 +300,7 @@ function CheckoutContent() {
         <Card className="rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl border-none p-0.5 md:p-2 bg-white dark:bg-slate-900">
           <CardHeader className="p-4 md:p-8">
             <CardTitle className="font-headline font-bold text-lg md:text-2xl text-slate-900 dark:text-white">Lacag Bixinta</CardTitle>
-            <CardDescription className="text-[10px] md:text-sm font-medium">Dooro qaabka aad lacagta u bixinayso</CardDescription>
+            <CardDescription className="text-[10px] md:text-sm font-medium">Dooro qaabka aad u bixinayso</CardDescription>
           </CardHeader>
           <CardContent className="p-4 md:p-8 pt-0 md:pt-0">
             {paymentMethods.length === 0 ? (
@@ -409,18 +410,6 @@ function CheckoutContent() {
           <div className="grid grid-cols-1 gap-2.5 md:gap-5 w-full max-w-[280px] md:max-w-sm">{!isBooyahPass && (<Button className="h-12 md:h-18 rounded-xl md:rounded-[2rem] font-bold text-sm md:text-xl shadow-xl shadow-primary/20 active:scale-95 transition-all" onClick={() => { setActiveTab('orders'); router.push('/#orders'); }}>Eeg Dalabkaaga</Button>)}<Button variant="ghost" className="h-11 md:h-14 rounded-xl text-xs md:text-base text-muted-foreground dark:text-slate-500 font-bold" onClick={() => router.push('/')}>Ku laabo Home-ka</Button></div>
         </div>
       </div>
-    </div>
-  );
-}
-
-export default function CheckoutPage() {
-  return (
-    <div className="min-h-screen bg-background pb-24 md:pb-10 page-transition">
-      <main className="container mx-auto px-1 sm:px-4 py-4 md:py-12 max-w-2xl">
-        <Suspense fallback={<Skeleton className="h-96 w-full rounded-[1.5rem] md:rounded-[2.5rem]" />}>
-          <CheckoutContent />
-        </Suspense>
-      </main>
     </div>
   );
 }
