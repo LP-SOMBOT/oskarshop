@@ -52,7 +52,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function MyAccountsView() {
-  const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, markAccountAsSold, storeSettings, isInitialLoading } = useApp();
+  const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, markAccountAsSold, storeSettings, isInitialLoading, language } = useApp();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renewingPost, setRenewingPost] = useState<any>(null);
   const [renewTerm, setRenewTerm] = useState<'weekly' | 'monthly'>('weekly');
@@ -138,8 +138,9 @@ export default function MyAccountsView() {
              <ChevronLeft className="w-6 h-6" />
            </button>
            <div>
-             <h1 className="text-2xl sm:text-4xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Management</h1>
-             <p className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">Verified Listings Dashboard</p>
+             <h1 className="text-2xl sm:text-4xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+               {language === 'so' ? "Maamul account kaga" : "Manage your accounts"}
+             </h1>
            </div>
         </div>
 
