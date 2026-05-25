@@ -672,9 +672,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!existingData.email && authUser.email) updates.email = authUser.email;
         if (!existingData.phoneNumber && authUser.email) updates.phoneNumber = authUser.email.split('@')[0];
         
-        if (Object.keys(updates).length > 1) {
-           await update(userRef, updates);
-        }
+        await update(userRef, updates);
         
         const finalProfile = { ...existingData, ...updates };
         setUserProfile(finalProfile);

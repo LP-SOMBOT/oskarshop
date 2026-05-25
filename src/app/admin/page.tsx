@@ -1310,7 +1310,7 @@ export default function AdminPage() {
                            <div className="flex items-center justify-between pt-2 border-t dark:border-white/5">
                               <div className="flex items-center gap-2">
                                  <div className={cn("w-2 h-2 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
-                                 <span className="text-10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
+                                 <span className="text-[10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
                               </div>
                               <div className="flex gap-2">
                                  <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
