@@ -502,7 +502,7 @@ const translations: Record<Language, Record<string, string>> = {
     holding: "Holding",
     rejected: "Rejected",
     sold: "Sold",
-    listing_flagged_fallback: "Listing was flagged by security. Penalty enforcement applied."
+    listing_flagged_fallback: "This account listing has been cancelled. Please contact OskarShop for more information."
   },
   so: {
     home: "Hoyga",
@@ -635,7 +635,7 @@ const translations: Record<Language, Record<string, string>> = {
     holding: "Hada lama heli karo",
     rejected: "Lama aqbalin",
     sold: "Waa la iibiyay",
-    listing_flagged_fallback: "Listing-ka waxaa calaamadeeyay nabad-sugidda. Waxaa lagu amray ganaax."
+    listing_flagged_fallback: "account listing kaan waala kansalay fadlan la xariir OskarShop waxii fahfahin ah"
   }
 };
 
