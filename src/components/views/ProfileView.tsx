@@ -108,7 +108,7 @@ export default function ProfileView() {
     );
   }
 
-  if (!user) null;
+  if (!user) return null;
 
   return (
     <div className="pb-32 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition">
