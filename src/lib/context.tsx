@@ -33,7 +33,6 @@ import {
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
-import { isStandalone } from './pwa-utils';
 
 export const safeGet = (obj: any, path: string, fallback: any = "") => {
   return path.split('.').reduce((acc, key) => acc?.[key] ?? fallback, obj);
@@ -492,7 +491,9 @@ const translations: Record<Language, Record<string, string>> = {
     delete_confirm_title: "Are you sure?",
     delete_confirm_desc: "This post cannot be recovered later.",
     yes_delete: "Yes, Delete",
-    no_cancel: "No"
+    no_cancel: "No",
+    session_label: "Session #",
+    final_total: "Final Total:"
   },
   so: {
     home: "Hoyga",
@@ -616,7 +617,9 @@ const translations: Record<Language, Record<string, string>> = {
     delete_confirm_title: "Ma hubtaa?",
     delete_confirm_desc: "Post-kan dibna looma heli karo.",
     yes_delete: "Haa, Tirtir",
-    no_cancel: "Maya"
+    no_cancel: "Maya",
+    session_label: "Siisoon #",
+    final_total: "Wadarta:"
   }
 };
 
@@ -785,8 +788,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const updates: any = {};
     
-    // Clear all previous ranks first if needed, or just handle top 3
-    // For efficiency, we'll only update changed users
     users.forEach(u => {
       const rankIndex = top50.findIndex(top => top.uid === u.uid);
       const rank = rankIndex !== -1 ? rankIndex + 1 : null;
@@ -814,7 +815,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
     if (storeSettings.lastResetMonth !== currentMonthStr) {
-      // It's a new month, reset everyone
       const resetPoints = async () => {
         setIsGlobalLoading(true);
         try {
@@ -822,7 +822,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             'settings/lastResetMonth': currentMonthStr
           };
           
-          // Reset all users
           const usersSnap = await get(ref(rtdb, 'users'));
           const users = usersSnap.val() || {};
           Object.keys(users).forEach(uid => {
@@ -1340,7 +1339,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       if (orderData && orderData.userId) {
         const isAccount = orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts';
-        // Only top-up items award points
         if (!isAccount) {
           await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
         }

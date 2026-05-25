@@ -29,7 +29,6 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
   const hasStoreDiscount = numDiscounted > 0 && numDiscounted < numPrice;
   let currentPrice = hasStoreDiscount ? numDiscounted : numPrice;
 
-  // Apply Leaderboard Discount if applicable
   const rankDiscount = user?.leaderboardDiscount || 0;
   const hasRankDiscount = rankDiscount > 0;
   
@@ -48,7 +47,6 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
 
   return (
     <Card className="group overflow-hidden bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-[1.5rem] md:rounded-[2rem] flex flex-col h-full relative">
-      {/* Top Percentage Off Label */}
       {hasStoreDiscount && (
         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10 animate-in fade-in zoom-in duration-500">
            <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1">
@@ -57,11 +55,10 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
         </div>
       )}
 
-      {/* Rank Reward Badge */}
       {hasRankDiscount && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
            <Badge className="bg-primary text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
-             {RankIcon} -{rankDiscount}%
+             {RankIcon} -{rankDiscount}% Reward
            </Badge>
         </div>
       )}

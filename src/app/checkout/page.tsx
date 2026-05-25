@@ -36,7 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 
 function CheckoutContent() {
-  const { products, games, createOrder, setGlobalLoading, setActiveTab, user, loading, storeSettings, checkPromoCode, t } = useApp();
+  const { products, games, createOrder, setGlobalLoading, setActiveTab, user, loading, storeSettings, checkPromoCode, t, language } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get('id');
@@ -46,7 +46,6 @@ function CheckoutContent() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
   
-  // Promo Code States
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
@@ -80,7 +79,6 @@ function CheckoutContent() {
     return (games || []).find(g => g.id === item?.gameId);
   }, [games, item?.gameId]);
 
-  // Pricing Logic with precise order
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
   const initialPrice = useMemo(() => (storeDiscountedPrice > 0 && storeDiscountedPrice < basePrice) ? storeDiscountedPrice : basePrice, [storeDiscountedPrice, basePrice]);
@@ -342,7 +340,7 @@ function CheckoutContent() {
               <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Lock size={40} className="md:size-[60px]" /></div>
               <div className="flex flex-col gap-3 relative z-10">
                 <div className="flex justify-between items-center text-sm md:text-lg">
-                   <span className="text-muted-foreground dark:text-slate-400 font-medium">Original Price:</span>
+                   <span className="text-muted-foreground dark:text-slate-400 font-medium">{language === 'so' ? 'Qiimaha:' : 'Original Price:'}</span>
                    <span className={cn("font-bold text-slate-900 dark:text-white", (initialPrice < basePrice || rankDiscount > 0) && "line-through opacity-40")}>${basePrice.toFixed(2)}</span>
                 </div>
                 
@@ -350,7 +348,7 @@ function CheckoutContent() {
                   <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2 text-primary">
                      <div className="flex items-center gap-2">
                         <span className="text-lg">{RankIcon}</span>
-                        <span className="font-bold uppercase tracking-tight">{t('rank_reward')} (-{rankDiscount}%):</span>
+                        <span className="font-bold uppercase tracking-tight">{language === 'so' ? 'Diskoonti' : 'Discount'} (-{rankDiscount}%):</span>
                      </div>
                      <span className="font-black">-${(initialPrice * rankDiscount / 100).toFixed(2)}</span>
                   </div>
@@ -368,7 +366,7 @@ function CheckoutContent() {
 
                 <div className="h-px bg-slate-200 dark:bg-white/5 my-1" />
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2"><span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">Final Total:</span></div>
+                  <div className="flex items-center gap-2"><span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">{t('final_total')}</span></div>
                   <div className="text-right">
                     <span className="text-2xl md:text-5xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
                     <div className="flex items-center justify-end gap-1 text-[8px] md:text-[11px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest mt-0.5 md:mt-1"><ShieldCheck size={10} className="md:w-3.5 md:h-3.5" /> Secure Rate</div>

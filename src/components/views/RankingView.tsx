@@ -8,11 +8,7 @@ import {
   ArrowLeft, 
   Crown, 
   Star, 
-  ChevronRight, 
   Clock,
-  LayoutGrid,
-  Sparkles,
-  Medal,
   User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 export default function RankingView() {
-  const { allUsers, setActiveTab, language, t } = useApp();
+  const { allUsers, setActiveTab, t } = useApp();
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
 
   const sortedUsers = useMemo(() => {
@@ -58,7 +54,6 @@ export default function RankingView() {
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden animate-in fade-in duration-500">
-      {/* Premium Header */}
       <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 flex items-center justify-between px-3 md:px-10 shrink-0 z-50">
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
           <Button variant="ghost" size="icon" onClick={() => setActiveTab('home')} className="rounded-full h-9 w-9 md:h-10 md:w-10">
@@ -68,11 +63,13 @@ export default function RankingView() {
             <h1 className="font-headline font-bold text-sm md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">
               {t('ranking')}
             </h1>
-            <Badge className="bg-primary text-white text-[7px] md:text-[8px] font-black uppercase px-1.5 md:px-2 py-0">LIVE</Badge>
+            <div className="flex items-center gap-1">
+              <Badge className="bg-primary text-white text-[7px] md:text-[8px] font-black uppercase px-1.5 md:px-2 py-0">LIVE</Badge>
+              <span className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('session_label')}1</span>
+            </div>
           </div>
         </div>
 
-        {/* Reward Tiers Info - Moved to Header */}
         <div className="flex items-center justify-center gap-1.5 md:gap-4 flex-1">
            <RewardBadge rank={1} discount={3} />
            <RewardBadge rank={2} discount={2} />
@@ -91,7 +88,6 @@ export default function RankingView() {
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
         <main className="max-w-4xl mx-auto w-full p-4 sm:p-8 space-y-10">
           
-          {/* Mobile Timer */}
           <div className="sm:hidden p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
              <div className="space-y-0.5">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('next_reset')}</p>
@@ -104,19 +100,12 @@ export default function RankingView() {
              </div>
           </div>
 
-          {/* Top 3 Podium */}
           <div className="grid grid-cols-3 gap-3 md:gap-8 items-end pt-10 pb-4">
-             {/* Rank 2 */}
              {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" />}
-             
-             {/* Rank 1 */}
              {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" />}
-             
-             {/* Rank 3 */}
              {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" />}
           </div>
 
-          {/* List 4-50 */}
           <div className="space-y-3">
              {others.length > 0 ? (
                others.map((u, i) => (
@@ -144,7 +133,7 @@ function RewardBadge({ rank, discount }: { rank: number, discount: number }) {
   );
 }
 
-function PodiumCard({ user, rank, color }: { user: UserProfile, rank: number, color: 'gold' | 'silver' | 'bronze' }) {
+function PodiumCard({ user, rank, color }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze' }) {
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
@@ -184,7 +173,6 @@ function PodiumCard({ user, rank, color }: { user: UserProfile, rank: number, co
           </div>
        </div>
 
-       {/* Podium Pedestal */}
        <div className={cn(
          "w-full rounded-t-2xl shadow-inner flex flex-col items-center justify-center pt-2",
          isGold ? "h-20 md:h-28 bg-gradient-to-b from-yellow-500/20 to-transparent" :
@@ -200,7 +188,7 @@ function PodiumCard({ user, rank, color }: { user: UserProfile, rank: number, co
   );
 }
 
-function RankListItem({ user, rank }: { user: UserProfile, rank: number }) {
+function RankListItem({ user, rank }: { user: any, rank: number }) {
   return (
     <Card className="p-3 md:p-5 rounded-2xl md:rounded-[1.5rem] border-none bg-white dark:bg-slate-900 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
        <div className="flex items-center gap-3 md:gap-5">
