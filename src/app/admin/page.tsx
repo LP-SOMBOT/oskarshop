@@ -323,7 +323,7 @@ export default function AdminPage() {
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
-  const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days" });
+  const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
   
   // Settings Form States
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
@@ -472,7 +472,7 @@ export default function AdminPage() {
     e.preventDefault();
     await savePromoCode(promoForm);
     setIsPromoDialogOpen(false);
-    setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days" });
+    setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
   };
 
   const handleStatusUpdate = async () => {
@@ -1237,6 +1237,11 @@ export default function AdminPage() {
                                       <Copy size={16} />
                                     </button>
                                  </div>
+                                 {promo.note && (
+                                   <p className="text-[10px] font-medium text-muted-foreground italic line-clamp-1 mt-1">
+                                     Note: {promo.note}
+                                   </p>
+                                 )}
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
@@ -2012,6 +2017,18 @@ export default function AdminPage() {
                        </SelectContent>
                     </Select>
                  </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">
+                  Sababta code-ka loo sameeyay (Sababta)
+                </Label>
+                <Textarea 
+                  placeholder="Internal note for admins..."
+                  value={promoForm.note}
+                  onChange={e => setPromoForm({...promoForm, note: e.target.value})}
+                  className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[80px] p-4 font-medium shadow-inner"
+                />
               </div>
 
               <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-[0.1em] shadow-xl active:scale-[0.98]">

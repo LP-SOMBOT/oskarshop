@@ -188,6 +188,7 @@ type PromoCode = {
   usedBy: string | null;
   claimed: boolean;
   expired: boolean;
+  note?: string;
 };
 
 type StoreSettings = {
