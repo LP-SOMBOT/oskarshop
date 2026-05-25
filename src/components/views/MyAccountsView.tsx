@@ -53,7 +53,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function MyAccountsView() {
-  const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, markAccountAsSold, storeSettings, isInitialLoading, language } = useApp();
+  const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, markAccountAsSold, storeSettings, isInitialLoading, language, t } = useApp();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renewingPost, setRenewingPost] = useState<any>(null);
   const [renewTerm, setRenewTerm] = useState<'weekly' | 'monthly'>('weekly');
@@ -140,15 +140,15 @@ export default function MyAccountsView() {
            </button>
            <div>
              <h1 className="text-2xl sm:text-4xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">
-               {language === 'so' ? "Maamul account kaga" : "Manage your accounts"}
+               {t('manage_accounts_title')}
              </h1>
            </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-6">
-           <StatBox icon={ShoppingBag} label="Active" value={stats.active} color="text-primary" />
-           <StatBox icon={TrendingUp} label="Claims" value={stats.pendingClaims} color="text-amber-500" />
-           <StatBox icon={CheckCircle2} label="Sold" value={stats.sold} color="text-green-500" />
+           <StatBox icon={ShoppingBag} label={t('active_stat')} value={stats.active} color="text-primary" />
+           <StatBox icon={TrendingUp} label={t('claims_stat')} value={stats.pendingClaims} color="text-amber-500" />
+           <StatBox icon={CheckCircle2} label={t('sold_stat')} value={stats.sold} color="text-green-500" />
         </div>
       </header>
 
@@ -160,9 +160,9 @@ export default function MyAccountsView() {
                  <AlertTriangle size={36} />
               </div>
               <div className="space-y-3 flex-1">
-                 <h3 className="text-xl md:text-2xl font-headline font-bold text-red-700 dark:text-red-400 uppercase tracking-tight">Kaja Waab Account-yadaada</h3>
+                 <h3 className="text-xl md:text-2xl font-headline font-bold text-red-700 dark:text-red-400 uppercase tracking-tight">{t('respond_accounts_warning_title')}</h3>
                  <p className="text-xs md:text-sm font-bold leading-relaxed text-red-800 dark:text-red-500/80 uppercase tracking-wide max-w-2xl">
-                   Account-kaaga qof ayaa dhahay "Waan iibsaday", admin-ka ayaa WhatsApp ka kaala soo hadli doona. Fadlan si deg-deg ah ugu jawaab verification-ka. 24 saac gudahood haddii aadan uga jawaabin, account-ka waa laga saari doonaa listing-ka.
+                   {t('respond_accounts_warning_desc')}
                  </p>
               </div>
            </div>
@@ -175,11 +175,11 @@ export default function MyAccountsView() {
             <Gamepad2 className="w-12 h-12 sm:w-16 sm:h-16" />
           </div>
           <div className="space-y-2">
-             <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">No Listings Found</p>
-             <p className="text-sm sm:text-lg">Wali wax account ah maadan soo dhigin Marketplace-ka.</p>
+             <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('no_listings_title')}</p>
+             <p className="text-sm sm:text-lg">{t('no_listings_desc')}</p>
           </div>
           <button onClick={() => setActiveTab('accounts')} className="bg-primary text-white rounded-2xl px-10 h-14 gap-2 font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-             Start Selling <ArrowRight size={20} />
+             {t('start_selling')} <ArrowRight size={20} />
           </button>
         </div>
       ) : (
@@ -201,31 +201,31 @@ export default function MyAccountsView() {
       <Dialog open={!!renewingPost} onOpenChange={(v) => { if(!v) { setRenewingPost(null); setHasTriggeredRenewUssd(false); } }}>
         <DialogContent className="max-md w-[95vw] rounded-[2.5rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader className="mb-8">
-             <DialogTitle className="text-2xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Renew Listing</DialogTitle>
-             <DialogDescription className="text-xs sm:text-sm font-bold text-slate-50">Muda cusub u door account-kaaga si uu marketplace-ka ugu soo laabto.</DialogDescription>
+             <DialogTitle className="text-2xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('renew_listing_btn')}</DialogTitle>
+             <DialogDescription className="text-xs sm:text-sm font-bold text-slate-50">{t('renew_listing_desc')}</DialogDescription>
            </DialogHeader>
            
            <div className="space-y-8">
               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">Dooro Muda Cusub</label>
+                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">{t('choose_term_label')}</label>
                  <Select value={renewTerm} onValueChange={(val: any) => setRenewTerm(val)}>
                     <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
                        <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl dark:bg-slate-900 border-none shadow-2xl z-[200]">
-                       <SelectItem value="weekly" className="rounded-xl p-4 font-bold text-xs">Weekly (Isbuucle) - ${storeSettings?.config?.shop?.listingFeeWeekly || 1.00}</SelectItem>
-                       <SelectItem value="monthly" className="rounded-xl p-4 font-bold text-xs">Monthly (Bile) - ${storeSettings?.config?.shop?.listingFeeMonthly || 3.00}</SelectItem>
+                       <SelectItem value="weekly" className="rounded-xl p-4 font-bold text-xs">{t('weekly_term')} - ${storeSettings?.config?.shop?.listingFeeWeekly || 1.00}</SelectItem>
+                       <SelectItem value="monthly" className="rounded-xl p-4 font-bold text-xs">{t('monthly_term')} - ${storeSettings?.config?.shop?.listingFeeMonthly || 3.00}</SelectItem>
                     </SelectContent>
                  </Select>
               </div>
 
               {!hasTriggeredRenewUssd ? (
                 <Button onClick={handleRenewUssd} className="w-full h-20 rounded-3xl text-lg font-black uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90">
-                   PAY FOR RENEWAL
+                   {t('pay_renewal_btn')}
                 </Button>
               ) : (
                 <Button onClick={handleRenewFinal} className="w-full h-20 rounded-3xl text-lg font-black uppercase tracking-widest shadow-2xl shadow-green-500/30 bg-green-600 hover:bg-green-700">
-                   CONFIRM & REACTIVATE
+                   {t('confirm_reactivate_btn')}
                 </Button>
               )}
            </div>
@@ -235,12 +235,12 @@ export default function MyAccountsView() {
       <Dialog open={!!deletingId} onOpenChange={(v) => !v && setDeletingId(null)}>
         <DialogContent className="max-sm rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-6"><Trash2 size={40}/></div>
-          <DialogTitle className="text-2xl font-headline font-bold mb-2">Ma hubtaa?</DialogTitle>
-          <DialogDescription className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-widest">Post-kan dibna looma heli karo.</DialogDescription>
+          <DialogTitle className="text-2xl font-headline font-bold mb-2">{t('delete_confirm_title')}</DialogTitle>
+          <DialogDescription className="text-sm font-bold text-slate-500 mb-8 uppercase tracking-widest">{t('delete_confirm_desc')}</DialogDescription>
           <DialogFooter className="gap-3 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-14 font-bold order-2 sm:order-1" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-14 font-bold order-2 sm:order-1" disabled={isDeleting}>{t('no_cancel')}</Button>
              <Button variant="destructive" onClick={handleDelete} className="rounded-xl flex-1 h-14 font-black uppercase tracking-widest order-1 sm:order-2 shadow-lg shadow-red-500/20" disabled={isDeleting}>
-                {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
+                {isDeleting ? <Loader2 className="animate-spin" /> : t('yes_delete')}
              </Button>
           </DialogFooter>
         </DialogContent>
@@ -250,11 +250,11 @@ export default function MyAccountsView() {
 }
 
 function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMarkAsSold }: { post: any, onDelete: () => void, onRespond: (buyerId: string, conf: boolean) => void, onRenew: () => void, onSeen: () => void, onMarkAsSold: () => void }) {
+  const { deleteAccountPost, allUsers, language, t } = useApp();
   const isExpired = post.expiresAt ? post.expiresAt < Date.now() : false;
   const isRejected = post.status === 'rejected';
   const [timeLeft, setTimeLeft] = useState("");
   const [autoDeleteTime, setAutoDeleteTime] = useState("");
-  const { deleteAccountPost, allUsers, language } = useApp();
 
   const claimants = useMemo(() => Object.values(post.claimants || {}), [post.claimants]);
   const showVerification = claimants.length > 0 && !post.sold;
@@ -291,7 +291,6 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
     if (post.sellerSeenDeletionAt) {
       const interval = setInterval(() => {
         const now = Date.now();
-        // 24 Hour Deletion Timer (86,400,000 ms)
         const diff = (post.sellerSeenDeletionAt! + 86400000) - now;
         if (diff <= 0) {
           deleteAccountPost(post.id);
@@ -350,7 +349,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                         <h3 className="font-headline font-bold text-xl sm:text-3xl text-slate-900 dark:text-white uppercase truncate">{post.gameType} Account</h3>
                         <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase">{post.platform}</Badge>
                      </div>
-                     <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Reference: #{post.id.toUpperCase()}</p>
+                     <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">{t('reference_label')}: #{post.id.toUpperCase()}</p>
                   </div>
                   <Badge className={cn(
                     "rounded-full px-5 py-2 font-black text-[10px] border-none uppercase tracking-[0.2em] shadow-sm shrink-0 transition-colors",
@@ -361,19 +360,18 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                </div>
 
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t dark:border-white/5">
-                  <StatusInfo icon={Calendar} label="Posted" value={post.createdAt ? format(new Date(post.createdAt), 'MMM d') : '...'} />
-                  <StatusInfo icon={Star} label="Level" value={post.level || '0'} />
-                  <StatusInfo icon={Clock} label="Expires" value={timeLeft || 'N/A'} color={isExpired && !post.sold ? "text-red-500" : "text-amber-500"} />
-                  <StatusInfo icon={DollarSign} label={language === 'so' ? 'Qiimaha' : 'Value'} value={`$${post.price || 0}`} color="text-primary" />
+                  <StatusInfo icon={Calendar} label={t('posted_label')} value={post.createdAt ? format(new Date(post.createdAt), 'MMM d') : '...'} />
+                  <StatusInfo icon={Star} label={t('level_label')} value={post.level || '0'} />
+                  <StatusInfo icon={Clock} label={t('expires_label')} value={timeLeft || 'N/A'} color={isExpired && !post.sold ? "text-red-500" : "text-amber-500"} />
+                  <StatusInfo icon={DollarSign} label={t('price_label')} value={`$${post.price || 0}`} color="text-primary" />
                </div>
 
-               {/* SOLD SUCCESS BLOCK */}
                {post.sold && finalBuyer && (
                  <div className="p-6 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-3xl border-2 border-green-500/20 space-y-6 animate-in zoom-in duration-700">
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-3 text-green-600">
                           <CheckCircle2 size={24} />
-                          <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Finalized Sale</h4>
+                          <h4 className="font-headline font-bold text-lg uppercase tracking-tight">{t('finalized_sale_title')}</h4>
                        </div>
                        <Badge variant="outline" className="border-green-500/30 text-green-600 font-bold text-[10px] uppercase">Verified</Badge>
                     </div>
@@ -383,7 +381,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                           {finalBuyer.photo ? <Image src={finalBuyer.photo} alt="" fill className="object-cover" /> : <User className="m-auto mt-2 opacity-20" />}
                        </div>
                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-black text-green-600/60 uppercase tracking-widest leading-none mb-1">Final Buyer</p>
+                          <p className="text-[10px] font-black text-green-600/60 uppercase tracking-widest leading-none mb-1">{t('final_buyer_label')}</p>
                           <p className="text-lg font-bold text-slate-900 dark:text-white truncate">{finalBuyer.name || "Client"}</p>
                           <div className="flex items-center gap-2 mt-1">
                              <Smartphone size={12} className="text-green-500" />
@@ -391,22 +389,21 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                           </div>
                        </div>
                        <div className="text-right shrink-0">
-                          <p className="text-[10px] font-black text-muted-foreground uppercase opacity-40 mb-1">Sold at</p>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase opacity-40 mb-1">{t('sold_at_label')}</p>
                           <p className="text-xs font-bold text-slate-900 dark:text-white">{post.completedAt ? format(new Date(post.completedAt), 'MMM d, HH:mm') : '...'}</p>
                        </div>
                     </div>
                  </div>
                )}
 
-               {/* Admin Feedback Block */}
                {(post.adminMessage || isRejected) && (
                   <div className="p-6 bg-slate-900 text-white rounded-3xl border-4 border-red-500/30 space-y-5 shadow-2xl">
                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                            <ShieldAlert className="text-red-500 w-6 h-6" />
-                           <h4 className="font-black text-[10px] sm:text-xs uppercase tracking-widest text-red-400">Admin Response</h4>
+                           <h4 className="font-black text-[10px] sm:text-xs uppercase tracking-widest text-red-400">{t('admin_response_title')}</h4>
                         </div>
-                        <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">Urgent Notice</span>
+                        <span className="text-[9px] font-black opacity-40 uppercase tracking-widest">{t('urgent_notice_label')}</span>
                      </div>
                      <p className="text-xs md:text-lg font-medium leading-relaxed italic text-slate-300 border-l-2 border-red-500/50 pl-4 py-1">
                         "{post.adminMessage || "Listing was flagged by security. Penalty enforcement applied."}"
@@ -414,13 +411,13 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                      
                      {!post.sellerSeenDeletionAt ? (
                        <Button onClick={onSeen} className="w-full h-12 md:h-16 rounded-2xl bg-white text-black hover:bg-slate-200 font-black uppercase tracking-widest text-xs md:text-sm gap-3 active:scale-[0.98] transition-all">
-                          <Eye size={20} /> I have read the decision
+                          <Eye size={20} /> {t('read_decision_btn')}
                        </Button>
                      ) : (
                         <div className="flex items-center justify-between p-4 bg-red-950/30 rounded-2xl text-[11px] font-black uppercase text-red-400 border border-red-900/30">
                            <div className="flex items-center gap-2">
                               <History size={16} className="animate-spin-slow" />
-                              <span>Auto-Deleting record in:</span>
+                              <span>{t('auto_delete_prefix')}</span>
                            </div>
                            <span className="bg-red-600 text-white px-4 py-1 rounded-full shadow-lg">{autoDeleteTime}</span>
                         </div>
@@ -436,11 +433,11 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                   <div className="flex items-center gap-4 text-primary">
                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"><AlertCircle size={24} /></div>
                      <div>
-                        <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight">Purchase Claims</h4>
-                        <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-widest opacity-60">Xaqiiji qofka kaa iibsaday account-ka</p>
+                        <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight">{t('purchase_claims_title')}</h4>
+                        <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-widest opacity-60">{t('verify_buyer_desc')}</p>
                      </div>
                   </div>
-                  <Badge className="bg-primary text-white border-none rounded-full h-8 px-4 font-black uppercase text-[10px]">{claimants.length} Requests</Badge>
+                  <Badge className="bg-primary text-white border-none rounded-full h-8 px-4 font-black uppercase text-[10px]">{claimants.length} {t('requests_count_label')}</Badge>
                </div>
                
                <div className="grid grid-cols-1 gap-4">
@@ -482,15 +479,15 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                          {!isDecisionMade ? (
                            <div className="flex gap-3 w-full sm:w-auto shrink-0">
                               <Button onClick={() => onRespond(claim.uid, true)} className="flex-1 sm:flex-none h-14 md:h-16 px-8 bg-green-600 hover:bg-green-700 font-black uppercase tracking-widest text-xs rounded-2xl gap-2 shadow-xl shadow-green-600/20 active:scale-[0.98]">
-                                 <Check size={20} /> SOLD
+                                 <Check size={20} /> {t('mark_as_sold_btn').toUpperCase()}
                               </Button>
                               <Button onClick={() => onRespond(claim.uid, false)} variant="outline" className="flex-1 sm:flex-none h-14 md:h-16 px-6 text-red-500 border-red-100 dark:border-red-900/20 font-black uppercase tracking-widest text-xs rounded-2xl gap-2 hover:bg-red-50 dark:hover:bg-red-950/20">
-                                 <XCircle size={20} /> REJECT
+                                 <XCircle size={20} /> {language === 'so' ? 'MAYA' : 'REJECT'}
                               </Button>
                            </div>
                          ) : (
                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground p-3 border rounded-xl border-dashed">
-                              Final Decision Recorded
+                              {t('final_decision_recorded')}
                            </div>
                          )}
                       </Card>
@@ -504,13 +501,13 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
              {!post.sold && post.status === 'approved' && (
                 <div className="space-y-2">
                    <p className="text-[9px] md:text-[11px] font-bold text-green-600 uppercase tracking-wide ml-1">
-                      Hadii la iibsaday account kaan fadlan Riix halkaan hoose
+                      {t('sold_confirmation_prompt')}
                    </p>
                    <Button 
                      onClick={onMarkAsSold}
                      className="h-12 md:h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-green-600/20 px-8"
                    >
-                      <CheckCircle2 className="w-4 h-4" /> Waala gatay
+                      <CheckCircle2 className="w-4 h-4" /> {t('mark_as_sold_btn')}
                    </Button>
                 </div>
              )}
@@ -518,11 +515,11 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
              <div className="flex flex-wrap gap-3">
                 {!post.sold && isExpired && !isRejected && (
                   <Button onClick={onRenew} className="h-12 md:h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 px-8">
-                     <RefreshCw className="w-4 h-4" /> Renew Listing
+                     <RefreshCw className="w-4 h-4" /> {t('renew_listing_btn')}
                   </Button>
                 )}
                 <Button variant="ghost" className="h-12 md:h-14 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 font-black text-xs uppercase tracking-widest gap-2 px-6" onClick={onDelete}>
-                   <Trash2 className="w-4 h-4" /> Delete record
+                   <Trash2 className="w-4 h-4" /> {t('delete_record_btn')}
                 </Button>
              </div>
           </div>
