@@ -46,14 +46,13 @@ export default function ProfileView() {
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [editData, setEditData] = useState({ name: "", phoneNumber: "", gameUid: "", photoURL: "" });
+  const [editData, setEditData] = useState({ name: "", phoneNumber: "", photoURL: "" });
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
     if (user) setEditData({ 
       name: user.name || "", 
       phoneNumber: user.phoneNumber || "", 
-      gameUid: user.gameUid || "", 
       photoURL: user.photoURL || "" 
     });
   }, [user, loading, router]);
@@ -109,7 +108,7 @@ export default function ProfileView() {
     );
   }
 
-  if (!user) return null;
+  if (!user) null;
 
   return (
     <div className="pb-32 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition">
@@ -214,10 +213,9 @@ export default function ProfileView() {
                     onChange={val => setEditData({...editData, phoneNumber: val.replace(/\D/g, '')})} 
                     required
                   />
-                  <ProfileInput label="Game UID / Player ID" value={editData.gameUid} type="tel" inputMode="numeric" onChange={val => setEditData({...editData, gameUid: val.replace(/\D/g, '')})} required />
                </div>
                <Button type="submit" disabled={isSaving} className="w-full h-12 md:h-20 rounded-xl md:rounded-[2.5rem] font-black text-xs md:text-xl shadow-2xl shadow-primary/20 active:scale-95 transition-transform uppercase tracking-widest">
-                 {isSaving ? <Loader2 className="animate-spin w-5 h-5 md:w-8 md:h-8" /> : "Apply Profile Updates"}
+                 {isSaving ? <Loader2 className="animate-spin w-5 h-5 md:w-8 md:h-8" /> : t('save')}
                </Button>
             </form>
          </DialogContent>

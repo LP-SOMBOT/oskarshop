@@ -442,7 +442,8 @@ const translations: Record<Language, Record<string, string>> = {
     premium_assets: "Premium Assets",
     verify_assets_desc: "Confirm the account features",
     contact_number: "Contact Number",
-    phone_digits_error: "Contact number must be at least 9 digits."
+    phone_digits_error: "Contact number must be at least 9 digits.",
+    save: "Save"
   },
   so: {
     home: "Hoyga",
@@ -521,7 +522,8 @@ const translations: Record<Language, Record<string, string>> = {
     premium_assets: "Waxyabaha account tiga yaalo",
     verify_assets_desc: "U geli Si saxan iskana hubi",
     contact_number: "Whatsapp number kaaga",
-    phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar."
+    phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar.",
+    save: "Save"
   }
 };
 
