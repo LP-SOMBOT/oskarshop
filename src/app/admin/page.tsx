@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -1658,7 +1657,7 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-blue-500">
                               <ImagePlus className="w-6 h-6" />
                               <div className="text-left">
-                                 h4 className="font-headline font-bold text-lg uppercase tracking-tight">Brand Identity</h4>
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Brand Identity</h4>
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Logo, Ticker & Live Toggles</p>
                               </div>
                            </div>
@@ -2190,7 +2189,7 @@ export default function AdminPage() {
               <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
-                 <SettingInput label="Duration Value" value={promoForm.duration} type="number" onChange={v => setPromoForm({...promoForm, duration: v})} placeholder="e.g. 7" />
+                 <SettingInput label="Duration Value" value={promoForm.duration} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 7" />
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
                     <Select value={promoForm.durationUnit} onValueChange={v => setPromoForm({...promoForm, durationUnit: v})}>
