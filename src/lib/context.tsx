@@ -223,6 +223,14 @@ type StoreSettings = {
     publicKey?: string;
   };
   lastResetMonth?: string; // Format: YYYY-MM
+  leaderboard?: {
+    rewardsActive: boolean;
+    rewards: {
+      rank1: number;
+      rank2: number;
+      rank3: number;
+    };
+  };
   config?: {
     shop?: {
       feeType: 'percentage' | 'fixed';
@@ -801,8 +809,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb]);
 
   const recalculateLeaderboard = useCallback(async (users: UserProfile[]) => {
-    if (!rtdb) return;
+    if (!rtdb || !syncStatus.settings) return;
     
+    const settings = storeSettings.leaderboard || {
+      rewardsActive: true,
+      rewards: { rank1: 3, rank2: 2, rank3: 1 }
+    };
+
     const sorted = [...users].sort((a, b) => (b.points || 0) - (a.points || 0));
     const top50 = sorted.slice(0, 50);
     
@@ -812,9 +825,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const rankIndex = top50.findIndex(top => top.uid === u.uid);
       const rank = rankIndex !== -1 ? rankIndex + 1 : null;
       let discount = 0;
-      if (rank === 1) discount = 3;
-      else if (rank === 2) discount = 2;
-      else if (rank === 3) discount = 1;
+      
+      if (settings.rewardsActive) {
+        if (rank === 1) discount = settings.rewards.rank1 || 3;
+        else if (rank === 2) discount = settings.rewards.rank2 || 2;
+        else if (rank === 3) discount = settings.rewards.rank3 || 1;
+      }
       
       if (u.leaderboardRank !== rank || u.leaderboardDiscount !== discount) {
         updates[`users/${u.uid}/leaderboardRank`] = rank;
@@ -825,7 +841,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (Object.keys(updates).length > 0) {
       await update(ref(rtdb), updates);
     }
-  }, [rtdb]);
+  }, [rtdb, syncStatus.settings, storeSettings.leaderboard]);
 
   useEffect(() => {
     if (!rtdb || !syncStatus.settings) return;
@@ -1758,7 +1774,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return Number(data.discount) || 0;
   };
 
-  const updateStoreSettings = async (s: any) => update(ref(rtdb, 'settings'), s);
+  const updateStoreSettings = async (s: any) => {
+    if (!rtdb) return;
+    await update(ref(rtdb, 'settings'), s);
+    // If leaderboard percentages changed, trigger a live recalculation for all users
+    if (s.leaderboard) {
+      const usersSnap = await get(ref(rtdb, 'users'));
+      if (usersSnap.exists()) {
+        const users = Object.entries(usersSnap.val()).map(([uid, v]: any) => ({ ...v, uid }));
+        recalculateLeaderboard(users);
+      }
+    }
+  };
   
   const updateAdminSettings = async (s: any) => update(ref(rtdb, 'admin_settings'), s);
 

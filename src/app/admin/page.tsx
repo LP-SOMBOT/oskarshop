@@ -75,7 +75,9 @@ import {
   Wallet,
   AlertTriangle,
   Ticket,
-  GripVertical
+  GripVertical,
+  Trophy,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -353,7 +355,7 @@ export default function AdminPage() {
 
   const router = useRouter();
 
-  const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'events' | 'users' | 'settings' | 'promo-codes'>('dashboard');
+  const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'events' | 'users' | 'settings' | 'promo-codes' | 'leaderboard'>('dashboard');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -402,6 +404,11 @@ export default function AdminPage() {
   const [termsForm, setTermsForm] = useState({ en: "", so: "" });
   const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
 
+  const [leaderboardForm, setLeaderboardForm] = useState({
+    rewardsActive: true,
+    rewards: { rank1: 3, rank2: 2, rank3: 1 }
+  });
+
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
@@ -444,6 +451,10 @@ export default function AdminPage() {
       setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
       setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
+      setLeaderboardForm(storeSettings.leaderboard || {
+        rewardsActive: true,
+        rewards: { rank1: 3, rank2: 2, rank3: 1 }
+      });
     }
   }, [storeSettings]);
 
@@ -660,6 +671,18 @@ export default function AdminPage() {
     toast({ title: "Economy settings updated" });
   };
 
+  const handleSaveLeaderboard = async () => {
+    setIsSavingStatus(true);
+    try {
+      await updateStoreSettings({
+        leaderboard: leaderboardForm
+      });
+      toast({ title: "Leaderboard Updated", description: "Rewards settings have been updated live." });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
   if (loading || isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-6">
@@ -683,6 +706,7 @@ export default function AdminPage() {
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
+        <SideNavItem icon={Trophy} label="Leaderboard" active={activeView === 'leaderboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('leaderboard'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} badge={promoCodes.filter(p => !p.claimed).length} />
@@ -799,6 +823,69 @@ export default function AdminPage() {
                         <Area type="monotone" dataKey="v" stroke="#0EA5E9" fillOpacity={0.1} fill="#0EA5E9" strokeWidth={4} />
                      </AreaChart>
                   </ResponsiveContainer>
+               </Card>
+            </div>
+          )}
+
+          {activeView === 'leaderboard' && (
+            <div className="space-y-12 animate-in fade-in duration-700">
+               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                  <div className="p-6 md:p-10 space-y-10">
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b dark:border-white/5 pb-8">
+                        <div className="flex items-center gap-4 text-primary">
+                           <Trophy size={32} />
+                           <div>
+                              <h3 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight">Leaderboard Rewards</h3>
+                              <p className="text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60">Control discount tiers for top players</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl border dark:border-white/5">
+                           <Label className="font-bold text-sm">Rewards Active</Label>
+                           <Switch 
+                             checked={leaderboardForm.rewardsActive} 
+                             onCheckedChange={(v) => setLeaderboardForm({...leaderboardForm, rewardsActive: v})} 
+                             className="scale-110"
+                           />
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
+                        <RewardControl 
+                          rank={1} 
+                          value={leaderboardForm.rewards.rank1} 
+                          onChange={(v) => setLeaderboardForm({
+                            ...leaderboardForm, 
+                            rewards: { ...leaderboardForm.rewards, rank1: parseInt(v) || 0 }
+                          })}
+                          onSave={handleSaveLeaderboard}
+                        />
+                        <RewardControl 
+                          rank={2} 
+                          value={leaderboardForm.rewards.rank2} 
+                          onChange={(v) => setLeaderboardForm({
+                            ...leaderboardForm, 
+                            rewards: { ...leaderboardForm.rewards, rank2: parseInt(v) || 0 }
+                          })}
+                          onSave={handleSaveLeaderboard}
+                        />
+                        <RewardControl 
+                          rank={3} 
+                          value={leaderboardForm.rewards.rank3} 
+                          onChange={(v) => setLeaderboardForm({
+                            ...leaderboardForm, 
+                            rewards: { ...leaderboardForm.rewards, rank3: parseInt(v) || 0 }
+                          })}
+                          onSave={handleSaveLeaderboard}
+                        />
+                     </div>
+                     
+                     <div className="pt-4 p-6 bg-blue-50 dark:bg-blue-900/10 rounded-[2rem] border border-blue-100 dark:border-blue-800/30 flex gap-4">
+                        <Info className="text-blue-500 shrink-0 mt-0.5" size={20} />
+                        <p className="text-[11px] md:text-sm font-medium leading-relaxed">
+                           Changing these values will immediately update the <strong>"Discount"</strong> applied to the checkout total for the top 3 rank holders. Each save triggers a live recalculation of all user profiles.
+                        </p>
+                     </div>
+                  </div>
                </Card>
             </div>
           )}
@@ -2161,7 +2248,8 @@ export default function AdminPage() {
                    <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act)} className={cn("rounded-xl h-10 md:h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600 text-white' : '')}>{act}</Button>
                  ))}
               </div>
-              <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="Reason for penalty..." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
+              <span className="text-red-500 font-bold text-[10px]">Reason:</span>
+              <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="e.g. Account listing was flagged by security. Penalty enforcement applied." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
               <Button onClick={async () => { await enforceAccountAction(selectedAccount!.id, enforceAction, enforceMessage); setIsEnforceDialogOpen(false); setSelectedAccountId(null); setEnforceMessage(""); }} disabled={isSavingStatus || !enforceMessage} className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest shadow-2xl">
                  Apply Enforcement
               </Button>
@@ -2182,6 +2270,31 @@ export default function AdminPage() {
            </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function RewardControl({ rank, value, onChange, onSave }: { rank: number, value: number, onChange: (v: string) => void, onSave: () => void }) {
+  const icon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
+  const label = rank === 1 ? "Top 1 Reward (%)" : rank === 2 ? "Top 2 Reward (%)" : "Top 3 Reward (%)";
+  
+  return (
+    <div className="bg-slate-50 dark:bg-slate-800/50 p-6 md:p-8 rounded-[2rem] border dark:border-white/5 space-y-4">
+       <div className="flex items-center gap-3 mb-2">
+          <div className="text-2xl md:text-3xl">{icon}</div>
+          <span className="font-bold text-sm md:text-base">{label}</span>
+       </div>
+       <div className="flex gap-2">
+          <Input 
+            type="number" 
+            value={value.toString()} 
+            onChange={(e) => onChange(e.target.value)} 
+            className="h-12 md:h-14 rounded-xl md:rounded-2xl border-none bg-white dark:bg-slate-900 font-bold px-4 md:px-6 shadow-inner text-base md:text-lg focus:ring-2 focus:ring-primary" 
+          />
+          <Button onClick={onSave} className="h-12 md:h-14 px-6 md:px-8 rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary">
+             <Save size={18} /> <span className="hidden sm:inline">Keydi</span>
+          </Button>
+       </div>
     </div>
   );
 }
@@ -2259,6 +2372,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
              <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
+             {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
           </div>
        </Card>
 
@@ -2444,7 +2558,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <ShieldAlert size={32} className="md:size-10 text-white" />
                </div>
                <div>
-                  <h2 className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight leading-none">Seller Stalling</h2>
+                  <h2 className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight font-black leading-none">Seller Stalling</h2>
                   <p className="text-white/80 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">PENALTY ACTION REQUIRED</p>
                </div>
             </div>
@@ -2629,7 +2743,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                                <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
                                <Badge className={cn(
                                  "text-[8px] font-black uppercase px-2 py-0 h-5 border-none shadow-sm",
-                                 claimStatus === 'accepted' ? "bg-green-500 text-white" : claimStatus === 'rejected' ? "bg-red-500 text-white" : "bg-amber-500 text-white"
+                                 claimStatus === 'accepted' ? 'bg-green-500 text-white' : claimStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
                                )}>
                                  {claimStatus === 'accepted' ? 'SELLER CONFIRMED' : claimStatus === 'rejected' ? 'SELLER REJECTED' : 'AWAITING SELLER'}
                                </Badge>
@@ -2640,7 +2754,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                             <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase() + " AGO"}</p>
                          </div>
                       </div>
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
                          <Button 
                            variant="outline" 
                            className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2 text-[10px] sm:text-sm"

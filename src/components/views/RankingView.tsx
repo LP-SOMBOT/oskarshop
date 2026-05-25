@@ -19,8 +19,15 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 export default function RankingView() {
-  const { allUsers, setActiveTab, t } = useApp();
+  const { allUsers, setActiveTab, storeSettings, t } = useApp();
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
+
+  const leaderboardSettings = useMemo(() => {
+    return storeSettings?.leaderboard || {
+      rewardsActive: true,
+      rewards: { rank1: 3, rank2: 2, rank3: 1 }
+    };
+  }, [storeSettings]);
 
   const sortedUsers = useMemo(() => {
     return [...allUsers]
@@ -71,9 +78,18 @@ export default function RankingView() {
         </div>
 
         <div className="flex items-center justify-center gap-1.5 md:gap-4 flex-1">
-           <RewardBadge rank={1} discount={3} />
-           <RewardBadge rank={2} discount={2} />
-           <RewardBadge rank={3} discount={1} />
+           {leaderboardSettings.rewardsActive && (
+             <>
+               <RewardBadge rank={1} discount={leaderboardSettings.rewards.rank1} />
+               <RewardBadge rank={2} discount={leaderboardSettings.rewards.rank2} />
+               <RewardBadge rank={3} discount={leaderboardSettings.rewards.rank3} />
+             </>
+           )}
+           {!leaderboardSettings.rewardsActive && (
+              <Badge className="bg-slate-100 text-slate-400 border-none text-[8px] md:text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
+                 Rewards Period Closed
+              </Badge>
+           )}
         </div>
 
         <div className="hidden sm:flex flex-col items-end shrink-0">
@@ -101,9 +117,9 @@ export default function RankingView() {
           </div>
 
           <div className="grid grid-cols-3 gap-3 md:gap-8 items-end pt-10 pb-4">
-             {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" />}
-             {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" />}
-             {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" />}
+             {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" activeRewards={leaderboardSettings.rewardsActive} />}
+             {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" activeRewards={leaderboardSettings.rewardsActive} />}
+             {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" activeRewards={leaderboardSettings.rewardsActive} />}
           </div>
 
           <div className="space-y-3">
@@ -133,7 +149,7 @@ function RewardBadge({ rank, discount }: { rank: number, discount: number }) {
   );
 }
 
-function PodiumCard({ user, rank, color }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze' }) {
+function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze', activeRewards: boolean }) {
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
@@ -173,17 +189,19 @@ function PodiumCard({ user, rank, color }: { user: any, rank: number, color: 'go
           </div>
        </div>
 
-       <div className={cn(
-         "w-full rounded-t-2xl shadow-inner flex flex-col items-center justify-center pt-2",
-         isGold ? "h-20 md:h-28 bg-gradient-to-b from-yellow-500/20 to-transparent" :
-         isSilver ? "h-16 md:h-20 bg-gradient-to-b from-slate-400/20 to-transparent" :
-         "h-12 md:h-16 bg-gradient-to-b from-amber-700/20 to-transparent"
-       )}>
-          <span className={cn(
-            "text-[8px] font-black uppercase tracking-widest",
-            isGold ? "text-yellow-600" : isSilver ? "text-slate-500" : "text-amber-800"
-          )}>TOP {rank}</span>
-       </div>
+       {activeRewards && (
+         <div className={cn(
+           "w-full rounded-t-2xl shadow-inner flex flex-col items-center justify-center pt-2",
+           isGold ? "h-20 md:h-28 bg-gradient-to-b from-yellow-500/20 to-transparent" :
+           isSilver ? "h-16 md:h-20 bg-gradient-to-b from-slate-400/20 to-transparent" :
+           "h-12 md:h-16 bg-gradient-to-b from-amber-700/20 to-transparent"
+         )}>
+            <span className={cn(
+              "text-[8px] font-black uppercase tracking-widest",
+              isGold ? "text-yellow-600" : isSilver ? "text-slate-500" : "text-amber-800"
+            )}>TOP {rank}</span>
+         </div>
+       )}
     </div>
   );
 }
