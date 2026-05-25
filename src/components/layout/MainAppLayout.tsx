@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -15,7 +16,9 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
   
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isAdminPage = pathname.startsWith("/admin");
-  const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || activeTab === 'chat' || isPostingAccount;
+  const isRanking = activeTab === 'ranking';
+  
+  const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || activeTab === 'chat' || isPostingAccount || isRanking;
 
   const isOffline = storeSettings?.appStatus?.offline;
   const isAdminUser = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'staff';

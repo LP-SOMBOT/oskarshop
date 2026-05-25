@@ -221,6 +221,7 @@ type StoreSettings = {
     templateId?: string;
     publicKey?: string;
   };
+  lastResetMonth?: string; // Format: YYYY-MM
   config?: {
     shop?: {
       feeType: 'percentage' | 'fixed';
@@ -260,6 +261,8 @@ type UserProfile = {
   termsAccepted?: boolean;
   suspendedUntil?: number;
   warnings?: Record<string, UserWarning>;
+  leaderboardRank?: number | null;
+  leaderboardDiscount?: number;
 };
 
 type BannedInfo = {
@@ -445,7 +448,12 @@ const translations: Record<Language, Record<string, string>> = {
     verify_assets_desc: "Confirm the account features",
     contact_number: "Contact Number",
     phone_digits_error: "Contact number must be at least 9 digits.",
-    save: "Save"
+    save: "Save",
+    rank_reward: "Rank Reward",
+    current_month: "Month",
+    next_reset: "Next Reset",
+    reward_tiers: "Reward Tiers",
+    no_participants: "No other participants found."
   },
   so: {
     home: "Hoyga",
@@ -525,7 +533,12 @@ const translations: Record<Language, Record<string, string>> = {
     verify_assets_desc: "U geli Si saxan iskana hubi",
     contact_number: "Whatsapp number kaaga",
     phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar.",
-    save: "Save"
+    save: "Keydi",
+    rank_reward: "Darajo",
+    current_month: "Bisha",
+    next_reset: "Reset-ka Xiga",
+    reward_tiers: "Abaalmarinta",
+    no_participants: "Ciyaartoy kale lama helin."
   }
 };
 
@@ -658,7 +671,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           createdAt: Date.now(),
           termsAccepted: localAccepted,
           photoURL: authUser.photoURL || "",
-          phoneNumber: authUser.email ? authUser.email.split('@')[0] : ""
+          phoneNumber: authUser.email ? authUser.email.split('@')[0] : "",
+          leaderboardRank: null,
+          leaderboardDiscount: 0
         };
         await set(userRef, profile);
         setUserProfile(profile);
@@ -682,6 +697,74 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error("Profile sync failed:", err);
     }
   }, [rtdb]);
+
+  // Ranking Logic
+  const recalculateLeaderboard = useCallback(async (users: UserProfile[]) => {
+    if (!rtdb) return;
+    
+    const sorted = [...users].sort((a, b) => (b.points || 0) - (a.points || 0));
+    const top50 = sorted.slice(0, 50);
+    
+    const updates: any = {};
+    
+    // Clear all previous ranks first if needed, or just handle top 3
+    // For efficiency, we'll only update changed users
+    users.forEach(u => {
+      const rankIndex = top50.findIndex(top => top.uid === u.uid);
+      const rank = rankIndex !== -1 ? rankIndex + 1 : null;
+      let discount = 0;
+      if (rank === 1) discount = 3;
+      else if (rank === 2) discount = 2;
+      else if (rank === 3) discount = 1;
+      
+      if (u.leaderboardRank !== rank || u.leaderboardDiscount !== discount) {
+        updates[`users/${u.uid}/leaderboardRank`] = rank;
+        updates[`users/${u.uid}/leaderboardDiscount`] = discount;
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      await update(ref(rtdb), updates);
+    }
+  }, [rtdb]);
+
+  // Monthly Reset Check
+  useEffect(() => {
+    if (!rtdb || !syncStatus.settings) return;
+
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    if (storeSettings.lastResetMonth !== currentMonthStr) {
+      // It's a new month, reset everyone
+      const resetPoints = async () => {
+        setIsGlobalLoading(true);
+        try {
+          const updates: any = {
+            'settings/lastResetMonth': currentMonthStr
+          };
+          
+          // Reset all users
+          const usersSnap = await get(ref(rtdb, 'users'));
+          const users = usersSnap.val() || {};
+          Object.keys(users).forEach(uid => {
+            updates[`users/${uid}/points`] = 0;
+            updates[`users/${uid}/leaderboardRank`] = null;
+            updates[`users/${uid}/leaderboardDiscount`] = 0;
+          });
+          
+          await update(ref(rtdb), updates);
+          toast({ title: "New Session Started!", description: "All points have been reset for the new month." });
+        } catch (e) {
+          console.error("Monthly reset failed:", e);
+        } finally {
+          setIsGlobalLoading(false);
+        }
+      };
+      
+      resetPoints();
+    }
+  }, [rtdb, syncStatus.settings, storeSettings.lastResetMonth]);
 
   useEffect(() => {
     if (!auth) return;
@@ -847,6 +930,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (s.val()) {
         const users = Object.entries(s.val()).map(([uid, v]: any) => ({ ...v, uid: v.uid || uid }));
         setAllUsers(users);
+        recalculateLeaderboard(users);
       } else setAllUsers([]);
       setSyncStatus(prev => ({ ...prev, allUsers: true }));
     });
@@ -854,7 +938,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       off(settingsRef); off(gamesRef); off(productsRef); off(accPostsRef); off(promoCodesRef); off(eventsRef); off(bannersRef); off(usersRef);
     };
-  }, [rtdb, syncStatus.settings, storeSettings.isLive, storeSettings.appStatus?.offline, showPushNotification]);
+  }, [rtdb, syncStatus.settings, storeSettings.isLive, storeSettings.appStatus?.offline, showPushNotification, recalculateLeaderboard]);
 
   useEffect(() => {
     if (!rtdb || !user) {
@@ -1000,7 +1084,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     setAuthError(null);
     try {
-      // Normalization check for RTDB uniqueness
       const normalizedPhone = ph.replace(/\D/g, "");
       const usersRef = ref(rtdb, 'users');
       const usersSnap = await get(usersRef);
@@ -1020,8 +1103,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await updateProfile(cred.user, { displayName: n });
       
       const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
-      
-      // Admin Check: if phone is 613982172
       const isAdminNumber = normalizedPhone.endsWith("613982172");
 
       const profile: UserProfile = { 
@@ -1032,7 +1113,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         role: isAdminNumber ? 'admin' : 'user', 
         points: 0, 
         createdAt: Date.now(),
-        termsAccepted: localAccepted 
+        termsAccepted: localAccepted,
+        leaderboardRank: null,
+        leaderboardDiscount: 0
       };
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
       setUserProfile(profile);
@@ -1171,11 +1254,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
+    
     if (status === 'successful') {
       updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val();
-      if (orderData && orderData.userId) await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
+      
+      if (orderData && orderData.userId) {
+        const isAccount = orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts';
+        // Only top-up items award points
+        if (!isAccount) {
+          await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
+        }
+      }
     }
     await update(ref(rtdb, `orders/${orderId}`), updates);
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
@@ -1305,7 +1396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const reportToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
+  const respondToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
     if (!rtdb || !user) return;
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
@@ -1345,10 +1436,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await broadcastAdminNotification("Conflict Detected! ⚠️", `Seller rejected buyer claim for account #${postId.toUpperCase()}.`);
     }
     await update(ref(rtdb), updates);
-  };
-
-  const respondToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
-    return reportToSaleReport(postId, confirmed, buyerId);
   };
 
   const enforceAccountAction = async (postId: string, action: 'delete' | 'holding' | 'approved' | 'pending', message: string) => {
@@ -1412,7 +1499,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb || !enhancedUser?.isAdmin) return; 
     setIsGlobalLoading(true);
     try {
-      // 1. Delete from Firebase Authentication via API
       const res = await fetch('/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1420,10 +1506,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
-
-      // 2. Delete from Realtime Database
       await remove(ref(rtdb, `users/${uid}`)); 
-      
       toast({ title: "User permanently deleted." });
     } catch (err: any) {
       toast({ variant: "destructive", title: "Deletion Failed", description: err.message });
