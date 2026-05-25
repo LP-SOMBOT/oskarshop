@@ -844,7 +844,17 @@ export default function AdminPage() {
                            <Label className="font-bold text-sm">Rewards Active</Label>
                            <Switch 
                              checked={leaderboardForm.rewardsActive} 
-                             onCheckedChange={(v) => setLeaderboardForm({...leaderboardForm, rewardsActive: v})} 
+                             onCheckedChange={async (v) => {
+                               const updatedForm = { ...leaderboardForm, rewardsActive: v };
+                               setLeaderboardForm(updatedForm);
+                               setIsSavingStatus(true);
+                               try {
+                                 await updateStoreSettings({ leaderboard: updatedForm });
+                                 toast({ title: v ? "Rewards Enabled" : "Rewards Disabled" });
+                               } finally {
+                                 setIsSavingStatus(false);
+                               }
+                             }} 
                              className="scale-110"
                            />
                         </div>
@@ -1648,7 +1658,7 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-blue-500">
                               <ImagePlus className="w-6 h-6" />
                               <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Brand Identity</h4>
+                                 h4 className="font-headline font-bold text-lg uppercase tracking-tight">Brand Identity</h4>
                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Logo, Ticker & Live Toggles</p>
                               </div>
                            </div>
