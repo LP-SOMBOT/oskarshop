@@ -57,8 +57,8 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
 
       {hasRankDiscount && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
-           <Badge className="bg-primary text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
-             {RankIcon} -{rankDiscount}% Reward
+           <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
+             {RankIcon} -{rankDiscount}% {t('rank_reward')}
            </Badge>
         </div>
       )}
