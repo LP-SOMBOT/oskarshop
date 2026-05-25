@@ -191,7 +191,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button type="submit" disabled={isSubmitting || isGlobalLoading} className="w-full h-12 sm:h-16 rounded-full text-base font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase">
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "SOO GAL"}
+                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Login"}
                 </Button>
 
                 <div className="text-center pt-2">
