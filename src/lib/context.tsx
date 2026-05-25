@@ -496,7 +496,12 @@ const translations: Record<Language, Record<string, string>> = {
     no_cancel: "No",
     session_label: "Session #",
     final_total: "Final Total:",
-    promo_code_prompt: "Enter Promo Code (If you have one)"
+    promo_code_prompt: "Enter Promo Code (If you have one)",
+    approved: "Approved",
+    pending: "Pending",
+    holding: "Holding",
+    rejected: "Rejected",
+    sold: "Sold"
   },
   so: {
     home: "Hoyga",
@@ -623,7 +628,12 @@ const translations: Record<Language, Record<string, string>> = {
     no_cancel: "Maya",
     session_label: "Siisoon #",
     final_total: "Wadarta:",
-    promo_code_prompt: "Geli Promo Code (Hadaad haysato)"
+    promo_code_prompt: "Geli Promo Code (Hadaad haysato)",
+    approved: "La aqbalay",
+    pending: "Wali",
+    holding: "Hada lama heli karo",
+    rejected: "Lama aqbalin",
+    sold: "Waa la iibiyay"
   }
 };
 
@@ -697,6 +707,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTabState] = useState('home');
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -728,8 +739,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(() => getCache(USER_CACHE_KEY));
   
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [adminNotifications, setAdminNotifications] = useState<AppNotification[]>([]);
   const [chatTargetId, setChatTargetId] = useState<string | null>(null);
@@ -738,6 +747,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
+
+  const orders = useMemo(() => {
+    if (!user) return [];
+    return allOrders.filter(o => o.userId === user.uid).sort((a,b)=>b.createdAt - a.createdAt);
+  }, [allOrders, user]);
 
   const ensureUserProfile = useCallback(async (authUser: any) => {
     if (!rtdb || !authUser) return;
@@ -783,7 +797,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
-  // Ranking Logic
   const recalculateLeaderboard = useCallback(async (users: UserProfile[]) => {
     if (!rtdb) return;
     
@@ -811,7 +824,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
-  // Monthly Reset Check
   useEffect(() => {
     if (!rtdb || !syncStatus.settings) return;
 
@@ -1023,12 +1035,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!rtdb || !user) {
-      setNotifications([]); setOrders([]);
+      setNotifications([]);
       return;
     }
     const profileRef = ref(rtdb, `users/${user.uid}`);
     const notifsRef = query(ref(rtdb, `notifications/${user.uid}`), limitToLast(20));
-    const userOrdersRef = query(ref(rtdb, 'orders'), orderByChild('userId'), equalTo(user.uid));
 
     onValue(profileRef, (s) => {
       const data = s.val();
@@ -1060,13 +1071,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setNotifications(data);
     });
 
-    onValue(userOrdersRef, (s) => {
-      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt) : [];
-      setOrders(data);
-    });
-
     return () => {
-      off(profileRef); off(notifsRef); off(userOrdersRef);
+      off(profileRef); off(notifsRef);
     };
   }, [rtdb, user, showPushNotification]);
 
@@ -1272,6 +1278,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`);
   };
 
+  const buyAccountPost = (post: AccountPost) => {
+    if (!user) {
+      toast({ title: "Fadlan soo gal", description: "Waa inaad soo gashaa si aad u iibsato account-kan.", variant: "destructive" });
+      router.push('/login');
+      return;
+    }
+    router.push(`/checkout-account?id=${post.id}`);
+  };
+
   const postAccount = async (data: any) => {
     if (!rtdb || !user) return;
     const postRef = push(ref(rtdb, 'accountPosts'));
@@ -1306,15 +1321,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteOrder = async (oid: string) => { if (!rtdb) return; await remove(ref(rtdb, `orders/${oid}`)); toast({ title: "Order Deleted" }); };
-
-  const buyAccountPost = (post: AccountPost) => {
-    if (!user) {
-      toast({ title: "Fadlan soo gal", description: "Waa inaad soo gashaa si aad u iibsato account-kan.", variant: "destructive" });
-      router.push('/login');
-      return;
-    }
-    router.push(`/checkout-account?id=${post.id}`);
-  };
 
   const markNotificationsAsRead = async (nid?: string) => {
     if (!rtdb || !user) return;

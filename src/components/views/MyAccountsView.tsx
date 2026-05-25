@@ -355,7 +355,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                     "rounded-full px-5 py-2 font-black text-[10px] border-none uppercase tracking-[0.2em] shadow-sm shrink-0 transition-colors",
                     statusColors[post.status as keyof typeof statusColors] || statusColors.pending
                   )}>
-                     {post.status}
+                     {t(post.status)}
                   </Badge>
                </div>
 
@@ -462,7 +462,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                                   <p className="text-lg md:text-2xl font-bold truncate">{claim.name}</p>
                                   {isDecisionMade && (
                                     <Badge className={cn("text-[8px] h-5 uppercase font-black", claim.status === 'accepted' ? "bg-green-500" : "bg-red-500")}>
-                                      {claim.status}
+                                      {t(claim.status)}
                                     </Badge>
                                   )}
                                </div>
