@@ -197,7 +197,7 @@ export default function MyAccountsView() {
       )}
 
       <Dialog open={!!renewingPost} onOpenChange={(v) => { if(!v) { setRenewingPost(null); setHasTriggeredRenewUssd(false); } }}>
-        <DialogContent className="max-w-md w-[95vw] rounded-[2.5rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+        <DialogContent className="max-md w-[95vw] rounded-[2.5rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader className="mb-8">
              <DialogTitle className="text-2xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Renew Listing</DialogTitle>
              <DialogDescription className="text-xs sm:text-sm font-bold text-slate-50">Muda cusub u door account-kaaga si uu marketplace-ka ugu soo laabto.</DialogDescription>
@@ -252,7 +252,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
   const isRejected = post.status === 'rejected';
   const [timeLeft, setTimeLeft] = useState("");
   const [autoDeleteTime, setAutoDeleteTime] = useState("");
-  const { deleteAccountPost, allUsers } = useApp();
+  const { deleteAccountPost, allUsers, language } = useApp();
 
   const claimants = useMemo(() => Object.values(post.claimants || {}), [post.claimants]);
   const showVerification = claimants.length > 0 && !post.sold;
@@ -327,7 +327,9 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                
                {post.sold && (
                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-10">
-                    <Badge className="bg-green-500 text-white border-none font-black uppercase tracking-[0.2em] text-[10px] px-4 py-1.5 shadow-2xl">SOLD</Badge>
+                    <Badge className="bg-green-500 text-white border-none font-black uppercase tracking-[0.2em] text-[10px] px-4 py-1.5 shadow-2xl">
+                       {language === 'so' ? 'Waa la gatay' : 'SOLD'}
+                    </Badge>
                  </div>
                )}
                {(isExpired || isRejected) && !post.sold && (
