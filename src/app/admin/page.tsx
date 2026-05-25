@@ -1715,7 +1715,7 @@ export default function AdminPage() {
 
       {/* Dialogs */}
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
+        <DialogContent className="max-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
            {/* Modal Header Gradient */}
@@ -1733,7 +1733,7 @@ export default function AdminPage() {
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size(40) /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
                     )}
                  </div>
               </div>
