@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -40,7 +41,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
   const router = useRouter();
-  const { accountPosts, user, orders, buyAccountPost, reportAccountOutcome } = useApp();
+  const { accountPosts, user, orders, buyAccountPost, reportAccountOutcome, language } = useApp();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
@@ -165,7 +166,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
 
              <div className="space-y-3 md:space-y-4">
                 <h3 className="text-lg md:text-xl font-headline font-bold flex items-center gap-2 uppercase tracking-tight">
-                  <ShieldCheck className="text-primary w-4 h-4 md:w-5 md:h-5" /> Account Assets
+                  <ShieldCheck className="text-primary w-4 h-4 md:w-5 md:h-5" /> {language === 'so' ? 'Waxayaabaha account ka yeelaan' : 'Account Assets'}
                 </h3>
                 <div className="flex flex-wrap gap-1.5 md:gap-2">
                    {post.gameType === 'bloodstrike' ? (
@@ -273,7 +274,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
 
 function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 p-2 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
        <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
        <div className="min-w-0 w-full">
          <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
