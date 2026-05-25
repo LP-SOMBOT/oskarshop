@@ -2569,13 +2569,13 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <div className="flex items-center gap-3 w-full sm:w-auto">
                          <Button 
                            variant="outline" 
-                           className="flex-1 sm:flex-none h-14 px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2"
+                           className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2 text-[10px] sm:text-sm"
                            onClick={() => handleWhatsApp(c.whatsapp)}
                          >
                             <MessageCircle size={18} /> WhatsApp
                          </Button>
                          <Button 
-                           className="flex-1 sm:flex-none h-14 px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20"
+                           className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20 text-[10px] sm:text-sm"
                            onClick={() => handleForceSold(c.uid)}
                          >
                             <Check size={18} /> FORCE SOLD
