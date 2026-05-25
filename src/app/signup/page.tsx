@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,17 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { User, Lock, Mail, Phone, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { User, Lock, Smartphone, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
- * @fileOverview Signup Page with Somali language default and responsive UI.
+ * @fileOverview Signup Page with Somali language default.
+ * Now simplified to Name, Phone Number, and Password.
  */
 
 export default function SignupPage() {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,19 +46,24 @@ export default function SignupPage() {
       return;
     }
 
+    if (phone.replace(/\D/g, '').length < 9) {
+      toast({
+        variant: "destructive",
+        title: "Khalad",
+        description: "Numbarku waa inuu ugu yaraan ka koobnaadaa 9 nambar.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await signup(email, password, name, phone);
+      await signup(phone, password, name);
       toast({
         title: "Account-ka waa la sameeyey!",
         description: "Ku soo dhawoow Oskar Shop.",
       });
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Wuu ku guul darraystay",
-        description: error.message || "Waxbaa khaldamay.",
-      });
+      // Error handled by context and shown in alert
     } finally {
       setIsSubmitting(false);
     }
@@ -117,27 +123,12 @@ export default function SignupPage() {
 
             <div className="relative group">
               <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
-                <Mail className="w-5 h-5" />
-              </div>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Email-kaaga" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
-              />
-            </div>
-
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
-                <Phone className="w-5 h-5" />
+                <Smartphone className="w-5 h-5" />
               </div>
               <Input 
                 id="phone" 
                 type="tel" 
-                placeholder="Lambarkaaga" 
+                placeholder="Numbarkaaga" 
                 required 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}

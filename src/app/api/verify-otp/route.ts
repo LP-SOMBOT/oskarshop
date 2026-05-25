@@ -1,9 +1,11 @@
+
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth, isFirebaseAdminAvailable } from '@/lib/firebaseAdmin';
 
 /**
  * API Route to verify OTP and reset password.
  * Path: /api/verify-otp
+ * Updated for Phone-to-SyntheticEmail mapping logic.
  */
 
 export async function POST(request: Request) {
@@ -22,8 +24,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Missing mandatory data' }, { status: 400 });
     }
 
-    const sanitizedEmail = email.replaceAll('.', ',');
-    const otpRef = adminDb.ref(`otp_codes/${sanitizedEmail}`);
+    const sanitizedIdentifier = email.replaceAll('.', ',');
+    const otpRef = adminDb.ref(`otp_codes/${sanitizedIdentifier}`);
     const snap = await otpRef.get();
 
     if (!snap.exists()) {

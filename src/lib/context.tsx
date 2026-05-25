@@ -277,8 +277,8 @@ type AppContextType = {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   setGlobalLoading: (loading: boolean) => void;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string, phone: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  signup: (phone: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
   orders: Order[];
@@ -533,14 +533,14 @@ const getFriendlyAuthError = (err: any, lang: Language): string => {
 
   switch (code) {
     case 'auth/invalid-email':
-      return isSo ? "Email-ka aad gelisay ma saxna." : "The email address you entered is invalid.";
+      return isSo ? "Numbarka aad gelisay ma saxna." : "The phone number you entered is invalid.";
     case 'auth/user-not-found':
     case 'auth/user-disabled':
       return isSo ? "Account-ken ma jiro ama waa la xiray." : "Account not found or has been disabled.";
     case 'auth/wrong-password':
       return isSo ? "Password-ka aad gelisay waa khalad." : "Incorrect password. Please try again.";
     case 'auth/email-already-in-use':
-      return isSo ? "Email-kan horay ayaa loo isticmaalay." : "This email is already in use.";
+      return isSo ? "Numbarkan horay ayaa loo isticmaalay." : "This number is already in use.";
     case 'auth/weak-password':
       return isSo ? "Password-ku waa inuu ka koobnaadaa ugu yaraan 6 xaraf." : "Password should be at least 6 characters.";
     case 'auth/network-request-failed':
@@ -548,7 +548,7 @@ const getFriendlyAuthError = (err: any, lang: Language): string => {
     case 'auth/too-many-requests':
       return isSo ? "Isku dayo badan ayaa dhacay. Fadlan sug waxyar." : "Too many attempts. Please try again later.";
     case 'auth/invalid-credential':
-      return isSo ? "Email-ka ama Password-ka waa khalad." : "Invalid email or password.";
+      return isSo ? "Numbarka ama Password-ka waa khalad." : "Invalid phone number or password.";
     case 'auth/operation-not-allowed':
       return isSo ? "Adeeggan hadda lama oggola." : "Operation not allowed.";
     default:
@@ -583,6 +583,11 @@ const setCache = (key: string, data: any) => {
       }
     }
   }
+};
+
+const formatToSyntheticEmail = (phone: string) => {
+  const clean = phone.replace(/\D/g, "");
+  return `${clean}@oskarshop.app`;
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -650,7 +655,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           points: 0, 
           createdAt: Date.now(),
           termsAccepted: localAccepted,
-          photoURL: authUser.photoURL || ""
+          photoURL: authUser.photoURL || "",
+          phoneNumber: authUser.email ? authUser.email.split('@')[0] : ""
         };
         await set(userRef, profile);
         setUserProfile(profile);
@@ -662,6 +668,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         };
         if (!existingData.photoURL && authUser.photoURL) updates.photoURL = authUser.photoURL;
         if (!existingData.email && authUser.email) updates.email = authUser.email;
+        if (!existingData.phoneNumber && authUser.email) updates.phoneNumber = authUser.email.split('@')[0];
         
         if (Object.keys(updates).length > 1) {
            await update(userRef, updates);
@@ -863,7 +870,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(data);
       if (data) {
         setCache(USER_CACHE_KEY, data);
-        const isComplete = data.phoneNumber && data.gameUid && data.name;
+        const isComplete = data.phoneNumber && data.name;
         if (isComplete) {
           localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
         }
@@ -976,11 +983,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const login = async (e: string, p: string) => {
+  const login = async (ph: string, p: string) => {
     setIsGlobalLoading(true);
     setAuthError(null);
     try { 
-      await signInWithEmailAndPassword(auth, e, p); 
+      const email = formatToSyntheticEmail(ph);
+      await signInWithEmailAndPassword(auth, email, p); 
     } catch (err: any) {
       const friendly = getFriendlyAuthError(err, language);
       setAuthError(friendly);
@@ -988,18 +996,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally { setIsGlobalLoading(false); }
   };
 
-  const signup = async (e: string, p: string, n: string, ph: string) => {
+  const signup = async (ph: string, p: string, n: string) => {
     setIsGlobalLoading(true);
     setAuthError(null);
     try {
-      const cred = await createUserWithEmailAndPassword(auth, e, p);
+      const email = formatToSyntheticEmail(ph);
+      const cred = await createUserWithEmailAndPassword(auth, email, p);
       await updateProfile(cred.user, { displayName: n });
       
       const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
       
       const profile: UserProfile = { 
         uid: cred.user.uid, 
-        email: e, 
+        email: email, 
         name: n, 
         phoneNumber: ph, 
         role: 'user', 
@@ -1377,7 +1386,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateUserProfile = async (updates: any) => { 
     if (!rtdb || !user) return; 
     await update(ref(rtdb, `users/${user.uid}`), updates); 
-    const isComplete = updates.phoneNumber && updates.gameUid && updates.name;
+    const isComplete = updates.phoneNumber && updates.name;
     if (isComplete) localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
     toast({ title: "Profile updated!" }); 
   };

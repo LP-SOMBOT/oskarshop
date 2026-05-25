@@ -404,7 +404,6 @@ export default function AdminPage() {
   const filteredUsers = useMemo(() => {
     return allUsers.filter(u => 
       u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.uid?.toLowerCase().includes(userSearch.toLowerCase())
     );
@@ -1284,7 +1283,7 @@ export default function AdminPage() {
                                    <div className="min-w-0 flex-1">
                                       <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Claimed By</p>
                                       <p className="text-[10px] font-bold text-slate-900 dark:text-white truncate">{claimedUser?.name || 'Unknown User'}</p>
-                                      <p className="text-[8px] text-muted-foreground truncate">{claimedUser?.email || promo.usedBy}</p>
+                                      <p className="text-[8px] text-muted-foreground truncate">{claimedUser?.phoneNumber || promo.usedBy}</p>
                                    </div>
                                 </div>
                               )}
@@ -1336,7 +1335,7 @@ export default function AdminPage() {
                               </div>
                               <div className="min-w-0">
                                  <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
-                                 <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
+                                 <p className="text-[10px] text-muted-foreground truncate">{u.phoneNumber}</p>
                               </div>
                            </div>
                            <div className="grid grid-cols-2 gap-3">
@@ -1396,7 +1395,7 @@ export default function AdminPage() {
                                        </div>
                                        <div className="flex flex-col min-w-0">
                                           <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
-                                          <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.email}</span>
+                                          <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
                                        </div>
                                     </div>
                                  </TableCell>
@@ -1698,7 +1697,7 @@ export default function AdminPage() {
                               <div className="p-4 sm:p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl border border-purple-100 dark:border-purple-900/30">
                                  <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-purple-700 dark:text-purple-300">
                                     <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
-                                    These keys allow the application to send password reset codes directly through EmailJS.
+                                    These keys allow the application to send password reset codes.
                                  </p>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
@@ -1756,7 +1755,6 @@ export default function AdminPage() {
               <div className="flex justify-between items-start">
                  <div className="min-w-0 pr-2">
                     <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
-                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground truncate">{selectedUser?.email}</p>
                     <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
                        <Smartphone size={12} />
                        <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
@@ -2289,7 +2287,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
  * Full Page Account Listing Management View
  * Features real-time wait tracking and specialized penalty hub.
  */
-function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning }: any) {
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
   const [now, setNow] = useState(Date.now());
   
   useEffect(() => {
@@ -2370,6 +2368,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                <div>
                   <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
                   <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
+                  <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
                </div>
             </div>
          </Card>
@@ -2578,7 +2577,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                                </Badge>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
-                               <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">ID: {c.uid.substring(0,8)}</Badge>
+                               <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">{c.whatsapp || "No Number"}</Badge>
                             </div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase() + " AGO"}</p>
                          </div>
@@ -2640,7 +2639,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <div className="max-h-[300px] overflow-y-auto">
                          {allUsers.map((u: any) => (
                            <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
-                              {u.name || "Unknown User"} ({u.phoneNumber || u.email})
+                              {u.name || "Unknown User"} ({u.phoneNumber})
                            </SelectItem>
                          ))}
                       </div>

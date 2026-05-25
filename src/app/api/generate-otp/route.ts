@@ -1,9 +1,11 @@
+
 import { NextResponse } from 'next/server';
 import { adminDb, isFirebaseAdminAvailable } from '@/lib/firebaseAdmin';
 
 /**
  * API Route to generate and store OTP.
  * Path: /api/generate-otp
+ * Updated to handle both email and phone-based identifiers.
  */
 
 export async function POST(request: Request) {
@@ -19,11 +21,10 @@ export async function POST(request: Request) {
     const { email } = body;
 
     if (!email) {
-      return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Identifier is required' }, { status: 400 });
     }
 
     // 1. Verify user exists in /users/
-    // We use a manual search to avoid "Index not defined" errors in the database rules
     const usersRef = adminDb.ref('users');
     const usersSnapshot = await usersRef.get();
     const allUsers = usersSnapshot.val() || {};
@@ -31,16 +32,16 @@ export async function POST(request: Request) {
     const userExists = Object.values(allUsers).some((u: any) => u.email === email);
 
     if (!userExists) {
-      return NextResponse.json({ success: false, message: 'No account found with that email.' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Account-kan lama helin. Fadlan iska hubi numbarka.' }, { status: 404 });
     }
 
     // 2. Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const sanitizedEmail = email.replaceAll('.', ',');
+    const sanitizedIdentifier = email.replaceAll('.', ',');
     const expiresAt = Date.now() + 600000; // 10 minutes
 
     // 3. Save to /otp_codes/
-    await adminDb.ref(`otp_codes/${sanitizedEmail}`).set({
+    await adminDb.ref(`otp_codes/${sanitizedIdentifier}`).set({
       otp,
       expiresAt,
       used: false
