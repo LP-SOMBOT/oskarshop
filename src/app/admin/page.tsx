@@ -586,6 +586,23 @@ export default function AdminPage() {
     </div>
   );
 
+  const getDeleteDescription = () => {
+    if (!deleteTarget) return "Are you sure you want to delete this item? This action cannot be undone.";
+    const type = deleteTarget.type;
+    switch (type) {
+      case 'user': return "Are you sure you want to permanently delete this user? This cannot be undone.";
+      case 'account': return "Are you sure you want to delete this marketplace listing?";
+      case 'order': return "Are you sure you want to delete this order record?";
+      case 'game': return "Are you sure you want to delete this game collection? This will also remove all its items.";
+      case 'product': return "Are you sure you want to delete this inventory package?";
+      case 'event': return "Are you sure you want to delete this game event?";
+      case 'banner': return "Are you sure you want to remove this banner?";
+      case 'paymentMethod': return "Are you sure you want to delete this payment method?";
+      case 'promoCode': return "Are you sure you want to delete this promo voucher?";
+      default: return "Are you sure you want to delete this item? This action cannot be undone.";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
       <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
@@ -1819,7 +1836,7 @@ export default function AdminPage() {
               </div>
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
-                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
+                 <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Category</Label>
                  <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl border-none shadow-2xl">
@@ -1849,7 +1866,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Package Title" value={productForm.title} onChange={v => setProductForm({ ...productForm, title: v })} placeholder="110 Diamonds" />
                  <div className="space-y-2">
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
+                    <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
                     <Select value={productForm.gameId} onValueChange={v => setProductForm({ ...productForm, gameId: v })}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue placeholder="Select Game" /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
@@ -1863,7 +1880,7 @@ export default function AdminPage() {
                  <SettingInput label="Discount Price ($)" type="number" value={productForm.discountedPrice} onChange={v => setProductForm({ ...productForm, discountedPrice: v })} placeholder="1.99" />
               </div>
               <div className="space-y-2">
-                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
+                 <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
                  <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
                     <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
@@ -2046,7 +2063,7 @@ export default function AdminPage() {
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
            <DialogTitle className="text-xl md:text-2xl font-headline font-bold">Are you sure?</DialogTitle>
-           <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Are you sure you want to permanently delete this user? This cannot be undone.</DialogDescription>
+           <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">{getDeleteDescription()}</DialogDescription>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
               <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
