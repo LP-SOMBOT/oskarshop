@@ -58,20 +58,27 @@ export default function RankingView() {
   return (
     <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-slate-950 flex flex-col overflow-hidden animate-in fade-in duration-500">
       {/* Premium Header */}
-      <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-50">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setActiveTab('home')} className="rounded-full h-10 w-10">
-            <ArrowLeft className="w-6 h-6" />
+      <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 flex items-center justify-between px-3 md:px-10 shrink-0 z-50">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => setActiveTab('home')} className="rounded-full h-9 w-9 md:h-10 md:w-10">
+            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
           </Button>
-          <div>
-            <h1 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">
+          <div className="hidden xs:block">
+            <h1 className="font-headline font-bold text-sm md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">
               {t('ranking')}
             </h1>
-            <Badge className="bg-primary text-white text-[8px] font-black uppercase px-2 py-0">LIVE</Badge>
+            <Badge className="bg-primary text-white text-[7px] md:text-[8px] font-black uppercase px-1.5 md:px-2 py-0">LIVE</Badge>
           </div>
         </div>
 
-        <div className="hidden sm:flex flex-col items-end">
+        {/* Reward Tiers Info - Moved to Header */}
+        <div className="flex items-center justify-center gap-1.5 md:gap-4 flex-1">
+           <RewardBadge rank={1} discount={3} />
+           <RewardBadge rank={2} discount={2} />
+           <RewardBadge rank={3} discount={1} />
+        </div>
+
+        <div className="hidden sm:flex flex-col items-end shrink-0">
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('current_month')}: {currentMonthName}</p>
            <div className="flex items-center gap-2 text-primary font-bold text-sm">
               <Clock size={14} className="animate-pulse" />
@@ -94,13 +101,6 @@ export default function RankingView() {
                    {timeLeft.d}d {timeLeft.h}:{timeLeft.m}:{timeLeft.s}
                 </p>
              </div>
-          </div>
-
-          {/* Reward Tiers Info */}
-          <div className="flex items-center justify-center gap-4 py-2">
-             <RewardBadge rank={1} discount={3} />
-             <RewardBadge rank={2} discount={2} />
-             <RewardBadge rank={3} discount={1} />
           </div>
 
           {/* Top 3 Podium */}
@@ -136,9 +136,9 @@ export default function RankingView() {
 function RewardBadge({ rank, discount }: { rank: number, discount: number }) {
   const icon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
   return (
-    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-full border dark:border-white/5 shadow-sm">
-       <span className="text-sm">{icon}</span>
-       <span className="text-[10px] font-black uppercase text-slate-900 dark:text-white">-{discount}%</span>
+    <div className="flex items-center gap-1 md:gap-1.5 bg-white dark:bg-slate-900 px-1.5 md:px-3 py-1 md:py-1.5 rounded-full border dark:border-white/5 shadow-sm">
+       <span className="text-xs md:text-sm">{icon}</span>
+       <span className="text-[8px] md:text-[10px] font-black uppercase text-slate-900 dark:text-white">-{discount}%</span>
     </div>
   );
 }
