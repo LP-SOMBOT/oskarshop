@@ -20,7 +20,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup, user, isGlobalLoading, authError } = useApp();
+  const { signup, user, isGlobalLoading, authError, language } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -35,8 +35,17 @@ export default function SignupPage() {
     if (password !== confirmPassword) {
       toast({
         variant: "destructive",
-        title: "Khalad",
-        description: "Password-yada isma laha. Fadlan mar kale isku day.",
+        title: language === 'so' ? "Khalad" : "Error",
+        description: language === 'so' ? "Password-yada isma laha. Fadlan mar kale isku day." : "Passwords do not match.",
+      });
+      return;
+    }
+
+    if (password.length < 8) {
+      toast({
+        variant: "destructive",
+        title: language === 'so' ? "Khalad" : "Error",
+        description: language === 'so' ? "Password-ku waa inuu ka koobnaadaa ugu yaraan 8 xaraf." : "Password must be at least 8 characters.",
       });
       return;
     }
@@ -44,8 +53,8 @@ export default function SignupPage() {
     if (phone.length < 9) {
       toast({
         variant: "destructive",
-        title: "Khalad",
-        description: "Numbarku waa inuu ka koobnaadaa 9 nambar.",
+        title: language === 'so' ? "Khalad" : "Error",
+        description: language === 'so' ? "Numbarku waa inuu ka koobnaadaa ugu yaraan 9 nambar." : "Phone number must be at least 9 digits.",
       });
       return;
     }
@@ -54,7 +63,7 @@ export default function SignupPage() {
     try {
       await signup("+252" + phone, password, name);
       toast({
-        title: "Account-ka waa la sameeyey!",
+        title: language === 'so' ? "Account-ka waa la sameeyey!" : "Account created!",
         description: "Ku soo dhawoow Oskar Shop.",
       });
     } catch (error: any) {
@@ -100,85 +109,97 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSignup} className="space-y-4">
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
-                <User className="w-5 h-5" />
+            <div className="space-y-1">
+              <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Magac</Label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
+                  <User className="w-5 h-5" />
+                </div>
+                <Input 
+                  id="name" 
+                  type="text" 
+                  placeholder="Magacaaga oo buuxa" 
+                  required 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                />
               </div>
-              <Input 
-                id="name" 
-                type="text" 
-                placeholder="Magacaaga oo buuxa" 
-                required 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-12 sm:h-16 pl-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
-              />
             </div>
 
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
-                <Smartphone className="w-5 h-5 text-[#7C3AED]" />
-                <span className="font-bold text-gray-400 border-r border-gray-200 pr-2">+252</span>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Number</Label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                  <Smartphone className="w-5 h-5 text-[#7C3AED]" />
+                  <span className="font-bold text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                </div>
+                <Input 
+                  id="phone" 
+                  type="tel" 
+                  placeholder="613982172" 
+                  required 
+                  value={phone}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    const normalized = val.startsWith('0') ? val.substring(1) : val;
+                    setPhone(normalized.substring(0, 9));
+                  }}
+                  className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                />
               </div>
-              <Input 
-                id="phone" 
-                type="tel" 
-                placeholder="Numbarkaaga" 
-                required 
-                value={phone}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  const normalized = val.startsWith('0') ? val.substring(1) : val;
-                  setPhone(normalized.substring(0, 9));
-                }}
-                className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
-              />
             </div>
 
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
-                <Lock className="w-5 h-5" />
+            <div className="space-y-1">
+              <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password</Label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Password-ka" 
+                  required 
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7C3AED] transition-colors p-1"
+                >
+                  {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
               </div>
-              <Input 
-                id="password" 
-                type={showPassword ? "text" : "password"} 
-                placeholder="Password-ka" 
-                required 
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7C3AED] transition-colors p-1"
-              >
-                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-              </button>
             </div>
 
-            <div className="relative group">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
-                <Lock className="w-5 h-5" />
+            <div className="space-y-1">
+              <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Repeat</Label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <Input 
+                  id="confirmPassword" 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  placeholder="Ku celi password-ka" 
+                  required 
+                  minLength={8}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7C3AED] transition-colors p-1"
+                >
+                  {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
               </div>
-              <Input 
-                id="confirmPassword" 
-                type={showConfirmPassword ? "text" : "password"} 
-                placeholder="Ku celi password-ka" 
-                required 
-                minLength={6}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7C3AED] transition-colors p-1"
-              >
-                {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-              </button>
             </div>
 
             <Button 

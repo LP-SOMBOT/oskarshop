@@ -250,7 +250,6 @@ export default function AdminPage() {
     updateOrderStatus,
     updateAccountPostStatus,
     enforceAccountAction,
-    issueSellerWarning,
     suspendSeller,
     dismissAccountWarning,
     deleteUser: deleteUserFn,
@@ -806,7 +805,6 @@ export default function AdminPage() {
                    onDelete={() => { setDeleteTarget({id:selectedAccountId, type:'account'}); setIsDeleteDialogOpen(true); }}
                    onEnforce={() => setIsEnforceDialogOpen(true)}
                    enforceAccountAction={enforceAccountAction}
-                   issueSellerWarning={issueSellerWarning}
                    suspendSeller={suspendSeller}
                    dismissAccountWarning={dismissAccountWarning}
                  />
@@ -1358,7 +1356,7 @@ export default function AdminPage() {
                                  </TableCell>
                                  <TableCell>
                                     <div className="flex flex-col gap-1">
-                                       <span className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
+                                       <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
                                        <Badge className={cn(
                                          "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
                                          u.role === 'admin' || u.role === 'super_admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
@@ -1892,7 +1890,7 @@ export default function AdminPage() {
               <SettingInput label="Event Title" value={eventForm.title} onChange={v => setEventForm({ ...eventForm, title: v })} placeholder="Hacker Store 2.0" />
               <SettingInput label="Short Description" value={eventForm.shortDescription} onChange={v => setEventForm({ ...eventForm, shortDescription: v })} placeholder="New legendary bundles are here!" />
               <div className="space-y-2">
-                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Event Type</Label>
+                 <Label className="text-[9px] md:text-bold uppercase text-slate-400 ml-1">Event Type</Label>
                  <Select value={eventForm.type} onValueChange={v => setEventForm({ ...eventForm, type: v as any })}>
                     <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
@@ -1916,7 +1914,7 @@ export default function AdminPage() {
                  </div>
               </div>
               <div className="space-y-2">
-                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Detailed Content</Label>
+                 <Label className="text-[9px] md:text-black uppercase text-slate-400 ml-1">Detailed Content</Label>
                  <Textarea value={eventForm.content} onChange={e => setEventForm({ ...eventForm, content: e.target.value })} placeholder="Write full event details here..." className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[120px] md:min-h-[150px] p-4 md:p-6 font-medium shadow-inner" />
               </div>
               <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest bg-primary text-white">
@@ -2041,8 +2039,8 @@ export default function AdminPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
-           <DialogTitle className="text-xl md:text-2xl font-headline font-bold">Ma hubtaa?</DialogTitle>
-           <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Action cannot be undone.</DialogDescription>
+           <DialogTitle className="text-xl md:text-2xl font-headline font-bold">Are you sure?</DialogTitle>
+           <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Are you sure you want to permanently delete this user? This cannot be undone.</DialogDescription>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
               <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>

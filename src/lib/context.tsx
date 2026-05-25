@@ -544,7 +544,7 @@ const getFriendlyAuthError = (err: any, lang: Language): string => {
     case 'auth/email-already-in-use':
       return isSo ? "Numbarkan horay ayaa loo isticmaalay." : "This number is already in use.";
     case 'auth/weak-password':
-      return isSo ? "Password-ku waa inuu ka koobnaadaa ugu yaraan 6 xaraf." : "Password should be at least 6 characters.";
+      return isSo ? "Password-ku waa inuu ka koobnaadaa ugu yaraan 8 xaraf." : "Password should be at least 8 characters.";
     case 'auth/network-request-failed':
       return isSo ? "Khalad dhinaca internet-ka ah. Hubi khadkaaga." : "Network error. Please check your connection.";
     case 'auth/too-many-requests':
@@ -1002,18 +1002,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     setAuthError(null);
     try {
+      // Normalization check for RTDB uniqueness
+      const normalizedPhone = ph.replace(/\D/g, "");
+      const usersRef = ref(rtdb, 'users');
+      const usersSnap = await get(usersRef);
+      const allUsersData = usersSnap.val() || {};
+      
+      const exists = Object.values(allUsersData).some((u: any) => {
+        const uPhone = (u.phoneNumber || "").replace(/\D/g, "");
+        return uPhone === normalizedPhone;
+      });
+
+      if (exists) {
+        throw { code: 'auth/email-already-in-use', message: language === 'so' ? "Numbarkan horay ayaa loo diiwaan geliyay" : "This number is already registered" };
+      }
+
       const email = formatToSyntheticEmail(ph);
       const cred = await createUserWithEmailAndPassword(auth, email, p);
       await updateProfile(cred.user, { displayName: n });
       
       const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
       
+      // Admin Check: if phone is 613982172
+      const isAdminNumber = normalizedPhone.endsWith("613982172");
+
       const profile: UserProfile = { 
         uid: cred.user.uid, 
         email: email, 
         name: n, 
         phoneNumber: ph, 
-        role: 'user', 
+        role: isAdminNumber ? 'admin' : 'user', 
         points: 0, 
         createdAt: Date.now(),
         termsAccepted: localAccepted 
@@ -1022,7 +1040,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profile);
       setCache(USER_CACHE_KEY, profile);
     } catch (err: any) {
-      const friendly = getFriendlyAuthError(err, language);
+      const friendly = err.code ? getFriendlyAuthError(err, language) : (err.message || "Signup failed");
       setAuthError(friendly);
       throw err;
     } finally { setIsGlobalLoading(false); }
@@ -1391,7 +1409,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toast({ title: "Profile updated!" }); 
   };
   const manageUser = async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); };
-  const deleteUser = async (uid: string) => { if (!rtdb) return; await remove(ref(rtdb, `users/${uid}`)); toast({ title: "User account deleted." }); };
+  
+  const deleteUser = async (uid: string) => { 
+    if (!rtdb || !enhancedUser?.isAdmin) return; 
+    setIsGlobalLoading(true);
+    try {
+      // 1. Delete from Firebase Authentication via API
+      const res = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message);
+
+      // 2. Delete from Realtime Database
+      await remove(ref(rtdb, `users/${uid}`)); 
+      
+      toast({ title: "User permanently deleted." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Deletion Failed", description: err.message });
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  };
 
   const sendMessage = async (text?: string, imageUrl?: string, targetId?: string) => {
     if (!rtdb || !user) return;
