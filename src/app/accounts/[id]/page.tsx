@@ -65,12 +65,13 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const showHolding = post?.status === 'holding' && !isBuyer;
 
   const buyButtonText = useMemo(() => {
-    if (showSold) return "Waa la iibiyay";
-    if (showSuccess) return "Waa lagu guuleystay!";
-    if (isOwner) return "Post-kaaga waaye";
-    if (showHolding) return "Account kaan hada lama heli karo";
-    return "Laxariir Seller-ka";
-  }, [showSold, showSuccess, isOwner, showHolding]);
+    const isSo = language === 'so';
+    if (showSold) return isSo ? "Waa la iibiyay" : "account sold";
+    if (showSuccess) return isSo ? "Waa lagu guuleystay!" : "Purchase successful!";
+    if (isOwner) return isSo ? "Post-kaaga waaye" : "This is your post";
+    if (showHolding) return isSo ? "Account kaan hada lama heli karo" : "Currently unavailable";
+    return isSo ? "Laxariir Seller-ka" : "Contact Seller";
+  }, [showSold, showSuccess, isOwner, showHolding, language]);
 
   const handleShare = async () => {
     if (!post) return;
@@ -274,7 +275,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
 
 function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-2 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
        <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
        <div className="min-w-0 w-full">
          <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
