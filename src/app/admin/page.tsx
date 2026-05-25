@@ -77,7 +77,8 @@ import {
   Ticket,
   GripVertical,
   Trophy,
-  Save
+  Save,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -696,7 +697,7 @@ export default function AdminPage() {
     <div className="flex flex-col h-full">
       {!isMobile && (
         <div className="h-20 px-6 flex items-center justify-between shrink-0">
-          {isSidebarExpanded && <span className="font-headline font-bold text-lg text-slate-900 dark:text-white uppercase tracking-tight">Oskar Control</span>}
+          {isSidebarExpanded && <span className="font-headline font-bold text-lg text-slate-900 dark:text-white uppercase tracking-tight text-nowrap">Oskar Control</span>}
           <button onClick={() => setIsSidebarExpanded(!isSidebarExpanded)} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"><Menu size={20} /></button>
         </div>
       )}
@@ -2215,7 +2216,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
-        <DialogContent className="max-w-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
+        <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
