@@ -602,7 +602,7 @@ const translations: Record<Language, Record<string, string>> = {
     expires_label: "Expires",
     price_label: "Qiimaha",
     sold_confirmation_prompt: "Hadii la iibsatay account kaan fadlan Riix halkaan hoose",
-    mark_as_sold_btn: "Waala gatay",
+    mark_as_sold_btn: "Wuu gatay",
     delete_record_btn: "Delete account kaan",
     renew_listing_btn: "Renew Listing",
     renew_listing_desc: "Muda cusub u door account-kaaga si uu marketplace-ka ugu soo laabto.",
@@ -701,7 +701,7 @@ const formatToSyntheticEmail = (phone: string) => {
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useUser();
+  const { user: authUser, loading } = useUser();
   const auth = useAuth();
   const rtdb = useDatabase();
   const router = useRouter();
@@ -749,28 +749,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
   const orders = useMemo(() => {
-    if (!user) return [];
-    return allOrders.filter(o => o.userId === user.uid).sort((a,b)=>b.createdAt - a.createdAt);
-  }, [allOrders, user]);
+    if (!authUser) return [];
+    return allOrders.filter(o => o.userId === authUser.uid).sort((a,b)=>b.createdAt - a.createdAt);
+  }, [allOrders, authUser]);
 
-  const ensureUserProfile = useCallback(async (authUser: any) => {
-    if (!rtdb || !authUser) return;
+  const ensureUserProfile = useCallback(async (firebaseUser: any) => {
+    if (!rtdb || !firebaseUser) return;
     try {
-      const userRef = ref(rtdb, `users/${authUser.uid}`);
+      const userRef = ref(rtdb, `users/${firebaseUser.uid}`);
       const snapshot = await get(userRef);
       
       if (!snapshot.exists()) {
         const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
         const profile: UserProfile = { 
-          uid: authUser.uid, 
-          email: authUser.email || "", 
-          name: authUser.displayName || "Gamer", 
+          uid: firebaseUser.uid, 
+          email: firebaseUser.email || "", 
+          name: firebaseUser.displayName || "Gamer", 
           role: 'user', 
           points: 0, 
           createdAt: Date.now(),
           termsAccepted: localAccepted,
-          photoURL: authUser.photoURL || "",
-          phoneNumber: authUser.email ? authUser.email.split('@')[0] : "",
+          photoURL: firebaseUser.photoURL || "",
+          phoneNumber: firebaseUser.email ? firebaseUser.email.split('@')[0] : "",
           leaderboardRank: null,
           leaderboardDiscount: 0
         };
@@ -782,9 +782,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const updates: any = {
            lastActive: Date.now()
         };
-        if (!existingData.photoURL && authUser.photoURL) updates.photoURL = authUser.photoURL;
-        if (!existingData.email && authUser.email) updates.email = authUser.email;
-        if (!existingData.phoneNumber && authUser.email) updates.phoneNumber = authUser.email.split('@')[0];
+        if (!existingData.photoURL && firebaseUser.photoURL) updates.photoURL = firebaseUser.photoURL;
+        if (!existingData.email && firebaseUser.email) updates.email = firebaseUser.email;
+        if (!existingData.phoneNumber && firebaseUser.email) updates.phoneNumber = firebaseUser.email.split('@')[0];
         
         await update(userRef, updates);
         
@@ -873,15 +873,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [auth, ensureUserProfile]);
 
   useEffect(() => {
-    if (!rtdb || !user) return;
-    const userRef = ref(rtdb, `users/${user.uid}`);
+    if (!rtdb || !authUser) return;
+    const userRef = ref(rtdb, `users/${authUser.uid}`);
     const updatePresence = () => {
       update(userRef, { lastActive: Date.now() });
     };
     updatePresence();
     const interval = setInterval(updatePresence, 300000); 
     return () => clearInterval(interval);
-  }, [rtdb, user]);
+  }, [rtdb, authUser]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1034,12 +1034,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb, syncStatus.settings, storeSettings.isLive, storeSettings.appStatus?.offline, showPushNotification, recalculateLeaderboard]);
 
   useEffect(() => {
-    if (!rtdb || !user) {
+    if (!rtdb || !authUser) {
       setNotifications([]);
       return;
     }
-    const profileRef = ref(rtdb, `users/${user.uid}`);
-    const notifsRef = query(ref(rtdb, `notifications/${user.uid}`), limitToLast(20));
+    const profileRef = ref(rtdb, `users/${authUser.uid}`);
+    const notifsRef = query(ref(rtdb, `notifications/${authUser.uid}`), limitToLast(20));
 
     onValue(profileRef, (s) => {
       const data = s.val();
@@ -1048,13 +1048,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCache(USER_CACHE_KEY, data);
         const isComplete = data.phoneNumber && data.name;
         if (isComplete) {
-          localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
+          localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
         }
       }
       if (data?.banned) {
         setBannedInfo({
           name: data.name || "N/A",
-          uid: data.uid || user.uid,
+          uid: data.uid || authUser.uid,
           phone: data.phoneNumber || "N/A"
         });
         setIsBannedModalOpen(true);
@@ -1074,13 +1074,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       off(profileRef); off(notifsRef);
     };
-  }, [rtdb, user, showPushNotification]);
+  }, [rtdb, authUser, showPushNotification]);
 
   const enhancedUser = useMemo(() => {
-    if (!user) return null;
+    if (!authUser) return null;
     const role = userProfile?.role || 'user';
-    return { ...user, ...userProfile, isAdmin: role === 'admin' || role === 'super_admin' || role === 'staff' };
-  }, [user, userProfile]);
+    return { ...authUser, ...userProfile, isAdmin: role === 'admin' || role === 'super_admin' || role === 'staff' };
+  }, [authUser, userProfile]);
 
   useEffect(() => {
     if (!rtdb || !enhancedUser?.isAdmin) {
@@ -1121,7 +1121,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const broadcastNotification = async (title: string, body: string, targetUid?: string) => {
     if (!rtdb) return;
-    const uid = targetUid || user?.uid;
+    const uid = targetUid || authUser?.uid;
     if (!uid) return;
     const notifRef = push(ref(rtdb, `notifications/${uid}`));
     await set(notifRef, {
@@ -1217,7 +1217,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setIsGlobalLoading(true);
     try { 
-      if (user) localStorage.removeItem(`oskar_profile_complete_${user.uid}`);
+      if (authUser) localStorage.removeItem(`oskar_profile_complete_${authUser.uid}`);
       localStorage.removeItem(USER_CACHE_KEY); 
       await signOut(auth); 
       router.push('/login'); 
@@ -1225,7 +1225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const buyNow = (item: any) => {
-    if (!user) {
+    if (!authUser) {
       toast({ title: "Fadlan soo gal", description: "Waa inaad soo gashaa si aad wax u iibsato.", variant: "destructive" });
       router.push('/login');
       return;
@@ -1234,7 +1234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createOrder = async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
-    if (!rtdb || !user) return;
+    if (!rtdb || !authUser) return;
     const counterRef = ref(rtdb, 'settings/orderCounter');
     let sequenceId = 10;
     try {
@@ -1248,7 +1248,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const newOrder: any = { 
       id: orderId, 
-      userId: user.uid, 
+      userId: authUser.uid, 
       userPhone: userProfile?.phoneNumber || "",
       items: [directItem], 
       total: directItem.price, 
@@ -1271,7 +1271,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const standardizedCode = promoCode.trim().toUpperCase();
       await update(ref(rtdb, `promo_codes/${standardizedCode}`), {
         claimed: true,
-        usedBy: user.uid
+        usedBy: authUser.uid
       });
     }
 
@@ -1279,7 +1279,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const buyAccountPost = (post: AccountPost) => {
-    if (!user) {
+    if (!authUser) {
       toast({ title: "Fadlan soo gal", description: "Waa inaad soo gashaa si aad u iibsato account-kan.", variant: "destructive" });
       router.push('/login');
       return;
@@ -1288,9 +1288,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const postAccount = async (data: any) => {
-    if (!rtdb || !user) return;
+    if (!rtdb || !authUser) return;
     const postRef = push(ref(rtdb, 'accountPosts'));
-    await set(postRef, { ...data, uid: user.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
+    await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`);
   };
@@ -1311,7 +1311,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteAccountPost = async (pid: string) => { if (!rtdb) return; await remove(ref(rtdb, `accountPosts/${pid}`)); toast({ title: "Post Deleted" }); };
   
   const markAccountAsSold = async (postId: string) => {
-    if (!rtdb || !user) return;
+    if (!rtdb || !authUser) return;
     await update(ref(rtdb, `accountPosts/${postId}`), {
       sold: true,
       status: 'sold',
@@ -1323,11 +1323,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteOrder = async (oid: string) => { if (!rtdb) return; await remove(ref(rtdb, `orders/${oid}`)); toast({ title: "Order Deleted" }); };
 
   const markNotificationsAsRead = async (nid?: string) => {
-    if (!rtdb || !user) return;
-    if (nid) await update(ref(rtdb, `notifications/${user.uid}/${nid}`), { read: true });
+    if (!rtdb || !authUser) return;
+    if (nid) await update(ref(rtdb, `notifications/${authUser.uid}/${nid}`), { read: true });
     else {
       const updates: any = {};
-      notifications.forEach(n => updates[`notifications/${user.uid}/${n.id}/read`] = true);
+      notifications.forEach(n => updates[`notifications/${authUser.uid}/${n.id}/read`] = true);
       await update(ref(rtdb), updates);
     }
   };
@@ -1452,22 +1452,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const reportAccountOutcome = async (postId: string, outcome: 'bought' | 'not_bought') => {
-    if (!rtdb || !user || !enhancedUser) return;
+    if (!rtdb || !authUser || !enhancedUser) return;
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
     if (!postData) return;
-    const targetOrder = orders.find(o => o.gameDetails?.postId === postId && o.userId === user.uid);
+    const targetOrder = orders.find(o => o.gameDetails?.postId === postId && o.userId === authUser.uid);
 
     if (outcome === 'not_bought') {
       const updates: any = {};
-      if (postData.claimants?.[user.uid]) {
-        updates[`accountPosts/${postId}/claimants/${user.uid}`] = null;
+      if (postData.claimants?.[authUser.uid]) {
+        updates[`accountPosts/${postId}/claimants/${authUser.uid}`] = null;
       }
       if (targetOrder) {
         updates[`orders/${targetOrder.id}`] = null;
       }
-      const otherClaimants = Object.keys(postData.claimants || {}).filter(uid => uid !== user.uid);
+      const otherClaimants = Object.keys(postData.claimants || {}).filter(uid => uid !== authUser.uid);
       if (otherClaimants.length === 0) {
         updates[`accountPosts/${postId}/buyerReported`] = false;
         updates[`accountPosts/${postId}/buyerReportedAt`] = null;
@@ -1477,8 +1477,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toast({ title: "Deal Cancelled", description: "Listing reset successfully." });
     } else {
       const reportTime = Date.now();
-      const claimantInfo = { uid: user.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending' };
-      await update(ref(rtdb, `accountPosts/${postId}/claimants/${user.uid}`), claimantInfo);
+      const claimantInfo = { uid: authUser.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending' };
+      await update(ref(rtdb, `accountPosts/${postId}/claimants/${authUser.uid}`), claimantInfo);
       await update(postRef, { buyerReported: true, buyerReportedAt: reportTime });
       if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
       toast({ title: "Report Sent!", description: "Seller has been notified to verify the sale." });
@@ -1488,7 +1488,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const respondToSaleReport = async (postId: string, confirmed: boolean, buyerId?: string) => {
-    if (!rtdb || !user) return;
+    if (!rtdb || !authUser) return;
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
@@ -1578,10 +1578,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const markDeletionAsSeen = async (postId: string) => { if (!rtdb) return; await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() }); };
 
   const updateUserProfile = async (updates: any) => { 
-    if (!rtdb || !user) return; 
-    await update(ref(rtdb, `users/${user.uid}`), updates); 
+    if (!rtdb || !authUser) return; 
+    await update(ref(rtdb, `users/${authUser.uid}`), updates); 
     const isComplete = updates.phoneNumber && updates.name;
-    if (isComplete) localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
+    if (isComplete) localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
     toast({ title: "Profile updated!" }); 
   };
   const manageUser = async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); };
@@ -1607,10 +1607,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendMessage = async (text?: string, imageUrl?: string, targetId?: string) => {
-    if (!rtdb || !user) return;
-    const tid = targetId || (enhancedUser?.isAdmin ? chatTargetId : user.uid);
+    if (!rtdb || !authUser) return;
+    const tid = targetId || (enhancedUser?.isAdmin ? chatTargetId : authUser.uid);
     if (!tid) return;
-    const msg: any = { senderId: user.uid, timestamp: Date.now(), isRead: false };
+    const msg: any = { senderId: authUser.uid, timestamp: Date.now(), isRead: false };
     if (text) msg.text = text; if (imageUrl) msg.imageUrl = imageUrl;
     await push(ref(rtdb, `chats/${tid}`), msg);
     await update(ref(rtdb, `chatIndex/${tid}`), {
@@ -1622,7 +1622,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const markMessagesAsRead = async (tid?: string) => { if (!rtdb || !user) return; const id = tid || user.uid; await update(ref(rtdb, `chatIndex/${id}`), { unreadCount: 0 }); };
+  const markMessagesAsRead = async (tid?: string) => { if (!rtdb || !authUser) return; const id = tid || authUser.uid; await update(ref(rtdb, `chatIndex/${id}`), { unreadCount: 0 }); };
 
   const saveGame = async (g: any) => {
     if (!rtdb) return;
@@ -1728,7 +1728,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const checkPromoCode = async (code: string): Promise<number> => {
-    if (!rtdb || !user) throw new Error("Connection error");
+    if (!rtdb || !authUser) throw new Error("Connection error");
     const standardizedCode = code.trim().toUpperCase();
     const promoSnap = await get(ref(rtdb, `promo_codes/${standardizedCode}`));
     if (!promoSnap.exists()) throw new Error("Invalid code");
@@ -1739,7 +1739,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const expiryTime = Number(data.expiresAt) || 0;
     if (expiryTime && expiryTime < Date.now()) throw new Error("Code expired");
     
-    if (data.usedBy === user.uid) throw new Error("You have already used this code");
+    if (data.usedBy === authUser.uid) throw new Error("You have already used this code");
     
     return Number(data.discount) || 0;
   };
@@ -1750,7 +1750,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const acceptTerms = async () => {
     if (typeof window !== 'undefined') localStorage.setItem('oskar_terms_accepted', 'true');
-    if (user && rtdb) try { await update(ref(rtdb, `users/${user.uid}`), { termsAccepted: true }); } catch (e) {}
+    if (authUser && rtdb) try { await update(ref(rtdb, `users/${authUser.uid}`), { termsAccepted: true }); } catch (e) {}
   };
 
   return (
