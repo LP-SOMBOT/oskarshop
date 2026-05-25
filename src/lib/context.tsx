@@ -1413,12 +1413,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deletePaymentMethod = async (id: string) => { if (!rtdb) return; await remove(ref(rtdb, `settings/paymentMethods/${id}`)); toast({ title: "Payment Method Removed" }); };
   
-  const savePromoCode = async (promo: Partial<PromoCode>) => {
+  const savePromoCode = async (promo: any) => {
     if (!rtdb || !promo.code) return;
+    
+    const { duration, durationUnit, discount, ...rest } = promo;
+    let expiresAt = 0;
+    
+    if (duration && durationUnit) {
+      const now = Date.now();
+      const val = parseInt(duration);
+      if (!isNaN(val)) {
+        if (durationUnit === 'minutes') expiresAt = now + (val * 60 * 1000);
+        else if (durationUnit === 'hours') expiresAt = now + (val * 60 * 60 * 1000);
+        else if (durationUnit === 'days') expiresAt = now + (val * 24 * 60 * 60 * 1000);
+        else if (durationUnit === 'months') expiresAt = now + (val * 30 * 24 * 60 * 60 * 1000);
+        else if (durationUnit === 'years') expiresAt = now + (val * 365 * 24 * 60 * 60 * 1000);
+      }
+    }
+    
+    if (!expiresAt) {
+      expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // Default 30 days
+    }
+
     const standardizedCode = promo.code.trim().toUpperCase();
     await set(ref(rtdb, `promo_codes/${standardizedCode}`), {
-      ...promo,
+      ...rest,
       code: standardizedCode,
+      discount: parseFloat(discount) || 0,
+      expiresAt,
       createdAt: Date.now(),
       claimed: false,
       usedBy: null,
@@ -1441,10 +1463,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const data = promoSnap.val() as PromoCode;
     if (data.claimed) throw new Error("Code already claimed");
-    if (data.expiresAt < Date.now()) throw new Error("Code expired");
+    
+    const expiryTime = Number(data.expiresAt) || 0;
+    if (expiryTime && expiryTime < Date.now()) throw new Error("Code expired");
+    
     if (data.usedBy === user.uid) throw new Error("You have already used this code");
     
-    return data.discount;
+    return Number(data.discount) || 0;
   };
 
   const updateStoreSettings = async (s: any) => update(ref(rtdb, 'settings'), s);

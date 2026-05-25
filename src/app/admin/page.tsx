@@ -1206,7 +1206,8 @@ export default function AdminPage() {
                     <div className="col-span-full py-24 text-center opacity-30 italic text-xs font-bold uppercase border-2 border-dashed rounded-[3rem]">No promo codes active</div>
                   ) : (
                     promoCodes.map(promo => {
-                      const isExpired = promo.expiresAt < Date.now();
+                      const expiryTime = Number(promo.expiresAt) || 0;
+                      const isExpired = expiryTime ? expiryTime < Date.now() : false;
                       const status = promo.claimed ? 'Claimed' : isExpired ? 'Expired' : 'Unclaimed';
                       const badgeColor = promo.claimed ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
                       const claimedUser = promo.claimed ? allUsers.find(u => u.uid === promo.usedBy) : null;
@@ -1251,7 +1252,9 @@ export default function AdminPage() {
                                  </div>
                                  <div className="space-y-1 text-right">
                                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Expires</p>
-                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">{format(new Date(promo.expiresAt), 'MMM d, HH:mm')}</p>
+                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                      {expiryTime ? format(new Date(expiryTime), 'MMM d, HH:mm') : 'N/A'}
+                                    </p>
                                  </div>
                               </div>
 
@@ -1766,7 +1769,7 @@ export default function AdminPage() {
                  </div>
                  <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
                     <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
-                    <Badge className="bg-primary/10 text-primary border-none text-[8px] md:text-[10px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
+                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
                       {selectedUser?.role || 'user'}
                     </Badge>
                  </div>
