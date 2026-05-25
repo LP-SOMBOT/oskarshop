@@ -295,7 +295,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
           clearInterval(interval);
         } else {
           const m = Math.floor(diff / 60000);
-          const s = Math.floor((diff % 60000) / 1000);
+          const s = Math.floor((diff % (1000 * 60000) / 1000));
           setAutoDeleteTime(`${m}m ${s}s`);
         }
       }, 1000);
@@ -360,7 +360,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                   <StatusInfo icon={Calendar} label="Posted" value={post.createdAt ? format(new Date(post.createdAt), 'MMM d') : '...'} />
                   <StatusInfo icon={Star} label="Level" value={post.level || '0'} />
                   <StatusInfo icon={Clock} label="Expires" value={timeLeft || 'N/A'} color={isExpired && !post.sold ? "text-red-500" : "text-amber-500"} />
-                  <StatusInfo icon={DollarSign} label="Value" value={`$${post.price || 0}`} color="text-primary" />
+                  <StatusInfo icon={DollarSign} label={language === 'so' ? 'Qiimaha' : 'Value'} value={`$${post.price || 0}`} color="text-primary" />
                </div>
 
                {/* SOLD SUCCESS BLOCK */}
