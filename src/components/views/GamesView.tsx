@@ -47,7 +47,10 @@ export default function GamesView() {
 
   const filteredProducts = useMemo(() => {
     if (!selectedGameId) return [];
-    return (products || []).filter(p => p.gameId === selectedGameId);
+    // Filter and sort by orderIndex
+    return (products || [])
+      .filter(p => p.gameId === selectedGameId)
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
   }, [products, selectedGameId]);
 
   if (isInitialLoading) {
@@ -141,4 +144,3 @@ export default function GamesView() {
     </div>
   );
 }
-

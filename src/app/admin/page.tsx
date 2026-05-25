@@ -74,7 +74,8 @@ import {
   ExternalLink,
   Wallet,
   AlertTriangle,
-  Ticket
+  Ticket,
+  GripVertical
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -144,6 +145,25 @@ import {
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
+
+// DND Kit Imports
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, status: string }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
@@ -229,6 +249,63 @@ function WaitTime({ post }: { post: any }) {
   );
 }
 
+// Sortable Item Component
+function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => void, onDelete: (e: any) => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: p.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "p-3 md:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex items-center justify-between group hover:bg-slate-100 transition-colors cursor-pointer",
+        isDragging && "opacity-50 border-primary ring-2 ring-primary/20 shadow-2xl"
+      )}
+      onClick={onEdit}
+    >
+      <div className="flex items-center gap-3 md:gap-5">
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="p-2 text-slate-300 hover:text-primary transition-colors cursor-grab active:cursor-grabbing"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical size={20} />
+        </div>
+        <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl overflow-hidden relative shrink-0 shadow-sm border border-white">
+          {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" unoptimized /> : <div className="w-full h-full bg-slate-200" />}
+        </div>
+        <div>
+          <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight">{p.title}</p>
+          <p className="text-[10px] md:text-sm font-black text-primary mt-0.5">${p.price}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button 
+          onClick={onDelete} 
+          className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+        >
+          <Trash2 size={16} />
+        </button>
+        <ChevronRight size={18} className="text-slate-300" />
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { 
     user, 
@@ -258,6 +335,7 @@ export default function AdminPage() {
     deleteGame,
     saveProduct,
     deleteProduct,
+    updateProductsOrder,
     saveEvent,
     deleteEvent,
     saveBanner,
@@ -326,6 +404,17 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     if (!loading && !user?.isAdmin) router.replace('/');
@@ -494,6 +583,20 @@ export default function AdminPage() {
     setSelectedUser({ ...selectedUser, points: newPoints });
     setPointAdjustment("");
     toast({ title: "Balance Updated" });
+  };
+
+  const handleDragEnd = (event: DragEndEvent, gameId: string) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const gameItems = products.filter(p => p.gameId === gameId);
+    const oldIndex = gameItems.findIndex(p => p.id === active.id);
+    const newIndex = gameItems.findIndex(p => p.id === over.id);
+
+    const reordered = arrayMove(gameItems, oldIndex, newIndex);
+    const updates = reordered.map((p, i) => ({ id: p.id, orderIndex: i }));
+    
+    updateProductsOrder(updates);
   };
 
   const executeDelete = async () => {
@@ -1075,29 +1178,27 @@ export default function AdminPage() {
                                  {gameItems.length === 0 ? (
                                    <div className="py-8 text-center opacity-30 italic text-xs uppercase font-bold">No items added yet</div>
                                  ) : (
-                                   gameItems.map(p => (
-                                     <div 
-                                       key={p.id}
-                                       onClick={() => handleOpenProductDialog(p)}
-                                       className="p-3 md:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex items-center justify-between group hover:bg-slate-100 transition-colors cursor-pointer"
+                                   <DndContext
+                                     sensors={sensors}
+                                     collisionDetection={closestCenter}
+                                     onDragEnd={(e) => handleDragEnd(e, g.id)}
+                                   >
+                                     <SortableContext
+                                       items={gameItems.map(p => p.id)}
+                                       strategy={verticalListSortingStrategy}
                                      >
-                                        <div className="flex items-center gap-3 md:gap-5">
-                                           <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl overflow-hidden relative shrink-0 shadow-sm border border-white">
-                                              {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200" />}
-                                           </div>
-                                           <div>
-                                              <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight">{p.title}</p>
-                                              <p className="text-[10px] md:text-sm font-black text-primary mt-0.5">${p.price}</p>
-                                           </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                           <button onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
-                                              <Trash2 size={16} />
-                                           </button>
-                                           <ChevronRight size={18} className="text-slate-300" />
-                                        </div>
-                                     </div>
-                                   ))
+                                       <div className="space-y-3">
+                                         {gameItems.map(p => (
+                                           <SortableProductItem 
+                                             key={p.id} 
+                                             p={p} 
+                                             onEdit={() => handleOpenProductDialog(p)}
+                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
+                                           />
+                                         ))}
+                                       </div>
+                                     </SortableContext>
+                                   </DndContext>
                                  )}
                               </div>
                            </div>

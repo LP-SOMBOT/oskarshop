@@ -16,6 +16,7 @@ export type GamePackage = {
   imageHint?: string;
   tags?: string[];
   whatsappNumber?: string;
+  orderIndex?: number;
 };
 
 // Always empty in code. Real data is loaded from Firebase Realtime Database.

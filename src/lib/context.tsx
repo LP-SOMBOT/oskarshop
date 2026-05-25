@@ -324,6 +324,7 @@ type AppContextType = {
   deleteGame: (id: string) => Promise<void>;
   saveProduct: (product: Partial<GamePackage>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  updateProductsOrder: (updates: {id: string, orderIndex: number}[]) => Promise<void>;
   saveEvent: (event: Partial<GameEvent>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   saveBanner: (banner: Partial<Banner>) => Promise<void>;
@@ -990,8 +991,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     onValue(productsRef, (s) => {
       const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
-      setProducts(data);
-      setCache(PRODUCTS_CACHE_KEY, data);
+      const sortedData = data.sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0));
+      setProducts(sortedData);
+      setCache(PRODUCTS_CACHE_KEY, sortedData);
       setSyncStatus(prev => ({ ...prev, products: true }));
     });
 
@@ -1655,6 +1657,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteProduct = async (id: string) => remove(ref(rtdb, `products/${id}`));
+
+  const updateProductsOrder = async (updates: {id: string, orderIndex: number}[]) => {
+    if (!rtdb) return;
+    const dbUpdates: any = {};
+    updates.forEach(u => {
+      dbUpdates[`products/${u.id}/orderIndex`] = u.orderIndex;
+    });
+    await update(ref(rtdb), dbUpdates);
+    toast({ title: "Order saved" });
+  };
   
   const saveEvent = async (e: any) => { 
     if (!rtdb) return; 
@@ -1760,7 +1772,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
       login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, markAccountAsSold, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning, markDeletionAsSeen,
-      updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
+      updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, updateProductsOrder, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
       acceptTerms, language, setLanguage, userProfile, t
