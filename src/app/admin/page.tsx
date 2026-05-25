@@ -455,9 +455,15 @@ export default function AdminPage() {
 
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    await savePromoCode(promoForm);
-    setIsPromoDialogOpen(false);
-    setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
+    setIsSavingStatus(true);
+    try {
+      await savePromoCode(promoForm);
+      setIsPromoDialogOpen(false);
+      setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
+      toast({ title: "Promo Saved" });
+    } finally {
+      setIsSavingStatus(false);
+    }
   };
 
   const handleStatusUpdate = async () => {
@@ -1987,8 +1993,8 @@ export default function AdminPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-[0.1em] shadow-xl active:scale-[0.98]">
-                 Deploy Voucher Code
+              <Button type="submit" disabled={isSavingStatus} className="w-full h-14 md:h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-[0.1em] shadow-xl active:scale-[0.98]">
+                 {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save"}
               </Button>
            </form>
         </DialogContent>
