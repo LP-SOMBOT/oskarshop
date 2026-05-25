@@ -851,7 +851,7 @@ export default function AdminPage() {
           {activeView === 'leaderboard' && (
             <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700">
                <Card className="rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-                  <div className="relative p-4 sm:p-8 md:p-12 space-y-8 md:space-y-12">
+                  <div className="relative p-4 sm:p-8 md:p-12 space-y-12 md:space-y-12">
                      {/* Background Decorative Accent */}
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
@@ -1952,7 +1952,7 @@ export default function AdminPage() {
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size(40) /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
                     )}
                  </div>
               </div>
@@ -2167,7 +2167,7 @@ export default function AdminPage() {
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Unit</Label>
                     <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
-                       <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                       <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                           <SelectItem value="days" className="p-3 font-bold uppercase text-xs uppercase">Days</SelectItem>
                           <SelectItem value="hours" className="p-3 font-bold uppercase text-xs uppercase">Hours</SelectItem>
@@ -2304,6 +2304,7 @@ export default function AdminPage() {
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
            <DialogTitle className="text-xl md:text-2xl font-headline font-bold">Are you sure?</DialogTitle>
+           <DialogTitle className="sr-only">Delete confirmation</DialogTitle>
            <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">{getDeleteDescription()}</DialogDescription>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
