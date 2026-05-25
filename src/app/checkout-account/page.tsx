@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { 
@@ -41,6 +41,8 @@ function CheckoutAccountContent() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [outcome, setOutcome] = useState<'bought' | 'not_bought' | null>(null);
 
+  const prefilledRef = useRef(false);
+
   const post = useMemo(() => {
     return (accountPosts || []).find(p => p.id === id);
   }, [accountPosts, id]);
@@ -56,11 +58,17 @@ function CheckoutAccountContent() {
     if (!loading && !user && step < 3) {
       router.push('/login');
     }
-    if (user && !name) setName(user.name || "");
+    
+    // Prefill user name only once to allow editing (even clearing the field)
+    if (user && !prefilledRef.current) {
+      setName(user.name || "");
+      prefilledRef.current = true;
+    }
+
     if (!id && step < 3 && user) {
       router.push('/#accounts');
     }
-  }, [id, step, router, user, loading, name]);
+  }, [id, step, router, user, loading]);
 
   const handleContactSeller = async () => {
     if (!post || !user) return;
