@@ -1437,7 +1437,7 @@ export default function AdminPage() {
                                        <button 
                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
                                          className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
-                                       >
+                                        >
                                          <Trash2 size={18} />
                                        </button>
                                     </div>
@@ -1827,17 +1827,19 @@ export default function AdminPage() {
                       const newBanned = !selectedUser.banned;
                       await manageUser(selectedUser.uid, { banned: newBanned }); 
                       setSelectedUser({...selectedUser, banned: newBanned}); 
-                      toast({title: newBanned ? "User Terminated" : "User Restored"}); 
+                      toast({title: newBanned ? "User Banned" : "User Restored"}); 
                     }} 
                     className={cn(
                       "w-full h-14 md:h-18 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3",
-                      selectedUser?.banned ? "bg-green-600 hover:bg-green-700" : "bg-red-50 hover:bg-red-600"
+                      selectedUser?.banned 
+                        ? "bg-green-600 hover:bg-green-700 text-white border-none" 
+                        : "bg-red-50 dark:bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-100 dark:border-red-500/20"
                     )}
                  >
                     {selectedUser?.banned ? (
                       <><RefreshCw size={18} /> RESTORE ACCESS</>
                     ) : (
-                      <><Ban size={18} /> TERMINATE</>
+                      <><Ban size={18} /> BAN</>
                     )}
                  </Button>
                  <p className="text-[7px] md:text-[8px] text-center text-slate-300 uppercase font-black tracking-widest mt-4 md:mt-6 opacity-40">
