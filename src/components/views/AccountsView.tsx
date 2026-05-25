@@ -772,6 +772,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
 }
 
 function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, isAdmin }: { post: any, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isBuyer: boolean, isAdmin?: boolean }) {
+  const { language } = useApp();
   const isGoogle = post.platform === 'Google';
   const isExpired = post.expiresAt ? post.expiresAt < Date.now() : false;
   
@@ -921,7 +922,9 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
 
         <div className="flex items-center justify-between pt-3 md:pt-6 border-t border-slate-50 dark:border-white/5 mt-auto">
            <div className="min-w-0">
-             <p className="text-[8px] md:text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-0.5 md:mb-1 opacity-60">Price Value</p>
+             <p className="text-[8px] md:text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-0.5 md:mb-1 opacity-60">
+                {language === 'so' ? 'Qiimaha' : 'Price Value'}
+             </p>
              <p className="text-xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${parseFloat(post.price?.toString() || '0').toFixed(2)}</p>
            </div>
            <button className="rounded-lg md:rounded-[1.5rem] h-9 md:h-14 px-3 md:px-8 font-black text-[10px] md:text-base shadow-xl shadow-primary/20 gap-1 md:gap-2 uppercase tracking-wide shrink-0 bg-primary text-white hover:bg-primary/90">
