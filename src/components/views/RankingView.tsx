@@ -12,7 +12,8 @@ import {
   Clock,
   LayoutGrid,
   Sparkles,
-  Medal
+  Medal,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -160,7 +161,9 @@ function PodiumCard({ user, rank, color }: { user: UserProfile, rank: number, co
           )}>
              <Avatar className="w-full h-full">
                 <AvatarImage src={user.photoURL} />
-                <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-xs">{user.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                   <User className="w-1/2 h-1/2 text-slate-300 dark:text-slate-700" />
+                </AvatarFallback>
              </Avatar>
           </div>
           <Badge className={cn(
@@ -204,7 +207,9 @@ function RankListItem({ user, rank }: { user: UserProfile, rank: number }) {
           <span className="w-6 md:w-8 font-headline font-bold text-sm md:text-lg text-slate-400 group-hover:text-primary transition-colors text-center">{rank}</span>
           <Avatar className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl shadow-sm border dark:border-white/5">
              <AvatarImage src={user.photoURL} />
-             <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-[10px]">{user.name.substring(0,2).toUpperCase()}</AvatarFallback>
+             <AvatarFallback className="bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <User className="w-1/2 h-1/2 text-slate-300 dark:text-slate-700" />
+             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
              <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{user.name}</p>
