@@ -214,27 +214,39 @@ function CheckoutContent() {
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
       {step < 4 && (
-        <div className="mb-6 flex items-center justify-between px-2">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/')} className="rounded-full gap-1.5 md:gap-2 text-muted-foreground hover:text-foreground h-9 md:h-10 px-3 md:px-4 text-xs md:text-sm">
-            <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" /> Go Back
-          </Button>
-        </div>
-      )}
+        <div className="mb-8 md:mb-12 flex items-center justify-between px-2 gap-4">
+          <div className="shrink-0">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => router.push('/')} 
+              className="rounded-full text-muted-foreground hover:text-foreground h-9 w-9 md:h-12 md:w-12"
+            >
+              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={3} />
+            </Button>
+          </div>
 
-      {step < 4 && !isBooyahPass && (
-        <div className="flex justify-between items-center mb-6 md:mb-12 px-1 relative max-w-sm mx-auto">
-          <div className="absolute left-0 right-0 h-0.5 bg-gray-100 dark:bg-white/5 top-[18px] md:top-[20px] mx-6 md:mx-8 -z-10" />
-          <div className="absolute left-0 h-0.5 bg-primary top-[18px] md:top-[20px] mx-6 md:mx-8 -z-10 transition-all duration-500" style={{ width: `${((step - 1) / 2) * 100}%` }} />
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex flex-col items-center gap-1 md:gap-2">
-              <div className={cn("w-8 h-8 md:w-11 md:h-11 rounded-full flex items-center justify-center font-bold transition-all shadow-sm text-[10px] md:text-sm", step >= s ? "bg-primary text-white scale-110 shadow-primary/20" : "bg-white dark:bg-slate-900 text-gray-400 dark:text-gray-600 border-2 border-gray-100 dark:border-white/5")}>
-                {step > s ? <CheckCircle2 className="w-3.5 h-3.5 md:w-5 md:h-5" /> : s}
-              </div>
-              <span className={cn("text-[7px] md:text-[10px] font-black uppercase tracking-widest text-center", step >= s ? "text-primary" : "text-gray-400 dark:text-gray-600")}>
-                {s === 1 ? "Xogta" : s === 2 ? "Lacagta" : "Xaqiiji"}
-              </span>
+          {!isBooyahPass && (
+            <div className="flex-1 flex justify-between items-center relative max-w-sm">
+              <div className="absolute left-0 right-0 h-0.5 bg-gray-100 dark:bg-white/5 top-[16px] md:top-[20px] mx-6 md:mx-8 -z-10" />
+              <div className="absolute left-0 h-0.5 bg-primary top-[16px] md:top-[20px] mx-6 md:mx-8 -z-10 transition-all duration-500" style={{ width: `${((step - 1) / 2) * 100}%` }} />
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="flex flex-col items-center gap-1 md:gap-2">
+                  <div className={cn(
+                    "w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold transition-all shadow-sm text-[9px] md:text-sm", 
+                    step >= s ? "bg-primary text-white scale-110 shadow-primary/20" : "bg-white dark:bg-slate-900 text-gray-400 dark:text-gray-600 border-2 border-gray-100 dark:border-white/5"
+                  )}>
+                    {step > s ? <CheckCircle2 className="w-3.5 h-3.5 md:w-5 md:h-5" /> : s}
+                  </div>
+                  <span className={cn("text-[7px] md:text-[10px] font-black uppercase tracking-widest text-center", step >= s ? "text-primary" : "text-gray-400 dark:text-gray-600")}>
+                    {s === 1 ? "Xogta" : s === 2 ? "Lacagta" : "Xaqiiji"}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          
+          <div className="w-9 md:w-12 shrink-0" /> {/* Symmetry spacer */}
         </div>
       )}
 
@@ -336,7 +348,7 @@ function CheckoutContent() {
               <div className="flex flex-col gap-3 relative z-10">
                 <div className="flex justify-between items-center text-sm md:text-lg">
                    <span className="text-muted-foreground dark:text-slate-400 font-medium">{language === 'so' ? 'Qiimaha:' : 'Original Price:'}</span>
-                   <span className={cn("font-bold text-slate-900 dark:text-white", (initialPrice < basePrice || rankDiscount > 0) && "line-through opacity-40")}>${basePrice.toFixed(2)}</span>
+                   <span className={cn("font-bold text-slate-900 dark:text-white", (initialPrice < basePrice || rankDiscount > 0) && "line-through opacity-40")}${(basePrice || 0).toFixed(2)}</span>
                 </div>
                 
                 {rankDiscount > 0 && (
