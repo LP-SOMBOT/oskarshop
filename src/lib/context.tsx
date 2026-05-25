@@ -520,7 +520,7 @@ const translations: Record<Language, Record<string, string>> = {
     pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa",
     premium_assets: "Waxyabaha account tiga yaalo",
     verify_assets_desc: "U geli Si saxan iskana hubi",
-    contact_number: "Lambarka xiriirka",
+    contact_number: "Whatsapp number kaaga",
     phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar."
   }
 };
