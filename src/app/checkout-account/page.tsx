@@ -185,7 +185,7 @@ function CheckoutAccountContent() {
 
             <Button 
               onClick={handleContactSeller}
-              disabled={!name || !whatsappNumber || isProcessing}
+              disabled={!name || whatsappNumber.length < 9 || isProcessing}
               className="w-full h-14 sm:h-18 rounded-xl sm:rounded-[2rem] text-base sm:text-xl font-bold shadow-xl shadow-primary/20 gap-2 active:scale-95 transition-all"
             >
               {isProcessing ? <Loader2 className="animate-spin" /> : <><MessageCircle size={20} className="sm:w-[22px] sm:h-[22px]" /> LAXARIIR SELLER-KA</>}
