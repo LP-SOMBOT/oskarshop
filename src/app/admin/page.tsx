@@ -914,13 +914,6 @@ export default function AdminPage() {
                           onSave={handleSaveLeaderboard}
                         />
                      </div>
-                     
-                     <div className="pt-4 p-6 bg-blue-50 dark:bg-blue-900/10 rounded-[2rem] border border-blue-100 dark:border-blue-800/30 flex gap-4">
-                        <Info className="text-blue-500 shrink-0 mt-0.5" size={20} />
-                        <p className="text-[11px] md:text-sm font-medium leading-relaxed">
-                           Changing these values will immediately update the <strong>"Discount"</strong> applied to the checkout total for the top 3 rank holders. Each save triggers a live recalculation of all user profiles.
-                        </p>
-                     </div>
                   </div>
                </Card>
             </div>
@@ -1200,7 +1193,7 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
                                             {p.processedBy?.name || "Wali lama furin"}
@@ -2488,7 +2481,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
              </Button>
 
              <div className="pt-8 space-y-6">
-                <p className="text-[10px] font-black text-center text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
+                <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
                 <div className="grid grid-cols-2 gap-4">
                    <button onClick={handleCopyId} className="h-14 rounded-full bg-slate-50 dark:bg-slate-800 border dark:border-white/5 font-black uppercase text-[11px] tracking-widest text-slate-500 hover:bg-slate-100 transition-colors">
                       Copy ID
