@@ -37,6 +37,7 @@ function CheckoutAccountContent() {
   
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
   const [name, setName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [outcome, setOutcome] = useState<'bought' | 'not_bought' | null>(null);
@@ -117,13 +118,20 @@ function CheckoutAccountContent() {
   };
 
   const handleOutcome = async (newOutcome: 'bought' | 'not_bought') => {
-    if (!post) return;
-    await reportAccountOutcome(post.id, newOutcome);
-    setOutcome(newOutcome);
-    if (newOutcome === 'bought') {
-      toast({ title: "Waa lagu guuleystay!" });
-    } else {
-      toast({ title: "Waa la kansalay", description: "Mahadsanid!" });
+    if (!post || isReporting) return;
+    setIsReporting(true);
+    try {
+      await reportAccountOutcome(post.id, newOutcome);
+      setOutcome(newOutcome);
+      if (newOutcome === 'bought') {
+        toast({ title: "Waa lagu guuleystay!" });
+      } else {
+        toast({ title: "Waa la kansalay", description: "Mahadsanid!" });
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Khalad ayaa dhacay", description: "Fadlan mar kale isku day." });
+    } finally {
+      setIsReporting(false);
     }
   };
 
@@ -263,11 +271,20 @@ function CheckoutAccountContent() {
                <div className="bg-white dark:bg-slate-900 p-5 sm:p-8 rounded-[2rem] sm:rounded-[3rem] shadow-xl space-y-4 sm:space-y-6 border border-slate-100 dark:border-white/5 mx-auto max-w-[320px] sm:max-w-none">
                   <p className="font-bold text-[10px] sm:text-sm uppercase tracking-widest text-muted-foreground">Ma iibsatay account-kan?</p>
                   <div className="flex flex-col gap-2.5 sm:gap-3">
-                     <Button onClick={() => handleOutcome('bought')} className="h-14 sm:h-16 rounded-xl sm:rounded-2xl bg-green-600 hover:bg-green-700 text-base sm:text-lg font-bold gap-2 active:scale-[0.98]">
-                        <Check size={18} className="sm:w-5 sm:h-5" /> Haa, Waan iibsaday
+                     <Button 
+                       onClick={() => handleOutcome('bought')} 
+                       disabled={isReporting}
+                       className="h-14 sm:h-16 rounded-xl sm:rounded-2xl bg-green-600 hover:bg-green-700 text-base sm:text-lg font-bold gap-2 active:scale-[0.98]"
+                     >
+                        {isReporting ? <Loader2 className="animate-spin" /> : <Check size={18} className="sm:w-5 sm:h-5" />} Haa, Waan iibsaday
                      </Button>
-                     <Button onClick={() => handleOutcome('not_bought')} variant="outline" className="h-12 sm:h-14 rounded-xl sm:rounded-2xl font-bold border-red-100 text-red-500 text-xs sm:text-sm active:scale-[0.98]">
-                        Maya, Ma iibsanin
+                     <Button 
+                       onClick={() => handleOutcome('not_bought')} 
+                       disabled={isReporting}
+                       variant="outline" 
+                       className="h-12 sm:h-14 rounded-xl sm:rounded-2xl font-bold border-red-100 text-red-500 text-xs sm:text-sm active:scale-[0.98]"
+                     >
+                        {isReporting ? <Loader2 className="animate-spin" /> : null} Maya, Ma iibsanin
                      </Button>
                   </div>
                </div>
