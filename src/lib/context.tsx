@@ -495,7 +495,8 @@ const translations: Record<Language, Record<string, string>> = {
     yes_delete: "Yes, Delete",
     no_cancel: "No",
     session_label: "Session #",
-    final_total: "Final Total:"
+    final_total: "Final Total:",
+    promo_code_prompt: "Enter Promo Code (If you have one)"
   },
   so: {
     home: "Hoyga",
@@ -621,7 +622,8 @@ const translations: Record<Language, Record<string, string>> = {
     yes_delete: "Haa, Tirtir",
     no_cancel: "Maya",
     session_label: "Siisoon #",
-    final_total: "Wadarta:"
+    final_total: "Wadarta:",
+    promo_code_prompt: "Geli Promo Code (Hadaad haysato)"
   }
 };
 
@@ -1351,7 +1353,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
-    await update(ref(rtdb, `orders/${orderId}`), updates);
+    await update(ref(rtdb), { [`orders/${orderId}`]: { ...allOrders.find(o => o.id === orderId), ...updates } });
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
     const orderData = orderSnap.val();
     if (orderData && orderData.userId) {

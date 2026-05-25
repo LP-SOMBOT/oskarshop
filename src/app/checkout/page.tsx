@@ -329,7 +329,7 @@ function CheckoutContent() {
             )}
 
             <div className="mb-6 md:mb-8 space-y-3">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2"><Ticket size={12} /> Dooro Promo Code (Hadaad haysato)</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2"><Ticket size={12} /> {t('promo_code_prompt')}</Label>
               <div className="flex gap-2">
                  <Input placeholder="Geli code-ka..." value={promoCodeInput} onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner" />
                  <Button onClick={handleApplyPromo} disabled={!promoCodeInput || isValidatingPromo} className="h-12 md:h-14 px-6 md:px-10 rounded-xl md:rounded-2xl font-black uppercase text-xs">{isValidatingPromo ? <Loader2 className="animate-spin" /> : "Apply"}</Button>
