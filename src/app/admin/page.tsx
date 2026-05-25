@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useApp } from "@/lib/context";
 import { 
   Settings as SettingsIcon, 
@@ -414,6 +415,8 @@ export default function AdminPage() {
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const formsInitialized = useRef(false);
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
@@ -436,7 +439,7 @@ export default function AdminPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (storeSettings) {
+    if (storeSettings && !formsInitialized.current) {
       setBrandForm({
         announcementTicker: storeSettings.announcementTicker || "",
         isLive: storeSettings.isLive || false,
@@ -464,6 +467,7 @@ export default function AdminPage() {
           rank3: lb.rewards?.rank3?.toString() || "",
         }
       });
+      formsInitialized.current = true;
     }
   }, [storeSettings]);
 
@@ -1203,7 +1207,7 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                             {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
                                             {p.processedBy?.name || "Wali lama furin"}
@@ -1948,7 +1952,7 @@ export default function AdminPage() {
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size(40) /></div>
                     )}
                  </div>
               </div>
