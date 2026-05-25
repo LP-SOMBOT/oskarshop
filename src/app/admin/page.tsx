@@ -406,7 +406,7 @@ export default function AdminPage() {
 
   const [leaderboardForm, setLeaderboardForm] = useState({
     rewardsActive: true,
-    rewards: { rank1: 3, rank2: 2, rank3: 1 }
+    rewards: { rank1: "0", rank2: "0", rank3: "0" } as any
   });
 
   const [pointAdjustment, setPointAdjustment] = useState("");
@@ -451,9 +451,18 @@ export default function AdminPage() {
       setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
       setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
-      setLeaderboardForm(storeSettings.leaderboard || {
+      
+      const lb = storeSettings.leaderboard || {
         rewardsActive: true,
-        rewards: { rank1: 3, rank2: 2, rank3: 1 }
+        rewards: { rank1: 0, rank2: 0, rank3: 0 }
+      };
+      setLeaderboardForm({
+        rewardsActive: lb.rewardsActive,
+        rewards: {
+          rank1: lb.rewards?.rank1?.toString() || "0",
+          rank2: lb.rewards?.rank2?.toString() || "0",
+          rank3: lb.rewards?.rank3?.toString() || "0",
+        }
       });
     }
   }, [storeSettings]);
@@ -674,8 +683,16 @@ export default function AdminPage() {
   const handleSaveLeaderboard = async () => {
     setIsSavingStatus(true);
     try {
+      const finalLeaderboard = {
+        rewardsActive: leaderboardForm.rewardsActive,
+        rewards: {
+          rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
+          rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
+          rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
+        }
+      };
       await updateStoreSettings({
-        leaderboard: leaderboardForm
+        leaderboard: finalLeaderboard
       });
       toast({ title: "Leaderboard Updated", description: "Rewards settings have been updated live." });
     } finally {
@@ -848,7 +865,16 @@ export default function AdminPage() {
                                setLeaderboardForm(updatedForm);
                                setIsSavingStatus(true);
                                try {
-                                 await updateStoreSettings({ leaderboard: updatedForm });
+                                 // Convert to numbers before saving
+                                 const savePayload = {
+                                   rewardsActive: v,
+                                   rewards: {
+                                     rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
+                                     rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
+                                     rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
+                                   }
+                                 };
+                                 await updateStoreSettings({ leaderboard: savePayload });
                                  toast({ title: v ? "Rewards Enabled" : "Rewards Disabled" });
                                } finally {
                                  setIsSavingStatus(false);
@@ -865,7 +891,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank1} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank1: parseInt(v) || 0 }
+                            rewards: { ...leaderboardForm.rewards, rank1: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />
@@ -874,7 +900,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank2} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank2: parseInt(v) || 0 }
+                            rewards: { ...leaderboardForm.rewards, rank2: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />
@@ -883,7 +909,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank3} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank3: parseInt(v) || 0 }
+                            rewards: { ...leaderboardForm.rewards, rank3: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />
@@ -2189,7 +2215,7 @@ export default function AdminPage() {
               <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
-                 <SettingInput label="Duration Value" value={promoForm.duration} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 7" />
+                 <SettingInput label="Duration Value" value={promoForm.duration} type="number" onChange={v => setPromoForm({...promoForm, duration: v})} placeholder="e.g. 7" />
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
                     <Select value={promoForm.durationUnit} onValueChange={v => setPromoForm({...promoForm, durationUnit: v})}>
@@ -2284,7 +2310,7 @@ export default function AdminPage() {
   );
 }
 
-function RewardControl({ rank, value, onChange, onSave }: { rank: number, value: number, onChange: (v: string) => void, onSave: () => void }) {
+function RewardControl({ rank, value, onChange, onSave }: { rank: number, value: string, onChange: (v: string) => void, onSave: () => void }) {
   const icon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
   const label = rank === 1 ? "Top 1 Reward (%)" : rank === 2 ? "Top 2 Reward (%)" : "Top 3 Reward (%)";
   
@@ -2297,7 +2323,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
        <div className="flex gap-2">
           <Input 
             type="number" 
-            value={value.toString()} 
+            value={value} 
             onChange={(e) => onChange(e.target.value)} 
             className="h-12 md:h-14 rounded-xl md:rounded-2xl border-none bg-white dark:bg-slate-900 font-bold px-4 md:px-6 shadow-inner text-base md:text-lg focus:ring-2 focus:ring-primary" 
           />
