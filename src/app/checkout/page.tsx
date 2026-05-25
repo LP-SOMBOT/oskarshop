@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -12,7 +11,6 @@ import {
   PartyPopper,
   Smartphone,
   ChevronRight,
-  X,
   CreditCard,
   AlertTriangle,
   MessageCircle,
@@ -219,9 +217,6 @@ function CheckoutContent() {
         <div className="mb-6 flex items-center justify-between px-2">
           <Button variant="ghost" size="sm" onClick={() => router.push('/')} className="rounded-full gap-1.5 md:gap-2 text-muted-foreground hover:text-foreground h-9 md:h-10 px-3 md:px-4 text-xs md:text-sm">
             <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4" /> Go Back
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="rounded-full text-muted-foreground hover:text-red-500 w-9 h-9 md:w-10 md:h-10">
-            <X className="w-4 h-4 md:w-5 md:h-5" />
           </Button>
         </div>
       )}

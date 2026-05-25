@@ -11,7 +11,6 @@ import {
   Smartphone, 
   Gamepad2,
   AlertCircle,
-  X,
   CreditCard,
   Copy,
   MessageCircle,
@@ -143,9 +142,6 @@ function CheckoutAccountContent() {
          <div className="mb-6 sm:mb-8 flex items-center justify-between px-2">
             <Button variant="ghost" size="sm" onClick={() => router.back()} className="rounded-full gap-2 text-muted-foreground h-9 text-xs sm:text-sm">
               <ArrowLeft size={16} className="sm:w-[18px] sm:h-[18px]" /> Dib u Noqo
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/#accounts')} className="rounded-full text-muted-foreground hover:text-red-500 w-9 h-9 sm:w-10 sm:h-10">
-              <X size={18} className="sm:w-5 sm:h-5" />
             </Button>
          </div>
        )}
