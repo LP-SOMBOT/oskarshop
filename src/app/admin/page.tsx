@@ -162,8 +162,8 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
         setTimeLeft({ d: 0, h: 0, m: 0 });
       } else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60));
-        const m = Math.floor((diff % (1000 * 60)) / (1000 * 60)); // Fixed minute calc
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         setTimeLeft({ d, h, m });
       }
     };
@@ -190,6 +190,7 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
 /**
  * Wait Time Helper
  * Tracks responsiveness of seller since earliest buyer claim.
+ * Resets to "None" when decisions are made or status changes.
  */
 function WaitTime({ post }: { post: any }) {
   const [elapsed, setElapsed] = useState("None");
@@ -197,10 +198,12 @@ function WaitTime({ post }: { post: any }) {
 
   useEffect(() => {
     const claimants = Object.values(post.claimants || {});
-    // Use the earliest claim timestamp as the start of the wait period
-    const claimTime = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
+    // Filter for only pending claims to track response wait time
+    const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
+    const claimTime = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
     
-    if (!claimTime || post.sold || post.sellerReported) {
+    // Dedicated logic: It should be "None" if no waiting responses (no claims or seller already responded)
+    if (!claimTime || post.sold || post.sellerReported || post.status === 'sold' || post.status === 'approved') {
       setElapsed("None");
       setIsUrgent(false);
       return;
@@ -210,7 +213,14 @@ function WaitTime({ post }: { post: any }) {
       const diff = Date.now() - claimTime;
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % (3600000) / 60000));
-      setElapsed(`${h}h ${m}m`);
+      
+      // Precision for short wait times
+      if (h === 0) {
+        setElapsed(m === 0 ? "less than a minute" : `${m}m`);
+      } else {
+        setElapsed(`${h}h ${m}m`);
+      }
+      
       // If wait time is >= 1 hour and seller hasn't responded, flag as urgent
       setIsUrgent(h >= 1 && !post.sellerReported && !post.warningDismissedAt);
     };
@@ -841,7 +851,8 @@ export default function AdminPage() {
                        ) : (
                          accountPosts.map(p => {
                            const claimantsList = Object.values(p.claimants || {});
-                           const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
+                           const pendingClaims = claimantsList.filter((c: any) => c.status === 'pending');
+                           const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
                            const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
                            return (
@@ -928,7 +939,8 @@ export default function AdminPage() {
                              ) : (
                                accountPosts.map(p => {
                                  const claimantsList = Object.values(p.claimants || {});
-                                 const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => c.timestamp)) : null;
+                                 const pendingClaims = claimantsList.filter((c: any) => c.status === 'pending');
+                                 const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
                                  const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
                                  return (
@@ -1365,7 +1377,7 @@ export default function AdminPage() {
                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Contact & Role</TableHead>
                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Reward Balance</TableHead>
                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Presence</TableHead>
-                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Status</TableHead>
+                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-center">Status</TableHead>
                            <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                         </TableRow>
                      </TableHeader>
@@ -2275,6 +2287,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 
 /**
  * Full Page Account Listing Management View
+ * Features real-time wait tracking and specialized penalty hub.
  */
 function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning }: any) {
   const [now, setNow] = useState(Date.now());
@@ -2288,10 +2301,12 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
-  const earliestClaim = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
+  // STALLING logic: only for unverified claims
+  const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
+  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
   const isStalling = earliestClaim && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
-  // Dedicated Wait logic
+  // Dedicated Wait logic: displayed ONLY for waiting responses
   const isWaiting = earliestClaim && !post.sellerReported && !post.sold;
   const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
 
@@ -2393,13 +2408,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 className="bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
                >
                   Suspend Seller (3D)
-               </Button>
-
-               <Button 
-                onClick={() => issueSellerWarning(post.uid, post.id, "Muddo ka badan 1 saac ayaadan uga jawaabin verification-ka account-kaaga. Fadlan deg-deg ugu jawaab.")} 
-                className="bg-amber-500 hover:bg-amber-600 text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
-               >
-                  Send Warning
                </Button>
 
                <Button 
