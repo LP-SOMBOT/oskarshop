@@ -19,10 +19,16 @@ import { useMemo, useState, useEffect } from "react";
 export default function SellerResponsiveGuard() {
   const { user, accountPosts, setActiveTab, language } = useApp();
   const [isDismissed, setIsDismissed] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  // Heartbeat timer to ensure realtime check of "stalling" status
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const stallingPosts = useMemo(() => {
     if (!user) return [];
-    const now = Date.now();
     
     return (accountPosts || []).filter(p => {
       if (p.uid !== user.uid || p.sold || p.warningDismissedAt) return false;
@@ -32,7 +38,7 @@ export default function SellerResponsiveGuard() {
         c.status === 'pending' && (now - c.timestamp) > 3600000
       );
     });
-  }, [user, accountPosts]);
+  }, [user, accountPosts, now]);
 
   // Reset dismissal state if no more stalling posts, so it can pop up again if a new one arrives later
   useEffect(() => {

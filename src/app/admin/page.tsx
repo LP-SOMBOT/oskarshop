@@ -162,8 +162,8 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
         setTimeLeft({ d: 0, h: 0, m: 0 });
       } else {
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60));
+        const m = Math.floor((diff % (1000 * 60)) / (1000 * 60)); // Fixed minute calc
         setTimeLeft({ d, h, m });
       }
     };
@@ -2074,7 +2074,7 @@ export default function AdminPage() {
            <div className="p-6 md:p-8 space-y-5 md:space-y-6">
               <div className="grid grid-cols-2 gap-3">
                  {(['delete', 'holding', 'approved', 'pending'] as const).map(act => (
-                   <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act)} className={cn("rounded-xl h-10 md:h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600' : '')}>{act}</Button>
+                   <Button key={act} variant={enforceAction === act ? 'default' : 'outline'} onClick={() => setEnforceAction(act)} className={cn("rounded-xl h-10 md:h-12 uppercase font-black text-[9px] tracking-widest", enforceAction === act && act === 'delete' ? 'bg-red-600 text-white' : '')}>{act}</Button>
                  ))}
               </div>
               <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="Reason for penalty..." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
@@ -2277,12 +2277,19 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
  * Full Page Account Listing Management View
  */
 function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning }: any) {
+  const [now, setNow] = useState(Date.now());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (!post) return null;
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
   const earliestClaim = claimants.length > 0 ? Math.min(...claimants.map((c: any) => c.timestamp)) : null;
-  const isStalling = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+  const isStalling = earliestClaim && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
   // Dedicated Wait logic
   const isWaiting = earliestClaim && !post.sellerReported && !post.sold;
@@ -2375,10 +2382,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                </Button>
                
                <Button 
-                onClick={() => onDelete()} 
+                onClick={() => enforceAccountAction(post.id, 'delete', 'Listing deleted due to stalling and security protocol violations.')} 
                 className="bg-red-800 hover:bg-red-900 text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
                >
-                  Delete Account
+                  Delete Listing
                </Button>
 
                <Button 
