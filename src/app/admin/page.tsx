@@ -1733,7 +1733,7 @@ export default function AdminPage() {
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size(40) /></div>
                     )}
                  </div>
               </div>
