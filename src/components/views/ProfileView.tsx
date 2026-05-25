@@ -67,7 +67,6 @@ export default function ProfileView() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     const cleanPhone = editData.phoneNumber.replace(/\D/g, '');
     if (cleanPhone.length < 9) {
       toast({ 
@@ -80,7 +79,6 @@ export default function ProfileView() {
 
     setIsSaving(true);
     try { 
-      // Prepend country code prefix
       await updateUserProfile({
         ...editData,
         phoneNumber: "+252" + cleanPhone
@@ -126,7 +124,6 @@ export default function ProfileView() {
 
   return (
     <div className="pb-32 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition">
-      {/* Profile Header */}
       <section className="flex flex-col items-center text-center">
         <div className="relative group mb-6 md:mb-10">
           <div className="w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 rounded-full border-[6px] md:border-[10px] border-white dark:border-slate-800 shadow-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 ring-2 md:ring-4 ring-primary/10 relative group-hover:scale-105 transition-transform duration-500">
@@ -232,7 +229,11 @@ export default function ProfileView() {
                         type="tel" 
                         inputMode="numeric" 
                         value={editData.phoneNumber} 
-                        onChange={val => setEditData({...editData, phoneNumber: val.target.value.replace(/\D/g, '').substring(0, 9)})} 
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          const normalized = val.startsWith('0') ? val.substring(1) : val;
+                          setEditData({...editData, phoneNumber: normalized.substring(0, 9)});
+                        }} 
                         required
                         className="h-10 md:h-16 lg:h-20 rounded-lg md:rounded-[1.5rem] lg:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-none pl-28 md:pl-44 pr-8 font-bold text-xs md:text-lg lg:text-2xl focus-visible:ring-primary shadow-inner" 
                       />

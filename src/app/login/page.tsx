@@ -10,12 +10,6 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { Smartphone, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, CheckCircle2, ShieldCheck, KeyRound } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import emailjs from '@emailjs/browser';
-
-/**
- * @fileOverview Login Page with Somali language default.
- * Now uses Number and Password with mandatory +252 prefix.
- */
 
 export default function LoginPage() {
   const [view, setView] = useState<'login' | 'forgot' | 'verify'>('login');
@@ -24,7 +18,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Forgot Password State
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,7 +36,6 @@ export default function LoginPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Prepend fixed country code
       await login("+252" + phone, password);
     } catch (error: any) {
       console.error("Login Error:", error);
@@ -63,7 +55,6 @@ export default function LoginPage() {
         throw new Error("Adeegga dib u habaynta password-ka si ku meel gaadh ah uma shaqaynayo.");
       }
 
-      // Enforce +252 prefix for synthetic identity
       const syntheticEmail = `252${phone.replace(/\D/g, "")}@oskarshop.app`;
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
@@ -165,7 +156,11 @@ export default function LoginPage() {
                     placeholder="Numbarkaaga" 
                     required 
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      const normalized = val.startsWith('0') ? val.substring(1) : val;
+                      setPhone(normalized.substring(0, 9));
+                    }}
                     className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
                   />
                 </div>
@@ -228,7 +223,11 @@ export default function LoginPage() {
                     placeholder="Numbarkaaga" 
                     required 
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      const normalized = val.startsWith('0') ? val.substring(1) : val;
+                      setPhone(normalized.substring(0, 9));
+                    }}
                     className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold transition-all"
                   />
                 </div>

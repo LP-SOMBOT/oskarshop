@@ -12,13 +12,6 @@ import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { uploadToImgbb } from '@/lib/imgbb';
 
-/**
- * ProfileCompletionGuard Component
- * 
- * Ensures that all users complete their mandatory profile details before accessing the app.
- * Optimized for mobile with an ultra-compact layout to prevent scrolling on all screens.
- * Enforces +252 prefix for WhatsApp numbers.
- */
 export default function ProfileCompletionGuard({ children }: { children: React.ReactNode }) {
   const { user, userProfile, isInitialLoading, loading, updateUserProfile } = useApp();
   const [open, setOpen] = useState(false);
@@ -28,21 +21,17 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
   const [formData, setFormData] = useState({
     name: "",
     phoneNumber: "",
-    gameName: "",
     photoURL: ""
   });
 
   useEffect(() => {
-    // Trigger guard when user is authenticated AND data nodes are synchronized
     if (!isInitialLoading && !loading && user) {
-      // Dual layer check: Cache for speed, DB for truth
       const localCompleted = localStorage.getItem(`oskar_profile_complete_${user.uid}`) === 'true';
       if (localCompleted) {
         setOpen(false);
         return;
       }
 
-      // Check for missing mandatory info
       const isMissingInfo = !userProfile?.phoneNumber || !userProfile?.name;
       
       if (isMissingInfo) {
@@ -52,12 +41,10 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
         setFormData({
           name: userProfile?.name || user?.displayName || "",
           phoneNumber: cleanPhone,
-          gameName: userProfile?.gameName || "",
           photoURL: userProfile?.photoURL || user?.photoURL || ""
         });
         setOpen(true);
       } else {
-        // Hydrate local cache if DB says we are done
         localStorage.setItem(`oskar_profile_complete_${user.uid}`, 'true');
         setOpen(false);
       }
@@ -100,7 +87,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
 
     setIsSaving(true);
     try {
-      // Prepend fixed country code
       await updateUserProfile({
         ...formData,
         phoneNumber: "+252" + formData.phoneNumber.replace(/\D/g, "")
@@ -117,7 +103,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
     }
   };
 
-  // Prevent UI flickering by waiting for initial auth state
   if (isInitialLoading || loading) return <>{children}</>;
 
   return (
@@ -130,7 +115,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
           >
-            {/* Ultra Compact Header */}
             <div className="bg-primary p-4 sm:p-5 text-white relative overflow-hidden shrink-0">
                <div className="absolute top-0 right-0 p-3 opacity-10"><Sparkles size={32} /></div>
                <DialogPrimitive.Title className="text-lg font-headline font-bold uppercase tracking-tight">
@@ -142,7 +126,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 pt-3 space-y-4 sm:space-y-6">
-              {/* Interactive Avatar Button */}
               <div className="flex flex-col items-center">
                  <button 
                    type="button"
@@ -157,7 +140,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                       </div>
                     )}
                     
-                    {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
                        <Camera size={14} className="mb-0.5" />
                        <span className="text-[7px] font-black uppercase">Change</span>
@@ -179,7 +161,6 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                  <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mt-2">Taabo si aad u bedeshid Sawirka</p>
               </div>
 
-              {/* Tighter Form Fields to prevent scrolling */}
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 flex items-center gap-1.5">
@@ -206,7 +187,11 @@ export default function ProfileCompletionGuard({ children }: { children: React.R
                       type="tel"
                       placeholder="613982172" 
                       value={formData.phoneNumber} 
-                      onChange={(e) => setFormData({...formData, phoneNumber: e.target.value.replace(/\D/g, '').substring(0, 9)})}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        const normalized = val.startsWith('0') ? val.substring(1) : val;
+                        setFormData({...formData, phoneNumber: normalized.substring(0, 9)});
+                      }}
                       className="h-10 sm:h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-4 shadow-inner text-xs sm:text-sm focus-visible:ring-primary"
                       required
                     />

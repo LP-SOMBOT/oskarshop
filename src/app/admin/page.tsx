@@ -145,10 +145,6 @@ import {
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
 
-/**
- * High-Fidelity Marketplace Countdown
- * Correctly calculates 7 days for Weekly and 30 days for Monthly terms.
- */
 function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, status: string }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
 
@@ -187,22 +183,15 @@ function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, stat
   );
 }
 
-/**
- * Wait Time Helper
- * Tracks responsiveness of seller since earliest buyer claim.
- * Resets to "None" when decisions are made or status changes.
- */
 function WaitTime({ post }: { post: any }) {
   const [elapsed, setElapsed] = useState("None");
   const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     const claimants = Object.values(post.claimants || {});
-    // Filter for only pending claims to track response wait time
     const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
     const claimTime = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
     
-    // Dedicated logic: It should be "None" if no waiting responses (no claims or seller already responded)
     if (!claimTime || post.sold || post.sellerReported || post.status === 'sold' || post.status === 'approved') {
       setElapsed("None");
       setIsUrgent(false);
@@ -214,14 +203,12 @@ function WaitTime({ post }: { post: any }) {
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % (3600000) / 60000));
       
-      // Precision for short wait times
       if (h === 0) {
         setElapsed(m === 0 ? "less than a minute" : `${m}m`);
       } else {
         setElapsed(`${h}h ${m}m`);
       }
       
-      // If wait time is >= 1 hour and seller hasn't responded, flag as urgent
       setIsUrgent(h >= 1 && !post.sellerReported && !post.warningDismissedAt);
     };
     update();
@@ -287,22 +274,17 @@ export default function AdminPage() {
 
   const router = useRouter();
 
-  // View States
   const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'events' | 'users' | 'settings' | 'promo-codes'>('dashboard');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Detail Selection States (Full Page)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
-  // Expansion States
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
-  // Search States
   const [userSearch, setUserSearch] = useState("");
 
-  // Dialog States
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
@@ -313,7 +295,6 @@ export default function AdminPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
 
-  // Form States
   const [editingGame, setEditingGame] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
@@ -335,7 +316,6 @@ export default function AdminPage() {
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
   const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
   
-  // Settings Form States
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
   const [economyForm, setEconomyForm] = useState({ paymentNumber: "", listingFeeWeekly: 1.00, listingFeeMonthly: 3.00 });
   const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
@@ -371,7 +351,6 @@ export default function AdminPage() {
     }
   }, [storeSettings]);
 
-  // Live Performance Chart Data
   const chartData = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = subDays(new Date(), 6 - i);
@@ -398,7 +377,6 @@ export default function AdminPage() {
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
 
-  // Orders View Specific - Only Top Up Items
   const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
 
   const filteredUsers = useMemo(() => {
@@ -414,7 +392,6 @@ export default function AdminPage() {
     return Object.entries(storeSettings.paymentMethods).map(([id, m]: any) => ({ ...m, id }));
   }, [storeSettings?.paymentMethods]);
 
-  // Actions
   const handleOpenGameDialog = (game?: any) => {
     setEditingGame(game || null);
     setGameForm(game ? { title: game.title, icon: game.icon || "", category: game.category } : { title: "", icon: "", category: "top-up" });
@@ -606,12 +583,10 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
-      {/* Desktop Sidebar */}
       <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-900 border-none">
           <SheetHeader className="sr-only">
@@ -622,7 +597,6 @@ export default function AdminPage() {
       </Sheet>
 
       <div className="flex-1 flex flex-col overflow-hidden w-full">
-        {/* Header */}
         <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
@@ -674,7 +648,6 @@ export default function AdminPage() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
-          {/* Dashboard View */}
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
@@ -697,7 +670,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Orders Management */}
           {activeView === 'orders' && (
             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
                {selectedOrderId ? (
@@ -714,7 +686,6 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-8">
-                    {/* Mobile Card List */}
                     <div className="grid grid-cols-1 gap-4 md:hidden">
                        {topUpOrders.length === 0 ? (
                          <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No orders found.</div>
@@ -757,7 +728,6 @@ export default function AdminPage() {
                        )}
                     </div>
 
-                    {/* Desktop Table View */}
                     <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -820,7 +790,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Marketplace Management */}
           {activeView === 'account-posts' && (
             <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                {selectedAccountId ? (
@@ -843,7 +812,6 @@ export default function AdminPage() {
                  />
                ) : (
                  <div className="space-y-10">
-                    {/* Mobile View: Cards */}
                     <div className="grid grid-cols-1 gap-4 md:hidden">
                        {accountPosts.length === 0 ? (
                          <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No account listings found.</div>
@@ -917,7 +885,6 @@ export default function AdminPage() {
                        )}
                     </div>
 
-                    {/* Desktop View: Table */}
                     <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -1018,7 +985,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Inventory Management View */}
           {activeView === 'inventory' && (
             <div className="space-y-12 animate-in fade-in duration-700">
                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -1043,7 +1009,6 @@ export default function AdminPage() {
                           isExpanded && "ring-2 ring-primary shadow-2xl"
                         )}
                       >
-                         {/* Card Header */}
                          <div 
                            onClick={() => setExpandedGameId(isExpanded ? null : g.id)}
                            className="p-4 md:p-8 flex items-center justify-between cursor-pointer group"
@@ -1073,7 +1038,6 @@ export default function AdminPage() {
                             </div>
                          </div>
 
-                         {/* Expanded Inventory Items */}
                          {isExpanded && (
                            <div className="px-4 md:px-8 pb-8 pt-4 border-t dark:border-white/5 animate-in slide-in-from-top-2 duration-300">
                               <div className="flex justify-between items-center mb-6">
@@ -1124,10 +1088,8 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Events & Banners View */}
           {activeView === 'events' && (
             <div className="space-y-12 animate-in fade-in duration-700">
-               {/* Header Controls */}
                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
                   <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                      <Button 
@@ -1146,7 +1108,6 @@ export default function AdminPage() {
                   </div>
                </div>
 
-               {/* Events Grid */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {events.map(e => (
                     <Card key={e.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900 group">
@@ -1176,7 +1137,6 @@ export default function AdminPage() {
                   ))}
                </div>
 
-               {/* Slider Banners Section */}
                <div className="space-y-6 pt-12">
                   <h4 className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.3em]">Slider Banners</h4>
                   <div className="flex flex-wrap gap-4">
@@ -1200,7 +1160,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Promo Codes Management */}
           {activeView === 'promo-codes' && (
             <div className="space-y-12 animate-in fade-in duration-700">
                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
@@ -1320,7 +1279,6 @@ export default function AdminPage() {
                   </div>
                </div>
 
-               {/* Mobile View: Cards */}
                <div className="grid grid-cols-1 gap-4 md:hidden">
                   {filteredUsers.length === 0 ? (
                     <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No users found</div>
@@ -1367,7 +1325,6 @@ export default function AdminPage() {
                   )}
                </div>
 
-               {/* Desktop View: Table */}
                <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden overflow-x-auto scrollbar-hide">
                   <Table className="min-w-[1000px]">
                      <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
@@ -1466,7 +1423,6 @@ export default function AdminPage() {
           {activeView === 'settings' && (
             <div className="max-w-5xl mx-auto space-y-6 sm:space-y-12 pb-20 sm:pb-24">
                <Accordion type="single" collapsible className="space-y-4 sm:space-y-6">
-                  {/* Brand Identity */}
                   <AccordionItem value="branding" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1509,7 +1465,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Marketplace Economy */}
                   <AccordionItem value="economy" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1534,7 +1489,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Payment Infrastructure */}
                   <AccordionItem value="gateways" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1577,7 +1531,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Communication Hub */}
                   <AccordionItem value="communication" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1602,7 +1555,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Compliance Editor */}
                   <AccordionItem value="legal" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1632,7 +1584,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Maintenance Console */}
                   <AccordionItem value="maintenance" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1680,7 +1631,6 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
-                  {/* Recovery Infrastructure */}
                   <AccordionItem value="emailjs" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1724,12 +1674,10 @@ export default function AdminPage() {
         </main>
       </div>
 
-      {/* Dialogs */}
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
-           {/* Modal Header Gradient */}
            <div className="h-28 md:h-32 bg-gradient-to-r from-[#0EA5E9] to-[#2563EB] relative shrink-0">
               <button 
                 onClick={() => setIsUserManageOpen(false)}
@@ -1738,7 +1686,6 @@ export default function AdminPage() {
                  <XCircle size={20} />
               </button>
               
-              {/* Overlapping Avatar */}
               <div className="absolute -bottom-12 left-8">
                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
                     {selectedUser?.photoURL ? (
@@ -1751,7 +1698,6 @@ export default function AdminPage() {
            </div>
 
            <div className="p-6 md:p-8 pt-12 md:pt-16 space-y-6 md:space-y-8">
-              {/* User Basic Info */}
               <div className="flex justify-between items-start">
                  <div className="min-w-0 pr-2">
                     <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
@@ -1768,7 +1714,6 @@ export default function AdminPage() {
                  </Badge>
               </div>
 
-              {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                  <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
                     <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
@@ -1785,7 +1730,6 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              {/* Role Management */}
               <div className="space-y-2 md:space-y-3">
                  <div className="flex items-center gap-2 text-primary ml-1">
                     <LayoutGrid size={14} />
@@ -1806,11 +1750,11 @@ export default function AdminPage() {
                        <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
                        <SelectItem value="staff" className="rounded-xl p-4 font-bold text-xs uppercase">staff member</SelectItem>
                        <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
+                       <SelectItem value="super_admin" className="rounded-xl p-4 font-bold text-xs uppercase">super admin</SelectItem>
                     </SelectContent>
                  </Select>
               </div>
 
-              {/* Wallet Adjustments */}
               <div className="space-y-3 md:space-y-4">
                  <div className="flex items-center gap-2 text-amber-500 ml-1">
                     <DollarSign size={14} />
@@ -1829,7 +1773,6 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              {/* Actions Footer */}
               <div className="pt-2">
                  <Button 
                     variant={selectedUser?.banned ? "default" : "destructive"} 
@@ -2112,9 +2055,6 @@ export default function AdminPage() {
   );
 }
 
-/**
- * Full Page Order Management View
- */
 function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
   if (!order) return null;
   const item = order.items?.[0];
@@ -2283,10 +2223,6 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
   );
 }
 
-/**
- * Full Page Account Listing Management View
- * Features real-time wait tracking and specialized penalty hub.
- */
 function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
   const [now, setNow] = useState(Date.now());
   
@@ -2299,12 +2235,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
-  // STALLING logic: only for unverified claims
   const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
   const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
   const isStalling = earliestClaim && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
-  // Dedicated Wait logic: displayed ONLY for waiting responses
   const isWaiting = earliestClaim && !post.sellerReported && !post.sold;
   const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
 
@@ -2318,7 +2252,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
     window.open(`https://wa.me/${formatted}`, '_blank');
   };
 
-  // Find final buyer info for confirmation banner
   const finalBuyer = useMemo(() => {
     if (post.status !== 'sold' || !post.boughtBy) return null;
     return allUsers.find((u: any) => u.uid === post.boughtBy);
@@ -2344,7 +2277,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </div>
 
-       {/* Sold Confirmation Banner */}
        {post.status === 'sold' && (
          <Card className="rounded-[3rem] border-none bg-green-500 text-white p-8 md:p-12 space-y-8 md:space-y-12 animate-in zoom-in duration-500 shadow-2xl shadow-green-500/20">
             <div className="flex items-center gap-6">
@@ -2374,7 +2306,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
          </Card>
        )}
 
-       {/* Critical Stalling Warning Banner (Penalty Hub) */}
        {isStalling && (
          <Card className="rounded-[3rem] border-none bg-red-600 text-white p-6 md:p-10 space-y-8 animate-in slide-in-from-top-4 duration-700 shadow-2xl shadow-red-500/20">
             <div className="flex items-center gap-6">
@@ -2446,7 +2377,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
          </Card>
        )}
 
-       {/* Main Account Card */}
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
           <div className="relative aspect-video w-full p-4 sm:p-8">
              <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden shadow-inner bg-slate-100 dark:bg-slate-800">
@@ -2496,7 +2426,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
        </div>
     </Card>
 
-    {/* Stakeholder Hub */}
     <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-primary">
@@ -2511,7 +2440,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
        </div>
 
        <div className="space-y-6">
-          {/* Seller section */}
           <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
              <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
@@ -2542,7 +2470,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              </div>
           </div>
 
-          {/* Buyer Reports Section */}
           {claimants.length === 0 ? (
             <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
                <ShieldCheck size={48} className="mb-4" />
@@ -2605,7 +2532,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
        </div>
     </Card>
 
-    {/* Lifecycle Control */}
     <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
        <div className="flex items-center gap-4 text-amber-500">
           <RefreshCw size={24} />
@@ -2627,7 +2553,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              </Select>
           </div>
 
-          {/* Manual Buyer Selection if Sold */}
           {status === 'sold' && (
              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
@@ -2662,7 +2587,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
 );
 }
 
-// Helper Components
 function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number }) {
   return (
     <button onClick={onClick} className={cn("w-full h-12 flex items-center transition-all duration-300 rounded-xl relative group", active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800", expanded ? "px-4 gap-4" : "justify-center", className)}>

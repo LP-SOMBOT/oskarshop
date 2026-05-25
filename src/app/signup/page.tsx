@@ -12,11 +12,6 @@ import { User, Lock, Smartphone, Loader2, ArrowLeft, Eye, EyeOff, AlertCircle } 
 import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-/**
- * @fileOverview Signup Page with Somali language default.
- * Now simplified to Name, Phone Number, and Password with mandatory +252 prefix.
- */
-
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -46,25 +41,23 @@ export default function SignupPage() {
       return;
     }
 
-    if (phone.replace(/\D/g, '').length < 9) {
+    if (phone.length < 9) {
       toast({
         variant: "destructive",
         title: "Khalad",
-        description: "Numbarku waa inuu ugu yaraan ka koobnaadaa 9 nambar.",
+        description: "Numbarku waa inuu ka koobnaadaa 9 nambar.",
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Prepend country code
       await signup("+252" + phone, password, name);
       toast({
         title: "Account-ka waa la sameeyey!",
         description: "Ku soo dhawoow Oskar Shop.",
       });
     } catch (error: any) {
-      // Error handled by context and shown in alert
     } finally {
       setIsSubmitting(false);
     }
@@ -133,7 +126,11 @@ export default function SignupPage() {
                 placeholder="Numbarkaaga" 
                 required 
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  const normalized = val.startsWith('0') ? val.substring(1) : val;
+                  setPhone(normalized.substring(0, 9));
+                }}
                 className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] focus-visible:ring-[#7C3AED] text-sm sm:text-base font-bold text-gray-900 placeholder:text-gray-400 transition-all"
               />
             </div>

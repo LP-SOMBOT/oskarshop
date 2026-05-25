@@ -60,6 +60,7 @@ type CartItem = {
 type Order = {
   id: string;
   userId: string;
+  userPhone?: string;
   items: CartItem[];
   total: number;
   status: 'pending' | 'processing' | 'successful' | 'cancelled';
@@ -82,6 +83,7 @@ type AccountPost = {
   id: string;
   uid: string;
   authorName: string;
+  authorPhone?: string;
   authorAvatar?: string;
   gameType: 'freefire' | 'bloodstrike';
   platform: string;
@@ -1058,10 +1060,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) { sequenceId = Date.now(); }
     const orderId = `iibinta${sequenceId}`;
     
-    // Construct order object carefully to avoid undefined properties
     const newOrder: any = { 
       id: orderId, 
       userId: user.uid, 
+      userPhone: userProfile?.phoneNumber || "",
       items: [directItem], 
       total: directItem.price, 
       status: 'pending', 
@@ -1088,7 +1090,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const postAccount = async (data: any) => {
     if (!rtdb || !user) return;
     const postRef = push(ref(rtdb, 'accountPosts'));
-    await set(postRef, { ...data, uid: user.uid, authorName: enhancedUser?.name, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
+    await set(postRef, { ...data, uid: user.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`);
   };
@@ -1193,7 +1195,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const now = Date.now();
       const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
       
-      // FORCE RESET TO NEW STATE (excluding term)
       updates.expiresAt = now + duration;
       updates.createdAt = now;
       updates.warningDismissedAt = null;
@@ -1360,14 +1361,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updates.hiddenFromMarket = false; 
     }
 
-    // FORCE RESET TO NEW STATE IF APPROVED
     if (action === 'approved') {
        const now = Date.now();
        const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
        
        updates.expiresAt = now + duration;
        updates.createdAt = now;
-       updates.sellerReported = false; // Reset security flag
+       updates.sellerReported = false; 
        updates.sold = false;
        updates.holdingBy = null;
        updates.boughtBy = null;
@@ -1491,7 +1491,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     
     if (!expiresAt) {
-      expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // Default 30 days
+      expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); 
     }
 
     const standardizedCode = promo.code.trim().toUpperCase();
