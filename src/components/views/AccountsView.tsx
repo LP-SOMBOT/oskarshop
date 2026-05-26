@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -67,6 +66,7 @@ export default function AccountsView() {
     isInitialLoading, 
     setIsPostingAccount,
     deleteAccountPost,
+    language,
     t 
   } = useApp();
   
@@ -200,8 +200,12 @@ export default function AccountsView() {
               <ShieldCheck className="w-10 h-10 md:w-16 md:h-16 text-slate-400 dark:text-slate-600" />
             </div>
             <div>
-               <h3 className="font-bold text-xl md:text-3xl text-slate-900 dark:text-white">No active listings</h3>
-               <p className="text-sm md:text-lg">Check back later or post your own account!</p>
+               <h3 className="font-bold text-xl md:text-3xl text-slate-900 dark:text-white">
+                 {language === 'so' ? 'Hadda wax account ah ma yaalaan' : 'No active listings'}
+               </h3>
+               <p className="text-sm md:text-lg">
+                 {language === 'so' ? 'Wali account lama soo dhigin' : 'Check back later or post your own account!'}
+               </p>
             </div>
           </div>
         ) : (
@@ -752,7 +756,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                                className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-slate-900 text-white hover:bg-black font-black text-xs md:text-2xl gap-3 shadow-2xl active:scale-95 transition-all uppercase tracking-widest"
                              >
                                 <Smartphone className="w-6 h-6 md:w-10 md:h-10" /> 
-                                {language === 'so' ? `KU BIXI ${paymentMethods.find(m => m.id === selectedMethodId)?.name || ''}` : `${paymentMethods.find(m => m.id === selectedMethodId)?.name || 'PAY'} (DIAL)`}
+                                {language === 'so' ? `KU BIXI ${paymentMethods.find(m => m.id === selectedMethodId)?.name || ''}` : `PAY WITH ${paymentMethods.find(m => m.id === selectedMethodId)?.name || 'MOBILE'}`}
                              </Button>
                            ) : (
                              <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
