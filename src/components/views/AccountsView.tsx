@@ -179,16 +179,7 @@ export default function AccountsView() {
            </div>
            
            <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
-              <div className="relative flex-1 md:w-96 lg:w-[500px]">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-400" />
-                <Input 
-                  placeholder="Search accounts..." 
-                  className="pl-10 md:pl-12 h-12 md:h-14 lg:h-16 rounded-xl md:rounded-[1.5rem] bg-white dark:bg-slate-900 border-none shadow-sm dark:shadow-none font-bold text-sm md:text-lg"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <button onClick={() => setIsActivityModalOpen(true)} className="hidden md:flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-sm text-slate-400 hover:text-primary transition-colors border border-gray-100 dark:border-white/5">
+              <button onClick={() => setIsActivityModalOpen(true)} className="hidden md:flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-sm text-slate-400 hover:text-primary transition-colors border border-gray-100 dark:border-white/5 ml-auto">
                  <Activity className="w-7 h-7 lg:w-8 lg:h-8" />
               </button>
            </div>
