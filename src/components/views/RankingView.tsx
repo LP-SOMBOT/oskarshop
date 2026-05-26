@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -181,7 +180,7 @@ function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: num
        
        <div className="text-center min-w-0 px-1">
           <p className="font-bold text-[10px] md:text-sm text-slate-900 dark:text-white truncate max-w-full">
-            {user.name.split(' ')[0]}
+            {user.name}
           </p>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} fill="currentColor" />
