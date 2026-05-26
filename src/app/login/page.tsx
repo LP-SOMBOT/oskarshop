@@ -266,7 +266,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button type="submit" disabled={isSubmitting} className="w-full h-12 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase tracking-wide">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Verify Phone & Send OTP"}
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : (language === 'so' ? "Dir code ka" : "Verify Phone & Send OTP")}
                 </Button>
 
                 <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-2 w-full group">
