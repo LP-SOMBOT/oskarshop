@@ -392,7 +392,7 @@ export default function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: string } | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up" });
-  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", thumbnail: "", whatsappNumber: "" });
+  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -522,7 +522,7 @@ export default function AdminPage() {
 
   const handleOpenProductDialog = (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString() } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", thumbnail: "", whatsappNumber: "" });
+    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
     setIsProductDialogOpen(true);
   };
 
@@ -542,7 +542,12 @@ export default function AdminPage() {
     e.preventDefault();
     setIsUploading(true);
     try { 
-      await saveProduct({ ...productForm, price: parseFloat(productForm.price), id: editingProduct?.id }); 
+      await saveProduct({ 
+        ...productForm, 
+        price: parseFloat(productForm.price), 
+        discountedPrice: productForm.discountedPrice ? parseFloat(productForm.discountedPrice) : null,
+        id: editingProduct?.id 
+      }); 
       setIsProductDialogOpen(false); 
       toast({ title: "Item Saved" }); 
     } finally { setIsUploading(false); }
@@ -2155,8 +2160,9 @@ export default function AdminPage() {
                     </Select>
                  </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Standard Price ($)" type="number" value={productForm.price} onChange={v => setProductForm({ ...productForm, price: v })} placeholder="2.99" />
+                 <SettingInput label="Discounted Price ($)" type="number" value={productForm.discountedPrice} onChange={v => setProductForm({ ...productForm, discountedPrice: v })} placeholder="1.99" />
               </div>
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>

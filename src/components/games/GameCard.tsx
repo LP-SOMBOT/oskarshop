@@ -50,7 +50,7 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
       {hasStoreDiscount && (
         <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10 animate-in fade-in zoom-in duration-500">
            <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1">
-             <Sparkles size={10} className="md:w-3 md:h-3" /> {savingsPercent}% OFF
+             <Sparkles size={10} className="md:w-3 md:h-3" /> -{savingsPercent}% Discount
            </Badge>
         </div>
       )}
