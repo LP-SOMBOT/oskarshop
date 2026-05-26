@@ -527,7 +527,7 @@ const translations: Record<Language, Record<string, string>> = {
     chat: "Sheeko",
     notifications: "Ogeysiis",
     ranking: "Leaderboard",
-    my_accounts: "Account-yadayda",
+    my_accounts: "My accounts",
     sell_account: "iibi/iibso account",
     leaderboard: "Leaderboard",
     logout: "Ka Bax",
