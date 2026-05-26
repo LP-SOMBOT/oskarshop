@@ -534,7 +534,7 @@ const translations: Record<Language, Record<string, string>> = {
     language: "Luqadda",
     dark_mode: "U bedel madoow",
     light_mode: "U bedel cadaan",
-    update_profile: "Cusbooneysii Profile",
+    update_profile: "Bedel profile ka",
     store_marketplace: "",
     support_center: "Caawinaad",
     global_settings: "Settings-ka Guud",
