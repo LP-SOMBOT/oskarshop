@@ -392,7 +392,7 @@ export default function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: string } | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up" });
-  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
+  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", thumbnail: "", whatsappNumber: "" });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -520,7 +520,7 @@ export default function AdminPage() {
 
   const handleOpenProductDialog = (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
+    setProductForm(p ? { ...p, price: p.price.toString() } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", thumbnail: "", whatsappNumber: "" });
     setIsProductDialogOpen(true);
   };
 
@@ -540,7 +540,7 @@ export default function AdminPage() {
     e.preventDefault();
     setIsUploading(true);
     try { 
-      await saveProduct({ ...productForm, price: parseFloat(productForm.price), discountedPrice: productForm.discountedPrice ? parseFloat(productForm.discountedPrice) : undefined, id: editingProduct?.id }); 
+      await saveProduct({ ...productForm, price: parseFloat(productForm.price), id: editingProduct?.id }); 
       setIsProductDialogOpen(false); 
       toast({ title: "Item Saved" }); 
     } finally { setIsUploading(false); }
@@ -1994,7 +1994,7 @@ export default function AdminPage() {
               <div className="space-y-2 md:space-y-3">
                  <div className="flex items-center gap-2 text-primary ml-1">
                     <LayoutGrid size={14} />
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
+                    <Label className="text-[9px] md:text-10px] font-black uppercase tracking-widest">Role Management</Label>
                  </div>
                  <Select 
                     value={selectedUser?.role || 'user'} 
@@ -2019,7 +2019,7 @@ export default function AdminPage() {
               <div className="space-y-3 md:space-y-4">
                  <div className="flex items-center gap-2 text-amber-500 ml-1">
                     <DollarSign size={14} />
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
+                    <Label className="text-[9px] md:text-10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
                  </div>
                  <div className="flex gap-2 md:gap-3">
                     <Input 
@@ -2115,9 +2115,8 @@ export default function AdminPage() {
                     </Select>
                  </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
                  <SettingInput label="Standard Price ($)" type="number" value={productForm.price} onChange={v => setProductForm({ ...productForm, price: v })} placeholder="2.99" />
-                 <SettingInput label="Discount Price ($)" type="number" value={productForm.discountedPrice} onChange={v => setProductForm({ ...productForm, discountedPrice: v })} placeholder="1.99" />
               </div>
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
@@ -2327,7 +2326,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
     <div className="group relative bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5 space-y-6 md:space-y-8 transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-800">
        <div className="flex items-center gap-4 sm:gap-5">
           <div className={cn(
-            "w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl md:text-4xl shadow-sm border border-white dark:border-white/5 shrink-0",
+            "w-10 h-10 sm:w-12 sm:h-12 md:w-16 h-16 rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl md:text-4xl shadow-sm border border-white dark:border-white/5 shrink-0",
             rank === 1 ? "bg-yellow-500/10" : rank === 2 ? "bg-slate-300/10" : "bg-amber-600/10"
           )}>
             {icon}
