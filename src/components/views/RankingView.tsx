@@ -151,6 +151,12 @@ function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: num
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
+  const borderClasses = isGold 
+    ? "border-yellow-400 ring-4 ring-yellow-400/20 shadow-[0_0_20px_rgba(234,179,8,0.4)]" 
+    : isSilver 
+      ? "border-slate-200 ring-4 ring-slate-200/20 shadow-[0_0_15px_rgba(203,213,225,0.3)]" 
+      : "border-amber-700 ring-4 ring-amber-700/20 shadow-[0_0_15px_rgba(180,83,9,0.3)]";
+
   return (
     <div className={cn(
       "flex flex-col items-center gap-3 relative transition-all duration-700 animate-in slide-in-from-bottom-10",
@@ -158,8 +164,8 @@ function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: num
     )}>
        <div className="relative">
           <div className={cn(
-            "w-16 h-16 md:w-24 md:h-24 rounded-full border-4 shadow-2xl relative overflow-hidden",
-            isGold ? "border-yellow-500 ring-4 ring-yellow-500/20" : isSilver ? "border-slate-300" : "border-amber-600"
+            "w-16 h-16 md:w-24 md:h-24 rounded-full border-4 relative overflow-hidden",
+            borderClasses
           )}>
              <Avatar className="w-full h-full">
                 <AvatarImage src={user.photoURL} />
