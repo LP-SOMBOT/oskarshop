@@ -5,7 +5,6 @@ import { useApp } from '@/lib/context';
 import { 
   Trophy, 
   ArrowLeft, 
-  Crown, 
   Star, 
   Clock,
   User
@@ -158,7 +157,6 @@ function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: num
       isGold ? "z-20 scale-110" : "z-10"
     )}>
        <div className="relative">
-          {isGold && <Crown className="absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 text-yellow-500 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)] animate-bounce" />}
           <div className={cn(
             "w-16 h-16 md:w-24 md:h-24 rounded-full border-4 shadow-2xl relative overflow-hidden",
             isGold ? "border-yellow-500 ring-4 ring-yellow-500/20" : isSilver ? "border-slate-300" : "border-amber-600"
