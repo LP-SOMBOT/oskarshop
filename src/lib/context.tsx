@@ -1060,42 +1060,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [authUser, userProfile, userRankData]);
 
+  // Role-based Order, Chat and Admin Notification Subscription
   useEffect(() => {
-    if (!rtdb || !enhancedUser?.isAdmin) {
-      if (allOrders.length > 0) setAllOrders([]);
+    if (!rtdb || !authUser) {
+      setAllOrders([]);
       setAdminNotifications([]);
+      setAllChatSessions([]);
       return;
     }
-    const allOrdersRef = ref(rtdb, 'orders');
-    const chatIndexRef = ref(rtdb, 'chatIndex');
-    const adminNotifsRef = query(ref(rtdb, 'adminNotifications'), limitToLast(30));
 
-    onValue(allOrdersRef, (snapshot) => {
+    // Orders Listener
+    let ordersRef;
+    if (enhancedUser?.isAdmin) {
+      ordersRef = ref(rtdb, 'orders');
+    } else {
+      // Filter for current user's orders in real-time
+      ordersRef = query(ref(rtdb, 'orders'), orderByChild('userId'), equalTo(authUser.uid));
+    }
+
+    const ordersUnsubscribe = onValue(ordersRef, (snapshot) => {
       const val = snapshot.val();
-      if (val) setAllOrders(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a, b) => b.createdAt - a.createdAt));
-      else setAllOrders([]);
-    });
-
-    onValue(chatIndexRef, (snapshot) => {
-      const val = snapshot.val();
-      setAllChatSessions(val ? Object.entries(val).map(([userId, v]: any) => ({ userId, ...v })).sort((a,b) => b.lastTimestamp - a.lastTimestamp) : []);
-    });
-
-    onValue(adminNotifsRef, (snapshot) => {
-      const data = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt) : [];
-      if (data.length > 0) {
-        const latest = data[0];
-        if (!latest.readBy?.[enhancedUser.uid] && latest.createdAt > sessionStartTime.current) {
-          if (latest.type !== 'assignment_update') showPushNotification(latest.title, latest.body, "admin-push-" + latest.id);
-        }
+      if (val) {
+        setAllOrders(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a, b) => b.createdAt - a.createdAt));
+      } else {
+        setAllOrders([]);
       }
-      setAdminNotifications(data);
     });
+
+    // Admin-Only Subscriptions
+    let adminNotifUnsubscribe = () => {};
+    let chatIndexUnsubscribe = () => {};
+
+    if (enhancedUser?.isAdmin) {
+      const chatIndexRef = ref(rtdb, 'chatIndex');
+      const adminNotifsRef = query(ref(rtdb, 'adminNotifications'), limitToLast(30));
+
+      chatIndexUnsubscribe = onValue(chatIndexRef, (snapshot) => {
+        const val = snapshot.val();
+        setAllChatSessions(val ? Object.entries(val).map(([userId, v]: any) => ({ userId, ...v })).sort((a,b) => b.lastTimestamp - a.lastTimestamp) : []);
+      });
+
+      adminNotifUnsubscribe = onValue(adminNotifsRef, (snapshot) => {
+        const data = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt) : [];
+        if (data.length > 0) {
+          const latest = data[0];
+          if (!latest.readBy?.[enhancedUser.uid] && latest.createdAt > sessionStartTime.current) {
+            if (latest.type !== 'assignment_update') showPushNotification(latest.title, latest.body, "admin-push-" + latest.id);
+          }
+        }
+        setAdminNotifications(data);
+      });
+    }
 
     return () => {
-      off(allOrdersRef); off(chatIndexRef); off(adminNotifsRef);
+      ordersUnsubscribe();
+      chatIndexUnsubscribe();
+      adminNotifUnsubscribe();
     };
-  }, [rtdb, enhancedUser, showPushNotification]);
+  }, [rtdb, authUser, enhancedUser?.isAdmin, showPushNotification]);
 
   const broadcastNotification = async (title: string, body: string, targetUid?: string) => {
     if (!rtdb) return;
