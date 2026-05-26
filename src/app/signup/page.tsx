@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -156,7 +155,7 @@ export default function SignupPage() {
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
              <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
              <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
-                {user ? "Xaqiijinta galitaanka..." : "Isku xirka..."}
+                {user ? "Authenticating..." : "Loading..."}
              </p>
           </div>
         )}
