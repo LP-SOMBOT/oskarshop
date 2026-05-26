@@ -121,15 +121,9 @@ export default function RankingView() {
           </div>
 
           <div className="space-y-3">
-             {others.length > 0 ? (
-               others.map((u, i) => (
-                 <RankListItem key={u.uid} user={u} rank={i + 4} />
-               ))
-             ) : (
-               <div className="py-20 text-center opacity-30 italic text-sm font-bold uppercase tracking-widest">
-                  {t('no_participants')}
-               </div>
-             )}
+             {others.map((u, i) => (
+               <RankListItem key={u.uid} user={u} rank={i + 4} />
+             ))}
           </div>
         </main>
       </div>
