@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Mail, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Smartphone } from "lucide-react";
+import { Mail, Key, ArrowLeft, Loader2, CheckCircle2, AlertCircle, Smartphone, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import emailjs from '@emailjs/browser';
 import { toast } from "@/hooks/use-toast";
@@ -17,15 +17,11 @@ import {
   EMAILJS_PUBLIC_KEY 
 } from "@/lib/emailjs-config";
 
-/**
- * @fileOverview Hardened Password Reset Flow.
- * Uses mandatory +252 prefix for phone numbers.
- */
-
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [step, setStep] = useState<'request' | 'verify'>('request');
   const [phone, setPhone] = useState("");
+  const [targetEmail, setTargetEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,20 +34,13 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      // Step A: Construct synthetic email with mandatory 252 prefix
       const fullPhone = `252${phone.replace(/\D/g, "")}`;
-      const email = `${fullPhone}@oskarshop.app`;
-
+      
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ phone: fullPhone, type: 'reset' }),
       });
-
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server configuration error. Please ensure Firebase Admin environment variables are set in the dashboard.");
-      }
 
       const data = await res.json();
 
@@ -61,11 +50,24 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      toast({ title: "Code Sent!", description: "Check your alerts." });
+      setTargetEmail(data.targetEmail);
+
+      // Send OTP via EmailJS
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_email: data.targetEmail,
+          otp_code: data.otp,
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+
+      toast({ title: "Code Sent!", description: `Check your email: ${data.targetEmail}` });
       setStep('verify');
     } catch (err: any) {
       console.error('Request OTP Error:', err);
-      setError(err.message || "Failed to send code. Please try again.");
+      setError("Wuu ku guul darraystay diritaanka code-ka.");
     } finally {
       setIsLoading(false);
     }
@@ -81,19 +83,16 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const fullPhone = `252${phone.replace(/\D/g, "")}`;
-      const email = `${fullPhone}@oskarshop.app`;
-
       const res = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword }),
+        body: JSON.stringify({ 
+          email: targetEmail, 
+          otp, 
+          newPassword, 
+          isReset: true 
+        }),
       });
-
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Verification server error. Please try again later.");
-      }
 
       const data = await res.json();
 
@@ -107,7 +106,7 @@ export default function ForgotPasswordPage() {
       setTimeout(() => router.push('/login'), 2000);
     } catch (err: any) {
       console.error('Verify OTP Error:', err);
-      setError(err.message || "Verification failed. Please try again.");
+      setError("Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +127,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-6 relative z-10">
               <div className="space-y-2">
                 <h2 className="text-2xl font-headline font-bold text-gray-900">Forgot Password?</h2>
-                <p className="text-sm text-gray-500 font-medium">Enter your number and we'll send you a 6-digit verification code.</p>
+                <p className="text-sm text-gray-500 font-medium">Enter your number and we'll send a verification code to your registered email.</p>
               </div>
 
               {error && (
@@ -158,7 +157,7 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
-                  {isLoading ? <Loader2 className="animate-spin" /> : "Send Code"}
+                  {isLoading ? <Loader2 className="animate-spin" /> : "Send Code to Email"}
                 </Button>
 
                 <Link href="/login" className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-4">
@@ -170,7 +169,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-6 relative z-10">
               <div className="space-y-2">
                 <h2 className="text-2xl font-headline font-bold text-gray-900">Verify Code</h2>
-                <p className="text-sm text-gray-500 font-medium">We sent a 6-digit code to <span className="font-bold text-[#7C3AED]">+252 {phone}</span></p>
+                <p className="text-sm text-gray-500 font-medium">We sent a 6-digit code to <span className="font-bold text-[#7C3AED] truncate max-w-[200px] inline-block align-bottom">{targetEmail}</span></p>
               </div>
 
               {error && (
@@ -220,11 +219,11 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-full bg-green-600 hover:bg-green-700 font-bold text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest">
-                  {isLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Reset Password</>}
+                  {isLoading ? <Loader2 className="animate-spin" /> : <><ShieldCheck className="mr-2" /> Reset Password</>}
                 </Button>
 
                 <button type="button" onClick={() => setStep('request')} className="w-full text-gray-400 text-xs font-bold hover:text-gray-600">
-                  Didn't receive the code? Resend
+                  Resend code to email
                 </button>
               </form>
             </div>

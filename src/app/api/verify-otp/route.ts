@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 import { adminDb, adminAuth, isFirebaseAdminAvailable } from '@/lib/firebaseAdmin';
 
 /**
- * API Route to verify OTP and reset password.
+ * API Route to verify OTP.
  * Path: /api/verify-otp
- * Updated for Phone-to-SyntheticEmail mapping logic.
+ * Supports verification only (for signup) or verification + password reset.
  */
 
 export async function POST(request: Request) {
@@ -13,14 +13,14 @@ export async function POST(request: Request) {
     if (!isFirebaseAdminAvailable || !adminDb || !adminAuth) {
       return NextResponse.json({ 
         success: false, 
-        message: 'Firebase Admin not configured. Please check your admin SDK settings.' 
+        message: 'Firebase Admin not configured.' 
       }, { status: 500 });
     }
 
     const body = await request.json().catch(() => ({}));
-    const { email, otp, newPassword } = body;
+    const { email, otp, newPassword, isReset } = body;
 
-    if (!email || !otp || !newPassword) {
+    if (!email || !otp) {
       return NextResponse.json({ success: false, message: 'Missing mandatory data' }, { status: 400 });
     }
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const snap = await otpRef.get();
 
     if (!snap.exists()) {
-      return NextResponse.json({ success: false, message: 'No OTP request found. Please request a new code.' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'No OTP request found.' }, { status: 404 });
     }
 
     const record = snap.val();
@@ -43,29 +43,29 @@ export async function POST(request: Request) {
     }
 
     if (Date.now() > record.expiresAt) {
-      return NextResponse.json({ success: false, message: 'Code expired. Please request a new one.' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Code expired.' }, { status: 400 });
     }
-
-    // Find user UID using manual search to avoid index requirement
-    const usersRef = adminDb.ref('users');
-    const usersSnapshot = await usersRef.get();
-    const allUsers = usersSnapshot.val() || {};
-    
-    const userEntry = Object.entries(allUsers).find(([_, u]: any) => u.email === email);
-    
-    if (!userEntry) {
-      return NextResponse.json({ success: false, message: 'User record not found.' }, { status: 404 });
-    }
-
-    const uid = userEntry[0];
-
-    // Update Firebase Auth password
-    await adminAuth.updateUser(uid, { password: newPassword });
 
     // Mark as used
     await otpRef.update({ used: true });
 
-    return NextResponse.json({ success: true, message: 'Password updated successfully.' });
+    // If it's a reset, update the password in Firebase Auth
+    if (isReset && newPassword) {
+      const usersRef = adminDb.ref('users');
+      const usersSnapshot = await usersRef.get();
+      const allUsers = usersSnapshot.val() || {};
+      
+      const userEntry = Object.entries(allUsers).find(([_, u]: any) => u.email === email);
+      
+      if (!userEntry) {
+        return NextResponse.json({ success: false, message: 'User record not found.' }, { status: 404 });
+      }
+
+      const uid = userEntry[0];
+      await adminAuth.updateUser(uid, { password: newPassword });
+    }
+
+    return NextResponse.json({ success: true, message: 'Verification successful.' });
   } catch (error: any) {
     console.error('Verify OTP Error:', error);
     return NextResponse.json({ 

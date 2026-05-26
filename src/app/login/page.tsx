@@ -8,8 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Smartphone, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, CheckCircle2, ShieldCheck, KeyRound } from "lucide-react";
+import { Smartphone, Lock, EyeOff, Eye, Loader2, AlertCircle, ArrowLeft, CheckCircle2, ShieldCheck, KeyRound, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import emailjs from '@emailjs/browser';
+import { 
+  EMAILJS_SERVICE_ID, 
+  EMAILJS_TEMPLATE_ID, 
+  EMAILJS_PUBLIC_KEY 
+} from "@/lib/emailjs-config";
 
 export default function LoginPage() {
   const [view, setView] = useState<'login' | 'forgot' | 'verify'>('login');
@@ -18,12 +24,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const [targetEmail, setTargetEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { login, user, isGlobalLoading, authError, storeSettings, language } = useApp();
+  const { login, user, isGlobalLoading, authError, language } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -50,11 +57,12 @@ export default function LoginPage() {
     setServerError(null);
 
     try {
-      const syntheticEmail = `252${phone.replace(/\D/g, "")}@oskarshop.app`;
+      const fullPhone = `252${phone.replace(/\D/g, "")}`;
+      
       const res = await fetch('/api/generate-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: syntheticEmail }),
+        body: JSON.stringify({ phone: fullPhone, type: 'reset' }),
       });
 
       const data = await res.json();
@@ -65,10 +73,23 @@ export default function LoginPage() {
         return;
       }
 
-      toast({ title: "Verification code ready!", description: "Check your alerts." });
+      setTargetEmail(data.targetEmail);
+
+      // Send OTP via EmailJS
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_email: data.targetEmail,
+          otp_code: data.otp,
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+
+      toast({ title: "Code Sent!", description: `Check email: ${data.targetEmail}` });
       setView('verify');
     } catch (err: any) {
-      setServerError(err.message || "Wuu ku guul darraystay diritaanka code-ka.");
+      setServerError("Wuu ku guul darraystay diritaanka code-ka.");
     } finally {
       setIsSubmitting(false);
     }
@@ -84,11 +105,15 @@ export default function LoginPage() {
     setServerError(null);
 
     try {
-      const syntheticEmail = `252${phone.replace(/\D/g, "")}@oskarshop.app`;
       const res = await fetch('/api/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: syntheticEmail, otp, newPassword }),
+        body: JSON.stringify({ 
+          email: targetEmail, 
+          otp, 
+          newPassword, 
+          isReset: true 
+        }),
       });
 
       const data = await res.json();
@@ -210,7 +235,7 @@ export default function LoginPage() {
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-1">
                 <h2 className="text-xl sm:text-3xl font-headline font-bold text-gray-900">Ma ilaawday password-ka?</h2>
-                <p className="text-xs sm:text-base text-gray-500 font-medium leading-relaxed">Geli numbarkaaga si aan kuugu soo dirno code-ka xaqiijinta ee 6-da nambar ah.</p>
+                <p className="text-xs sm:text-base text-gray-500 font-medium leading-relaxed">Geli numbarkaaga si aan code ugu soo dirno email-kaaga.</p>
               </div>
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
@@ -234,7 +259,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button type="submit" disabled={isSubmitting} className="w-full h-12 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase tracking-wide">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Dir Code-ka"}
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Verify Phone & Send OTP"}
                 </Button>
 
                 <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-2 w-full group">
@@ -248,11 +273,11 @@ export default function LoginPage() {
             <div className="space-y-5 animate-in slide-in-from-right-4 duration-500">
               <div className="space-y-2">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#7C3AED]">
-                  <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <h2 className="text-lg sm:text-3xl font-headline font-bold text-gray-900 leading-tight">Xaqiiji Code-ka</h2>
                 <p className="text-[10px] sm:text-base text-gray-500 font-medium leading-relaxed">
-                  Waxaan code-ka u dirnay <span className="font-bold text-[#7C3AED] block sm:inline truncate max-w-full">+252 {phone}</span>
+                  Waxaan code-ka u dirnay email-kaaga: <span className="font-bold text-[#7C3AED] block truncate max-w-full">{targetEmail}</span>
                 </p>
               </div>
 
@@ -315,7 +340,7 @@ export default function LoginPage() {
                       onClick={() => { setOtp(""); setServerError(null); handleRequestOtp(new Event('submit') as any); }} 
                       className="text-gray-400 text-[10px] sm:text-sm font-bold hover:text-[#7C3AED] transition-colors"
                     >
-                      Code-ka ma helin? <span className="underline decoration-dotted">Dib u dir</span>
+                      Resend code to email
                     </button>
 
                     <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-gray-400 text-[10px] sm:text-sm font-bold hover:text-gray-600 transition-colors">

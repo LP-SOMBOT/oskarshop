@@ -292,7 +292,7 @@ type AppContextType = {
   setActiveTab: (tab: string) => void;
   setGlobalLoading: (loading: boolean) => void;
   login: (phone: string, password: string) => Promise<void>;
-  signup: (phone: string, password: string, name: string) => Promise<void>;
+  signup: (phone: string, password: string, name: string, realEmail: string) => Promise<void>;
   logout: () => Promise<void>;
   buyNow: (item: Omit<CartItem, 'quantity'>) => void;
   orders: Order[];
@@ -1167,7 +1167,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally { setIsGlobalLoading(false); }
   };
 
-  const signup = async (ph: string, p: string, n: string) => {
+  const signup = async (ph: string, p: string, n: string, realEmail: string) => {
     setIsGlobalLoading(true);
     setAuthError(null);
     try {
@@ -1178,15 +1178,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       const exists = Object.values(allUsersData).some((u: any) => {
         const uPhone = (u.phoneNumber || "").replace(/\D/g, "");
-        return uPhone === normalizedPhone;
+        return uPhone === normalizedPhone || u.email === realEmail;
       });
 
       if (exists) {
-        throw { code: 'auth/email-already-in-use', message: language === 'so' ? "Numbarkan horay ayaa loo diiwaan geliyay" : "This number is already registered" };
+        throw { code: 'auth/email-already-in-use', message: language === 'so' ? "Numbarkan ama email-kan horay ayaa loo diiwaan geliyay" : "This number or email is already registered" };
       }
 
-      const email = formatToSyntheticEmail(ph);
-      const cred = await createUserWithEmailAndPassword(auth, email, p);
+      const syntheticEmail = formatToSyntheticEmail(ph);
+      const cred = await createUserWithEmailAndPassword(auth, syntheticEmail, p);
       await updateProfile(cred.user, { displayName: n });
       
       const localAccepted = typeof window !== 'undefined' && localStorage.getItem('oskar_terms_accepted') === 'true';
@@ -1194,7 +1194,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const profile: UserProfile = { 
         uid: cred.user.uid, 
-        email: email, 
+        email: realEmail, 
         name: n, 
         phoneNumber: ph, 
         role: isAdminNumber ? 'admin' : 'user', 
