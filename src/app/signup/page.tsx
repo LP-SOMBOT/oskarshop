@@ -293,7 +293,7 @@ export default function SignupPage() {
 
             <div className="text-center pt-2 pb-4">
               <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                Horey ma u lahayd account? <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">Soo gal</Link>
+                {language === 'so' ? 'Horey ma u lahayd account?' : 'Already have an account?'} <Link href="/login" className="text-[#7C3AED] font-bold hover:underline ml-1">{language === 'so' ? 'Login' : 'Log in'}</Link>
               </p>
             </div>
           </form>
