@@ -331,7 +331,7 @@ export default function SignupPage() {
               </div>
 
               <Button type="submit" disabled={isVerifying || otpCode.length !== 6} className="w-full h-14 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
-                {isVerifying ? <Loader2 className="w-6 h-6 animate-spin" /> : "Verify & Complete"}
+                {isVerifying ? <Loader2 className="w-6 h-6 animate-spin" /> : (language === 'so' ? "Xaqiiji" : "Verify & Complete")}
               </Button>
 
               <button 
