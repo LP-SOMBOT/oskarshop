@@ -115,9 +115,9 @@ export default function RankingView() {
           </div>
 
           <div className="grid grid-cols-3 gap-3 md:gap-8 items-end pt-10 pb-4">
-             {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" activeRewards={leaderboardSettings.rewardsActive} />}
-             {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" activeRewards={leaderboardSettings.rewardsActive} />}
-             {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" activeRewards={leaderboardSettings.rewardsActive} />}
+             {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" activeRewards={leaderboardSettings.rewardsActive} delay="duration-700 delay-100" />}
+             {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" activeRewards={leaderboardSettings.rewardsActive} delay="duration-1000 delay-300" />}
+             {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" activeRewards={leaderboardSettings.rewardsActive} delay="duration-700 delay-500" />}
           </div>
 
           <div className="space-y-3">
@@ -147,24 +147,25 @@ function RewardBadge({ rank, discount }: { rank: number, discount: number }) {
   );
 }
 
-function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze', activeRewards: boolean }) {
+function PodiumCard({ user, rank, color, activeRewards, delay }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze', activeRewards: boolean, delay?: string }) {
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
   const borderClasses = isGold 
-    ? "border-yellow-400 ring-4 ring-yellow-400/20 shadow-[0_0_20px_rgba(234,179,8,0.4)]" 
+    ? "border-yellow-400 ring-4 ring-yellow-400/20 shadow-[0_0_25px_rgba(234,179,8,0.5)]" 
     : isSilver 
-      ? "border-slate-200 ring-4 ring-slate-200/20 shadow-[0_0_15px_rgba(203,213,225,0.3)]" 
+      ? "border-slate-300 ring-4 ring-slate-300/20 shadow-[0_0_15px_rgba(203,213,225,0.3)]" 
       : "border-amber-700 ring-4 ring-amber-700/20 shadow-[0_0_15px_rgba(180,83,9,0.3)]";
 
   return (
     <div className={cn(
-      "flex flex-col items-center gap-3 relative transition-all duration-700 animate-in slide-in-from-bottom-10",
-      isGold ? "z-20 scale-110" : "z-10"
+      "flex flex-col items-center gap-3 relative transition-all animate-in slide-in-from-bottom-20",
+      isGold ? "z-20 scale-110 animate-float" : "z-10",
+      delay
     )}>
        <div className="relative">
           <div className={cn(
-            "w-16 h-16 md:w-24 md:h-24 rounded-full border-4 relative overflow-hidden",
+            "w-16 h-16 md:w-28 md:h-28 rounded-full border-[4px] md:border-[6px] relative overflow-hidden",
             borderClasses
           )}>
              <Avatar className="w-full h-full">
@@ -175,32 +176,32 @@ function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: num
              </Avatar>
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-black p-0 border-2 border-white dark:border-slate-950",
-            isGold ? "bg-yellow-500" : isSilver ? "bg-slate-400" : "bg-amber-700"
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-white dark:border-slate-950 shadow-lg text-[10px] md:text-sm",
+            isGold ? "bg-yellow-500 text-white" : isSilver ? "bg-slate-400 text-white" : "bg-amber-700 text-white"
           )}>
             {rank}
           </Badge>
        </div>
        
        <div className="text-center min-w-0 px-1">
-          <p className="font-bold text-[10px] md:text-sm text-slate-900 dark:text-white truncate max-w-full">
+          <p className="font-bold text-[10px] md:text-base text-slate-900 dark:text-white truncate max-w-full">
             {user.name}
           </p>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} fill="currentColor" />
-             <span className="text-[10px] md:text-xs font-black">{user.points || 0}</span>
+             <span className="text-[10px] md:text-sm font-black">{user.points || 0}</span>
           </div>
        </div>
 
        {activeRewards && (
          <div className={cn(
-           "w-full rounded-t-2xl shadow-inner flex flex-col items-center justify-center pt-2",
-           isGold ? "h-20 md:h-28 bg-gradient-to-b from-yellow-500/20 to-transparent" :
-           isSilver ? "h-16 md:h-20 bg-gradient-to-b from-slate-400/20 to-transparent" :
+           "w-full rounded-t-[1.5rem] md:rounded-t-[2.5rem] shadow-inner flex flex-col items-center justify-center pt-2",
+           isGold ? "h-24 md:h-32 bg-gradient-to-b from-yellow-500/30 to-transparent" :
+           isSilver ? "h-16 md:h-24 bg-gradient-to-b from-slate-400/20 to-transparent" :
            "h-12 md:h-16 bg-gradient-to-b from-amber-700/20 to-transparent"
          )}>
             <span className={cn(
-              "text-[8px] font-black uppercase tracking-widest",
+              "text-[8px] md:text-[10px] font-black uppercase tracking-widest",
               isGold ? "text-yellow-600" : isSilver ? "text-slate-500" : "text-amber-800"
             )}>TOP {rank}</span>
          </div>
@@ -210,26 +211,27 @@ function PodiumCard({ user, rank, color, activeRewards }: { user: any, rank: num
 }
 
 function RankListItem({ user, rank }: { user: any, rank: number }) {
+  const { t } = useApp();
   return (
-    <Card className="p-3 md:p-5 rounded-2xl md:rounded-[1.5rem] border-none bg-white dark:bg-slate-900 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-       <div className="flex items-center gap-3 md:gap-5">
-          <span className="w-6 md:w-8 font-headline font-bold text-sm md:text-lg text-slate-400 group-hover:text-primary transition-colors text-center">{rank}</span>
-          <Avatar className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl shadow-sm border dark:border-white/5">
+    <Card className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-none bg-white dark:bg-slate-900 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
+       <div className="flex items-center gap-3 md:gap-6">
+          <span className="w-6 md:w-10 font-headline font-bold text-sm md:text-xl text-slate-400 group-hover:text-primary transition-colors text-center">{rank}</span>
+          <Avatar className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl shadow-sm border-2 border-white dark:border-white/5">
              <AvatarImage src={user.photoURL} />
              <AvatarFallback className="bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <User className="w-1/2 h-1/2 text-slate-300 dark:text-slate-700" />
              </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-             <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{user.name}</p>
+             <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name}</p>
           </div>
        </div>
        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-1.5 md:gap-2 text-primary font-headline font-bold text-sm md:text-xl">
-             <Star size={14} className="fill-primary/20" />
+          <div className="flex items-center gap-1.5 md:gap-3 text-primary font-headline font-bold text-sm md:text-2xl">
+             <Star size={14} className="fill-primary/20 md:size-6" />
              <span>{user.points || 0}</span>
           </div>
-          <p className="text-[7px] md:text-[9px] font-black text-muted-foreground uppercase tracking-tighter">TOTAL PTS</p>
+          <p className="text-[7px] md:text-[10px] font-black text-muted-foreground uppercase tracking-tighter">TOTAL PTS</p>
        </div>
     </Card>
   );
