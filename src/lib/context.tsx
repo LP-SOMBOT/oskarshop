@@ -570,7 +570,7 @@ const translations: Record<Language, Record<string, string>> = {
     view: "Eeg",
     time_left: "Waqtiga haray",
     buy_button: "iibso",
-    terms_of_service: "Sharuudaha Iyo qawaaniinta",
+    terms_of_service: "Sharuudaha/xeerarka website ka",
     read_terms: "Akhri Shuruudaha",
     photo_updated: "Sawirka waa la soo geliyey!",
     terms_welcome: "Ku soo dhawaada Oskar Shop. Si loo damaanad qaado deegaan ammaan ah dhammaan ciyaartoyda, fadlan dib u eeg Shuruudaha iyo Qawaaniinta ka hor intaadan sii socon.",
@@ -969,6 +969,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setProducts(sortedData);
       setCache(PRODUCTS_CACHE_KEY, sortedData);
       setSyncStatus(prev => ({ ...prev, products: true }));
+    });
+
+    onValue(accPostsRef, (s) => {
+      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
+      setAccountPosts(data);
+      setSyncStatus(prev => ({ ...prev, accPosts: true }));
     });
 
     onValue(accPostsRef, (s) => {
