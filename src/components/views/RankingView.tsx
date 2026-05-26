@@ -115,9 +115,9 @@ export default function RankingView() {
           </div>
 
           <div className="grid grid-cols-3 gap-3 md:gap-8 items-end pt-10 pb-4">
-             {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" activeRewards={leaderboardSettings.rewardsActive} delay="duration-700 delay-100" />}
-             {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" activeRewards={leaderboardSettings.rewardsActive} delay="duration-1000 delay-300" />}
-             {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" activeRewards={leaderboardSettings.rewardsActive} delay="duration-700 delay-500" />}
+             {top3[1] && <PodiumCard user={top3[1]} rank={2} color="silver" delay="duration-700 delay-100" />}
+             {top3[0] && <PodiumCard user={top3[0]} rank={1} color="gold" delay="duration-1000 delay-300" />}
+             {top3[2] && <PodiumCard user={top3[2]} rank={3} color="bronze" delay="duration-700 delay-500" />}
           </div>
 
           <div className="space-y-3">
@@ -147,7 +147,7 @@ function RewardBadge({ rank, discount }: { rank: number, discount: number }) {
   );
 }
 
-function PodiumCard({ user, rank, color, activeRewards, delay }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze', activeRewards: boolean, delay?: string }) {
+function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, color: 'gold' | 'silver' | 'bronze', delay?: string }) {
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
@@ -193,19 +193,17 @@ function PodiumCard({ user, rank, color, activeRewards, delay }: { user: any, ra
           </div>
        </div>
 
-       {activeRewards && (
-         <div className={cn(
-           "w-full rounded-t-[1.5rem] md:rounded-t-[2.5rem] shadow-inner flex flex-col items-center justify-center pt-2",
-           isGold ? "h-24 md:h-32 bg-gradient-to-b from-yellow-500/30 to-transparent" :
-           isSilver ? "h-16 md:h-24 bg-gradient-to-b from-slate-400/20 to-transparent" :
-           "h-12 md:h-16 bg-gradient-to-b from-amber-700/20 to-transparent"
-         )}>
-            <span className={cn(
-              "text-[8px] md:text-[10px] font-black uppercase tracking-widest",
-              isGold ? "text-yellow-600" : isSilver ? "text-slate-500" : "text-amber-800"
-            )}>TOP {rank}</span>
-         </div>
-       )}
+       <div className={cn(
+         "w-full rounded-t-[1.5rem] md:rounded-t-[2.5rem] shadow-inner flex flex-col items-center justify-center pt-2",
+         isGold ? "h-24 md:h-32 bg-gradient-to-b from-yellow-500/30 to-transparent" :
+         isSilver ? "h-16 md:h-24 bg-gradient-to-b from-slate-400/20 to-transparent" :
+         "h-12 md:h-16 bg-gradient-to-b from-amber-700/20 to-transparent"
+       )}>
+          <span className={cn(
+            "text-[8px] md:text-[10px] font-black uppercase tracking-widest",
+            isGold ? "text-yellow-600" : isSilver ? "text-slate-500" : "text-amber-800"
+          )}>TOP {rank}</span>
+       </div>
     </div>
   );
 }
