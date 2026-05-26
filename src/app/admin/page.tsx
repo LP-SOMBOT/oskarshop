@@ -404,6 +404,7 @@ export default function AdminPage() {
   const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
   const [termsForm, setTermsForm] = useState({ en: "", so: "" });
   const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
+  const [emailjsVerificationForm, setEmailjsVerificationForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
 
   const [leaderboardForm, setLeaderboardForm] = useState({
     rewardsActive: true,
@@ -454,6 +455,7 @@ export default function AdminPage() {
       setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
       setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
+      setEmailjsVerificationForm(storeSettings.emailjs_verification || { serviceId: "", templateId: "", publicKey: "" });
       
       const lb = storeSettings.leaderboard || {
         rewardsActive: true,
@@ -1100,7 +1102,7 @@ export default function AdminPage() {
                                       <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
                                    </div>
                                    <StatusBadge status={p.status} />
-                                </div>
+                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                    <div className="space-y-1">
@@ -1892,6 +1894,44 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
+                  <AccordionItem value="emailjs-verification" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-blue-600">
+                              <ShieldCheck className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Verification Infrastructure</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">EmailJS Template for Signups</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-6 sm:space-y-8">
+                              <div className="p-4 sm:p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-blue-700 dark:text-blue-300">
+                                    <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                                    These keys are used specifically for the OTP verification during user registration.
+                                 </p>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                                 <div className="space-y-4 sm:space-y-6">
+                                    <SettingInput label="Service ID" value={emailjsVerificationForm.serviceId || ''} onChange={v => setEmailjsVerificationForm(f => ({ ...f, serviceId: v }))} placeholder="service_xxxxxxxx" />
+                                    <SettingInput label="Template ID" value={emailjsVerificationForm.templateId || ''} onChange={v => setEmailjsVerificationForm(f => ({ ...f, templateId: v }))} placeholder="template_xxxxxxxx" />
+                                 </div>
+                                 <div className="space-y-4 sm:space-y-6">
+                                    <SettingInput label="Public Key" value={emailjsVerificationForm.publicKey || ''} onChange={v => setEmailjsVerificationForm(f => ({ ...f, publicKey: v }))} placeholder="xxxxxxxxxxxxxxxxx" />
+                                    <div className="pt-2">
+                                       <Button onClick={() => updateStoreSettings({ emailjs_verification: emailjsVerificationForm }).then(()=>toast({title:"Verification Infrastructure Synced"}))} disabled={isUploading} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-blue-600 hover:bg-blue-700">
+                                          {isUploading ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Sync Verification Keys</>}
+                                       </Button>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
                   <AccordionItem value="emailjs" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -1899,7 +1939,7 @@ export default function AdminPage() {
                               <Mail className="w-6 h-6" />
                               <div className="text-left">
                                  <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Recovery Infrastructure</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Automated OTP & verification keys</p>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">EmailJS Template for Resets</p>
                               </div>
                            </div>
                         </AccordionTrigger>
@@ -1919,8 +1959,8 @@ export default function AdminPage() {
                                  <div className="space-y-4 sm:space-y-6">
                                     <SettingInput label="Public Key" value={emailjsForm.publicKey || ''} onChange={v => setEmailjsForm(f => ({ ...f, publicKey: v }))} placeholder="xxxxxxxxxxxxxxxxx" />
                                     <div className="pt-2">
-                                       <Button onClick={() => updateStoreSettings({ emailjs: emailjsForm }).then(()=>toast({title:"Infrastructure Synced"}))} disabled={isUploading} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-purple-600 hover:bg-purple-700">
-                                          {isUploading ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Sync Keys</>}
+                                       <Button onClick={() => updateStoreSettings({ emailjs: emailjsForm }).then(()=>toast({title:"Recovery Infrastructure Synced"}))} disabled={isUploading} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-purple-600 hover:bg-purple-700">
+                                          {isUploading ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Sync Recovery Keys</>}
                                        </Button>
                                     </div>
                                  </div>
@@ -2881,7 +2921,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              disabled={isSaving} 
              className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
           >
-             {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Order"}
+             {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
           </Button>
        </div>
     </Card>

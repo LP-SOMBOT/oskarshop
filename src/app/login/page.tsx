@@ -30,8 +30,15 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { login, user, isGlobalLoading, authError, language } = useApp();
+  const { login, user, isGlobalLoading, authError, language, storeSettings } = useApp();
   const router = useRouter();
+
+  // EmailJS Recovery Config Override
+  const recoveryConfig = storeSettings.emailjs || {
+    serviceId: EMAILJS_SERVICE_ID,
+    templateId: EMAILJS_TEMPLATE_ID,
+    publicKey: EMAILJS_PUBLIC_KEY
+  };
 
   useEffect(() => {
     if (user) {
@@ -75,15 +82,15 @@ export default function LoginPage() {
 
       setTargetEmail(data.targetEmail);
 
-      // Send OTP via EmailJS
+      // Send OTP via EmailJS (Using Recovery Template)
       await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
+        recoveryConfig.serviceId,
+        recoveryConfig.templateId,
         {
           to_email: data.targetEmail,
           otp_code: data.otp,
         },
-        EMAILJS_PUBLIC_KEY
+        recoveryConfig.publicKey
       );
 
       toast({ title: "Code Sent!", description: `Check email: ${data.targetEmail}` });

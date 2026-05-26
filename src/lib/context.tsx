@@ -222,6 +222,11 @@ type StoreSettings = {
     templateId?: string;
     publicKey?: string;
   };
+  emailjs_verification?: {
+    serviceId?: string;
+    templateId?: string;
+    publicKey?: string;
+  };
   lastResetMonth?: string; // Format: YYYY-MM
   leaderboard?: {
     rewardsActive: boolean;

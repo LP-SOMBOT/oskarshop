@@ -31,11 +31,17 @@ export default function SignupPage() {
   // OTP States
   const [showOtpOverlay, setShowOtpOverlay] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [serverOtp, setServerOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const { signup, user, isGlobalLoading, authError, language, t } = useApp();
+  const { signup, user, isGlobalLoading, authError, language, t, storeSettings } = useApp();
   const router = useRouter();
+
+  // EmailJS Verification Config Override
+  const verificationConfig = storeSettings.emailjs_verification || {
+    serviceId: EMAILJS_SERVICE_ID,
+    templateId: EMAILJS_TEMPLATE_ID,
+    publicKey: EMAILJS_PUBLIC_KEY
+  };
 
   useEffect(() => {
     if (user) {
@@ -82,23 +88,22 @@ export default function SignupPage() {
         return;
       }
 
-      setServerOtp(data.otp);
-
-      // 2. Send OTP via EmailJS
+      // 2. Send OTP via EmailJS (Using Verification Template)
       await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
+        verificationConfig.serviceId,
+        verificationConfig.templateId,
         {
           to_name: name,
           to_email: email,
           otp_code: data.otp,
         },
-        EMAILJS_PUBLIC_KEY
+        verificationConfig.publicKey
       );
 
       setShowOtpOverlay(true);
       toast({ title: "Verification code sent!", description: "Check your email." });
     } catch (err: any) {
+      console.error("EmailJS Error:", err);
       toast({ variant: "destructive", title: "Failed", description: "Email-ka waa lagu guul darraystay in la diro." });
     } finally {
       setIsSubmitting(false);

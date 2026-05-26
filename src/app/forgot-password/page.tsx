@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useApp } from "@/lib/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import {
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { storeSettings } = useApp();
   const [step, setStep] = useState<'request' | 'verify'>('request');
   const [phone, setPhone] = useState("");
   const [targetEmail, setTargetEmail] = useState("");
@@ -27,6 +29,13 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // EmailJS Recovery Config Override
+  const recoveryConfig = storeSettings.emailjs || {
+    serviceId: EMAILJS_SERVICE_ID,
+    templateId: EMAILJS_TEMPLATE_ID,
+    publicKey: EMAILJS_PUBLIC_KEY
+  };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +61,15 @@ export default function ForgotPasswordPage() {
 
       setTargetEmail(data.targetEmail);
 
-      // Send OTP via EmailJS
+      // Send OTP via EmailJS (Using Recovery Template)
       await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
+        recoveryConfig.serviceId,
+        recoveryConfig.templateId,
         {
           to_email: data.targetEmail,
           otp_code: data.otp,
         },
-        EMAILJS_PUBLIC_KEY
+        recoveryConfig.publicKey
       );
 
       toast({ title: "Code Sent!", description: `Check your email: ${data.targetEmail}` });
@@ -197,7 +206,7 @@ export default function ForgotPasswordPage() {
                   <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">New Password</Label>
                   <Input 
                     type="password" 
-                    placeholder="Min 8 characters" 
+                    placeholder="Ugu yaraan 8 xaraf" 
                     required 
                     minLength={8}
                     value={newPassword}
@@ -210,7 +219,7 @@ export default function ForgotPasswordPage() {
                   <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Confirm Password</Label>
                   <Input 
                     type="password" 
-                    placeholder="Repeat password" 
+                    placeholder="Ku celi password-ka" 
                     required 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
