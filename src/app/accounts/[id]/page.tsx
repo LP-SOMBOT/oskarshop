@@ -26,7 +26,8 @@ import {
   History,
   Check,
   PartyPopper,
-  ShoppingBag
+  ShoppingBag,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,13 +65,15 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const showSuccess = (post?.status === 'holding' || post?.buyerReported) && hasBought && isBuyer;
   const showHolding = post?.status === 'holding' && !isBuyer;
 
+  const isContactState = !isOwner && !showSold && !showSuccess && !showHolding;
+
   const buyButtonText = useMemo(() => {
     const isSo = language === 'so';
     if (showSold) return isSo ? "Waa la iibiyay" : "account sold";
     if (showSuccess) return isSo ? "Waa lagu guuleystay!" : "Purchase successful!";
     if (isOwner) return isSo ? "Post-kaaga waaye" : "This is your post";
     if (showHolding) return isSo ? "Account kaan hada lama heli karo" : "Currently unavailable";
-    return isSo ? "Laxariir Seller-ka" : "Contact Seller";
+    return isSo ? "La xariir" : "Contact Seller";
   }, [showSold, showSuccess, isOwner, showHolding, language]);
 
   const handleShare = async () => {
@@ -230,6 +233,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                     disabled={isOwner || showSold || showSuccess || showHolding}
                     className="w-full h-14 md:h-16 rounded-xl md:rounded-[2rem] text-lg md:text-xl font-bold shadow-xl shadow-primary/30 active:scale-95 transition-all"
                   >
+                    {isContactState && <MessageCircle className="mr-2 h-6 w-6" />}
                     {buyButtonText}
                   </Button>
                 </div>
@@ -245,6 +249,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
            disabled={isOwner || showSold || showSuccess || showHolding}
            className="w-full h-14 rounded-xl text-base font-bold shadow-lg"
          >
+            {isContactState && <MessageCircle className="mr-2 h-5 w-5" />}
             {buyButtonText}
          </Button>
       </div>
