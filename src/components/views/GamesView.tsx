@@ -91,15 +91,15 @@ export default function GamesView() {
         </div>
 
         {!selectedGameId ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
+          <div className="flex flex-col gap-3 md:gap-4 w-full">
             {filteredGames.length > 0 ? (
               filteredGames.map((game) => (
                 <Card 
                   key={game.id} 
                   onClick={() => handleSelectGame(game.id)}
-                  className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-xl lg:rounded-[2.5rem] p-1 lg:p-1.5 pr-0 flex items-center h-20 lg:h-32 cursor-pointer"
+                  className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-xl lg:rounded-[2.5rem] p-1 lg:p-1.5 pr-0 flex items-center h-20 lg:h-32 cursor-pointer w-full"
                 >
-                  <div className="w-16 h-16 lg:w-28 lg:h-28 rounded-lg lg:rounded-3xl overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800">
+                  <div className="w-16 h-16 lg:w-28 lg:h-28 rounded-lg lg:rounded-3xl overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
                     {game.icon ? (
                       <Image src={game.icon} alt={game.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
                     ) : (
@@ -108,12 +108,12 @@ export default function GamesView() {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 px-3 lg:px-6 min-w-0">
-                    <h3 className="font-headline font-bold text-sm md:text-lg lg:text-2xl text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">
+                  <div className="flex-1 px-3 md:px-5 lg:px-12 min-w-0">
+                    <h3 className="font-headline font-bold text-sm md:text-lg lg:text-3xl text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">
                       {game.title}
                     </h3>
                   </div>
-                  <button className="h-full px-4 md:px-8 lg:px-12 bg-primary text-white font-bold text-xs md:text-lg lg:text-2xl flex items-center justify-center group-hover:bg-primary/90 transition-colors uppercase tracking-widest">
+                  <button className="h-full px-6 sm:px-10 lg:px-20 bg-primary text-white font-black text-xs md:text-lg lg:text-3xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0 ml-auto">
                     iibso
                   </button>
                 </Card>
