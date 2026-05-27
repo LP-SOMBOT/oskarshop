@@ -1,4 +1,3 @@
-
 import { MetadataRoute } from 'next';
 
 /**
@@ -7,7 +6,7 @@ import { MetadataRoute } from 'next';
  * works perfectly on both iOS and Android.
  */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
-  const dbUrl = "https://connectnexus-a9acf-default-rtdb.firebaseio.com";
+  const dbUrl = "https://oskarshop-631c5-default-rtdb.firebaseio.com";
   let logoUrl = 'https://placehold.co/192x192/0EA5E9/FFFFFF/png?text=O';
 
   try {
