@@ -110,7 +110,7 @@ export default function HomeView() {
           </section>
         )}
 
-        {/* Game Collections */}
+        {/* Game Collections - Improved responsive grid */}
         <section>
           <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-6 lg:mb-10 min-[2500px]:mb-16">
             <div className="p-1.5 md:p-3 lg:p-5 bg-primary/10 rounded-lg md:rounded-2xl lg:rounded-3xl">
@@ -119,7 +119,7 @@ export default function HomeView() {
             <h2 className="text-lg md:text-3xl lg:text-5xl min-[3000px]:text-7xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('select_game')}</h2>
           </div>
           
-          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2500px]:grid-cols-6 min-[3500px]:grid-cols-8 min-[4500px]:grid-cols-10 gap-2.5 md:gap-4 lg:gap-8 min-[2500px]:gap-12">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 min-[2000px]:grid-cols-4 min-[3000px]:grid-cols-5 gap-3 md:gap-6 lg:gap-8">
             {games.filter(g => g.category === 'top-up').map((game) => (
               <GameCollectionCard 
                 key={game.id} 
@@ -256,9 +256,9 @@ function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: (
   return (
     <Card 
       onClick={onClick}
-      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] lg:rounded-[2.5rem] min-[3000px]:rounded-[4rem] p-0.5 md:p-1 flex items-center h-16 xs:h-20 md:h-28 lg:h-36 min-[3000px]:h-56 cursor-pointer"
+      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] lg:rounded-[2.5rem] min-[3000px]:rounded-[4rem] p-0.5 md:p-1 flex items-center h-16 xs:h-20 md:h-24 lg:h-32 min-[3000px]:h-56 cursor-pointer"
     >
-      <div className="w-14 h-14 xs:w-16 xs:h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 min-[3000px]:w-48 min-[3000px]:h-48 rounded-lg md:rounded-xl lg:rounded-3xl min-[3000px]:rounded-[3rem] overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
+      <div className="w-14 h-14 xs:w-16 xs:h-16 md:w-20 md:h-20 lg:w-28 lg:h-28 min-[3000px]:w-48 min-[3000px]:h-48 rounded-lg md:rounded-xl lg:rounded-3xl min-[3000px]:rounded-[3rem] overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
         {game.icon ? (
           <Image src={game.icon} alt={game.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
         ) : (
@@ -266,13 +266,13 @@ function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: (
         )}
       </div>
       
-      <div className="flex-1 px-2.5 xs:px-4 md:px-6 lg:px-8 min-w-0">
-        <h3 className="font-headline font-bold text-[10px] xs:text-sm md:text-xl lg:text-3xl min-[3000px]:text-5xl text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">
+      <div className="flex-1 px-2 xs:px-4 md:px-5 lg:px-8 min-w-0">
+        <h3 className="font-headline font-bold text-[10px] xs:text-sm md:text-lg lg:text-2xl min-[3000px]:text-5xl text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">
           {game.title}
         </h3>
       </div>
 
-      <button className="h-full px-3 xs:px-6 md:px-10 lg:px-16 min-[3000px]:px-24 bg-primary text-white font-black text-[9px] xs:text-xs md:text-xl lg:text-2xl min-[3000px]:text-4xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0">
+      <button className="h-full px-3 xs:px-6 md:px-8 lg:px-14 min-[3000px]:px-24 bg-primary text-white font-black text-[9px] xs:text-xs md:text-lg lg:text-2xl min-[3000px]:text-4xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0">
         {buyLabel}
       </button>
     </Card>
