@@ -386,7 +386,7 @@ const LANG_CACHE_KEY = 'oskar_lang_cache';
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
-    home: "Home",
+    home: "HOME",
     games: "Shop",
     accounts: "Accounts",
     orders: "Orders",
@@ -519,7 +519,7 @@ const translations: Record<Language, Record<string, string>> = {
     listing_flagged_fallback: "This account listing has been cancelled. Please contact OskarShop for more information."
   },
   so: {
-    home: "Hoyga",
+    home: "HOME",
     games: "Adeego",
     accounts: "Suuqa",
     orders: "Dalabaadka",
@@ -556,7 +556,7 @@ const translations: Record<Language, Record<string, string>> = {
     seller: "Iibiyaha",
     platform: "Platform",
     final_amount: "Wadarta Guud",
-    verifying_payment: "Dalabkaaga waa la diray, Mahadsanid!.",
+    verifying_payment: "Dalabkaka waa la diray, Mahadsanid!.",
     delivering_diamonds: "Xogta ayaa la xaqiijinooyaa fadlan dulqaadka badi.",
     delivered_success: "Dalabkaaga waa Laguu Soo diray, Mahadsanid!.",
     order_cancelled: "Dalabka waa la kansalay sababta:",
