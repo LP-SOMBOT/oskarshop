@@ -179,7 +179,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
        
        <div className="text-center min-w-0 px-1">
           <p className="font-bold text-[10px] md:text-base text-slate-900 dark:text-white truncate max-w-full">
-            {user.name}
+            {user.name?.split(' ')[0] || "Gamer"}
           </p>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} fill="currentColor" />
@@ -215,7 +215,7 @@ function RankListItem({ user, rank }: { user: any, rank: number }) {
              </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-             <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name}</p>
+             <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name?.split(' ')[0] || "Gamer"}</p>
           </div>
        </div>
        <div className="flex flex-col items-end gap-1">
