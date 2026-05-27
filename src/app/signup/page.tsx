@@ -177,14 +177,14 @@ export default function SignupPage() {
 
           <form onSubmit={handleInitialSubmit} className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Magac</Label>
+              <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Magaca</Label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10">
                   <User className="w-5 h-5" />
                 </div>
                 <Input 
                   type="text" 
-                  placeholder="Magacaaga oo buuxa" 
+                  placeholder="Geli magacaaga" 
                   required 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -330,7 +330,7 @@ export default function SignupPage() {
               </div>
 
               <Button type="submit" disabled={isVerifying || otpCode.length !== 6} className="w-full h-14 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20">
-                {isVerifying ? <Loader2 className="w-6 h-6 animate-spin" /> : (language === 'so' ? "Xaqiiji" : "Verify & Complete")}
+                {isVerifying ? <Loader2 className="animate-spin" /> : (language === 'so' ? "Xaqiiji" : "Verify & Complete")}
               </Button>
 
               <button 
