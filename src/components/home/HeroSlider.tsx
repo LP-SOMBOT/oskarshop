@@ -23,19 +23,19 @@ export default function HeroSlider() {
   }, [slides.length]);
 
   if (isInitialLoading) {
-    return <Skeleton className="w-full aspect-[21/9] md:aspect-[3/1] rounded-[2rem] animate-shimmer" />;
+    return <Skeleton className="w-full aspect-[21/9] md:aspect-[3/1] max-h-[420px] rounded-[2rem] animate-shimmer" />;
   }
 
   if (slides.length === 0) {
     return (
-      <div className="w-full aspect-[21/9] md:aspect-[3/1] bg-slate-100 rounded-[2rem] flex items-center justify-center text-slate-400 italic text-xs font-bold border-2 border-dashed border-slate-200">
+      <div className="w-full aspect-[21/9] md:aspect-[3/1] max-h-[420px] bg-slate-100 rounded-[2rem] flex items-center justify-center text-slate-400 italic text-xs font-bold border-2 border-dashed border-slate-200">
         No active promotions.
       </div>
     );
   }
 
   return (
-    <div className="relative w-full aspect-[21/9] md:aspect-[3/1] overflow-hidden rounded-[2rem] group shadow-xl">
+    <div className="relative w-full aspect-[21/9] md:aspect-[3/1] max-h-[420px] overflow-hidden rounded-[2rem] group shadow-xl">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
