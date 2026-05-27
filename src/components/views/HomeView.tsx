@@ -67,7 +67,7 @@ export default function HomeView() {
     <div className="pb-24 page-transition">
       <AnnouncementTicker />
       
-      <main className="container mx-auto px-4 pt-4 md:pt-6 lg:pt-10 space-y-8 md:space-y-12 lg:space-y-20 w-full max-w-[1100px] xl:max-w-[1400px] 2xl:max-w-[1800px] min-[2000px]:max-w-[2200px]">
+      <main className="container mx-auto px-4 pt-4 md:pt-6 lg:pt-10 space-y-8 md:space-y-12 lg:space-y-20 w-full max-w-[1100px] xl:max-w-[1400px] 2xl:max-w-[1800px] min-[2000px]:max-w-[2400px] min-[3000px]:max-w-[3200px] min-[4000px]:max-w-[4000px]">
         {/* Main Hero Slider */}
         <section className="relative">
           <HeroSlider />
@@ -112,14 +112,14 @@ export default function HomeView() {
 
         {/* Game Collections */}
         <section>
-          <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-6 lg:mb-10">
-            <div className="p-1.5 md:p-3 bg-primary/10 rounded-lg md:rounded-2xl">
-              <Gamepad2 className="w-4 h-4 md:w-8 md:h-8 lg:w-10 lg:h-10 text-primary" />
+          <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-6 lg:mb-10 min-[2500px]:mb-16">
+            <div className="p-1.5 md:p-3 lg:p-5 bg-primary/10 rounded-lg md:rounded-2xl lg:rounded-3xl">
+              <Gamepad2 className="w-4 h-4 md:w-8 md:h-8 lg:w-12 lg:h-12 min-[3000px]:w-16 min-[3000px]:h-16 text-primary" />
             </div>
-            <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('select_game')}</h2>
+            <h2 className="text-lg md:text-3xl lg:text-5xl min-[3000px]:text-7xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('select_game')}</h2>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 gap-3 md:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2500px]:grid-cols-6 min-[3500px]:grid-cols-8 min-[4500px]:grid-cols-10 gap-3 md:gap-4 lg:gap-8 min-[2500px]:gap-12">
             {games.filter(g => g.category === 'top-up').map((game) => (
               <GameCollectionCard 
                 key={game.id} 
@@ -133,18 +133,18 @@ export default function HomeView() {
 
         {/* Live Events */}
         {activeEvents.length > 0 && (
-          <section className="space-y-4 md:space-y-8 lg:space-y-16">
+          <section className="space-y-4 md:space-y-8 lg:space-y-16 min-[2500px]:space-y-24">
             <div className="flex items-center gap-2 md:gap-5">
-              <div className="p-1.5 md:p-3 bg-blue-100 dark:bg-blue-500/10 rounded-lg md:rounded-2xl">
-                <Flame className="w-4 h-4 md:w-8 md:h-8 lg:w-10 lg:h-10 text-blue-500" />
+              <div className="p-1.5 md:p-3 lg:p-5 bg-blue-100 dark:bg-blue-500/10 rounded-lg md:rounded-2xl lg:rounded-3xl">
+                <Flame className="w-4 h-4 md:w-8 md:h-8 lg:w-12 lg:h-12 min-[3000px]:w-16 min-[3000px]:h-16 text-blue-500" />
               </div>
               <div>
-                <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('active_events')}</h2>
-                <p className="text-[9px] md:text-sm lg:text-lg text-muted-foreground font-medium uppercase tracking-[0.2em] mt-0.5">{t('take_advantage')}</p>
+                <h2 className="text-lg md:text-3xl lg:text-5xl min-[3000px]:text-7xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('active_events')}</h2>
+                <p className="text-[9px] md:text-sm lg:text-lg min-[3000px]:text-2xl text-muted-foreground font-medium uppercase tracking-[0.2em] mt-0.5">{t('take_advantage')}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[2000px]:grid-cols-5 min-[2500px]:grid-cols-6 gap-4 md:gap-8 xl:gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[2000px]:grid-cols-5 min-[3000px]:grid-cols-6 gap-4 md:gap-8 xl:gap-12 min-[2500px]:gap-16">
               {activeEvents.map((event) => (
                 <EventCard key={event.id} event={event} viewLabel={t('view')} timeLeftLabel={t('time_left')} />
               ))}
@@ -153,28 +153,28 @@ export default function HomeView() {
         )}
 
         {/* Global Ranking Quick Link */}
-        <section className="pt-2 md:pt-6">
+        <section className="pt-2 md:pt-6 lg:pt-16">
           <div 
             onClick={() => setActiveTab('ranking')} 
-            className="w-full p-5 xs:p-6 sm:p-10 md:p-14 lg:p-20 xl:p-24 rounded-[1.5rem] md:rounded-[3rem] lg:rounded-[4rem] bg-primary text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer shadow-xl active:scale-[0.98] transition-all relative overflow-hidden text-center md:text-left"
+            className="w-full p-5 xs:p-6 sm:p-10 md:p-14 lg:p-20 xl:p-24 min-[3000px]:p-32 rounded-[1.5rem] md:rounded-[3rem] lg:rounded-[4rem] min-[3000px]:rounded-[6rem] bg-primary text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer shadow-xl active:scale-[0.98] transition-all relative overflow-hidden text-center md:text-left"
           >
-            <div className="flex items-center gap-5 sm:gap-8 lg:gap-14 flex-col md:flex-row max-w-5xl">
-               <div className="w-14 h-14 sm:w-20 sm:h-20 lg:w-32 xl:w-40 bg-white/10 rounded-2xl md:rounded-3xl lg:rounded-[2.5rem] flex items-center justify-center text-white shrink-0 shadow-inner">
-                  <Trophy className="w-7 h-7 sm:w-10 sm:h-10 lg:w-16 xl:w-20" />
+            <div className="flex items-center gap-5 sm:gap-8 lg:gap-14 min-[3000px]:gap-24 flex-col md:flex-row max-w-5xl lg:max-w-7xl">
+               <div className="w-14 h-14 sm:w-20 sm:h-20 lg:w-32 xl:w-40 min-[3000px]:w-64 min-[3000px]:h-64 bg-white/10 rounded-2xl md:rounded-3xl lg:rounded-[2.5rem] min-[3000px]:rounded-[4rem] flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <Trophy className="w-7 h-7 sm:w-10 sm:h-10 lg:w-16 xl:w-20 min-[3000px]:w-32 min-[3000px]:h-32" />
                </div>
-               <div className="space-y-1 sm:space-y-2 lg:space-y-4">
-                  <h3 className="text-xl sm:text-3xl lg:text-5xl xl:text-6xl font-headline font-bold tracking-tight uppercase leading-none">{t('ranking')}</h3>
-                  <p className="text-white/80 text-[11px] xs:text-xs sm:text-base lg:text-xl xl:text-2xl font-medium leading-relaxed max-w-3xl">
+               <div className="space-y-1 sm:space-y-2 lg:space-y-4 min-[3000px]:space-y-8">
+                  <h3 className="text-xl sm:text-3xl lg:text-5xl xl:text-6xl min-[3000px]:text-8xl font-headline font-bold tracking-tight uppercase leading-none">{t('ranking')}</h3>
+                  <p className="text-white/80 text-[11px] xs:text-xs sm:text-base lg:text-xl xl:text-2xl min-[3000px]:text-4xl font-medium leading-relaxed max-w-3xl lg:max-w-5xl">
                     {t('ranking_desc')}
                   </p>
                </div>
             </div>
-            <div className="mt-8 md:mt-0 self-center w-12 h-12 sm:w-16 sm:h-16 lg:w-24 xl:w-32 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all shadow-lg shrink-0">
-               <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 xl:w-16 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-8 md:mt-0 self-center w-12 h-12 sm:w-16 sm:h-16 lg:w-24 xl:w-32 min-[3000px]:w-48 min-[3000px]:h-48 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all shadow-lg shrink-0">
+               <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 xl:w-16 min-[3000px]:w-24 min-[3000px]:h-24 group-hover:translate-x-1 transition-transform" />
             </div>
             
             {/* Background Decorative Element */}
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 md:w-80 md:h-80 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 md:w-80 md:h-80 min-[3000px]:w-[500px] min-[3000px]:h-[500px] bg-white/5 rounded-full blur-3xl pointer-events-none" />
           </div>
         </section>
       </main>
@@ -256,23 +256,23 @@ function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: (
   return (
     <Card 
       onClick={onClick}
-      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] lg:rounded-[2rem] p-1 md:p-1.5 pr-0 flex items-center h-20 md:h-28 lg:h-32 cursor-pointer"
+      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] lg:rounded-[2.5rem] min-[3000px]:rounded-[4rem] p-1 md:p-1.5 pr-0 flex items-center h-20 md:h-28 lg:h-36 min-[3000px]:h-56 cursor-pointer"
     >
-      <div className="w-16 h-16 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-lg md:rounded-xl lg:rounded-2xl overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800">
+      <div className="w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32 min-[3000px]:w-48 min-[3000px]:h-48 rounded-lg md:rounded-xl lg:rounded-3xl min-[3000px]:rounded-[3rem] overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
         {game.icon ? (
           <Image src={game.icon} alt={game.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-primary font-bold text-[10px]">G</div>
+          <div className="w-full h-full flex items-center justify-center text-primary font-bold text-[10px] md:text-xl">G</div>
         )}
       </div>
       
-      <div className="flex-1 px-2.5 md:px-6 min-w-0">
-        <h3 className="font-headline font-bold text-sm md:text-xl lg:text-2xl text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">
+      <div className="flex-1 px-3 md:px-6 lg:px-8 min-w-0">
+        <h3 className="font-headline font-bold text-sm md:text-xl lg:text-3xl min-[3000px]:text-5xl text-slate-900 dark:text-white truncate uppercase tracking-tight group-hover:text-primary transition-colors">
           {game.title}
         </h3>
       </div>
 
-      <button className="h-full px-4 md:px-8 lg:px-12 bg-primary text-white font-bold text-xs md:text-xl lg:text-2xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest">
+      <button className="h-full px-4 md:px-8 lg:px-12 min-[3000px]:px-20 bg-primary text-white font-black text-xs md:text-xl lg:text-2xl min-[3000px]:text-4xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest">
         {buyLabel}
       </button>
     </Card>
