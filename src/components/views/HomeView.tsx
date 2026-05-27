@@ -43,7 +43,7 @@ export default function HomeView() {
     return (
       <div className="pb-24 animate-in fade-in duration-500">
         <AnnouncementTicker />
-        <main className="container mx-auto px-4 pt-4 md:pt-6 space-y-8 md:space-y-12 max-w-[1600px]">
+        <main className="container mx-auto px-4 pt-4 md:pt-6 space-y-8 md:space-y-12 w-full max-w-[1100px] xl:max-w-[1400px] 2xl:max-w-[1800px] min-[2000px]:max-w-[2200px]">
           <Skeleton className="w-full aspect-[21/9] md:aspect-[3/1] rounded-[1.5rem] md:rounded-[2.5rem]" />
           <section>
             <div className="flex justify-between mb-4 md:mb-6">
@@ -67,7 +67,7 @@ export default function HomeView() {
     <div className="pb-24 page-transition">
       <AnnouncementTicker />
       
-      <main className="container mx-auto px-4 pt-4 md:pt-6 lg:pt-10 space-y-8 md:space-y-12 lg:space-y-20 max-w-[1600px]">
+      <main className="container mx-auto px-4 pt-4 md:pt-6 lg:pt-10 space-y-8 md:space-y-12 lg:space-y-20 w-full max-w-[1100px] xl:max-w-[1400px] 2xl:max-w-[1800px] min-[2000px]:max-w-[2200px]">
         {/* Main Hero Slider */}
         <section className="relative">
           <HeroSlider />
@@ -119,7 +119,7 @@ export default function HomeView() {
             <h2 className="text-lg md:text-3xl lg:text-5xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('select_game')}</h2>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[2000px]:grid-cols-6 min-[2500px]:grid-cols-8 gap-3 md:gap-4 lg:gap-6">
             {games.filter(g => g.category === 'top-up').map((game) => (
               <GameCollectionCard 
                 key={game.id} 
@@ -144,7 +144,7 @@ export default function HomeView() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-8 xl:gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[2000px]:grid-cols-5 min-[2500px]:grid-cols-6 gap-4 md:gap-8 xl:gap-12">
               {activeEvents.map((event) => (
                 <EventCard key={event.id} event={event} viewLabel={t('view')} timeLeftLabel={t('time_left')} />
               ))}
@@ -212,7 +212,7 @@ function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel:
       className="group overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] lg:rounded-[3.5rem] border-none shadow-lg md:shadow-xl bg-white dark:bg-slate-900 transition-all hover:shadow-2xl hover:-translate-y-1 md:hover:-translate-y-2 cursor-pointer"
     >
       <div className="relative aspect-[16/9] w-full">
-        <Image src={event.thumbnailUrl || 'https://picsum.photos/seed/event/600/400'} alt={event.title} fill className="object-cover group-hover:scale-110 transition-transform duration-1000" unoptimized />
+        <Image src={event.thumbnailUrl || 'https://picsum.photos/seed/event/600/400'} alt={event.title} fill className="object-cover" unoptimized />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-6 md:right-6">
           <Badge className="bg-primary text-white border-none rounded-full px-2 py-0.5 md:px-3 md:py-1 text-[7px] md:text-[10px] lg:text-[12px] font-bold mb-1.5 md:mb-3 uppercase tracking-widest">
