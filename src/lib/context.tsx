@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -784,11 +785,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       linkTo: '#notifications'
     });
 
-    // Trigger OneSignal push via API route
-    fetch('/api/onesignal', {
+    // Trigger OneSignal push via SERVER-SIDE API route
+    fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, body, targetUid: uid })
+      body: JSON.stringify({ targetUids: [uid], title, message: body })
     }).catch(err => console.error("OneSignal broadcast failed", err));
   }, [rtdb, authUser]);
 
@@ -804,11 +805,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!skipPush) {
-      // Trigger OneSignal push to all admins via API route
-      fetch('/api/onesignal', {
+      // Trigger OneSignal push to all admins via SERVER-SIDE API route
+      fetch('/api/notify-new-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body, isAdminOnly: true })
+        body: JSON.stringify({ title, message: body })
       }).catch(err => console.error("OneSignal admin broadcast failed", err));
     }
   }, [rtdb]);
@@ -1029,7 +1030,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`);
+    // Trigger SERVER-SIDE admin notification
+    fetch('/api/notify-new-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, itemTitle: directItem.title })
+    }).catch(err => console.error("OneSignal admin notify failed", err));
+
+    await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`, true);
   }, [rtdb, authUser, userProfile, broadcastAdminNotification]);
 
   const orders = useMemo(() => {
@@ -1338,7 +1346,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postRef = push(ref(rtdb, 'accountPosts'));
     await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
-    await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`);
+    
+    // Server-side notify admins
+    fetch('/api/notify-new-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` })
+    }).catch(err => console.error("Admin notify error", err));
+
+    await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`, true);
   }, [rtdb, authUser, enhancedUser, broadcastAdminNotification]);
 
   const updateAccountPost = useCallback(async (postId: string, data: any) => {
@@ -1418,6 +1434,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
     const orderData = orderSnap.val();
     if (orderData && orderData.userId) {
+      // SERVER-SIDE notify user via API route
+      fetch('/api/notify-order-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, userId: orderData.userId, status })
+      }).catch(err => console.error("OneSignal order notify failed", err));
+
       const title = status === 'successful' ? "Diamonds Delivered! ✅" : status === 'cancelled' ? "Order Cancelled ❌" : "Order Update 📦";
       const body = status === 'successful' ? `Your order #${orderId.toUpperCase()} is complete!` : status === 'cancelled' ? `Order #${orderId.toUpperCase()} was cancelled: ${cancellationReason || 'Contact support'}` : `Order #${orderId.toUpperCase()} status is now: ${status}`;
       broadcastNotification(title, body, orderData.userId);
@@ -1469,6 +1492,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
     if (postData && postData.uid) {
+       // SERVER-SIDE notify seller
+       fetch('/api/notify-order-complete', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ orderId: postId, userId: postData.uid, status })
+       }).catch(err => console.error("Seller notify failed", err));
+
        const title = status === 'approved' ? "Post Approved! ✅" : status === 'rejected' ? "Post Rejected ❌" : "Listing Update 🎮";
        broadcastNotification(title, `Your account listing #${postId.toUpperCase()} is now ${status}.`, postData.uid);
     }
@@ -1483,6 +1513,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       message,
       timestamp: Date.now()
     });
+    
+    // Notify via server-side
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUids: [uid], title: " Formal Warning Issued! ⚠️", message: `Security alert for Listing #${postId.toUpperCase()}: ${message}` })
+    }).catch(e => console.error(e));
+
     await broadcastNotification("Formal Warning Issued! ⚠️", `Security alert for Listing #${postId.toUpperCase()}: ${message}`, uid);
     toast({ title: "Warning Issued" });
   }, [rtdb, enhancedUser, broadcastNotification]);
@@ -1491,6 +1529,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     const suspensionEnd = Date.now() + (days * 24 * 60 * 60 * 1000);
     await update(ref(rtdb, `users/${uid}`), { suspendedUntil: suspensionEnd });
+    
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUids: [uid], title: "Account Suspended! 🚫", message: `Your selling privileges are blocked for ${days} days.` })
+    }).catch(e => console.error(e));
+
     await broadcastNotification("Account Suspended! 🚫", `Your selling privileges are blocked for ${days} days due to security violations.`, uid);
     toast({ title: `Seller suspended for ${days} days` });
   }, [rtdb, enhancedUser, broadcastNotification]);
@@ -1537,7 +1582,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await update(postRef, { buyerReported: true, buyerReportedAt: reportTime });
       if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
       toast({ title: "Report Sent!", description: "Seller has been notified to verify the sale." });
-      if (postData.uid) broadcastNotification("New Purchase Claim! 💰", `A buyer reported they bought your ${postData.gameType} account. Please verify in My Accounts!`, postData.uid);
+
+      // Notify seller via server-side
+      if (postData.uid) {
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUids: [postData.uid], title: "New Purchase Claim! 💰", message: `A buyer reported they bought your ${postData.gameType} account.` })
+        }).catch(e => console.error(e));
+        broadcastNotification("New Purchase Claim! 💰", `A buyer reported they bought your ${postData.gameType} account. Please verify in My Accounts!`, postData.uid);
+      }
+
+      fetch('/api/notify-new-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: postId, itemTitle: 'Marketplace Claim' })
+      }).catch(e => console.error(e));
+
       await broadcastAdminNotification("Buyer Report!", `Buyer reported purchase for account #${postId.toUpperCase()}.`);
     }
   }, [rtdb, authUser, enhancedUser, orders, broadcastNotification, broadcastAdminNotification]);
@@ -1573,12 +1634,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updates[`accountPosts/${postId}/claimants`] = null; 
       }
       toast({ title: "Response Recorded!", description: "Sale confirmed. Waiting for finalization." });
+      
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUids: [buyerId], title: "Purchase Update! 🤑", message: "Seller has accepted your purchase claim!" })
+      }).catch(e => console.error(e));
+
       broadcastNotification("Purchase Update! 🤑", "Seller has accepted your purchase claim!", buyerId);
     } else {
       updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'rejected';
       updates[`accountPosts/${postId}/status`] = 'holding';
       updates[`accountPosts/${postId}/conflict`] = true;
       toast({ title: "Claim Rejected", description: "This will be reviewed by an admin." });
+      
+      fetch('/api/notify-new-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: postId, itemTitle: 'Seller Disputed Claim' })
+      }).catch(e => console.error(e));
+
       await broadcastAdminNotification("Conflict Detected! ⚠️", `Seller rejected buyer claim for account #${postId.toUpperCase()}.`);
     }
     await update(ref(rtdb), updates);
@@ -1626,6 +1701,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     await update(postRef, updates);
+
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUids: [postData.uid], title: "Security Penalty Enforcement 👮", message })
+    }).catch(e => console.error(e));
+
     broadcastNotification("Security Penalty Enforcement 👮", message, postData.uid);
     toast({ title: `Action "${action}" Applied` });
   }, [rtdb, enhancedUser, broadcastNotification]);
