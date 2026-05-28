@@ -90,7 +90,7 @@ export default function EidModal({ onClose }: EidModalProps) {
              onClick={onClose}
              className="w-full h-14 md:h-16 bg-[#F59E0B] hover:bg-[#D97706] text-white font-black text-sm md:text-lg rounded-2xl md:rounded-3xl shadow-[0_15px_35px_rgba(245,158,11,0.25)] active:scale-[0.97] transition-all uppercase tracking-widest flex items-center justify-center gap-2 border-b-4 border-[#B45309]"
            >
-              OK — Mahadsanid! 🙏
+              OK — Mahadsanid!
            </button>
         </div>
       </div>
