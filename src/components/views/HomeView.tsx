@@ -26,10 +26,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import EidModal from "@/components/modals/EidModal";
 
 export default function HomeView() {
   const { storeSettings, games, events, setActiveTab, isInitialLoading, t } = useApp();
   const [localDismiss, setLocalDismiss] = useState(false);
+  const [showEidModal, setShowEidModal] = useState(true);
   const router = useRouter();
 
   const isVisible = storeSettings?.isLive && !localDismiss;
@@ -177,6 +179,8 @@ export default function HomeView() {
           </div>
         </section>
       </main>
+
+      {showEidModal && <EidModal onClose={() => setShowEidModal(false)} />}
     </div>
   );
 }
