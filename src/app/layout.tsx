@@ -1,4 +1,3 @@
-
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -16,6 +15,8 @@ import MainAppLayout from "@/components/layout/MainAppLayout";
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 import SplashScreen from "@/components/layout/SplashScreen";
 import BannedModal from "@/components/layout/BannedModal";
+import OneSignalInitializer from "@/components/layout/OneSignalInitializer";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: 'Oskar Shop - Game Top-Up & Accounts',
@@ -47,6 +48,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+        {/* OneSignal SDK */}
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
       </head>
       <body className="font-body antialiased min-h-screen relative overflow-x-hidden transition-colors duration-500">
         {/* Global Deep Light Blue Background & Neon Accents */}
@@ -66,6 +69,7 @@ export default function RootLayout({
               <GlobalLoading />
               <PWAInstaller />
               <BannedModal />
+              <OneSignalInitializer />
               <NotificationGuard>
                 <TermsGuard>
                   <OnboardingGuard>

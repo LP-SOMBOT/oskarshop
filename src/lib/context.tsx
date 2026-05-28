@@ -598,7 +598,7 @@ const translations: Record<Language, Record<string, string>> = {
     pay_listing_fee_title: "Bixi Qarashka",
     pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa",
     premium_assets: "Waxyabaha account tiga yaalo",
-    verify_assets_desc: "U geli Si saxan iskana hubi",
+    verify_assets_desc: "Confirm correctly and check carefully",
     contact_number: "Whatsapp number kaaga",
     phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar.",
     save: "Keydi",
@@ -615,7 +615,7 @@ const translations: Record<Language, Record<string, string>> = {
     no_listings_desc: "Wali wax account ah maadan soo dhigin Marketplace-ka.",
     start_selling: "Start Selling",
     respond_accounts_warning_title: "Kaja Waab Account-yadaada",
-    respond_accounts_warning_desc: "Account-kaaga qof ayaa dhahay \"Waan iibsaday\", admin-ka ayaa WhatsApp ka kaala soo hadli doona. Fadlan si deg-deg ah ugu jawaab verification-ka. 24 saac gudahood haddii aadan uga jawaabin, account-ka waa laga saari doonaa listing-ka.",
+    respond_accounts_warning_desc: "Someone said \"I bought it\" for your account, and the admin will contact you via WhatsApp. Please respond to the verification quickly. If you don't respond within 24 hours, the account will be removed from the listing.",
     reference_label: "Reference",
     posted_label: "Posted",
     level_label: "Level",
@@ -770,6 +770,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
+  const broadcastNotification = useCallback(async (title: string, body: string, targetUid?: string) => {
+    if (!rtdb) return;
+    const uid = targetUid || authUser?.uid;
+    if (!uid) return;
+    const notifRef = push(ref(rtdb, `notifications/${uid}`));
+    await set(notifRef, {
+      title,
+      body,
+      type: 'broadcast',
+      createdAt: Date.now(),
+      read: false,
+      linkTo: '#notifications'
+    });
+
+    // Trigger OneSignal push via API route
+    fetch('/api/onesignal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body, targetUid: uid })
+    }).catch(err => console.error("OneSignal broadcast failed", err));
+  }, [rtdb, authUser]);
+
+  const broadcastAdminNotification = useCallback(async (title: string, body: string, skipPush?: boolean) => {
+    if (!rtdb) return;
+    const adminNotifRef = push(ref(rtdb, 'adminNotifications'));
+    await set(adminNotifRef, {
+      title,
+      body,
+      type: 'broadcast',
+      createdAt: Date.now(),
+      readBy: {}
+    });
+
+    if (!skipPush) {
+      // Trigger OneSignal push to all admins via API route
+      fetch('/api/onesignal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body, isAdminOnly: true })
+      }).catch(err => console.error("OneSignal admin broadcast failed", err));
+    }
+  }, [rtdb]);
+
   const showPushNotification = useCallback((title: string, body: string, id: string) => {
     if (typeof window === 'undefined') return;
     if (lastNotifiedRef.current.has(id)) return;
@@ -878,33 +921,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       throw err;
     } finally { setIsGlobalLoading(false); }
   }, [auth, rtdb, language]);
-
-  const broadcastNotification = useCallback(async (title: string, body: string, targetUid?: string) => {
-    if (!rtdb) return;
-    const uid = targetUid || authUser?.uid;
-    if (!uid) return;
-    const notifRef = push(ref(rtdb, `notifications/${uid}`));
-    await set(notifRef, {
-      title,
-      body,
-      type: 'broadcast',
-      createdAt: Date.now(),
-      read: false,
-      linkTo: '#notifications'
-    });
-  }, [rtdb, authUser]);
-
-  const broadcastAdminNotification = useCallback(async (title: string, body: string, skipPush?: boolean) => {
-    if (!rtdb) return;
-    const adminNotifRef = push(ref(rtdb, 'adminNotifications'));
-    await set(adminNotifRef, {
-      title,
-      body,
-      type: 'broadcast',
-      createdAt: Date.now(),
-      readBy: {}
-    });
-  }, [rtdb]);
 
   const ensureUserProfile = useCallback(async (firebaseUser: any) => {
     if (!rtdb || !firebaseUser) return;
