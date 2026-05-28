@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -6,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   useUser, 
   useAuth, 
-  useDatabase
+  useDatabase,
+  useMessaging
 } from '@/firebase';
 import { 
   update,
@@ -31,6 +31,7 @@ import {
   updateProfile,
   onAuthStateChanged
 } from 'firebase/auth';
+import { getToken } from 'firebase/messaging';
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
 
@@ -277,6 +278,7 @@ type UserProfile = {
   warnings?: Record<string, UserWarning>;
   leaderboardRank?: number | null;
   leaderboardDiscount?: number;
+  fcmToken?: string;
 };
 
 type BannedInfo = {
@@ -359,6 +361,7 @@ type AppContextType = {
   sendMessage: (text?: string, imageUrl?: string, targetUserId?: string) => Promise<void>;
   markMessagesAsRead: (targetUserId?: string) => Promise<void>;
   refreshAdminData: () => void;
+  refreshFcmToken: () => Promise<void>;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   isBannedModalOpen: boolean;
@@ -383,6 +386,8 @@ const EVENTS_CACHE_KEY = 'oskar_events_cache';
 const BANNERS_CACHE_KEY = 'oskar_banners_cache';
 const THEME_CACHE_KEY = 'oskar_theme_cache';
 const LANG_CACHE_KEY = 'oskar_lang_cache';
+
+const VAPID_KEY = 'BFqhWz7U7MFslT9zROix7BPbhIMZkCCytnB5dc8xd3cfWKZMdT0fKjUghbtZpFgpZEiWOjKez11FIiEoWfG-Ovc';
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
@@ -720,6 +725,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user: authUser, loading } = useUser();
   const auth = useAuth();
   const rtdb = useDatabase();
+  const messaging = useMessaging();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -836,18 +842,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { rank, discount };
   }, [authUser, allUsers, storeSettings.leaderboard, syncStatus.settings]);
 
+  const refreshFcmToken = useCallback(async () => {
+    if (!messaging || !authUser || !rtdb) return;
+    try {
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      if (token) {
+        await update(ref(rtdb, `users/${authUser.uid}`), { fcmToken: token });
+      }
+    } catch (err) {
+      console.error("Failed to refresh FCM token:", err);
+    }
+  }, [messaging, authUser, rtdb]);
+
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
         ensureUserProfile(u);
+        refreshFcmToken();
       } else {
         setUserProfile(null);
         localStorage.removeItem(USER_CACHE_KEY);
       }
     });
     return () => unsubscribe();
-  }, [auth, ensureUserProfile]);
+  }, [auth, ensureUserProfile, refreshFcmToken]);
 
   useEffect(() => {
     if (!rtdb || !authUser) return;
@@ -977,12 +996,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSyncStatus(prev => ({ ...prev, accPosts: true }));
     });
 
-    onValue(accPostsRef, (s) => {
-      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
-      setAccountPosts(data);
-      setSyncStatus(prev => ({ ...prev, accPosts: true }));
-    });
-
     onValue(promoCodesRef, (s) => {
       const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
       setPromoCodes(data);
@@ -1057,7 +1070,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       off(profileRef); off(notifsRef);
     };
-  }, [rtdb, authUser, showPushNotification]);
+  }, [rtdb, authUser, showPushNotification, logout]);
 
   const enhancedUser = useMemo(() => {
     if (!authUser) return null;
@@ -1071,7 +1084,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [authUser, userProfile, userRankData]);
 
-  // Role-based Order, Chat and Admin Notification Subscription
   useEffect(() => {
     if (!rtdb || !authUser) {
       setAllOrders([]);
@@ -1080,12 +1092,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Orders Listener
     let ordersRef;
     if (enhancedUser?.isAdmin) {
       ordersRef = ref(rtdb, 'orders');
     } else {
-      // Filter for current user's orders in real-time
       ordersRef = query(ref(rtdb, 'orders'), orderByChild('userId'), equalTo(authUser.uid));
     }
 
@@ -1098,7 +1108,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Admin-Only Subscriptions
     let adminNotifUnsubscribe = () => {};
     let chatIndexUnsubscribe = () => {};
 
@@ -1128,7 +1137,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       chatIndexUnsubscribe();
       adminNotifUnsubscribe();
     };
-  }, [rtdb, authUser, enhancedUser?.isAdmin, showPushNotification]);
+  }, [rtdb, authUser, enhancedUser?.isAdmin, enhancedUser?.uid, showPushNotification]);
 
   const broadcastNotification = async (title: string, body: string, targetUid?: string) => {
     if (!rtdb) return;
@@ -1783,7 +1792,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, markAccountAsSold, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, updateProductsOrder, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
-      broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData,
+      broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData, refreshFcmToken,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
       acceptTerms, language, setLanguage, userProfile, t
     }}>

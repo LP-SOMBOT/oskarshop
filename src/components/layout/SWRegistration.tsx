@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -12,6 +11,7 @@ export default function SWRegistration() {
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+        // Register standard PWA SW
         navigator.serviceWorker
           .register('/sw.js')
           .then((registration) => {
@@ -19,6 +19,16 @@ export default function SWRegistration() {
           })
           .catch((error) => {
             console.error('OskarShop SW registration failed:', error);
+          });
+
+        // Register FCM SW specifically for background push
+        navigator.serviceWorker
+          .register('/firebase-messaging-sw.js')
+          .then((registration) => {
+            console.log('FCM Messaging SW registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.error('FCM Messaging SW registration failed:', error);
           });
       });
     }

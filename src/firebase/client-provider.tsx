@@ -7,13 +7,12 @@ import { FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
 import { Database } from 'firebase/database';
+import { Messaging } from 'firebase/messaging';
 
 /**
  * FirebaseClientProvider
  * 
  * Handles early service initialization.
- * Removed the redundant "first" splash screen to ensure a seamless
- * transition to the main branded SplashScreen component.
  */
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
   const [services, setServices] = useState<{
@@ -21,16 +20,14 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
     auth: Auth;
     db: Firestore;
     rtdb: Database;
+    messaging: Messaging | null;
   } | null>(null);
 
   useEffect(() => {
-    const s = initializeFirebase();
-    setServices(s);
+    initializeFirebase().then(s => setServices(s));
   }, []);
 
   if (!services) {
-    // Returning null instead of a redundant loader prevents the "double splash" effect.
-    // The main SplashScreen component in layout.tsx will handle the branded experience.
     return null;
   }
 
@@ -40,6 +37,7 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
       auth={services.auth} 
       db={services.db}
       rtdb={services.rtdb}
+      messaging={services.messaging}
     >
       {children}
     </FirebaseProvider>

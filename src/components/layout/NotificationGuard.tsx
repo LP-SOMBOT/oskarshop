@@ -1,10 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, ShieldAlert, Loader2, Smartphone } from 'lucide-react';
 import { isStandalone } from '@/lib/pwa-utils';
+import { useApp } from '@/lib/context';
 
 /**
  * NotificationGuard Component
@@ -15,6 +15,7 @@ import { isStandalone } from '@/lib/pwa-utils';
  * 3. On regular websites, it stays silent and lets users browse normally.
  */
 export default function NotificationGuard({ children }: { children: React.ReactNode }) {
+  const { refreshFcmToken } = useApp();
   const [status, setStatus] = useState<'loading' | 'request' | 'granted' | 'denied' | 'skip'>('loading');
 
   useEffect(() => {
@@ -37,13 +38,14 @@ export default function NotificationGuard({ children }: { children: React.ReactN
       const currentPermission = Notification.permission;
       if (currentPermission === 'granted') {
         setStatus('granted');
+        refreshFcmToken();
       } else if (currentPermission === 'denied') {
         setStatus('denied');
       } else {
         setStatus('request');
       }
     }
-  }, []);
+  }, [refreshFcmToken]);
 
   const requestPermission = async () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -51,6 +53,7 @@ export default function NotificationGuard({ children }: { children: React.ReactN
         const result = await Notification.requestPermission();
         if (result === 'granted') {
           setStatus('granted');
+          refreshFcmToken();
           new Notification("Notifications Enabled!", {
             body: "You'll now receive real-time updates from Oskar Shop.",
             icon: "https://placehold.co/192x192/0EA5E9/FFFFFF/png?text=O"

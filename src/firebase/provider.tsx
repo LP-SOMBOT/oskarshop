@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext } from 'react';
@@ -6,12 +5,14 @@ import { FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { Firestore } from 'firebase/firestore';
 import { Database } from 'firebase/database';
+import { Messaging } from 'firebase/messaging';
 
 interface FirebaseContextType {
   app: FirebaseApp;
   auth: Auth;
   db: Firestore;
   rtdb: Database;
+  messaging: Messaging | null;
 }
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
@@ -21,16 +22,18 @@ export function FirebaseProvider({
   app, 
   auth, 
   db,
-  rtdb
+  rtdb,
+  messaging
 }: { 
   children: React.ReactNode; 
   app: FirebaseApp; 
   auth: Auth; 
   db: Firestore;
   rtdb: Database;
+  messaging: Messaging | null;
 }) {
   return (
-    <FirebaseContext.Provider value={{ app, auth, db, rtdb }}>
+    <FirebaseContext.Provider value={{ app, auth, db, rtdb, messaging }}>
       {children}
     </FirebaseContext.Provider>
   );
