@@ -272,9 +272,9 @@ function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: (
   return (
     <Card 
       onClick={onClick}
-      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] p-0.5 md:p-1.5 flex items-center h-16 sm:h-20 md:h-24 lg:h-28 cursor-pointer w-full"
+      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] p-0.5 md:p-1.5 flex items-center h-20 sm:h-24 md:h-28 lg:h-32 cursor-pointer w-full"
     >
-      <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 rounded-lg md:rounded-2xl overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 rounded-lg md:rounded-2xl overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
         {game.icon ? (
           <Image src={game.icon} alt={game.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
         ) : (
@@ -283,12 +283,12 @@ function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: (
       </div>
       
       <div className="flex-1 px-3 md:px-5 lg:px-8 min-w-0">
-        <h3 className="font-headline font-bold text-[10px] sm:text-sm md:text-lg lg:text-2xl text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">
+        <h3 className="font-headline font-bold text-base sm:text-lg md:text-xl lg:text-3xl text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">
           {game.title}
         </h3>
       </div>
 
-      <button className="h-full px-4 sm:px-6 md:px-10 lg:px-16 bg-primary text-white font-black text-[9px] sm:text-xs md:text-lg lg:text-3xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0 ml-auto">
+      <button className="h-full px-4 sm:px-6 md:px-10 lg:px-16 bg-primary text-white font-black text-xs sm:text-sm md:text-xl lg:text-3xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0 ml-auto">
         {buyLabel}
       </button>
     </Card>
