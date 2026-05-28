@@ -30,16 +30,16 @@ export default function OrdersView() {
 
   if (isInitialLoading) {
     return (
-      <div className="min-h-screen px-4 py-10 max-w-[1600px] mx-auto space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
+      <div className="min-h-screen px-4 py-10 max-w-2xl mx-auto space-y-10">
+        <div className="grid grid-cols-1 gap-8">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-32 px-4 py-10 max-w-[1600px] mx-auto page-transition">
+    <div className="min-h-screen pb-32 px-4 py-10 lg:max-w-2xl mx-auto page-transition">
       {orders.length === 0 ? (
         <div className="py-20 md:py-40 text-center space-y-6 md:space-y-8 opacity-30 flex flex-col items-center">
            <div className="w-20 h-20 md:w-32 md:h-32 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center shadow-inner">
@@ -57,7 +57,7 @@ export default function OrdersView() {
            </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 gap-6 md:gap-8">
            {orders.map((order) => ( <OrderCard key={order.id} order={order} /> ))}
         </div>
       )}
@@ -67,11 +67,11 @@ export default function OrdersView() {
 
 function DetailRow({ icon: Icon, label, value, color }: { icon: any, label: string, value: string, color?: string }) {
   return (
-    <div className="flex justify-between items-center gap-3">
-       <span className="text-muted-foreground font-black uppercase tracking-widest text-[7px] sm:text-[9px] lg:text-[11px] flex items-center gap-1.5 md:gap-2 shrink-0">
+    <div className="flex items-start justify-between gap-4">
+       <span className="text-muted-foreground font-black uppercase tracking-widest text-[7px] sm:text-[9px] lg:text-[11px] flex items-center gap-1.5 md:gap-2 shrink-0 pt-0.5">
           <Icon size={12} className="opacity-60" /> {label}
        </span>
-       <span className={cn("font-bold text-slate-900 dark:text-white text-[10px] sm:text-sm lg:text-base truncate", color)}>
+       <span className={cn("font-bold text-slate-900 dark:text-white text-[10px] sm:text-sm lg:text-base flex-1 text-right break-words", color)}>
           {value || "---"}
        </span>
     </div>
@@ -93,7 +93,7 @@ function OrderCard({ order }: { order: any }) {
   const StatusIcon = order.status === 'successful' ? CheckCircle2 : order.status === 'pending' ? Clock : order.status === 'processing' ? RefreshCw : XCircle;
 
   return (
-    <Card className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
+    <Card className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group hover:shadow-2xl transition-all duration-500">
        <div className="p-5 sm:p-6 lg:p-8 h-full flex flex-col">
           <div className="flex flex-col xs:flex-row justify-between items-start gap-4 mb-6 md:mb-8">
              <div className="flex gap-3 md:gap-5 min-w-0">
@@ -110,11 +110,11 @@ function OrderCard({ order }: { order: any }) {
                    )}
                 </div>
                 <div className="min-w-0 flex-1">
-                   <h3 className="font-bold text-slate-900 dark:text-white text-base sm:text-xl lg:text-2xl leading-tight mb-1 md:mb-2 truncate">{item?.title || "Game Item"}</h3>
+                   <h3 className="font-bold text-slate-900 dark:text-white text-base sm:text-xl lg:text-2xl leading-tight mb-1 md:mb-2">{item?.title || "Game Item"}</h3>
                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
                       <p className="text-[8px] sm:text-[10px] lg:text-[12px] font-black text-muted-foreground uppercase tracking-widest">{order.paymentMethod}</p>
                       <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800 hidden xs:block" />
-                      <p className="text-[8px] sm:text-[10px] lg:text-[12px] font-black text-muted-foreground uppercase tracking-widest truncate">ID: {order.id.toUpperCase()}</p>
+                      <p className="text-[8px] sm:text-[10px] lg:text-[12px] font-black text-muted-foreground uppercase tracking-widest">ID: {order.id.toUpperCase()}</p>
                    </div>
                    <p className="text-[9px] sm:text-[11px] lg:text-[13px] text-muted-foreground font-bold mt-1 md:mt-2">
                       {format(new Date(order.createdAt), 'MMM d, yyyy - HH:mm')}
