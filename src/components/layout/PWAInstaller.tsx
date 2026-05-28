@@ -1,12 +1,15 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, X, Smartphone, Zap } from "lucide-react";
+import { Download, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export default function PWAInstaller() {
+  const { storeSettings } = useApp();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -52,50 +55,53 @@ export default function PWAInstaller() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-[100] animate-in slide-in-from-bottom-full duration-700 md:bottom-8 md:left-auto md:right-8 md:w-96">
-      <Card className="p-5 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-primary/20 dark:border-primary/40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl relative overflow-hidden group dark:shadow-primary/5">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors duration-500" />
+    <div className="fixed bottom-24 left-4 right-4 z-[100] animate-in slide-in-from-bottom-full duration-700 md:bottom-8 md:left-1/2 md:-translate-x-1/2 md:w-full md:max-w-2xl">
+      <div className="flex items-center gap-3 md:gap-5 bg-white dark:bg-slate-900 p-2 md:p-3 pr-4 md:pr-6 rounded-full shadow-[0_15px_50px_-10px_rgba(0,0,0,0.15)] dark:shadow-primary/5 border border-gray-100 dark:border-white/5 relative group transition-all">
         
-        <div className="flex items-start gap-4 relative z-10">
-          <div className="w-14 h-14 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20">
-            <Smartphone className="w-7 h-7" />
+        {/* App Icon with Gradient */}
+        <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-[#6366F1] to-[#A855F7] rounded-[1.25rem] md:rounded-[1.75rem] flex items-center justify-center p-1.5 md:p-2.5 shrink-0 shadow-lg shadow-indigo-500/20">
+          <div className="relative w-full h-full rounded-lg md:rounded-xl overflow-hidden bg-white">
+            {storeSettings?.logo ? (
+              <Image 
+                src={storeSettings.logo} 
+                alt="Logo" 
+                fill 
+                className="object-cover" 
+                unoptimized 
+              />
+            ) : (
+              <div className="w-full h-full bg-primary flex items-center justify-center text-white font-bold text-lg">O</div>
+            )}
           </div>
-          <div className="flex-1 pr-6">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-headline font-bold text-base text-slate-900 dark:text-white">Install Oskar Shop</h3>
-              <Zap className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-            </div>
-            <p className="text-xs text-muted-foreground dark:text-slate-400 leading-relaxed">
-              Get the full app experience! Install now for faster access to top-ups and exclusive mobile rewards.
-            </p>
-            <div className="flex gap-3 mt-4">
-              <Button 
-                onClick={handleInstallClick}
-                size="sm" 
-                className="rounded-full h-10 px-6 gap-2 font-bold bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/10 transition-transform active:scale-95 border-none"
-              >
-                <Download className="w-4 h-4" /> Install Now
-              </Button>
-              <Button 
-                onClick={handleDismiss}
-                variant="ghost" 
-                size="sm" 
-                className="rounded-full h-10 px-4 text-xs font-bold text-muted-foreground hover:text-foreground dark:hover:bg-white/5"
-              >
-                Maybe Later
-              </Button>
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 rounded-full absolute top-0 right-0 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors"
-            onClick={handleDismiss}
-          >
-            <X className="w-4 h-4" />
-          </Button>
         </div>
-      </Card>
+
+        {/* Text Content */}
+        <div className="flex-1 min-w-0 pr-2">
+          <h3 className="font-headline font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">
+            Install Oskar Shop
+          </h3>
+          <p className="text-[9px] md:text-sm text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+            Add to Home Screen for fast access
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 md:gap-6 shrink-0">
+          <Button 
+            onClick={handleInstallClick}
+            className="rounded-full h-9 md:h-12 px-5 md:px-8 gap-1.5 md:gap-2 font-bold bg-[#6366F1] hover:bg-[#5558E3] text-white shadow-md shadow-indigo-500/20 transition-all active:scale-95 border-none text-xs md:text-base"
+          >
+            <Download className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} /> Install
+          </Button>
+          
+          <button 
+            onClick={handleDismiss}
+            className="p-1.5 md:p-2 text-slate-300 hover:text-red-500 transition-colors"
+          >
+            <X className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
