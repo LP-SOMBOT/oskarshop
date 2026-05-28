@@ -3,16 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, ShieldAlert, Loader2, Smartphone } from 'lucide-react';
-import { isStandalone } from '@/lib/pwa-utils';
 import { useApp } from '@/lib/context';
 
 /**
  * NotificationGuard Component
  * 
- * CRITICAL RULE:
- * 1. ONLY active in Standalone PWA mode.
- * 2. In PWA mode, users MUST grant notification permission to access the app.
- * 3. On regular websites, it stays silent and lets users browse normally.
+ * Ensures users grant notification permissions to receive real-time diamond deliveries.
+ * Prompts in both Browser and Standalone PWA mode to ensure full system coverage.
  */
 export default function NotificationGuard({ children }: { children: React.ReactNode }) {
   const { refreshFcmToken } = useApp();
@@ -20,21 +17,14 @@ export default function NotificationGuard({ children }: { children: React.ReactN
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Step 1: Check if we are in PWA mode
-      const standalone = isStandalone();
-      
-      if (!standalone) {
+      // Step 1: Check browser support
+      if (!('Notification' in window)) {
+        console.warn("This browser does not support notifications.");
         setStatus('skip');
         return;
       }
 
-      // Step 2: Check browser support
-      if (!('Notification' in window)) {
-        setStatus('skip'); // Device doesn't support notifications
-        return;
-      }
-
-      // Step 3: Check current permission
+      // Step 2: Check current permission
       const currentPermission = Notification.permission;
       if (currentPermission === 'granted') {
         setStatus('granted');
@@ -54,6 +44,8 @@ export default function NotificationGuard({ children }: { children: React.ReactN
         if (result === 'granted') {
           setStatus('granted');
           refreshFcmToken();
+          
+          // Test notification to confirm it works
           new Notification("Notifications Enabled!", {
             body: "You'll now receive real-time updates from Oskar Shop.",
             icon: "https://placehold.co/192x192/0EA5E9/FFFFFF/png?text=O"
@@ -75,7 +67,7 @@ export default function NotificationGuard({ children }: { children: React.ReactN
     );
   }
 
-  // If not in PWA mode or already granted or unsupported, just show the app
+  // If already granted or unsupported, just show the app
   if (status === 'skip' || status === 'granted') {
     return <>{children}</>;
   }
@@ -105,7 +97,7 @@ export default function NotificationGuard({ children }: { children: React.ReactN
       </Button>
 
       <p className="mt-8 text-[11px] font-bold text-gray-400 dark:text-slate-600 uppercase tracking-widest flex items-center gap-2">
-         <Smartphone className="w-3 h-3" /> Mandatory for Oskar Shop PWA
+         <Smartphone className="w-3 h-3" /> Essential for Instant Delivery
       </p>
 
       {status === 'denied' && (
@@ -115,7 +107,7 @@ export default function NotificationGuard({ children }: { children: React.ReactN
             <span className="font-bold text-base">Action Required</span>
           </div>
           <p className="text-xs text-center leading-relaxed font-medium">
-            Notifications are currently blocked. To continue using the app, please go to your device settings, allow notifications for Oskar Shop, and refresh.
+            Notifications are currently blocked. To receive diamond updates, please go to your device settings, allow notifications for Oskar Shop, and refresh.
           </p>
           <Button 
             variant="outline" 

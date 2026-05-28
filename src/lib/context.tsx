@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -32,7 +31,7 @@ import {
   updateProfile,
   onAuthStateChanged
 } from 'firebase/auth';
-import { getToken } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
 
@@ -777,7 +776,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     lastNotifiedRef.current.add(id);
     if (!('Notification' in window)) return;
     if (Notification.permission !== 'granted') return;
+    
     const logo = storeSettings.logo || "https://placehold.co/192x192/0EA5E9/FFFFFF/png?text=O";
+    
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
         registration.showNotification(title, {
@@ -795,6 +796,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       new Notification(title, { body, icon: logo });
     }
   }, [storeSettings.logo]);
+
+  const refreshFcmToken = useCallback(async () => {
+    if (!messaging || !authUser || !rtdb) return;
+    try {
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      if (token) {
+        await update(ref(rtdb, `users/${authUser.uid}`), { fcmToken: token });
+      }
+    } catch (err) {
+      console.error("Failed to refresh FCM token:", err);
+    }
+  }, [messaging, authUser, rtdb]);
 
   const login = useCallback(async (ph: string, p: string) => {
     setIsGlobalLoading(true);
@@ -936,18 +949,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error("Profile sync failed:", err);
     }
   }, [rtdb]);
-
-  const refreshFcmToken = useCallback(async () => {
-    if (!messaging || !authUser || !rtdb) return;
-    try {
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-      if (token) {
-        await update(ref(rtdb, `users/${authUser.uid}`), { fcmToken: token });
-      }
-    } catch (err) {
-      console.error("Failed to refresh FCM token:", err);
-    }
-  }, [messaging, authUser, rtdb]);
 
   const setActiveTab = useCallback((tab: string) => {
     setActiveTabState(tab);
@@ -1223,6 +1224,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       off(profileRef); off(notifsRef);
     };
   }, [rtdb, authUser, showPushNotification, logout]);
+
+  // Foreground messaging listener
+  useEffect(() => {
+    if (!messaging) return;
+    const unsubscribe = onMessage(messaging, (payload) => {
+      console.log('Foreground message received:', payload);
+      const title = payload.notification?.title || 'Notification';
+      const body = payload.notification?.body || '';
+      if (title && body) {
+        toast({ title, description: body });
+        if (Notification.permission === 'granted') {
+          new Notification(title, { body, icon: storeSettings.logo });
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [messaging, storeSettings.logo]);
 
   const enhancedUser = useMemo(() => {
     if (!authUser) return null;
@@ -1779,9 +1797,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateStoreSettings = useCallback(async (s: any) => {
     if (!rtdb) return;
     await update(ref(rtdb, 'settings'), s);
-  }, [rtdb]);
+    await broadcastAdminNotification("Store Settings Updated ⚙️", `Global configuration was updated by ${enhancedUser?.name || 'an admin'}.`);
+  }, [rtdb, enhancedUser, broadcastAdminNotification]);
   
-  const updateAdminSettings = useCallback(async (s: any) => update(ref(rtdb, 'admin_settings'), s), [rtdb]);
+  const updateAdminSettings = useCallback(async (s: any) => {
+    if (!rtdb) return;
+    await update(ref(rtdb, 'admin_settings'), s);
+    await broadcastAdminNotification("Admin Settings Updated 🔒", `Security parameters were updated.`);
+  }, [rtdb, broadcastAdminNotification]);
 
   const acceptTerms = useCallback(async () => {
     if (typeof window !== 'undefined') localStorage.setItem('oskar_terms_accepted', 'true');
