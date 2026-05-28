@@ -770,6 +770,83 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
+  // Define logic functions early to avoid initialization order errors
+  const login = async (ph: string, p: string) => {
+    setIsGlobalLoading(true);
+    setAuthError(null);
+    try { 
+      const email = formatToSyntheticEmail(ph);
+      await signInWithEmailAndPassword(auth, email, p); 
+    } catch (err: any) {
+      const friendly = getFriendlyAuthError(err, language);
+      setAuthError(friendly);
+      throw err;
+    } finally { setIsGlobalLoading(false); }
+  };
+
+  const logout = async () => {
+    setIsGlobalLoading(true);
+    try { 
+      if (authUser) localStorage.removeItem(`oskar_profile_complete_${authUser.uid}`);
+      localStorage.removeItem(USER_CACHE_KEY); 
+      await signOut(auth); 
+      router.push('/login'); 
+    } finally { setIsGlobalLoading(false); }
+  };
+
+  const showPushNotification = useCallback((title: string, body: string, id: string) => {
+    if (typeof window === 'undefined') return;
+    if (lastNotifiedRef.current.has(id)) return;
+    lastNotifiedRef.current.add(id);
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    const logo = storeSettings.logo || "https://placehold.co/192x192/0EA5E9/FFFFFF/png?text=O";
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.showNotification(title, {
+          body,
+          icon: logo,
+          badge: logo,
+          tag: id,
+          vibrate: [200, 100, 200],
+          requireInteraction: true
+        });
+      }).catch(() => {
+        new Notification(title, { body, icon: logo });
+      });
+    } else {
+      new Notification(title, { body, icon: logo });
+    }
+  }, [storeSettings.logo]);
+
+  const broadcastNotification = async (title: string, body: string, targetUid?: string) => {
+    if (!rtdb) return;
+    const uid = targetUid || authUser?.uid;
+    if (!uid) return;
+    const notifRef = push(ref(rtdb, `notifications/${uid}`));
+    await set(notifRef, {
+      title,
+      body,
+      type: 'broadcast',
+      createdAt: Date.now(),
+      read: false,
+      linkTo: '#notifications'
+    });
+  };
+
+  const broadcastAdminNotification = async (title: string, body: string, skipPush?: boolean) => {
+    if (!rtdb) return;
+    const adminNotifRef = push(ref(rtdb, 'adminNotifications'));
+    await set(adminNotifRef, {
+      title,
+      body,
+      type: 'broadcast',
+      createdAt: Date.now(),
+      readBy: {}
+    });
+  };
+
+  // Rest of the AppProvider logic follows...
   const orders = useMemo(() => {
     if (!authUser) return [];
     return allOrders.filter(o => o.userId === authUser.uid).sort((a,b)=>b.createdAt - a.createdAt);
@@ -902,31 +979,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isInitialLoading = useMemo(() => {
     return !syncStatus.settings || !syncStatus.products || !syncStatus.banners || !syncStatus.events || !syncStatus.games;
   }, [syncStatus]);
-
-  const showPushNotification = useCallback((title: string, body: string, id: string) => {
-    if (typeof window === 'undefined') return;
-    if (lastNotifiedRef.current.has(id)) return;
-    lastNotifiedRef.current.add(id);
-    if (!('Notification' in window)) return;
-    if (Notification.permission !== 'granted') return;
-    const logo = storeSettings.logo || "https://placehold.co/192x192/0EA5E9/FFFFFF/png?text=O";
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.showNotification(title, {
-          body,
-          icon: logo,
-          badge: logo,
-          tag: id,
-          vibrate: [200, 100, 200],
-          requireInteraction: true
-        });
-      }).catch(() => {
-        new Notification(title, { body, icon: logo });
-      });
-    } else {
-      new Notification(title, { body, icon: logo });
-    }
-  }, [storeSettings.logo]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -1139,54 +1191,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [rtdb, authUser, enhancedUser?.isAdmin, enhancedUser?.uid, showPushNotification]);
 
-  const broadcastNotification = async (title: string, body: string, targetUid?: string) => {
-    if (!rtdb) return;
-    const uid = targetUid || authUser?.uid;
-    if (!uid) return;
-    const notifRef = push(ref(rtdb, `notifications/${uid}`));
-    await set(notifRef, {
-      title,
-      body,
-      type: 'broadcast',
-      createdAt: Date.now(),
-      read: false,
-      linkTo: '#notifications'
-    });
-  };
-
-  const broadcastAdminNotification = async (title: string, body: string, skipPush?: boolean) => {
-    if (!rtdb) return;
-    const adminNotifRef = push(ref(rtdb, 'adminNotifications'));
-    await set(adminNotifRef, {
-      title,
-      body,
-      type: 'broadcast',
-      createdAt: Date.now(),
-      readBy: {}
-    });
-  };
-
-  const refreshAdminData = () => {
-    if (!rtdb) return;
-    get(ref(rtdb, 'orders')).then(s => {
-      const val = s.val();
-      if (val) setAllOrders(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt));
-    });
-  };
-
-  const login = async (ph: string, p: string) => {
-    setIsGlobalLoading(true);
-    setAuthError(null);
-    try { 
-      const email = formatToSyntheticEmail(ph);
-      await signInWithEmailAndPassword(auth, email, p); 
-    } catch (err: any) {
-      const friendly = getFriendlyAuthError(err, language);
-      setAuthError(friendly);
-      throw err;
-    } finally { setIsGlobalLoading(false); }
-  };
-
   const signup = async (ph: string, p: string, n: string, realEmail: string) => {
     setIsGlobalLoading(true);
     setAuthError(null);
@@ -1234,14 +1238,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally { setIsGlobalLoading(false); }
   };
 
-  const logout = async () => {
-    setIsGlobalLoading(true);
-    try { 
-      if (authUser) localStorage.removeItem(`oskar_profile_complete_${authUser.uid}`);
-      localStorage.removeItem(USER_CACHE_KEY); 
-      await signOut(auth); 
-      router.push('/login'); 
-    } finally { setIsGlobalLoading(false); }
+  const refreshAdminData = () => {
+    if (!rtdb) return;
+    get(ref(rtdb, 'orders')).then(s => {
+      const val = s.val();
+      if (val) setAllOrders(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt));
+    });
   };
 
   const buyNow = (item: any) => {
