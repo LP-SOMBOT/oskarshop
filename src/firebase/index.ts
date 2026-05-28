@@ -6,6 +6,7 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getDatabase, Database } from 'firebase/database';
 import { getMessaging, Messaging, isSupported } from 'firebase/messaging';
 import { firebaseConfig } from './config';
+import { useFirebase } from './provider';
 
 let app: FirebaseApp;
 let auth: Auth;
