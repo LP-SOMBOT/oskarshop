@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, ShieldAlert, Loader2, Smartphone } from 'lucide-react';
 import { useApp } from '@/lib/context';
+import { isStandalone } from '@/lib/pwa-utils';
 
 /**
  * NotificationGuard Component
  * 
  * Ensures users grant notification permissions to receive real-time diamond deliveries.
- * Prompts in both Browser and Standalone PWA mode to ensure full system coverage.
+ * Prompts ONLY in Standalone PWA mode to ensure full system coverage for installed users.
+ * Never appears on a regular browser visit.
  */
 export default function NotificationGuard({ children }: { children: React.ReactNode }) {
   const { refreshFcmToken } = useApp();
@@ -17,6 +19,13 @@ export default function NotificationGuard({ children }: { children: React.ReactN
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Step 0: Check if running as PWA
+      // If not standalone (regular browser), skip the guard entirely
+      if (!isStandalone()) {
+        setStatus('skip');
+        return;
+      }
+
       // Step 1: Check browser support
       if (!('Notification' in window)) {
         console.warn("This browser does not support notifications.");
@@ -67,7 +76,7 @@ export default function NotificationGuard({ children }: { children: React.ReactN
     );
   }
 
-  // If already granted or unsupported, just show the app
+  // If already granted or unsupported, or not in PWA mode, just show the app
   if (status === 'skip' || status === 'granted') {
     return <>{children}</>;
   }
