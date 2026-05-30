@@ -19,14 +19,31 @@ import OneSignalInitializer from "@/components/layout/OneSignalInitializer";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: 'Oskar Shop - Game Top-Up & Accounts',
-  description: 'The best gaming top-up service and accounts store.',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Oskar Shop',
+  title: 'OskarShop - Game Top-Up & Accounts Store in Somalia',
+  description: 'OskarShop is Somalia\'s #1 gaming store. Buy game top-ups, in-game currency, and gaming accounts safely and instantly.',
+  keywords: 'game topup somalia, gaming accounts, oskarshop, mobile legends somalia, free fire topup, muqpro',
+  openGraph: {
+    title: 'OskarShop - Game Top-Up & Accounts Store in Somalia',
+    description: 'Somalia\'s #1 gaming store. Buy game top-ups and accounts safely.',
+    url: 'https://oskarshop.so',
+    siteName: 'OskarShop',
+    images: [
+      {
+        url: 'https://files.catbox.moe/ywu4tl.jpg',
+        width: 512,
+        height: 512,
+        alt: 'OskarShop Logo',
+      }
+    ],
+    locale: 'so_SO',
+    type: 'website',
   },
+  twitter: {
+    card: 'summary',
+    title: 'OskarShop - Game Top-Up & Accounts Store in Somalia',
+    description: 'Somalia\'s #1 gaming store.',
+  },
+  metadataBase: new URL('https://oskarshop.so'),
 };
 
 export const viewport: Viewport = {
