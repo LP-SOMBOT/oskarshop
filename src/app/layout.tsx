@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   title: 'OskarShop - Game Top-Up & Accounts Store in Somalia',
   description: 'OskarShop is Somalia\'s #1 gaming store. Buy game top-ups, in-game currency, and gaming accounts safely and instantly.',
   keywords: 'game topup somalia, gaming accounts, oskarshop, mobile legends somalia, free fire topup, muqpro',
+  icons: {
+    icon: 'https://files.catbox.moe/ywu4tl.jpg',
+    shortcut: 'https://files.catbox.moe/ywu4tl.jpg',
+    apple: 'https://files.catbox.moe/ywu4tl.jpg',
+  },
   openGraph: {
     title: 'OskarShop - Game Top-Up & Accounts Store in Somalia',
     description: 'Somalia\'s #1 gaming store. Buy game top-ups and accounts safely.',
