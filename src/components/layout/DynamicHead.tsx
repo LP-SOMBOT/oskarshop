@@ -18,8 +18,8 @@ export default function DynamicHead() {
       metaTheme.setAttribute('content', theme === 'dark' ? '#0F172A' : '#0EA5E9');
     }
 
-    // Default Fallback Logo to the locally uploaded logo.png
-    const fallbackLogo = "/logo.png";
+    // Default Fallback Logo to the locally uploaded favicon.png
+    const fallbackLogo = "/favicon.png";
     const logo = storeSettings?.logo || fallbackLogo;
 
     // Update Browser Favicon and Touch Icons
