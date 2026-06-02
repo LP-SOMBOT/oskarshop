@@ -1,10 +1,10 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Play, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
