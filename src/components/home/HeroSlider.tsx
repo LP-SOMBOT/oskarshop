@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function HeroSlider() {
@@ -17,17 +17,19 @@ export default function HeroSlider() {
       id: b.id,
       image: b.imageUrl,
       link: b.linkTo,
-      title: b.title || "Banner",
+      title: b.title || "Promotion",
+      description: b.description || "",
     }));
 
-    // Inject Tutorial slide if active
+    // Inject Tutorial slide if active with specific branding
     const helpLinks = storeSettings?.helpLinks;
     if (helpLinks?.tutorialBannerActive && helpLinks?.tutorialThumbnail) {
       list.unshift({
         id: 'tutorial-slide',
         image: helpLinks.tutorialThumbnail,
         link: helpLinks.tutorialUrl,
-        title: "Tutorial",
+        title: "Sida loo isticmaalo website ka oskarshop",
+        description: "daawo video ga",
       });
     }
 
@@ -54,7 +56,8 @@ export default function HeroSlider() {
     setCurrent((prev) => (prev > 0 ? prev - 1 : slides.length - 1));
   };
 
-  const handleSlideClick = (link?: string) => {
+  const handleSlideClick = (slide: any) => {
+    const link = slide.link;
     if (!link) return;
     if (link.startsWith('http')) {
       window.open(link, '_blank');
@@ -77,7 +80,7 @@ export default function HeroSlider() {
   }
 
   return (
-    <div className="relative w-full aspect-[21/9] md:aspect-[3/1] max-h-[460px] overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] group shadow-2xl">
+    <div className="relative w-full aspect-[21/9] md:aspect-[3/1] max-h-[460px] overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] group shadow-2xl bg-slate-950">
       {/* Slides Container */}
       {slides.map((slide, index) => (
         <div
@@ -86,7 +89,7 @@ export default function HeroSlider() {
             "absolute inset-0 transition-all duration-1000 ease-in-out cursor-pointer",
             index === current ? "opacity-100 scale-100 z-10" : "opacity-0 scale-110 z-0"
           )}
-          onClick={() => handleSlideClick(slide.link)}
+          onClick={() => handleSlideClick(slide)}
         >
           {/* Main Image */}
           <div className="relative w-full h-full">
@@ -98,9 +101,28 @@ export default function HeroSlider() {
               priority={index === 0}
               unoptimized
             />
-            {/* Subtle bottom gradient to help navigation visibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+            {/* Gradient for text contrast on tutorial slide */}
+            {slide.id === 'tutorial-slide' && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+            )}
           </div>
+
+          {/* Tutorial Specific Text Overlay (No Background) */}
+          {slide.id === 'tutorial-slide' && (
+            <div className="absolute bottom-6 left-6 right-6 md:bottom-10 md:left-12 z-20 pointer-events-none">
+              <div className="flex flex-col items-start gap-1 md:gap-2">
+                 <div className="flex items-center gap-1.5 md:gap-2 bg-primary/90 text-white text-[8px] md:text-[10px] font-black uppercase px-2 py-0.5 rounded-md mb-1 shadow-lg backdrop-blur-sm">
+                    <Play size={10} fill="currentColor" /> App Guide
+                 </div>
+                 <h3 className="text-white font-headline font-bold text-lg md:text-3xl uppercase tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                    {slide.title}
+                 </h3>
+                 <p className="text-white/90 text-xs md:text-xl font-medium drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                    {slide.description}
+                 </p>
+              </div>
+            </div>
+          )}
         </div>
       ))}
       
@@ -126,7 +148,7 @@ export default function HeroSlider() {
           <button
             key={i}
             onClick={() => { setIsAutoPlaying(false); setCurrent(i); }}
-            className="relative h-1.5 transition-all duration-300 overflow-hidden rounded-full bg-white/20"
+            className="relative h-1.5 transition-all duration-300 overflow-hidden rounded-full bg-white/20 shadow-sm"
             style={{ width: i === current ? '40px' : '10px' }}
           >
              {i === current && (
