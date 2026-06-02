@@ -23,9 +23,9 @@ export const metadata: Metadata = {
   description: 'OskarShop is Somalia\'s #1 gaming store. Buy game top-ups, in-game currency, and gaming accounts safely and instantly.',
   keywords: 'game topup somalia, gaming accounts, oskarshop, mobile legends somalia, free fire topup, muqpro',
   icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
   openGraph: {
     title: 'OskarShop - Game Top-Up & Accounts Store in Somalia',

@@ -33,9 +33,13 @@ export default function DesktopSidebar() {
       <div className="p-8 lg:p-10 flex items-center gap-3 relative">
         <div 
           onClick={() => setActiveTab('home')}
-          className="relative w-12 h-12 overflow-hidden rounded-2xl shadow-xl shadow-primary/20 cursor-pointer active:scale-95 transition-transform"
+          className="relative w-12 h-12 overflow-hidden rounded-2xl shadow-xl shadow-primary/20 cursor-pointer active:scale-95 transition-transform bg-slate-50 dark:bg-slate-800 flex items-center justify-center"
         >
-          <Image src={storeSettings?.logo || "/logo.png"} alt="Logo" fill className="object-cover" unoptimized />
+          {storeSettings?.logo || "/logo.png" ? (
+            <Image src={storeSettings?.logo || "/logo.png"} alt="Logo" fill className="object-cover" unoptimized />
+          ) : (
+            <Gamepad2 className="text-primary w-7 h-7" />
+          )}
         </div>
         <div className="flex flex-col cursor-pointer" onClick={() => setActiveTab('home')}>
           <span className="font-headline font-bold text-2xl tracking-tight leading-none text-slate-900 dark:text-white">

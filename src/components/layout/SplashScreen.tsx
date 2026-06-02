@@ -11,17 +11,12 @@ import { Gamepad2 } from "lucide-react";
  * 
  * Provides a branded entry experience for the application.
  * Stays visible while the app is in its initial loading state.
- * 
- * Update: The splash screen now strictly adheres to isInitialLoading,
- * which tracks complete database synchronization across all critical nodes.
  */
 export default function SplashScreen() {
   const { isInitialLoading, storeSettings } = useApp();
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // When synchronization is complete, we add a tiny aesthetic delay 
-    // to allow React to paint the first frame of the hydrated app.
     if (!isInitialLoading) {
       const timer = setTimeout(() => setIsVisible(false), 800);
       return () => clearTimeout(timer);
@@ -42,14 +37,18 @@ export default function SplashScreen() {
 
       <div className="relative w-32 h-32 animate-in zoom-in duration-700 ease-out">
         <div className="relative w-full h-full p-2 bg-white rounded-[2.5rem] shadow-2xl shadow-primary/10 flex items-center justify-center overflow-hidden border border-slate-50">
-          <Image 
-            src={storeSettings?.logo || "/logo.png"} 
-            alt="Oskar Shop" 
-            fill 
-            className="object-contain p-4"
-            priority
-            unoptimized
-          />
+          {storeSettings?.logo || "/logo.png" ? (
+            <Image 
+              src={storeSettings?.logo || "/logo.png"} 
+              alt="Oskar Shop" 
+              fill 
+              className="object-contain p-4"
+              priority
+              unoptimized
+            />
+          ) : (
+            <Gamepad2 className="w-16 h-16 text-primary" />
+          )}
         </div>
       </div>
       
