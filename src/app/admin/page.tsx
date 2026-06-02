@@ -216,9 +216,12 @@ function WaitTime({ post }: { post: any }) {
   useEffect(() => {
     const claimants = Object.values(post.claimants || {});
     const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
-    const claimTime = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
+    const claimTime = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+      const t = Number(c.timestamp);
+      return isNaN(t) ? Infinity : t;
+    })) : null;
     
-    if (!claimTime || post.sold || post.sellerReported || post.status === 'sold' || post.status === 'approved') {
+    if (!claimTime || claimTime === Infinity || post.sold || post.sellerReported || post.status === 'sold' || post.status === 'approved') {
       setElapsed("None");
       setIsUrgent(false);
       return;
@@ -352,7 +355,8 @@ export default function AdminPage() {
     deleteAccountPost,
     logout,
     isInitialLoading,
-    refreshAdminData
+    refreshAdminData,
+    resetLeaderboard
   } = useApp();
 
   const router = useRouter();
@@ -876,35 +880,45 @@ export default function AdminPage() {
                            </div>
                         </div>
                         
-                        <div className="flex flex-col items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[160px] sm:min-w-[200px]">
-                           <Label className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
-                           <div className="flex items-center gap-3 sm:gap-4">
-                              <span className={cn("text-xs font-bold uppercase", leaderboardForm.rewardsActive ? "text-green-500" : "text-slate-400")}>
-                                 {leaderboardForm.rewardsActive ? 'Active' : 'Closed'}
-                              </span>
-                              <Switch 
-                                checked={leaderboardForm.rewardsActive} 
-                                onCheckedChange={async (v) => {
-                                  const updatedForm = { ...leaderboardForm, rewardsActive: v };
-                                  setLeaderboardForm(updatedForm);
-                                  setIsSavingStatus(true);
-                                  try {
-                                    const savePayload = {
-                                      rewardsActive: v,
-                                      rewards: {
-                                        rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
-                                        rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
-                                        rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
-                                      }
-                                    };
-                                    await updateStoreSettings({ leaderboard: savePayload });
-                                    toast({ title: v ? "Rewards Enabled" : "Rewards Disabled" });
-                                  } finally {
-                                    setIsSavingStatus(false);
-                                  }
-                                }} 
-                                className="scale-110 sm:scale-125"
-                              />
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                           <Button 
+                             variant="outline" 
+                             onClick={resetLeaderboard}
+                             className="h-12 sm:h-16 rounded-xl sm:rounded-2xl border-2 font-black uppercase text-[10px] sm:text-xs tracking-widest gap-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50"
+                           >
+                             <RefreshCw size={16} /> Reset All Points
+                           </Button>
+                           
+                           <div className="flex flex-col items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[160px] sm:min-w-[200px]">
+                              <Label className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
+                              <div className="flex items-center gap-3 sm:gap-4">
+                                 <span className={cn("text-xs font-bold uppercase", leaderboardForm.rewardsActive ? "text-green-500" : "text-slate-400")}>
+                                    {leaderboardForm.rewardsActive ? 'Active' : 'Closed'}
+                                 </span>
+                                 <Switch 
+                                   checked={leaderboardForm.rewardsActive} 
+                                   onCheckedChange={async (v) => {
+                                     const updatedForm = { ...leaderboardForm, rewardsActive: v };
+                                     setLeaderboardForm(updatedForm);
+                                     setIsSavingStatus(true);
+                                     try {
+                                       const savePayload = {
+                                         rewardsActive: v,
+                                         rewards: {
+                                           rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
+                                           rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
+                                           rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
+                                         }
+                                       };
+                                       await updateStoreSettings({ leaderboard: savePayload });
+                                       toast({ title: v ? "Rewards Enabled" : "Rewards Disabled" });
+                                     } finally {
+                                       setIsSavingStatus(false);
+                                     }
+                                   }} 
+                                   className="scale-110 sm:scale-125"
+                                 />
+                              </div>
                            </div>
                         </div>
                      </div>
@@ -1091,8 +1105,11 @@ export default function AdminPage() {
                          accountPosts.map(p => {
                            const claimantsList = Object.values(p.claimants || {});
                            const pendingClaims = claimantsList.filter((c: any) => c.status === 'pending');
-                           const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
-                           const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
+                           const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+                             const t = Number(c.timestamp);
+                             return isNaN(t) ? Infinity : t;
+                           })) : null;
+                           const isOverdue = earliestClaim && earliestClaim !== Infinity && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
                            return (
                              <Card 
@@ -1178,8 +1195,11 @@ export default function AdminPage() {
                                accountPosts.map(p => {
                                  const claimantsList = Object.values(p.claimants || {});
                                  const pendingClaims = claimantsList.filter((c: any) => c.status === 'pending');
-                                 const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
-                                 const isOverdue = earliestClaim && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
+                                 const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+                                   const t = Number(c.timestamp);
+                                   return isNaN(t) ? Infinity : t;
+                                 })) : null;
+                                 const isOverdue = earliestClaim && earliestClaim !== Infinity && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
                                  return (
                                  <TableRow 
@@ -1626,7 +1646,8 @@ export default function AdminPage() {
                     <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No users found</div>
                   ) : (
                     filteredUsers.map(u => {
-                      const isOnline = u.lastActive && (Date.now() - u.lastActive) < 300000;
+                      const lastActive = Number(u.lastActive);
+                      const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
                       return (
                         <Card key={u.uid} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                            <div className="flex items-center gap-4">
@@ -1684,7 +1705,8 @@ export default function AdminPage() {
                           <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
                         ) : (
                           filteredUsers.map(u => {
-                            const isOnline = u.lastActive && (Date.now() - u.lastActive) < 300000;
+                            const lastActive = Number(u.lastActive);
+                            const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
                             return (
                               <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
                                  <TableCell className="px-10">
@@ -1724,7 +1746,7 @@ export default function AdminPage() {
                                           </span>
                                        </div>
                                        <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
-                                          {u.lastActive ? formatDistanceToNow(u.lastActive).toUpperCase() + " AGO" : "NEVER"}
+                                          {!isNaN(lastActive) ? formatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
                                        </span>
                                     </div>
                                  </TableCell>
@@ -2047,7 +2069,7 @@ export default function AdminPage() {
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-6 sm:space-y-8">
                               <div className="p-4 sm:p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl border border-purple-100 dark:border-purple-900/30">
-                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-purple-700 dark:text-purple-300">
+                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-purple-700 dark:text-blue-300">
                                     <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
                                     These keys allow the application to send password reset codes.
                                  </p>
@@ -2630,10 +2652,13 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const { updateAccountPostStatus } = useApp();
 
   const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
-  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => c.timestamp)) : null;
-  const isStalling = earliestClaim && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+    const t = Number(c.timestamp);
+    return isNaN(t) ? Infinity : t;
+  })) : null;
+  const isStalling = earliestClaim && earliestClaim !== Infinity && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
-  const isWaiting = earliestClaim && !post.sellerReported && !post.sold;
+  const isWaiting = earliestClaim && earliestClaim !== Infinity && !post.sellerReported && !post.sold;
   const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
 
   const handleForceSold = (uid: string) => {
@@ -2873,6 +2898,8 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
             <div className="space-y-4">
                {claimants.map((c: any) => {
                  const claimStatus = c.status || 'pending';
+                 const t = Number(c.timestamp);
+                 const validTimestamp = isNaN(t) ? Date.now() : t;
                  return (
                    <div key={c.uid} className={cn(
                      "p-6 md:p-8 rounded-[2.5rem] border flex flex-col sm:flex-row items-center justify-between gap-6 transition-all",
@@ -2900,7 +2927,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                             <div className="flex items-center gap-2 mt-1">
                                <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">{c.whatsapp || "No Number"}</Badge>
                             </div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(c.timestamp)).toUpperCase() + " AGO"}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(validTimestamp)).toUpperCase() + " AGO"}</p>
                          </div>
                       </div>
                       <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">

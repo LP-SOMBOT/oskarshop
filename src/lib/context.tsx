@@ -35,6 +35,7 @@ import {
 import { getToken, onMessage } from 'firebase/messaging';
 import { toast } from '@/hooks/use-toast';
 import { type GamePackage } from './games-data';
+import { format } from 'date-fns';
 
 export const safeGet = (obj: any, path: string, fallback: any = "") => {
   return path.split('.').reduce((acc, key) => acc?.[key] ?? fallback, obj);
@@ -371,6 +372,7 @@ type AppContextType = {
   setLanguage: (lang: Language) => void;
   userProfile: UserProfile | null;
   t: (key: string) => string;
+  resetLeaderboard: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -1349,6 +1351,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, [rtdb]);
 
+  const resetLeaderboard = useCallback(async () => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const updates: any = {};
+    
+    allUsers.forEach(u => {
+      updates[`users/${u.uid}/points`] = 0;
+      updates[`users/${u.uid}/leaderboardRank`] = null;
+      updates[`users/${u.uid}/leaderboardDiscount`] = 0;
+    });
+    
+    updates[`settings/lastResetMonth`] = currentMonth;
+    
+    try {
+      await update(ref(rtdb), updates);
+      await broadcastAdminNotification(
+        "Leaderboard Reset! 🏆", 
+        `System points have been reset for the new month (${currentMonth}) by ${enhancedUser.name}.`,
+        true
+      );
+      toast({ title: "Reset Complete", description: "All points set to 0 for the new session." });
+    } catch (error) {
+      console.error("Reset failed:", error);
+      toast({ title: "Reset Failed", variant: "destructive" });
+    }
+  }, [rtdb, enhancedUser, allUsers, broadcastAdminNotification]);
+
+  // Automated Monthly Leaderboard Reset logic
+  useEffect(() => {
+    if (!rtdb || !enhancedUser?.isAdmin || !syncStatus.settings || !syncStatus.allUsers || allUsers.length === 0) return;
+
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const lastReset = storeSettings?.lastResetMonth;
+
+    if (lastReset !== currentMonth) {
+       // A new month has started and no reset has happened yet.
+       console.log(`[Leaderboard] Automated reset triggered for ${currentMonth}`);
+       resetLeaderboard();
+    }
+  }, [rtdb, enhancedUser?.isAdmin, syncStatus.settings, syncStatus.allUsers, storeSettings?.lastResetMonth, allUsers, resetLeaderboard]);
+
   const postAccount = useCallback(async (data: any) => {
     if (!rtdb || !authUser) return;
     const postRef = push(ref(rtdb, 'accountPosts'));
@@ -1925,7 +1969,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, updateProductsOrder, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData, refreshFcmToken,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
-      acceptTerms, language, setLanguage, userProfile, t
+      acceptTerms, language, setLanguage, userProfile, t, resetLeaderboard
     }}>
       {children}
     </AppContext.Provider>
