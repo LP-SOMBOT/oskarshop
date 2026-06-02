@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -39,7 +38,9 @@ export default function DesktopSidebar() {
           {storeSettings?.logo ? (
             <Image src={storeSettings.logo} alt="Logo" fill className="object-cover" unoptimized />
           ) : (
-            <div className="w-full h-full bg-primary flex items-center justify-center text-white font-headline font-bold text-2xl">O</div>
+            <div className="w-full h-full bg-primary flex items-center justify-center text-white">
+              <Gamepad2 className="w-7 h-7" />
+            </div>
           )}
         </div>
         <div className="flex flex-col cursor-pointer" onClick={() => setActiveTab('home')}>

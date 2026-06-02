@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, X, Smartphone } from "lucide-react";
+import { Download, X, Smartphone, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
@@ -60,7 +59,7 @@ export default function PWAInstaller() {
         
         {/* App Icon with Gradient */}
         <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-[#6366F1] to-[#A855F7] rounded-[1.25rem] md:rounded-[1.75rem] flex items-center justify-center p-1.5 md:p-2.5 shrink-0 shadow-lg shadow-indigo-500/20">
-          <div className="relative w-full h-full rounded-lg md:rounded-xl overflow-hidden bg-white">
+          <div className="relative w-full h-full rounded-lg md:rounded-xl overflow-hidden bg-white flex items-center justify-center">
             {storeSettings?.logo ? (
               <Image 
                 src={storeSettings.logo} 
@@ -70,7 +69,7 @@ export default function PWAInstaller() {
                 unoptimized 
               />
             ) : (
-              <div className="w-full h-full bg-primary flex items-center justify-center text-white font-bold text-lg">O</div>
+              <Gamepad2 className="w-6 h-6 text-primary" />
             )}
           </div>
         </div>

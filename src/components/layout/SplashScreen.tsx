@@ -4,6 +4,7 @@ import { useApp } from "@/lib/context";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { Gamepad2 } from "lucide-react";
 
 /**
  * SplashScreen Component
@@ -52,8 +53,8 @@ export default function SplashScreen() {
             />
           </div>
         ) : (
-          <div className="w-full h-full bg-primary rounded-[2.5rem] flex items-center justify-center text-white text-6xl font-headline font-bold shadow-2xl shadow-primary/20">
-            O
+          <div className="w-full h-full bg-primary rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shadow-primary/20">
+            <Gamepad2 className="w-16 h-16" />
           </div>
         )}
       </div>

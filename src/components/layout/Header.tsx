@@ -25,8 +25,8 @@ export default function Header() {
                 unoptimized
               />
             ) : (
-              <div className="w-full h-full bg-primary flex items-center justify-center text-white font-headline font-bold text-xl">
-                O
+              <div className="w-full h-full bg-primary flex items-center justify-center text-white">
+                <Gamepad2 className="w-6 h-6" />
               </div>
             )}
           </div>
