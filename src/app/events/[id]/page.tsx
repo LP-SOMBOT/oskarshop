@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
-import { ArrowLeft, Clock, Calendar, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, ShieldCheck, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -15,7 +16,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
   const router = useRouter();
-  const { events, setActiveTab } = useApp();
+  const { events, setActiveTab, t } = useApp();
   const [timeLeft, setTimeLeft] = useState<string>("");
 
   const event = useMemo(() => {
@@ -50,6 +51,15 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [event?.expiresAt]);
+
+  const handleAction = () => {
+    if (!event) return;
+    if (event.redirectRoute) {
+      router.push(event.redirectRoute);
+    } else {
+      setActiveTab('games');
+    }
+  };
 
   if (!event) {
     return (
@@ -119,7 +129,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <span className="text-sm font-bold uppercase tracking-[0.3em]">Event Overview</span>
                  </div>
                  <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                    {event.shortDescription || event.description}
+                    {event.shortDescription}
                  </p>
               </div>
 
@@ -127,7 +137,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
               <div className="prose dark:prose-invert max-w-none">
                  <div className="text-base sm:text-lg text-slate-700 dark:text-slate-400 leading-loose whitespace-pre-wrap font-medium">
-                    {event.content || event.description}
+                    {event.content}
                  </div>
               </div>
            </div>
@@ -142,10 +152,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <DetailItem icon={ShieldCheck} label="Verified" value="Official Event" />
                  </div>
                  <Button 
-                   onClick={() => setActiveTab('games')}
-                   className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all mt-4"
+                   onClick={handleAction}
+                   className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 active:scale-95 transition-all mt-4 uppercase tracking-widest gap-2"
                  >
-                    Join Event Now
+                    {event.buttonText || t('view')} <ChevronRight size={18} />
                  </Button>
               </Card>
 

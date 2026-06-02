@@ -370,7 +370,7 @@ export default function AdminPage() {
 
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
   const [isPaymentMethodDialogOpen, setIsPaymentMethodDialogOpen] = useState(false);
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
@@ -394,7 +394,7 @@ export default function AdminPage() {
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up" });
   const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
-  const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days" });
+  const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
   const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
@@ -559,7 +559,8 @@ export default function AdminPage() {
     setIsUploading(true);
     try {
       await saveEvent({ ...eventForm, id: editingEvent?.id });
-      setIsEventDialogOpen(false);
+      setIsEditingEvent(false);
+      setEditingEvent(null);
       toast({ title: "Event Saved" });
     } finally { setIsUploading(false); }
   };
@@ -1360,73 +1361,144 @@ export default function AdminPage() {
 
           {activeView === 'events' && (
             <div className="space-y-12 animate-in fade-in duration-700">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
-                  <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                     <Button 
-                       variant="outline"
-                       onClick={() => { setBannerForm({ imageUrl: "", linkTo: "" }); setIsBannerDialogOpen(true); }}
-                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
-                     >
-                        <Plus size={18} /> New Banner
-                     </Button>
-                     <Button 
-                       onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }}
-                       className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
-                     >
-                        <Megaphone size={18} /> Create Event
-                     </Button>
-                  </div>
-               </div>
+               {isEditingEvent ? (
+                 <div className="space-y-10 animate-in slide-in-from-right-4 duration-500 max-w-4xl mx-auto pb-32">
+                    <div className="flex items-center gap-6">
+                       <Button variant="ghost" onClick={() => { setIsEditingEvent(false); setEditingEvent(null); }} className="rounded-2xl h-12 w-12 p-0">
+                          <ArrowLeft size={24} />
+                       </Button>
+                       <h2 className="text-3xl font-headline font-bold uppercase tracking-tight">
+                         {editingEvent ? 'Edit Event' : 'Create Live Event'}
+                       </h2>
+                    </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {events.map(e => (
-                    <Card key={e.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900 group">
-                       <div className="aspect-[16/10] relative">
-                          <Image src={e.thumbnailUrl} alt={e.title} fill className="object-cover" unoptimized />
-                          <div className="absolute top-4 left-4">
-                             <Badge className="bg-green-500 text-white border-none font-bold text-[8px] uppercase px-2 py-0.5">LIVE</Badge>
+                    <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                       <form onSubmit={handleSaveEvent} className="p-8 md:p-12 space-y-8">
+                          <div className="relative w-full aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+                             {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-xs font-black uppercase text-slate-400">Add Event Poster</span></>}
+                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'event')} />
                           </div>
-                          <div className="absolute top-4 right-4 flex gap-2">
-                             <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEventDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-blue-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
-                                <Edit size={14} />
-                             </button>
-                             <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
-                                <Trash2 size={14} />
-                             </button>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <SettingInput label="Event Title" value={eventForm.title} onChange={v => setEventForm({ ...eventForm, title: v })} placeholder="e.g. Hacker Store 2.0" />
+                             <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Event Type</Label>
+                                <Select value={eventForm.type} onValueChange={v => setEventForm({ ...eventForm, type: v as any })}>
+                                   <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                                      <SelectItem value="freefire_event" className="p-4 font-bold text-xs uppercase">Free Fire Event</SelectItem>
+                                      <SelectItem value="general" className="p-4 font-bold text-xs uppercase">General Promotion</SelectItem>
+                                   </SelectContent>
+                                </Select>
+                             </div>
                           </div>
-                       </div>
-                       <div className="p-6 md:p-8 space-y-4">
-                          <h4 className="font-headline font-bold text-xl uppercase truncate text-slate-900 dark:text-white">{e.title}</h4>
-                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.5rem]">{e.shortDescription}</p>
-                          <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest pt-2">
-                             <Clock size={14} />
-                             <span>ENDS {e.expiresAt ? format(new Date(e.expiresAt), "MMM d, HH:mm").toUpperCase() : "SOON"}</span>
+
+                          <SettingInput label="Short Description" value={eventForm.shortDescription} onChange={v => setEventForm({ ...eventForm, shortDescription: v })} placeholder="Appears on the home card" />
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <SettingInput label="Redirect Route (Optional)" value={eventForm.redirectRoute || ""} onChange={v => setEventForm({ ...eventForm, redirectRoute: v })} placeholder="e.g. /checkout?id=..." />
+                             <SettingInput label="Custom Button Text" value={eventForm.buttonText || ""} onChange={v => setEventForm({ ...eventForm, buttonText: v })} placeholder="e.g. iibso (Defaults to 'eeg')" />
                           </div>
-                       </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <SettingInput label="Duration (Value)" value={eventForm.duration} type="number" onChange={v => setEventForm({ ...eventForm, duration: v })} placeholder="e.g. 7" />
+                             <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Unit</Label>
+                                <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
+                                   <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                                      <SelectItem value="days" className="p-4 font-bold text-xs uppercase">Days</SelectItem>
+                                      <SelectItem value="hours" className="p-4 font-bold text-xs uppercase">Hours</SelectItem>
+                                      <SelectItem value="minutes" className="p-4 font-bold text-xs uppercase">Minutes</SelectItem>
+                                   </SelectContent>
+                                </Select>
+                             </div>
+                          </div>
+
+                          <div className="space-y-2">
+                             <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Detailed Content</Label>
+                             <Textarea value={eventForm.content} onChange={e => setEventForm({ ...eventForm, content: e.target.value })} placeholder="Full event article..." className="rounded-3xl bg-slate-50 dark:bg-slate-800 border-none min-h-[200px] p-8 font-medium shadow-inner" />
+                          </div>
+
+                          <div className="pt-8">
+                             <Button type="submit" disabled={isUploading} className="w-full h-16 md:h-24 rounded-3xl font-black text-xl md:text-3xl shadow-2xl uppercase tracking-widest bg-primary text-white active:scale-95 transition-all">
+                               {isUploading ? <Loader2 className="animate-spin w-10 h-10" /> : "Publish Event"}
+                             </Button>
+                          </div>
+                       </form>
                     </Card>
-                  ))}
-               </div>
+                 </div>
+               ) : (
+                 <div className="space-y-12">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
+                      <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                         <Button 
+                           variant="outline"
+                           onClick={() => { setBannerForm({ imageUrl: "", linkTo: "" }); setIsBannerDialogOpen(true); }}
+                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
+                         >
+                            <Plus size={18} /> New Banner
+                         </Button>
+                         <Button 
+                           onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" }); setIsEditingEvent(true); }}
+                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                         >
+                            <Megaphone size={18} /> Create Event
+                         </Button>
+                      </div>
+                   </div>
 
-               <div className="space-y-6 pt-12">
-                  <h4 className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.3em]">Slider Banners</h4>
-                  <div className="flex flex-wrap gap-4">
-                     {banners.map(b => (
-                        <div key={b.id} className="relative w-40 md:w-64 aspect-[3/1] rounded-2xl md:rounded-[1.5rem] overflow-hidden group shadow-lg">
-                           <Image src={b.imageUrl} alt="" fill className="object-cover" unoptimized />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
-                                 <Trash2 size={16} />
-                              </button>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {events.map(e => (
+                        <Card key={e.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900 group">
+                           <div className="aspect-[16/10] relative">
+                              <Image src={e.thumbnailUrl} alt={e.title} fill className="object-cover" unoptimized />
+                              <div className="absolute top-4 left-4">
+                                 <Badge className="bg-green-500 text-white border-none font-bold text-[8px] uppercase px-2 py-0.5">LIVE</Badge>
+                              </div>
+                              <div className="absolute top-4 right-4 flex gap-2">
+                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                    <Edit size={14} />
+                                 </button>
+                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                    <Trash2 size={14} />
+                                 </button>
+                              </div>
                            </div>
-                        </div>
-                     ))}
-                     {banners.length === 0 && (
-                        <div className="py-12 px-20 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[2rem] flex flex-col items-center gap-4 opacity-30 italic text-xs font-bold uppercase">
-                           No banners added
-                        </div>
-                     )}
-                  </div>
-               </div>
+                           <div className="p-6 md:p-8 space-y-4">
+                              <h4 className="font-headline font-bold text-xl uppercase truncate text-slate-900 dark:text-white">{e.title}</h4>
+                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.5rem]">{e.shortDescription}</p>
+                              <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest pt-2">
+                                 <Clock size={14} />
+                                 <span>ENDS {e.expiresAt ? format(new Date(e.expiresAt), "MMM d, HH:mm").toUpperCase() : "SOON"}</span>
+                              </div>
+                           </div>
+                        </Card>
+                      ))}
+                   </div>
+
+                   <div className="space-y-6 pt-12">
+                      <h4 className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.3em]">Slider Banners</h4>
+                      <div className="flex flex-wrap gap-4">
+                         {banners.map(b => (
+                            <div key={b.id} className="relative w-40 md:w-64 aspect-[3/1] rounded-2xl md:rounded-[1.5rem] overflow-hidden group shadow-lg">
+                               <Image src={b.imageUrl} alt="" fill className="object-cover" unoptimized />
+                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
+                                     <Trash2 size={16} />
+                                  </button>
+                               </div>
+                            </div>
+                         ))}
+                         {banners.length === 0 && (
+                            <div className="py-12 px-20 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[2rem] flex flex-col items-center gap-4 opacity-30 italic text-xs font-bold uppercase">
+                               No banners added
+                            </div>
+                         )}
+                      </div>
+                   </div>
+                 </div>
+               )}
             </div>
           )}
 
@@ -2201,56 +2273,6 @@ export default function AdminPage() {
               {productForm.category === 'booyah-pass' && <SettingInput label="Admin WhatsApp for Direct Sale" value={productForm.whatsappNumber || ""} onChange={v => setProductForm({ ...productForm, whatsappNumber: v })} placeholder="252613982172" />}
               <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest active:scale-[0.98] transition-all">
                 {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Package"}
-              </Button>
-           </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
-        <DialogContent className="max-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
-           <div className="h-2 bg-primary w-full" />
-           <DialogHeader className="p-6 md:p-10 pb-0">
-              <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
-                {editingEvent ? 'Edit Event' : 'Create Live Event'}
-              </DialogTitle>
-           </DialogHeader>
-           <form onSubmit={handleSaveEvent} className="p-6 md:p-10 space-y-6 md:space-y-8">
-              <div className="relative w-full aspect-video rounded-2xl md:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
-                 {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-10 h-10 md:w-12 md:h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Event Poster</span></>}
-                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'event')} />
-              </div>
-              <SettingInput label="Event Title" value={eventForm.title} onChange={v => setEventForm({ ...eventForm, title: v })} placeholder="Hacker Store 2.0" />
-              <SettingInput label="Short Description" value={eventForm.shortDescription} onChange={v => setEventForm({ ...eventForm, shortDescription: v })} placeholder="New legendary bundles are here!" />
-              <div className="space-y-2">
-                 <Label className="text-[9px] md:text-bold uppercase text-slate-400 ml-1">Event Type</Label>
-                 <Select value={eventForm.type} onValueChange={v => setEventForm({ ...eventForm, type: v as any })}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                       <SelectItem value="freefire_event" className="p-3 font-bold text-xs uppercase">Free Fire Event</SelectItem>
-                       <SelectItem value="general" className="p-3 font-bold text-xs uppercase">General Promotion</SelectItem>
-                    </SelectContent>
-                 </Select>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                 <SettingInput label="Duration (Value)" value={eventForm.duration} type="number" onChange={v => setEventForm({ ...eventForm, duration: v })} placeholder="7" />
-                 <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Unit</Label>
-                    <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
-                       <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
-                       <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                          <SelectItem value="days" className="p-3 font-bold uppercase text-xs uppercase">Days</SelectItem>
-                          <SelectItem value="hours" className="p-3 font-bold uppercase text-xs uppercase">Hours</SelectItem>
-                          <SelectItem value="minutes" className="p-3 font-bold uppercase text-xs uppercase">Minutes</SelectItem>
-                       </SelectContent>
-                    </Select>
-                 </div>
-              </div>
-              <div className="space-y-2">
-                 <Label className="text-[9px] md:text-black uppercase text-slate-400 ml-1">Detailed Content</Label>
-                 <Textarea value={eventForm.content} onChange={e => setEventForm({ ...eventForm, content: e.target.value })} placeholder="Write full event details here..." className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[120px] md:min-h-[150px] p-4 md:p-6 font-medium shadow-inner" />
-              </div>
-              <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest bg-primary text-white">
-                {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Publish Event"}
               </Button>
            </form>
         </DialogContent>

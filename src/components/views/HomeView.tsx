@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -173,7 +174,7 @@ export default function HomeView() {
             onClick={() => setActiveTab('ranking')} 
             className="w-full p-5 sm:p-10 md:p-14 rounded-[1.5rem] md:rounded-[3.5rem] bg-primary text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer shadow-xl active:scale-[0.98] transition-all relative overflow-hidden text-center md:text-left"
           >
-            <div className="flex items-center gap-5 sm:gap-8 flex-col md:flex-row relative z-10">
+            <div className="flex items-center gap-5 sm:gap-8 flex-col md:text-left relative z-10">
                <div className="w-14 h-14 sm:w-20 md:w-28 bg-white/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-white shrink-0 shadow-inner">
                   <Trophy className="w-7 h-7 sm:w-10 md:w-14" />
                </div>
@@ -222,9 +223,18 @@ function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel:
     return () => clearInterval(interval);
   }, [event.expiresAt]);
 
+  const handleAction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (event.redirectRoute) {
+      router.push(event.redirectRoute);
+    } else {
+      router.push(`/events/${event.id}`);
+    }
+  };
+
   return (
     <Card 
-      onClick={() => router.push(`/events/${event.id}`)}
+      onClick={handleAction}
       className="group overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-lg bg-white dark:bg-slate-900 transition-all hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
     >
       <div className="relative aspect-[16/9] w-full">
@@ -257,10 +267,10 @@ function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel:
           </div>
           <Button 
             variant="ghost" 
-            className="rounded-full h-8 md:h-10 px-3 md:px-6 font-bold text-[10px] md:text-sm hover:bg-primary/10 transition-all" 
-            onClick={(e) => { e.stopPropagation(); router.push(`/events/${event.id}`); }}
+            className="rounded-full h-8 md:h-10 px-3 md:px-6 font-bold text-[10px] md:text-sm hover:bg-primary/10 transition-all uppercase tracking-widest" 
+            onClick={handleAction}
           >
-            {viewLabel} <ChevronRight className="w-3 h-3 ml-0.5" />
+            {event.buttonText || viewLabel} <ChevronRight className="w-3 h-3 ml-0.5" />
           </Button>
         </div>
       </div>
@@ -288,7 +298,7 @@ function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: (
         </h3>
       </div>
 
-      <button className="h-full px-4 sm:px-6 md:px-10 lg:px-16 bg-primary text-white font-black text-xs sm:text-sm md:text-xl lg:text-3xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0 ml-auto">
+      <button className="h-full px-4 sm:px-6 md:px-10 lg:px-16 bg-primary text-white font-black text-xs sm:sm md:text-xl lg:text-3xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0 ml-auto">
         {buyLabel}
       </button>
     </Card>

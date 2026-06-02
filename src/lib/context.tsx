@@ -166,6 +166,8 @@ type GameEvent = {
   active: boolean;
   expiresAt?: number;
   createdAt: number;
+  redirectRoute?: string;
+  buttonText?: string;
 };
 
 type Banner = {
