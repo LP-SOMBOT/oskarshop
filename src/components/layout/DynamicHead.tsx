@@ -18,8 +18,8 @@ export default function DynamicHead() {
       metaTheme.setAttribute('content', theme === 'dark' ? '#0F172A' : '#0EA5E9');
     }
 
-    // Default Fallback Logo if none is set in storeSettings
-    const fallbackLogo = "https://files.catbox.moe/ywu4tl.jpg";
+    // Default Fallback Logo to the locally uploaded logo.png
+    const fallbackLogo = "/logo.png";
     const logo = storeSettings?.logo || fallbackLogo;
 
     // Update Browser Favicon and Touch Icons

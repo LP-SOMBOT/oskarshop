@@ -60,17 +60,13 @@ export default function PWAInstaller() {
         {/* App Icon with Gradient */}
         <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-[#6366F1] to-[#A855F7] rounded-[1.25rem] md:rounded-[1.75rem] flex items-center justify-center p-1.5 md:p-2.5 shrink-0 shadow-lg shadow-indigo-500/20">
           <div className="relative w-full h-full rounded-lg md:rounded-xl overflow-hidden bg-white flex items-center justify-center">
-            {storeSettings?.logo ? (
-              <Image 
-                src={storeSettings.logo} 
-                alt="Logo" 
-                fill 
-                className="object-cover" 
-                unoptimized 
-              />
-            ) : (
-              <Gamepad2 className="w-6 h-6 text-primary" />
-            )}
+            <Image 
+              src={storeSettings?.logo || "/logo.png"} 
+              alt="Logo" 
+              fill 
+              className="object-cover" 
+              unoptimized 
+            />
           </div>
         </div>
 
