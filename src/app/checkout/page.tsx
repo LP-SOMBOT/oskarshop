@@ -81,7 +81,7 @@ function CheckoutContent() {
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
   const initialPrice = useMemo(() => (storeDiscountedPrice > 0 && storeDiscountedPrice < basePrice) ? storeDiscountedPrice : basePrice, [storeDiscountedPrice, basePrice]);
 
-  const rankDiscount = useMemo(() => user?.leaderboardDiscount || 0, [user]);
+  const rankDiscount = user?.leaderboardDiscount || 0;
   const priceAfterRank = useMemo(() => {
     return initialPrice - (initialPrice * rankDiscount / 100);
   }, [initialPrice, rankDiscount]);
@@ -210,6 +210,8 @@ function CheckoutContent() {
   }
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
+
+  const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -346,10 +348,12 @@ function CheckoutContent() {
             <div className="bg-gray-50 dark:bg-slate-800/40 p-4 md:p-8 rounded-2xl md:rounded-[2rem] mb-6 md:mb-8 border border-gray-100 dark:border-white/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Lock size={40} className="md:size-[60px]" /></div>
               <div className="flex flex-col gap-3 relative z-10">
-                <div className="flex justify-between items-center text-sm md:text-lg">
-                   <span className="text-muted-foreground dark:text-slate-400 font-medium">{language === 'so' ? 'Qiimaha:' : 'Original Price:'}</span>
-                   <span className={cn("font-bold text-slate-900 dark:text-white", (initialPrice < basePrice || rankDiscount > 0) && "line-through opacity-40")}>${(basePrice || 0).toFixed(2)}</span>
-                </div>
+                {hasAnyDiscount && (
+                  <div className="flex justify-between items-center text-sm md:text-lg">
+                    <span className="text-muted-foreground dark:text-slate-400 font-medium">{language === 'so' ? 'Qiimaha:' : 'Original Price:'}</span>
+                    <span className={cn("font-bold text-slate-900 dark:text-white", (initialPrice < basePrice || rankDiscount > 0 || promoDiscount > 0) && "line-through opacity-40")}>${(basePrice || 0).toFixed(2)}</span>
+                  </div>
+                )}
                 
                 {rankDiscount > 0 && (
                   <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2 text-primary">
