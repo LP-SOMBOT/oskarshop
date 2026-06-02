@@ -174,6 +174,8 @@ type Banner = {
   linkTo?: string;
   active: boolean;
   createdAt: number;
+  title?: string;
+  description?: string;
 };
 
 type PaymentMethod = {
@@ -216,18 +218,10 @@ type StoreSettings = {
   };
   helpLinks?: {
     tutorialUrl?: string;
+    tutorialThumbnail?: string;
+    tutorialBannerActive?: boolean;
     whatsappNumber?: string;
     tiktokUrl?: string;
-  };
-  emailjs?: {
-    serviceId?: string;
-    templateId?: string;
-    publicKey?: string;
-  };
-  emailjs_verification?: {
-    serviceId?: string;
-    templateId?: string;
-    publicKey?: string;
   };
   lastResetMonth?: string; // Format: YYYY-MM
   leaderboard?: {

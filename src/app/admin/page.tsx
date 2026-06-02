@@ -78,7 +78,8 @@ import {
   GripVertical,
   Trophy,
   Save,
-  Info
+  Info,
+  Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -400,7 +401,7 @@ export default function AdminPage() {
   
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
   const [economyForm, setEconomyForm] = useState({ paymentNumber: "", listingFeeWeekly: 1.00, listingFeeMonthly: 3.00 });
-  const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
+  const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", tutorialThumbnail: "", tutorialBannerActive: false, whatsappNumber: "", tiktokUrl: "" });
   const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
   const [termsForm, setTermsForm] = useState({ en: "", so: "" });
   const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
@@ -451,7 +452,7 @@ export default function AdminPage() {
         listingFeeWeekly: storeSettings.config?.shop?.listingFeeWeekly || 1.00,
         listingFeeMonthly: storeSettings.config?.shop?.listingFeeMonthly || 3.00
       });
-      setHelpLinksForm(storeSettings.helpLinks || { tutorialUrl: "", whatsappNumber: "", tiktokUrl: "" });
+      setHelpLinksForm(storeSettings.helpLinks || { tutorialUrl: "", tutorialThumbnail: "", tutorialBannerActive: false, whatsappNumber: "", tiktokUrl: "" });
       setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
       setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
@@ -672,6 +673,7 @@ export default function AdminPage() {
       if (target === 'logo') setBrandForm(f => ({ ...f, logo: url }));
       if (target === 'offlineImage') setAppStatusForm(f => ({ ...f, offlineImageUrl: url }));
       if (target === 'paymentIcon') setPaymentMethodForm(f => ({ ...f, icon: url }));
+      if (target === 'tutorialThumbnail') setHelpLinksForm(f => ({ ...f, tutorialThumbnail: url }));
       toast({ title: "Media Uploaded" });
     } finally { setIsUploading(false); }
   };
@@ -1812,10 +1814,32 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-6 sm:space-y-10">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                 <SettingInput label="WhatsApp Support No" value={helpLinksForm.whatsappNumber} onChange={v => setHelpLinksForm(f => ({ ...f, whatsappNumber: v }))} placeholder="252613982172" />
-                                 <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tiktokUrl: v }))} placeholder="https://tiktok.com/@..." />
-                                 <SettingInput label="Tutorial Video URL" value={helpLinksForm.tutorialUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tutorialUrl: v }))} placeholder="https://youtube.com/..." />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 <div className="space-y-6">
+                                    <SettingInput label="WhatsApp Support No" value={helpLinksForm.whatsappNumber} onChange={v => setHelpLinksForm(f => ({ ...f, whatsappNumber: v }))} placeholder="252613982172" />
+                                    <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tiktokUrl: v }))} placeholder="https://tiktok.com/@..." />
+                                    <SettingInput label="Tutorial Video URL" value={helpLinksForm.tutorialUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tutorialUrl: v }))} placeholder="https://youtube.com/..." />
+                                 </div>
+                                 <div className="space-y-6">
+                                    <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-between border dark:border-white/5">
+                                       <div className="flex items-center gap-3">
+                                          <Video className={cn("w-5 h-5", helpLinksForm.tutorialBannerActive ? "text-primary" : "text-slate-400")} />
+                                          <div>
+                                             <p className="text-sm font-bold">Tutorial Banner</p>
+                                             <p className="text-[10px] text-muted-foreground font-medium">Show app guide on home slider</p>
+                                          </div>
+                                       </div>
+                                       <Switch checked={helpLinksForm.tutorialBannerActive} onCheckedChange={v => setHelpLinksForm(f => ({ ...f, tutorialBannerActive: v }))} />
+                                    </div>
+                                    <div className="space-y-3">
+                                       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Tutorial Thumbnail</Label>
+                                       <div className="relative aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center overflow-hidden shadow-inner group">
+                                          {helpLinksForm.tutorialThumbnail ? <Image src={helpLinksForm.tutorialThumbnail} alt="Tutorial" fill className="object-cover" /> : <ImageIcon className="text-slate-300 w-10 h-10" />}
+                                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'tutorialThumbnail')} />
+                                          {isUploading && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center"><Loader2 className="animate-spin" /></div>}
+                                       </div>
+                                    </div>
+                                 </div>
                               </div>
                               <Button onClick={() => updateStoreSettings({ helpLinks: helpLinksForm }).then(()=>toast({title:"Links Synced"}))} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-indigo-500 hover:bg-indigo-600">Save Communication Links</Button>
                            </div>
