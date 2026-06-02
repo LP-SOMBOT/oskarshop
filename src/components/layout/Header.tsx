@@ -16,19 +16,13 @@ export default function Header() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer">
           <div className="relative w-10 h-10 overflow-hidden rounded-xl">
-            {storeSettings?.logo ? (
-              <Image 
-                src={storeSettings.logo} 
-                alt="Oskar Shop Logo" 
-                fill 
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="w-full h-full bg-primary flex items-center justify-center text-white">
-                <Gamepad2 className="w-6 h-6" />
-              </div>
-            )}
+            <Image 
+              src={storeSettings?.logo || "/logo.png"} 
+              alt="Oskar Shop Logo" 
+              fill 
+              className="object-cover"
+              unoptimized
+            />
           </div>
           <span className="font-headline font-bold text-2xl tracking-tight">
             <span className="text-red-600">Oskar</span><span className="text-primary">Shop</span>

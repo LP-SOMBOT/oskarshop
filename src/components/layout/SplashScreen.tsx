@@ -41,22 +41,16 @@ export default function SplashScreen() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="relative w-32 h-32 animate-in zoom-in duration-700 ease-out">
-        {storeSettings?.logo ? (
-          <div className="relative w-full h-full p-2 bg-white rounded-[2.5rem] shadow-2xl shadow-primary/10 flex items-center justify-center overflow-hidden border border-slate-50">
-            <Image 
-              src={storeSettings.logo} 
-              alt="Oskar Shop" 
-              fill 
-              className="object-contain p-4"
-              priority
-              unoptimized
-            />
-          </div>
-        ) : (
-          <div className="w-full h-full bg-primary rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shadow-primary/20">
-            <Gamepad2 className="w-16 h-16" />
-          </div>
-        )}
+        <div className="relative w-full h-full p-2 bg-white rounded-[2.5rem] shadow-2xl shadow-primary/10 flex items-center justify-center overflow-hidden border border-slate-50">
+          <Image 
+            src={storeSettings?.logo || "/logo.png"} 
+            alt="Oskar Shop" 
+            fill 
+            className="object-contain p-4"
+            priority
+            unoptimized
+          />
+        </div>
       </div>
       
       <div className="mt-10 flex flex-col items-center gap-2 animate-in slide-in-from-bottom-4 duration-1000">
