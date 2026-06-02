@@ -1,18 +1,19 @@
 
 "use client";
 
-import { House, ShoppingBag, Package, User } from "lucide-react";
+import { House, ShoppingBag, ShieldCheck, Package, User } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 
 export default function BottomNav() {
-  const { activeTab, setActiveTab, storeSettings } = useApp();
+  const { activeTab, setActiveTab, storeSettings, t } = useApp();
 
   const navItems = [
-    { id: "home", label: "Home", icon: House },
-    { id: "games", label: "Top Up", icon: ShoppingBag },
-    { id: "orders", label: "Orders", icon: Package },
-    { id: "profile", label: "Profile", icon: User },
+    { id: "home", label: t('home'), icon: House },
+    { id: "games", label: t('games'), icon: ShoppingBag },
+    { id: "accounts", label: t('accounts'), icon: ShieldCheck },
+    { id: "orders", label: t('orders'), icon: Package },
+    { id: "profile", label: t('profile'), icon: User },
   ];
 
   const handleWhatsApp = () => {
@@ -23,16 +24,16 @@ export default function BottomNav() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden pointer-events-none">
       {/* WhatsApp Floating Button */}
-      <div className="absolute -top-24 right-6 pointer-events-auto">
+      <div className="absolute -top-20 right-6 pointer-events-auto">
         <button
           onClick={handleWhatsApp}
-          className="w-16 h-16 bg-[#00D95F] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,217,95,0.4)] active:scale-90 transition-transform"
+          className="w-14 h-14 bg-[#00D95F] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,217,95,0.4)] active:scale-90 transition-transform"
           aria-label="Contact on WhatsApp"
         >
           <svg 
             viewBox="0 0 24 24" 
-            width="34" 
-            height="34" 
+            width="30" 
+            height="30" 
             fill="currentColor" 
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -41,7 +42,7 @@ export default function BottomNav() {
         </button>
       </div>
 
-      <nav className="w-full h-[80px] bg-white border-t border-gray-100 flex items-center justify-around px-2 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] pointer-events-auto">
+      <nav className="w-full h-[75px] bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-white/5 flex items-center justify-around px-1 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] pointer-events-auto">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
@@ -50,23 +51,25 @@ export default function BottomNav() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className="flex flex-col items-center justify-center flex-1 h-full relative"
+              className="flex flex-col items-center justify-center flex-1 h-full relative group"
             >
               <div className={cn(
-                "transition-all duration-300",
-                isActive ? "text-[#2563EB]" : "text-[#94A3B8]"
+                "transition-all duration-300 transform",
+                isActive 
+                  ? "text-primary scale-110" 
+                  : "text-slate-400 dark:text-slate-500 group-active:scale-90"
               )}>
-                <Icon size={26} className={isActive ? "stroke-[2.5px]" : "stroke-[2px]"} />
+                <Icon size={24} className={isActive ? "stroke-[2.5px]" : "stroke-[2px]"} />
               </div>
               <span className={cn(
-                "text-[12px] font-bold mt-1 transition-all",
-                isActive ? "text-[#2563EB]" : "text-[#94A3B8]"
+                "text-[10px] sm:text-[11px] font-bold mt-1 transition-all uppercase tracking-tight",
+                isActive ? "text-primary" : "text-slate-400 dark:text-slate-500"
               )}>
                 {item.label}
               </span>
               
               {isActive && (
-                <div className="absolute bottom-1 w-1.5 h-1.5 bg-[#2563EB] rounded-full animate-in fade-in zoom-in duration-300" />
+                <div className="absolute bottom-1 w-1.5 h-1.5 bg-primary rounded-full animate-in fade-in zoom-in duration-300 shadow-[0_0_8px_rgba(37,99,235,0.6)]" />
               )}
             </button>
           );
