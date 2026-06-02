@@ -106,7 +106,12 @@ export default function HeroSlider() {
             
             {/* Content Overlay */}
             <div className="absolute bottom-6 left-6 right-6 md:bottom-12 md:left-12 max-w-xl animate-in fade-in slide-in-from-bottom-6 duration-700">
-               <div className="glass p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] space-y-2 md:space-y-4 border-white/20 shadow-2xl">
+               <div className={cn(
+                 "space-y-2 md:space-y-4 transition-all duration-500",
+                 slide.id === 'tutorial-slide' 
+                   ? "bg-transparent border-none shadow-none" 
+                   : "glass p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border-white/20 shadow-2xl"
+               )}>
                   <div className="flex items-center gap-2">
                      <Badge className="bg-primary text-white border-none rounded-full px-3 py-0.5 md:py-1 font-bold text-[8px] md:text-[10px] uppercase tracking-[0.2em]">
                         {slide.id === 'tutorial-slide' ? 'App Guide' : 'Promotion'}
@@ -120,7 +125,7 @@ export default function HeroSlider() {
                     {slide.title}
                   </h2>
                   
-                  <p className="text-[10px] md:text-lg text-white/80 font-medium line-clamp-2 max-w-sm md:max-w-none">
+                  <p className="text-[10px] md:text-lg text-white/80 font-medium line-clamp-2 max-w-sm md:max-w-none drop-shadow-md">
                     {slide.description}
                   </p>
                   
