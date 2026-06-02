@@ -376,7 +376,6 @@ function CheckoutContent() {
                   <div className="flex items-center gap-2"><span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">{t('final_total')}</span></div>
                   <div className="text-right">
                     <span className="text-2xl md:text-5xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
-                    <div className="flex items-center justify-end gap-1 text-[8px] md:text-[11px] text-green-600 dark:text-green-400 font-black uppercase tracking-widest mt-0.5 md:mt-1"><ShieldCheck size={10} className="md:w-3.5 md:h-3.5" /> Secure Rate</div>
                   </div>
                 </div>
               </div>
