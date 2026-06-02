@@ -551,11 +551,7 @@ const translations: Record<Language, Record<string, string>> = {
     points: "PTS",
     rank: "KAALINTA",
     admin_hub: "Admin panel",
-<<<<<<< HEAD
     restricted_access: "U gaar ah admin ka",
-=======
-    restricted_access: "Admin ka u gaar ah",
->>>>>>> 63d4f29f5e4256fbfc54aa783a94244943334158
     manage_orders: "Maamul dalabaadka iyo suuqa.",
     no_orders: "Wax dalab ah masameeynin.",
     no_orders_desc: "Dalabaadyadada halkaan ayeey kala socon kartaa.",
