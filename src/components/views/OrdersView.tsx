@@ -16,17 +16,21 @@ import {
   CreditCard,
   MessageCircle,
   Ticket,
-  Trophy
+  Trophy,
+  Lock
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function OrdersView() {
-  const { orders, isInitialLoading, setActiveTab, t } = useApp();
+  const { orders, isInitialLoading, setActiveTab, user, t } = useApp();
+  const router = useRouter();
 
   if (isInitialLoading) {
     return (
@@ -34,6 +38,33 @@ export default function OrdersView() {
         <div className="grid grid-cols-1 gap-8">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
         </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-32 px-4 py-20 flex flex-col items-center justify-center text-center space-y-8 page-transition">
+        <div className="relative">
+           <div className="absolute inset-0 bg-primary/20 rounded-full blur-[60px] animate-pulse" />
+           <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-xl border border-slate-100 dark:border-white/5">
+              <Lock size={48} className="text-primary" />
+           </div>
+        </div>
+        <div className="space-y-3">
+           <h3 className="text-xl sm:text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+             {t('login_to_view_orders')}
+           </h3>
+           <p className="text-sm sm:text-lg text-muted-foreground max-w-xs mx-auto font-medium">
+             {t('login_required_desc')}
+           </p>
+        </div>
+        <Button 
+          onClick={() => router.push('/login')}
+          className="h-14 px-10 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-white transition-all active:scale-95"
+        >
+          {t('login_button')}
+        </Button>
       </div>
     );
   }
@@ -87,7 +118,7 @@ function OrderCard({ order }: { order: any }) {
     pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
     processing: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
     successful: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400",
-    cancelled: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400"
+    cancelled: "bg-red-100 text-red-700 dark:bg-red-950/20 dark:text-red-400"
   };
 
   const StatusIcon = order.status === 'successful' ? CheckCircle2 : order.status === 'pending' ? Clock : order.status === 'processing' ? RefreshCw : XCircle;

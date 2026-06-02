@@ -518,7 +518,10 @@ const translations: Record<Language, Record<string, string>> = {
     holding: "Holding",
     rejected: "Rejected",
     sold: "Sold",
-    listing_flagged_fallback: "This account listing has been cancelled. Please contact OskarShop for more information."
+    listing_flagged_fallback: "This account listing has been cancelled. Please contact OskarShop for more information.",
+    login_to_view_orders: "Login to view your orders",
+    login_required_desc: "Sign in to access your purchase history and tracking details.",
+    login_button: "Login"
   },
   so: {
     home: "HOME",
@@ -651,7 +654,10 @@ const translations: Record<Language, Record<string, string>> = {
     holding: "Hada lama heli karo",
     rejected: "Lama aqbalin",
     sold: "Waa la iibiyay",
-    listing_flagged_fallback: "account listing kaan waala kansalay fadlan la xariir OskarShop waxii fahfahin ah"
+    listing_flagged_fallback: "account listing kaan waala kansalay fadlan la xariir OskarShop waxii fahfahin ah",
+    login_to_view_orders: "Login si aad dalabaadkaaga u arakto",
+    login_required_desc: "Soo gal si aad u gasho taariikhda iibsashada iyo faahfaahinta dhabta ah.",
+    login_button: "Login"
   }
 };
 
@@ -1161,6 +1167,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setProducts(sortedData);
       setCache(PRODUCTS_CACHE_KEY, sortedData);
       setSyncStatus(prev => ({ ...prev, products: true }));
+    });
+
+    onValue(accPostsRef, (s) => {
+      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
+      setAccountPosts(data);
+      setSyncStatus(prev => ({ ...prev, accPosts: true }));
     });
 
     onValue(accPostsRef, (s) => {
