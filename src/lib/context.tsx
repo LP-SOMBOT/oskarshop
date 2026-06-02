@@ -656,7 +656,7 @@ const translations: Record<Language, Record<string, string>> = {
     sold: "Waa la iibiyay",
     listing_flagged_fallback: "account listing kaan waala kansalay fadlan la xariir OskarShop waxii fahfahin ah",
     login_to_view_orders: "Login si aad dalabaadkaaga u arakto",
-    login_required_desc: "Soo gal si aad u gasho taariikhda iibsashada iyo faahfaahinta dhabta ah.",
+    login_required_desc: "Soo gal si aad u aragtid dalabaadkaagii ugu danbeeyay, ama ula socotid dalabaadyadada.",
     login_button: "Login"
   }
 };
