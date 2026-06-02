@@ -44,17 +44,25 @@ export default function Header() {
             </Link>
           ) : null}
 
-          <button 
-            onClick={() => setActiveTab('notifications')}
-            className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-          >
-            <Bell className="w-6 h-6" />
-            {unreadNotifs > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
-                {unreadNotifs > 9 ? '9+' : unreadNotifs}
-              </span>
-            )}
-          </button>
+          {user ? (
+            <button 
+              onClick={() => setActiveTab('notifications')}
+              className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+            >
+              <Bell className="w-6 h-6" />
+              {unreadNotifs > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
+                  {unreadNotifs > 9 ? '9+' : unreadNotifs}
+                </span>
+              )}
+            </button>
+          ) : (
+            <Link href="/login">
+              <Button variant="default" size="sm" className="rounded-full px-5 font-bold h-9">
+                Login
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
