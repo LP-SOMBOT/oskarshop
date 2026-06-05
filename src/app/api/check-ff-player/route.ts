@@ -18,8 +18,9 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Updated API endpoint provided by user
     const res = await fetch(
-      `https://ff-info-api-xyz.vercel.app/api/Flex-ff-Info?region=${region.toUpperCase()}&uid=${uid.trim()}`,
+      `https://ff-info-api-oskar.vercel.app/api/player?uid=${uid.trim()}&region=${region.toUpperCase()}`,
       {
         headers: { 'User-Agent': 'Mozilla/5.0' },
         signal: AbortSignal.timeout(12000),
@@ -35,14 +36,15 @@ export async function GET(request: Request) {
 
     const data = await res.json();
 
-    if (data?.basicInfo?.nickname) {
+    // Extracting AccountName as requested (checking both root and nested structures)
+    const nickname = data?.AccountName || data?.AccountInfo?.AccountName;
+
+    if (nickname) {
       return NextResponse.json({
         success: true,
-        nickname: data.basicInfo.nickname,
-        level: data.basicInfo.level || null,
-        region: data.basicInfo.region || region,
-        likes: data.basicInfo.liked || null,
-        clan: data.clanBasicInfo?.clanName || null,
+        nickname: nickname,
+        level: data?.AccountLevel || data?.AccountInfo?.AccountLevel || null,
+        region: data?.AccountRegion || data?.AccountInfo?.AccountRegion || region,
       });
     }
 

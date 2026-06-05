@@ -51,7 +51,7 @@ function CheckoutContent() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
-  // New Free Fire Auto-Detect States
+  // Free Fire Auto-Detect States
   const [ffUid, setFfUid] = useState('');
   const [ffPlayerName, setFfPlayerName] = useState('');
   const [ffRegion, setFfRegion] = useState('ME');
@@ -324,7 +324,7 @@ function CheckoutContent() {
                   )}>
                     {step > s ? <CheckCircle2 className="w-3.5 h-3.5 md:w-5 md:h-5" /> : s}
                   </div>
-                  <span className={cn("text-[7px] md:text-[10px] font-black uppercase tracking-widest text-center", step >= s ? "text-primary" : "text-gray-400 dark:text-gray-600")}>
+                  <span className={cn("text-[7px] md:text-[10px] font-black uppercase tracking-widest text-center", step >= s ? "text-primary" : "text-gray-400 dark:text-slate-600")}>
                     {s === 1 ? "Xogta" : s === 2 ? "Lacagta" : "Xaqiiji"}
                   </span>
                 </div>
@@ -385,7 +385,7 @@ function CheckoutContent() {
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
                       <div className="relative">
                         <Input 
-                          placeholder="Auto-detecting..." 
+                          placeholder={language === 'so' ? "Magaca game ka kugu qoran halkaa ayuu kasoo baxayaa" : "Auto-detecting..."} 
                           readOnly 
                           className={cn(
                             "h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 px-4 md:px-5 font-bold text-xs md:text-base transition-all",
