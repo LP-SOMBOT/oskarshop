@@ -79,7 +79,8 @@ import {
   Trophy,
   Save,
   Info,
-  Video
+  Video,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -396,7 +397,7 @@ export default function AdminPage() {
   const [enforceAction, setEnforceAction] = useState<'delete' | 'holding' | 'approved' | 'pending'>('delete');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: string } | null>(null);
 
-  const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up" });
+  const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
   const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
@@ -521,7 +522,7 @@ export default function AdminPage() {
 
   const handleOpenGameDialog = (game?: any) => {
     setEditingGame(game || null);
-    setGameForm(game ? { title: game.title, icon: game.icon || "", category: game.category } : { title: "", icon: "", category: "top-up" });
+    setGameForm(game ? { title: game.title, icon: game.icon || "", category: game.category, autoDetectName: !!game.autoDetectName } : { title: "", icon: "", category: "top-up", autoDetectName: false });
     setIsGameDialogOpen(true);
   };
 
@@ -1311,7 +1312,10 @@ export default function AdminPage() {
                                </div>
                                <div className="min-w-0">
                                   <h4 className="font-headline font-bold text-base sm:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">{g.title}</h4>
-                                  <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{g.category}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-60">{g.category}</p>
+                                    {g.autoDetectName && <Badge className="bg-primary/10 text-primary border-none text-[7px] uppercase font-black px-1.5 h-4">Auto Detect</Badge>}
+                                  </div>
                                </div>
                             </div>
                             <div className="flex flex-col gap-3 shrink-0">
@@ -2193,7 +2197,7 @@ export default function AdminPage() {
                       className="h-12 md:h-16 rounded-xl md:rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-4 md:px-6 text-base md:text-lg focus:ring-2 focus:ring-primary" 
                     />
                     <Button onClick={() => handleAdjustPoints('credit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20 shrink-0"><ArrowUpCircle size={24} className="md:size-7" /></Button>
-                    <Button onClick={() => handleAdjustPoints('debit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={24} className="md:size-7" /></Button>
+                    <Button onClick={() => handleAdjustPoints('debit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-red-50 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={24} className="md:size-7" /></Button>
                  </div>
               </div>
 
@@ -2247,6 +2251,10 @@ export default function AdminPage() {
                        <SelectItem value="accounts" className="p-3 font-bold text-xs">Account Marketplace</SelectItem>
                     </SelectContent>
                  </Select>
+              </div>
+              <div className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                 <Label className="font-bold text-sm">Auto Detect Name</Label>
+                 <Switch checked={gameForm.autoDetectName} onCheckedChange={v => setGameForm(f => ({ ...f, autoDetectName: v }))} />
               </div>
               <Button type="submit" disabled={isUploading} className="w-full h-12 md:h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Save Collection"}</Button>
            </form>
@@ -2485,8 +2493,9 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
   };
 
   const handleCopyPlayerId = () => {
-    if (order.gameDetails?.playerID) {
-      navigator.clipboard.writeText(order.gameDetails.playerID);
+    const pid = order.ffUid || order.gameDetails?.playerID;
+    if (pid) {
+      navigator.clipboard.writeText(pid);
       toast({ title: "Player ID Copied" });
     }
   };
@@ -2536,12 +2545,26 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-             <InsightStat label="Player ID" value={order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={ order.gameDetails?.playerID && ( <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> ) } />
-             <InsightStat label="In-Game Name" value={order.gameDetails?.playerName || "N/A"} icon={User} />
+             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={ (order.ffUid || order.gameDetails?.playerID) && ( <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> ) } />
+             <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                   <User size={14} className="opacity-40" />
+                   <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
+                </div>
+                <div className="flex items-center gap-2">
+                   <p className="text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || "N/A"}</p>
+                   {order.ffVerified ? (
+                     <Badge className="bg-green-100 text-green-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Verified</Badge>
+                   ) : order.ffUid ? (
+                     <Badge className="bg-amber-100 text-amber-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
+                   ) : null}
+                </div>
+             </div>
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
              <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={ order.gameDetails?.whatsappNumber && ( <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> ) } />
              <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
+             {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
              {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
           </div>

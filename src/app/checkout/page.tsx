@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -19,7 +20,8 @@ import {
   Lock,
   Tag,
   DollarSign,
-  Ticket
+  Ticket,
+  UserCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +51,14 @@ function CheckoutContent() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
+  // New Free Fire Auto-Detect States
+  const [ffUid, setFfUid] = useState('');
+  const [ffPlayerName, setFfPlayerName] = useState('');
+  const [ffRegion, setFfRegion] = useState('ME');
+  const [checking, setChecking] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [lookupError, setLookupError] = useState('');
+
   const [gameDetails, setGameDetails] = useState({
     playerID: "",
     playerName: "",
@@ -60,7 +70,7 @@ function CheckoutContent() {
     if (!storeSettings.paymentMethods) return [];
     return Object.entries(storeSettings.paymentMethods)
       .map(([id, m]) => ({ ...m, id }))
-      .filter(m => m.active);
+      .filter(m => (m as any).active);
   }, [storeSettings.paymentMethods]);
 
   useEffect(() => {
@@ -76,6 +86,52 @@ function CheckoutContent() {
   const game = useMemo(() => {
     return (games || []).find(g => g.id === item?.gameId);
   }, [games, item?.gameId]);
+
+  const isAutoDetectEnabled = !!game?.autoDetectName;
+
+  // Debounced auto-detection for Free Fire
+  useEffect(() => {
+    if (!isAutoDetectEnabled) return;
+    
+    if (!ffUid || ffUid.trim().length < 5) {
+      setFfPlayerName('');
+      setVerified(false);
+      setLookupError('');
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setChecking(true);
+      setVerified(false);
+      setLookupError('');
+      setFfPlayerName('');
+      try {
+        const res = await fetch(
+          `/api/check-ff-player?uid=${ffUid.trim()}&region=${ffRegion}`
+        );
+        const data = await res.json();
+        if (data.success && data.nickname) {
+          setFfPlayerName(data.nickname);
+          setVerified(true);
+          setLookupError('');
+          // Update base gameDetails as well
+          setGameDetails(prev => ({ ...prev, playerName: data.nickname, playerID: ffUid.trim() }));
+        } else {
+          setFfPlayerName('');
+          setVerified(false);
+          setLookupError(data.message || 'Player not found. Check your UID.');
+        }
+      } catch {
+        setFfPlayerName('');
+        setVerified(false);
+        setLookupError('Could not verify. Check your ID manually.');
+      } finally {
+        setChecking(false);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [ffUid, ffRegion, isAutoDetectEnabled]);
 
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
@@ -127,11 +183,16 @@ function CheckoutContent() {
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (gameDetails.playerName.trim().length < 4) {
-      toast({ title: "Magaca wuu gaabanyahay", description: "Magaca game-ka waa inuu ugu yaraan ka koobnaadaa 4 xaraf.", variant: "destructive" });
+    
+    // For auto-detect games, use ffUid
+    const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
+    const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
+
+    if (effectivePlayerName.trim().length < 2) {
+      toast({ title: "Magaca wuu gaabanyahay", description: "Magaca game-ka waa qasab.", variant: "destructive" });
       return;
     }
-    if (gameDetails.playerID.length < 5) {
+    if (effectivePlayerID.length < 5) {
       toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah (ugu yaraan 5 nambar).", variant: "destructive" });
       return;
     }
@@ -149,14 +210,17 @@ function CheckoutContent() {
   };
 
   const handleBooyahRedirect = () => {
-    if (gameDetails.playerName.trim().length < 4) { toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" }); return; }
-    if (gameDetails.playerID.length < 5) { toast({ title: "Game ID khaldan", variant: "destructive" }); return; }
+    const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
+    const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
+
+    if (effectivePlayerName.trim().length < 2) { toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" }); return; }
+    if (effectivePlayerID.length < 5) { toast({ title: "Game ID khaldan", variant: "destructive" }); return; }
     const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
     const cleanSender = gameDetails.senderNumber.replace(/\D/g, '');
     if (cleanWhatsapp.length < 9 || cleanSender.length < 9) { toast({ title: "Fadlan geli number-ada saxda ah (9+ nambar)", variant: "destructive" }); return; }
     
     const adminWa = formatWhatsAppNumber(item?.whatsappNumber || "252613982172");
-    const message = `Asc, Oskar Shop.\nWaxaan rabaa Booyah Pass: *${item?.title}*\nQiimaha: *$${total.toFixed(2)}*\n\n*Xogta Dalabka:*\nGame ID: ${gameDetails.playerID}\nin-Game name: ${gameDetails.playerName}\nWhatsApp: ${gameDetails.whatsappNumber}\nLacag Diraha: ${gameDetails.senderNumber}\n\nFadlan ila soo xiriir.`;
+    const message = `Asc, Oskar Shop.\nWaxaan rabaa Booyah Pass: *${item?.title}*\nQiimaha: *$${total.toFixed(2)}*\n\n*Xogta Dalabka:*\nGame ID: ${effectivePlayerID}\nin-Game name: ${effectivePlayerName}\nWhatsApp: ${gameDetails.whatsappNumber}\nLacag Diraha: ${gameDetails.senderNumber}\n\nFadlan ila soo xiriir.`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${adminWa}?text=${encoded}`, '_blank');
     setIsSuccess(true);
@@ -179,7 +243,24 @@ function CheckoutContent() {
     setGlobalLoading(true);
     const purchaseItem = { id: item.id, title: item.title, price: total, quantity: 1, gameId: item.gameId, thumbnail: item.thumbnail };
     const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId);
-    const finalDetails = { ...gameDetails, gameTitle: game?.title || "Unknown Game", itemTitle: item.title, category: isFreeFire ? "Free Fire" : isBloodStrike ? "Blood Strike" : "General" };
+    
+    const finalDetails = { 
+      ...gameDetails, 
+      playerName: isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName,
+      playerID: isAutoDetectEnabled ? ffUid : gameDetails.playerID,
+      gameTitle: game?.title || "Unknown Game", 
+      itemTitle: item.title, 
+      category: isFreeFire ? "Free Fire" : isBloodStrike ? "Blood Strike" : "General" 
+    };
+
+    // Add auto-detect specific data for the order record
+    if (isAutoDetectEnabled) {
+      (finalDetails as any).ffUid = ffUid.trim();
+      (finalDetails as any).ffPlayerName = ffPlayerName;
+      (finalDetails as any).ffVerified = verified;
+      (finalDetails as any).ffRegion = ffRegion;
+    }
+
     createOrder(selectedMethod?.name || "Mobile Payment", finalDetails, purchaseItem, appliedPromoCode || undefined);
     
     setTimeout(() => {
@@ -210,8 +291,11 @@ function CheckoutContent() {
   }
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
-
   const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
+
+  // Submit button disabled logic
+  const isLookupFailure = lookupError.includes("Could not verify");
+  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isLookupFailure);
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -283,14 +367,54 @@ function CheckoutContent() {
               </div>
 
               <div className="space-y-3 md:space-y-4">
-                <div className="space-y-1 md:space-y-2">
-                  <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">in-game name</Label>
-                  <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
-                </div>
-                <div className="space-y-1 md:space-y-2">
-                  <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">{isBooyahPass ? "Game id" : (isFreeFire ? "Game UID" : "Game ID")}</Label>
-                  <Input placeholder={isBooyahPass ? "Geli ID Ga game kugu qoran" : (isFreeFire ? "Geli ID-Ga game ka kugu qoran" : "Geli ID game ka kugu qoran")} required type="tel" inputMode="numeric" className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerID} onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value.replace(/\D/g, '')})} />
-                </div>
+                {isAutoDetectEnabled ? (
+                  <>
+                    <div className="space-y-1 md:space-y-2">
+                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
+                      <Input 
+                        placeholder="Tusaale: 5783204760" 
+                        required 
+                        type="tel" 
+                        inputMode="numeric" 
+                        className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                        value={ffUid} 
+                        onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
+                      />
+                    </div>
+                    <div className="space-y-1 md:space-y-2">
+                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
+                      <div className="relative">
+                        <Input 
+                          placeholder="Auto-detecting..." 
+                          readOnly 
+                          className={cn(
+                            "h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 px-4 md:px-5 font-bold text-xs md:text-base transition-all",
+                            checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
+                          )} 
+                          value={ffPlayerName} 
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
+                           {checking && <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-slate-400" />}
+                           {verified && <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-green-500" />}
+                           {lookupError && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
+                        </div>
+                      </div>
+                      {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Verified</p>}
+                      {lookupError && <p className="text-[10px] font-bold text-red-500 ml-1">{lookupError}</p>}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-1 md:space-y-2">
+                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">in-game name</Label>
+                      <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
+                    </div>
+                    <div className="space-y-1 md:space-y-2">
+                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">{isFreeFire ? "Game UID" : "Game ID"}</Label>
+                      <Input placeholder={isFreeFire ? "Geli ID-Ga game ka kugu qoran" : "Geli ID game ka kugu qoran"} required type="tel" inputMode="numeric" className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerID} onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value.replace(/\D/g, '')})} />
+                    </div>
+                  </>
+                )}
                 <div className="space-y-1 md:space-y-2">
                   <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">WhatsApp Number</Label>
                   <Input type="tel" placeholder="Geli WhatsApp number kaaga" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.whatsappNumber} onChange={(e) => setGameDetails({...gameDetails, whatsappNumber: e.target.value})} />
@@ -303,12 +427,26 @@ function CheckoutContent() {
                 <p className="text-[8px] md:text-[11px] text-muted-foreground dark:text-slate-500 font-medium italic ml-1">* Number-kan waxaa loo isticmaali doonaa in lagu hubiyo lacag bixintaada.</p>
               </div>
 
-              <Button type="button" onClick={isBooyahPass ? handleBooyahRedirect : handleDetailsSubmit} className="w-full h-13 md:h-16 rounded-xl md:rounded-2xl text-sm md:text-xl font-bold gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all">{isBooyahPass ? "iibso" : "Continue to Payment"} {isBooyahPass ? <MessageCircle className="w-4 h-4 md:w-6 md:h-6" /> : <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />}</Button>
+              {isLookupFailure && (
+                <p className="text-[10px] md:text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200">
+                  ⚠️ Auto-detect unavailable. Double-check your Game ID. No refunds for wrong IDs.
+                </p>
+              )}
+
+              <Button 
+                type="button" 
+                onClick={isBooyahPass ? handleBooyahRedirect : handleDetailsSubmit} 
+                disabled={isSubmitDisabled}
+                className="w-full h-13 md:h-16 rounded-xl md:rounded-2xl text-sm md:text-xl font-bold gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all"
+              >
+                {isBooyahPass ? "iibso" : "Continue to Payment"} {isBooyahPass ? <MessageCircle className="w-4 h-4 md:w-6 md:h-6" /> : <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />}
+              </Button>
             </form>
           </CardContent>
         </Card>
       </div>
 
+      {/* Payment Step */}
       <div className={cn("transition-all duration-300 transform", step === 2 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute inset-0")}>
         <Card className="rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl border-none p-0.5 md:p-2 bg-white dark:bg-slate-900">
           <CardHeader className="p-4 md:p-8">
@@ -398,6 +536,7 @@ function CheckoutContent() {
         </Card>
       </div>
 
+      {/* Confirmation Step */}
       <div className={cn("transition-all duration-300 transform", step === 3 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute inset-0")}>
         <Card className="rounded-[1.5rem] md:rounded-[3.5rem] shadow-2xl border-none p-3 md:p-8 text-center bg-white dark:bg-slate-900">
           <CardContent className="pt-6 md:pt-10">
@@ -408,7 +547,7 @@ function CheckoutContent() {
               <div className="flex justify-between font-bold text-sm md:text-xl mb-2.5 md:mb-4 dark:text-white"><span>Wadarta dhabta ah</span><span className="text-primary font-headline text-lg md:text-3xl">${total.toFixed(2)}</span></div>
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Lacag Diraha:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.senderNumber}</span></div>
-                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Player ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.playerID}</span></div>
+                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Player ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{isAutoDetectEnabled ? ffUid : gameDetails.playerID}</span></div>
               </div>
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">

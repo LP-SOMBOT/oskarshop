@@ -47,6 +47,7 @@ type Game = {
   icon: string;
   category: 'top-up' | 'accounts';
   createdAt: number;
+  autoDetectName?: boolean;
 };
 
 type CartItem = {
@@ -81,6 +82,10 @@ type Order = {
   promoCode?: string;
   rank?: number;
   rankDiscount?: number;
+  ffUid?: string;
+  ffPlayerName?: string;
+  ffVerified?: boolean;
+  ffRegion?: string;
 };
 
 type AccountPost = {
@@ -1024,6 +1029,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     if (promoCode) newOrder.promoCode = promoCode;
     
+    // Add verification details if present in gameDetails
+    if (gameDetails.ffUid) {
+      newOrder.ffUid = gameDetails.ffUid;
+      newOrder.ffPlayerName = gameDetails.ffPlayerName;
+      newOrder.ffVerified = gameDetails.ffVerified;
+      newOrder.ffRegion = gameDetails.ffRegion;
+    }
+    
     await set(ref(rtdb, `orders/${orderId}`), newOrder);
 
     if (promoCode) {
@@ -1169,12 +1182,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setProducts(sortedData);
       setCache(PRODUCTS_CACHE_KEY, sortedData);
       setSyncStatus(prev => ({ ...prev, products: true }));
-    });
-
-    onValue(accPostsRef, (s) => {
-      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
-      setAccountPosts(data);
-      setSyncStatus(prev => ({ ...prev, accPosts: true }));
     });
 
     onValue(accPostsRef, (s) => {
@@ -1827,7 +1834,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const associatedProducts = products.filter(p => p.gameId === id);
     const updates: any = {};
     associatedProducts.forEach(p => updates[`products/${p.id}`] = null);
-    await update(ref(rtdb), updates);
+    await update(ref(rtdb), dbUpdates);
   }, [rtdb, products]);
 
   const saveProduct = useCallback(async (p: any) => {
