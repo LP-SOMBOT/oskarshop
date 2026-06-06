@@ -74,8 +74,12 @@ export default function HomeView() {
   }
 
   const handleGameRedirect = (gameId: string) => {
-    setActiveTab('games');
-    window.location.hash = `#games-${gameId}`;
+    setGlobalLoading(true);
+    // Use a small timeout to allow the loader to appear before hash change
+    setTimeout(() => {
+      window.location.hash = `games-${gameId}`;
+      setGlobalLoading(false);
+    }, 150);
   };
 
   return (
@@ -99,7 +103,7 @@ export default function HomeView() {
             >
               <X className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto">
+            <div className="flex items-center gap-4 md:gap-8 w-full md:auto">
               <div className="relative shrink-0">
                 <div className="w-14 h-14 md:w-20 md:h-20 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center ring-4 ring-red-50 dark:ring-red-950/20">
                   <Radio className="w-6 h-6 md:w-10 md:h-10 text-red-500 animate-pulse" />
