@@ -488,9 +488,10 @@ function CheckoutContent() {
                 type="button" 
                 onClick={isBooyahPass ? handleBooyahRedirect : handleDetailsSubmit} 
                 disabled={isSubmitDisabled}
-                className="w-full h-13 md:h-16 rounded-xl md:rounded-2xl text-sm md:text-xl font-bold gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all"
+                className="w-full h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] text-base md:text-2xl font-bold gap-3 shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest mt-4"
               >
-                {isBooyahPass ? "iibso" : "Continue to Payment"} {isBooyahPass ? <MessageCircle className="w-4 h-4 md:w-6 md:h-6" /> : <ChevronRight className="w-4 h-4 md:w-6 md:h-6" />}
+                {isBooyahPass ? "iibso" : "Continue to Payment"} 
+                {isBooyahPass ? <MessageCircle className="w-5 h-5 md:w-8 md:h-8" /> : <ChevronRight className="w-5 h-5 md:w-8 md:h-8" />}
               </Button>
             </form>
           </CardContent>
