@@ -80,7 +80,9 @@ import {
   Save,
   Info,
   Video,
-  UserCheck
+  UserCheck,
+  Globe,
+  BellRing
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -411,6 +413,7 @@ export default function AdminPage() {
   const [termsForm, setTermsForm] = useState({ en: "", so: "" });
   const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
   const [emailjsVerificationForm, setEmailjsVerificationForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
+  const [telegramForm, setTelegramForm] = useState({ telegramBotToken: "", telegramAdminChatIds: "" });
 
   const [leaderboardForm, setLeaderboardForm] = useState({
     rewardsActive: true,
@@ -462,6 +465,10 @@ export default function AdminPage() {
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
       setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
       setEmailjsVerificationForm(storeSettings.emailjs_verification || { serviceId: "", templateId: "", publicKey: "" });
+      setTelegramForm({
+        telegramBotToken: storeSettings.telegramBotToken || "",
+        telegramAdminChatIds: storeSettings.telegramAdminChatIds || ""
+      });
       
       const lb = storeSettings.leaderboard || {
         rewardsActive: true,
@@ -714,6 +721,16 @@ export default function AdminPage() {
         leaderboard: finalLeaderboard
       });
       toast({ title: "Leaderboard Updated", description: "Rewards settings have been updated live." });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
+  const handleSaveTelegram = async () => {
+    setIsSavingStatus(true);
+    try {
+      await updateStoreSettings(telegramForm);
+      toast({ title: "Telegram Config Synced", description: "Alerts will now use these credentials." });
     } finally {
       setIsSavingStatus(false);
     }
@@ -1632,7 +1649,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'users' && (
-            <div className="space-y-8 animate-in fade-in duration-700">
+            <div className="space-y-8 fade-in duration-700">
                <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
                   <div className="relative w-full lg:w-96">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -1899,6 +1916,48 @@ export default function AdminPage() {
                      </Card>
                   </AccordionItem>
 
+                  <AccordionItem value="telegram" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-primary">
+                              <BellRing className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Notification Center</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Telegram Bot & Admin Alerts</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-6 sm:space-y-8">
+                              <div className="p-4 sm:p-6 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20">
+                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-primary dark:text-blue-300">
+                                    <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                                    Connect your Telegram Bot to receive real-time order alerts. Use @userinfobot to get Chat IDs.
+                                 </p>
+                              </div>
+                              <div className="grid grid-cols-1 gap-6">
+                                 <SettingInput 
+                                   label="Telegram Bot Token" 
+                                   value={telegramForm.telegramBotToken} 
+                                   onChange={v => setTelegramForm(f => ({ ...f, telegramBotToken: v }))} 
+                                   placeholder="8817771628:AA..." 
+                                 />
+                                 <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Admin Chat IDs (Comma Separated)</Label>
+                                    <Textarea 
+                                      value={telegramForm.telegramAdminChatIds} 
+                                      onChange={e => setTelegramForm(f => ({ ...f, telegramAdminChatIds: e.target.value }))} 
+                                      className="min-h-[100px] rounded-3xl bg-slate-50 dark:bg-slate-800 border-none p-6 font-bold shadow-inner" 
+                                      placeholder="8105182517, 123456789" 
+                                    />
+                                 </div>
+                              </div>
+                              <Button onClick={handleSaveTelegram} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">Sync Telegram Config</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
                   <AccordionItem value="communication" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                         <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
@@ -2072,7 +2131,7 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-6 sm:space-y-8">
-                              <div className="p-4 sm:p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl border border-purple-100 dark:border-purple-900/30">
+                              <div className="p-4 sm:p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl border border-purple-100 dark:border-blue-900/30">
                                  <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-purple-700 dark:text-blue-300">
                                     <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
                                     These keys allow the application to send password reset codes.

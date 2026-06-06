@@ -214,6 +214,8 @@ type StoreSettings = {
   onboardingImages?: string[];
   sliderImages?: string[]; 
   paymentMethods?: Record<string, PaymentMethod>;
+  telegramBotToken?: string;
+  telegramAdminChatIds?: string;
   termsAndConditions?: {
     en?: string;
     so?: string;
@@ -1047,6 +1049,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
+    // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
+    fetch('/api/notify-telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: orderId,
+        customerName: gameDetails.playerName || userProfile?.name || 'Guest',
+        customerPhone: gameDetails.whatsappNumber || userProfile?.phoneNumber || 'N/A',
+        itemName: directItem.title,
+        amount: directItem.price,
+        ffUid: gameDetails.ffUid || null,
+        ffPlayerName: gameDetails.ffPlayerName || null,
+        promoCode: promoCode || null,
+        discount: userProfile?.leaderboardDiscount || null,
+      }),
+    }).catch(() => {});
+
     // Trigger SERVER-SIDE admin notification
     fetch('/api/notify-new-order', {
       method: 'POST',
@@ -1406,6 +1425,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
     
+    // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
+    const listingFee = data.fee || 0;
+    fetch('/api/notify-telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId: postRef.key,
+        customerName: enhancedUser?.name || 'Seller',
+        customerPhone: enhancedUser?.phoneNumber || 'N/A',
+        itemName: `${data.gameType} Account Listing`,
+        amount: listingFee,
+        ffUid: null,
+        ffPlayerName: null,
+      }),
+    }).catch(() => {});
+
     // Server-side notify admins
     fetch('/api/notify-new-order', {
       method: 'POST',
@@ -1832,8 +1867,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb) return;
     await remove(ref(rtdb, `games/${id}`));
     const associatedProducts = products.filter(p => p.gameId === id);
-    const updates: any = {};
-    associatedProducts.forEach(p => updates[`products/${p.id}`] = null);
+    const dbUpdates: any = {};
+    associatedProducts.forEach(p => dbUpdates[`products/${p.id}`] = null);
     await update(ref(rtdb), dbUpdates);
   }, [rtdb, products]);
 
