@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -417,13 +416,46 @@ function CheckoutContent() {
                 )}
                 <div className="space-y-1 md:space-y-2">
                   <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">WhatsApp Number</Label>
-                  <Input type="tel" placeholder="Geli WhatsApp number kaaga" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.whatsappNumber} onChange={(e) => setGameDetails({...gameDetails, whatsappNumber: e.target.value})} />
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                      <span className="font-bold text-[10px] md:text-sm text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                    </div>
+                    <Input 
+                      type="tel" 
+                      placeholder="613982172" 
+                      required 
+                      className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-16 md:pl-20 pr-4 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                      value={gameDetails.whatsappNumber} 
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        const normalized = val.startsWith('0') ? val.substring(1) : val;
+                        setGameDetails({...gameDetails, whatsappNumber: normalized.substring(0, 9)});
+                      }} 
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-1.5 md:space-y-2 pt-4 md:pt-5 border-t dark:border-white/5">
                 <Label htmlFor="sender" className="text-[10px] md:text-sm font-bold flex items-center gap-1.5 md:gap-2 text-primary ml-1"><CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4" /> Lacag Diraha</Label>
-                <Input id="sender" type="tel" placeholder="Geli number ka lacagta kasoo direesid" required className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-base md:text-xl dark:text-white" value={gameDetails.senderNumber} onChange={(e) => setGameDetails({...gameDetails, senderNumber: e.target.value})} />
+                <div className="relative">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                    <span className="font-bold text-sm md:text-lg text-gray-400 border-r border-gray-200 pr-3">+252</span>
+                  </div>
+                  <Input 
+                    id="sender" 
+                    type="tel" 
+                    placeholder="613982172" 
+                    required 
+                    className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-base md:text-xl dark:text-white pl-16 md:pl-24 pr-4 md:pr-6" 
+                    value={gameDetails.senderNumber} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      const normalized = val.startsWith('0') ? val.substring(1) : val;
+                      setGameDetails({...gameDetails, senderNumber: normalized.substring(0, 9)});
+                    }} 
+                  />
+                </div>
                 <p className="text-[8px] md:text-[11px] text-muted-foreground dark:text-slate-500 font-medium italic ml-1">* Number-kan waxaa loo isticmaali doonaa in lagu hubiyo lacag bixintaada.</p>
               </div>
 
@@ -558,6 +590,7 @@ function CheckoutContent() {
         </Card>
       </div>
 
+      {/* Success Step */}
       <div className={cn("transition-all duration-700 transform", step === 4 ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-95 pointer-events-none absolute inset-0")}>
         <div className="py-6 md:py-16 flex flex-col items-center text-center px-2">
           <div className="relative mb-6 md:mb-12">
