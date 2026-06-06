@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -42,9 +41,13 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
   const router = useRouter();
-  const { accountPosts, user, orders, buyAccountPost, reportAccountOutcome, language } = useApp();
+  const { accountPosts, user, orders, buyAccountPost, reportAccountOutcome, language, setGlobalLoading } = useApp();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGlobalLoading(false);
+  }, [setGlobalLoading]);
 
   const post = useMemo(() => {
     return (accountPosts || []).find(p => p.id === id);
@@ -110,7 +113,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen pb-32 bg-slate-50 dark:bg-transparent page-transition overflow-x-hidden">
       <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b dark:border-white/5 h-14 md:h-16 flex items-center px-4 md:px-6 justify-between">
          <div className="flex items-center gap-2 md:gap-4">
-            <button onClick={() => router.push('/#accounts')} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-90"><ArrowLeft size={20} className="md:w-6 md:h-6" /></button>
+            <button onClick={() => { setGlobalLoading(true); router.push('/#accounts'); }} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-90"><ArrowLeft size={20} className="md:w-6 md:h-6" /></button>
             <h1 className="text-base md:text-lg font-headline font-bold">Details</h1>
          </div>
          <button onClick={handleShare} className="p-2 text-primary bg-primary/10 rounded-full active:scale-90 transition-transform"><Share2 size={18} className="md:w-5 md:h-5" /></button>
@@ -203,7 +206,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                           <CheckCircle2 size={28} className="md:w-8 md:h-8" />
                         </div>
                         <h4 className="font-bold text-base md:text-lg">Mahadsanid!</h4>
-                        <p className="text-[10px] md:text-xs text-muted-foreground max-w-[200px] md:max-w-none">Waad ku guuleysatay iibsiga. Admin-ka ayaa hadda hubinaya dalabkaaga.</p>
+                        <p className="text-[10px] md:text-xs text-muted-foreground max-w-[200px] md:max-w-none">Waad ku guuleystay iibsiga. Admin-ka ayaa hadda hubinaya dalabkaaga.</p>
                       </div>
                     ) : (
                       <>

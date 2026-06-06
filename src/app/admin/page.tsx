@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -359,7 +358,8 @@ export default function AdminPage() {
     logout,
     isInitialLoading,
     refreshAdminData,
-    resetLeaderboard
+    resetLeaderboard,
+    setGlobalLoading
   } = useApp();
 
   const router = useRouter();
@@ -443,6 +443,11 @@ export default function AdminPage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  useEffect(() => {
+    // Clear global loader on mount
+    setGlobalLoading(false);
+  }, [setGlobalLoading]);
 
   useEffect(() => {
     if (!loading && !user?.isAdmin) router.replace('/');
@@ -754,7 +759,7 @@ export default function AdminPage() {
         </div>
       )}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-hide">
-        <SideNavItem icon={Home} label="Back to Store" active={false} expanded={isSidebarExpanded || isMobile} onClick={() => router.push('/')} className="text-primary hover:bg-primary/5 mb-4" />
+        <SideNavItem icon={Home} label="Back to Store" active={false} expanded={isSidebarExpanded || isMobile} onClick={() => { setGlobalLoading(true); router.push('/'); }} className="text-primary hover:bg-primary/5 mb-4" />
         <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />

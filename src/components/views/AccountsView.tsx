@@ -67,7 +67,8 @@ export default function AccountsView() {
     setIsPostingAccount,
     deleteAccountPost,
     language,
-    t 
+    t,
+    setGlobalLoading
   } = useApp();
   
   const router = useRouter();
@@ -207,7 +208,7 @@ export default function AccountsView() {
                 <AccountPostCard 
                   key={post.id} 
                   post={post} 
-                  onClick={() => router.push(`/accounts/${post.id}`)}
+                  onClick={() => { setGlobalLoading(true); router.push(`/accounts/${post.id}`); }}
                   onEdit={(e) => { e.stopPropagation(); setEditingPost(post); }}
                   onDelete={(e) => { e.stopPropagation(); setDeletingPostId(post.id); }}
                   isOwner={post.uid === user?.uid}
@@ -260,7 +261,7 @@ export default function AccountsView() {
                  myActivity.map(p => {
                     const isSeller = p.uid === user?.uid;
                     return (
-                      <Card key={p.id} className="p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] border-none bg-slate-50 dark:bg-slate-800 flex items-center justify-between group hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" onClick={() => { setIsActivityModalOpen(false); router.push(`/accounts/${p.id}`); }}>
+                      <Card key={p.id} className="p-4 md:p-5 rounded-2xl md:rounded-[1.5rem] border-none bg-slate-50 dark:bg-slate-800 flex items-center justify-between group hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" onClick={() => { setIsActivityModalOpen(false); setGlobalLoading(true); router.push(`/accounts/${p.id}`); }}>
                          <div className="flex items-center gap-3 md:gap-4">
                             <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 relative shadow-sm shrink-0">
                                {p.thumbnailUrl && <Image src={p.thumbnailUrl} alt="" fill className="object-cover" />}

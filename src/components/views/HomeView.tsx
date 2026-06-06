@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -29,7 +28,7 @@ import { useRouter } from "next/navigation";
 import EidModal from "@/components/modals/EidModal";
 
 export default function HomeView() {
-  const { storeSettings, games, events, setActiveTab, isInitialLoading, t } = useApp();
+  const { storeSettings, games, events, setActiveTab, isInitialLoading, t, setGlobalLoading } = useApp();
   const [localDismiss, setLocalDismiss] = useState(false);
   const [showEidModal, setShowEidModal] = useState(false);
   const router = useRouter();
@@ -201,6 +200,7 @@ export default function HomeView() {
 
 function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel: string, timeLeftLabel: string }) {
   const router = useRouter();
+  const { setGlobalLoading } = useApp();
   const [timeLeft, setTimeLeft] = useState<string>("");
 
   useEffect(() => {
@@ -225,6 +225,7 @@ function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel:
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setGlobalLoading(true);
     if (event.redirectRoute) {
       router.push(event.redirectRoute);
     } else {

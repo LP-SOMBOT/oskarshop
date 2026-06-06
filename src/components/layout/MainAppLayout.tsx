@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import Header from "./Header";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
@@ -12,8 +13,13 @@ import { cn } from "@/lib/utils";
 
 export default function MainAppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { activeTab, storeSettings, user, isPostingAccount } = useApp();
+  const { activeTab, storeSettings, user, isPostingAccount, setGlobalLoading } = useApp();
   
+  // Clear loading state whenever the pathname changes
+  useEffect(() => {
+    setGlobalLoading(false);
+  }, [pathname, setGlobalLoading]);
+
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isAdminPage = pathname.startsWith("/admin");
   const isRanking = activeTab === 'ranking';

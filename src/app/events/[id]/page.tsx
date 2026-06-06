@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
@@ -16,8 +15,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
   const router = useRouter();
-  const { events, setActiveTab, t } = useApp();
+  const { events, setActiveTab, t, setGlobalLoading } = useApp();
   const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    setGlobalLoading(false);
+  }, [setGlobalLoading]);
 
   const event = useMemo(() => {
     return (events || []).find(e => e.id === id);
@@ -55,6 +58,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const handleAction = () => {
     if (!event) return;
     if (event.redirectRoute) {
+      setGlobalLoading(true);
       router.push(event.redirectRoute);
     } else {
       setActiveTab('games');
@@ -77,7 +81,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-white/5 h-16 sm:h-20 flex items-center px-4 sm:px-8 justify-between">
          <div className="flex items-center gap-4 sm:gap-6">
             <button 
-              onClick={() => router.push('/')} 
+              onClick={() => { setGlobalLoading(true); router.push('/'); }} 
               className="p-2 sm:p-3 text-slate-900 dark:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 transition-all active:scale-90"
             >
                 <ArrowLeft size={24} />
