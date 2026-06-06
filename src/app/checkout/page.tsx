@@ -89,12 +89,10 @@ function CheckoutContent() {
 
   const isAutoDetectEnabled = !!game?.autoDetectName;
 
-  // Clear global loading overlay once component is ready
   useEffect(() => {
     setGlobalLoading(false);
   }, [setGlobalLoading]);
 
-  // Debounced auto-detection for Free Fire
   useEffect(() => {
     if (!isAutoDetectEnabled) return;
     
@@ -119,7 +117,6 @@ function CheckoutContent() {
           setFfPlayerName(data.nickname);
           setVerified(true);
           setLookupError('');
-          // Update base gameDetails as well
           setGameDetails(prev => ({ ...prev, playerName: data.nickname, playerID: ffUid.trim() }));
         } else {
           setFfPlayerName('');
@@ -188,8 +185,6 @@ function CheckoutContent() {
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // For auto-detect games, use ffUid
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
@@ -258,7 +253,6 @@ function CheckoutContent() {
       category: isFreeFire ? "Free Fire" : isBloodStrike ? "Blood Strike" : "General" 
     };
 
-    // Add auto-detect specific data for the order record
     if (isAutoDetectEnabled) {
       (finalDetails as any).ffUid = ffUid.trim();
       (finalDetails as any).ffPlayerName = ffPlayerName;
@@ -297,8 +291,6 @@ function CheckoutContent() {
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
   const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
-
-  // Submit button disabled logic
   const isLookupFailure = lookupError.includes("Could not verify");
   const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isLookupFailure);
 
@@ -336,7 +328,6 @@ function CheckoutContent() {
               ))}
             </div>
           )}
-          
           <div className="w-9 md:w-12 shrink-0" />
         </div>
       )}
@@ -398,7 +389,7 @@ function CheckoutContent() {
                           <User size={18} />
                         </div>
                         <Input 
-                          placeholder={language === 'so' ? "Magaca game-ka kugu qoran" : "Auto-detecting..."} 
+                          placeholder={checking ? "Checking..." : (language === 'so' ? "Magaca game-ka kugu qoran" : "Auto-detecting...")} 
                           readOnly 
                           className={cn(
                             "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
@@ -503,7 +494,6 @@ function CheckoutContent() {
         </Card>
       </div>
 
-      {/* Payment Step */}
       <div className={cn("transition-all duration-300 transform", step === 2 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute inset-0")}>
         <Card className="rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl border-none p-0.5 md:p-2 bg-white dark:bg-slate-900">
           <CardHeader className="p-4 md:p-8">
@@ -593,7 +583,6 @@ function CheckoutContent() {
         </Card>
       </div>
 
-      {/* Confirmation Step */}
       <div className={cn("transition-all duration-300 transform", step === 3 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute inset-0")}>
         <Card className="rounded-[1.5rem] md:rounded-[3.5rem] shadow-2xl border-none p-3 md:p-8 text-center bg-white dark:bg-slate-900">
           <CardContent className="pt-6 md:pt-10">
@@ -615,7 +604,6 @@ function CheckoutContent() {
         </Card>
       </div>
 
-      {/* Success Step */}
       <div className={cn("transition-all duration-700 transform", step === 4 ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-95 pointer-events-none absolute inset-0")}>
         <div className="py-6 md:py-16 flex flex-col items-center text-center px-2">
           <div className="relative mb-6 md:mb-12">
