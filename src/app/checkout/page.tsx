@@ -585,7 +585,7 @@ function CheckoutContent() {
               <Button 
                 onClick={handlePaymentInitiation} 
                 disabled={paymentMethods.length === 0} 
-                className="order-1 sm:order-2 flex-[2] h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] text-sm md:text-2xl font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest"
+                className="order-1 sm:order-2 flex-[2] h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] text-sm xs:text-lg md:text-2xl font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest"
               >
                 Ku bixi {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'lacagta'}
               </Button>
