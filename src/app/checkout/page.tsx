@@ -387,7 +387,7 @@ function CheckoutContent() {
                           placeholder={language === 'so' ? "Magaca game ka kugu qoran halkaa ayuu kasoo baxayaa" : "Auto-detecting..."} 
                           readOnly 
                           className={cn(
-                            "h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-2 px-4 md:px-5 font-bold text-xs md:text-base transition-all",
+                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 px-4 md:px-5 font-bold text-xs md:text-base",
                             checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
                           )} 
                           value={ffPlayerName} 
@@ -611,6 +611,15 @@ export default function CheckoutPage() {
       <Suspense fallback={<Skeleton className="h-[600px] w-full rounded-[2.5rem]" />}>
         <CheckoutContent />
       </Suspense>
+    </div>
+  );
+}
+
+export function FormGroup({ label, children }: { label: string, children: React.ReactNode }) {
+  return (
+    <div className="space-y-2.5">
+       <label className="text-[10px] sm:text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">{label}</label>
+       {children}
     </div>
   );
 }
