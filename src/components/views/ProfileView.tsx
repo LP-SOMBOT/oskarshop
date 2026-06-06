@@ -41,7 +41,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function ProfileView() {
   const { 
-    user, loading, logout, isInitialLoading, updateUserProfile, allUsers, setActiveTab, theme, toggleTheme, storeSettings, language, setLanguage, t
+    user, loading, logout, isInitialLoading, updateUserProfile, allUsers, setActiveTab, theme, toggleTheme, storeSettings, language, setLanguage, t, setGlobalLoading
   } = useApp();
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -155,7 +155,7 @@ export default function ProfileView() {
          {user.isAdmin && (
            <div className="space-y-3 md:space-y-4 max-w-4xl mx-auto">
               <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-4 md:ml-8 flex items-center gap-2"> <ShieldCheck size={14} /> {t('restricted_access')} </p>
-              <button onClick={() => router.push('/admin')} className="w-full p-6 md:p-8 lg:p-14 bg-slate-900 dark:bg-slate-800 text-white rounded-[2rem] md:rounded-[3rem] lg:rounded-[4rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all border-2 md:border-4 border-white/5">
+              <button onClick={() => { setGlobalLoading(true); router.push('/admin'); }} className="w-full p-6 md:p-8 lg:p-14 bg-slate-900 dark:bg-slate-800 text-white rounded-[2rem] md:rounded-[3rem] lg:rounded-[4rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all border-2 md:border-4 border-white/5">
                 <div className="flex items-center gap-4 md:gap-8 lg:gap-12 text-left min-w-0">
                   <div className="w-12 h-12 md:w-16 md:h-16 lg:w-28 lg:h-28 bg-white/10 rounded-2xl lg:rounded-3xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
                     <LayoutDashboard className="w-6 h-6 md:w-8 md:h-8 lg:w-16 lg:h-16" />
