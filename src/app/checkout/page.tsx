@@ -20,7 +20,8 @@ import {
   Tag,
   DollarSign,
   Ticket,
-  UserCheck
+  UserCheck,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -370,24 +371,32 @@ function CheckoutContent() {
                   <>
                     <div className="space-y-1 md:space-y-2">
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
-                      <Input 
-                        placeholder="Tusaale: 5783204760" 
-                        required 
-                        type="tel" 
-                        inputMode="numeric" 
-                        className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
-                        value={ffUid} 
-                        onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
-                      />
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                          <Gamepad2 size={18} />
+                        </div>
+                        <Input 
+                          placeholder="Tusaale: 5783204760" 
+                          required 
+                          type="tel" 
+                          inputMode="numeric" 
+                          className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                          value={ffUid} 
+                          onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1 md:space-y-2">
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
                       <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 z-10 pointer-events-none">
+                          <User size={18} />
+                        </div>
                         <Input 
-                          placeholder={language === 'so' ? "Magaca game ka kugu qoran halkaa ayuu kasoo baxayaa" : "Auto-detecting..."} 
+                          placeholder={language === 'so' ? "Magaca game-ka kugu qoran" : "Auto-detecting..."} 
                           readOnly 
                           className={cn(
-                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 px-4 md:px-5 font-bold text-xs md:text-base",
+                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
                             checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
                           )} 
                           value={ffPlayerName} 
@@ -406,11 +415,21 @@ function CheckoutContent() {
                   <>
                     <div className="space-y-1 md:space-y-2">
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">in-game name</Label>
-                      <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                          <User size={18} />
+                        </div>
+                        <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
+                      </div>
                     </div>
                     <div className="space-y-1 md:space-y-2">
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">{isFreeFire ? "Game UID" : "Game ID"}</Label>
-                      <Input placeholder={isFreeFire ? "Geli ID-Ga game ka kugu qoran" : "Geli ID game ka kugu qoran"} required type="tel" inputMode="numeric" className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none px-4 md:px-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerID} onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value.replace(/\D/g, '')})} />
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                          <Gamepad2 size={18} />
+                        </div>
+                        <Input placeholder={isFreeFire ? "Geli ID-Ga game ka kugu qoran" : "Geli ID game ka kugu qoran"} required type="tel" inputMode="numeric" className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerID} onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value.replace(/\D/g, '')})} />
+                      </div>
                     </div>
                   </>
                 )}
