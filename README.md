@@ -1,7 +1,6 @@
 # Oskar Shop - Game Top-Up & Accounts
 
-A modern, high-performance PWA for gaming top-ups and account trading, built with Next.js 15, Firebase Realtime Database, and Genkit AI.
-
+A modern, high-performance PWA for gaming top-ups and account trading, built with Next.js 15, Firebase Realtime Database.
 ## 🚀 Deployment Guide
 
 To deploy this application to **Vercel** or **Netlify**:
@@ -20,7 +19,7 @@ Set the following variables in your deployment dashboard:
 
 ---
 
-## 🛠 Troubleshooting Git Issues (THE NUCLEAR OPTION)
+## 🛠 Troubleshooting Git Issues
 
 If you are stuck with "failed to push" or "authentication failed" and cannot find the profile icon (especially on mobile):
 
