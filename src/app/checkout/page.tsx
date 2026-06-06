@@ -439,7 +439,7 @@ function CheckoutContent() {
               <div className="space-y-1.5 md:space-y-2 pt-4 md:pt-5 border-t dark:border-white/5">
                 <Label htmlFor="sender" className="text-[10px] md:text-sm font-bold flex items-center gap-1.5 md:gap-2 text-primary ml-1"><CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4" /> Lacag Diraha</Label>
                 <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
                     <span className="font-bold text-sm md:text-lg text-gray-400 border-r border-gray-200 pr-3">+252</span>
                   </div>
                   <Input 
@@ -447,7 +447,7 @@ function CheckoutContent() {
                     type="tel" 
                     placeholder="613982172" 
                     required 
-                    className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-base md:text-xl dark:text-white pl-16 md:pl-24 pr-4 md:pr-6" 
+                    className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-base md:text-xl dark:text-white pl-20 md:pl-28 pr-4 md:pr-6" 
                     value={gameDetails.senderNumber} 
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '');
