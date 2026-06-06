@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -979,15 +978,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb]);
 
   const setActiveTab = useCallback((tab: string) => {
-    setActiveTabState(tab);
-    if (typeof window !== 'undefined') {
-      const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || pathname === "/terms";
-      if (isSpecialFlow || pathname !== '/') {
-        router.push(tab === 'home' ? '/' : `/#${tab}`);
-      } else {
-        window.location.hash = tab === 'home' ? '' : tab;
+    setIsGlobalLoading(true);
+    setTimeout(() => {
+      setActiveTabState(tab);
+      if (typeof window !== 'undefined') {
+        const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || pathname === "/terms";
+        if (isSpecialFlow || pathname !== '/') {
+          router.push(tab === 'home' ? '/' : `/#${tab}`);
+        } else {
+          window.location.hash = tab === 'home' ? '' : tab;
+        }
       }
-    }
+      setIsGlobalLoading(false);
+    }, 150);
   }, [pathname, router]);
 
   const buyNow = useCallback((item: any) => {
@@ -996,11 +999,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       router.push('/login');
       return;
     }
+    setIsGlobalLoading(true);
     router.push(`/checkout?id=${item.id}`);
   }, [authUser, router]);
 
   const createOrder = useCallback(async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
     if (!rtdb || !authUser) return;
+    setIsGlobalLoading(true);
     const counterRef = ref(rtdb, 'settings/orderCounter');
     let sequenceId = 10;
     try {
@@ -1074,6 +1079,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }).catch(err => console.error("OneSignal admin notify failed", err));
 
     await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`, true);
+    setIsGlobalLoading(false);
   }, [rtdb, authUser, userProfile, broadcastAdminNotification]);
 
   const orders = useMemo(() => {
@@ -1140,9 +1146,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(() => setTheme(prev => prev === 'light' ? 'dark' : 'light'), []);
 
   const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang);
-    setCache(LANG_CACHE_KEY, lang);
-    toast({ title: lang === 'en' ? "Language changed to English" : "Luqadda waxaa loo baddalay Somali" });
+    setIsGlobalLoading(true);
+    setTimeout(() => {
+      setLanguageState(lang);
+      setCache(LANG_CACHE_KEY, lang);
+      toast({ title: lang === 'en' ? "Language changed to English" : "Luqadda waxaa loo baddalay Somali" });
+      setIsGlobalLoading(false);
+    }, 300);
   }, []);
 
   const t = useCallback((key: string) => {
@@ -1371,15 +1381,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAdminData = useCallback(() => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     get(ref(rtdb, 'orders')).then(s => {
       const val = s.val();
       if (val) setAllOrders(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt));
+      setIsGlobalLoading(false);
     });
   }, [rtdb]);
 
   const resetLeaderboard = useCallback(async () => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
-    
+    setIsGlobalLoading(true);
     const currentMonth = format(new Date(), 'yyyy-MM');
     const updates: any = {};
     
@@ -1402,6 +1414,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Reset failed:", error);
       toast({ title: "Reset Failed", variant: "destructive" });
+    } finally {
+      setIsGlobalLoading(false);
     }
   }, [rtdb, enhancedUser, allUsers, broadcastAdminNotification]);
 
@@ -1421,6 +1435,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const postAccount = useCallback(async (data: any) => {
     if (!rtdb || !authUser) return;
+    setIsGlobalLoading(true);
     const postRef = push(ref(rtdb, 'accountPosts'));
     await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
@@ -1449,34 +1464,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }).catch(err => console.error("Admin notify error", err));
 
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`, true);
+    setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, broadcastAdminNotification]);
 
   const updateAccountPost = useCallback(async (postId: string, data: any) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     const { price, totalCharge, fee, ...editableData } = data;
     await update(ref(rtdb, `accountPosts/${postId}`), editableData);
     toast({ title: "Post Updated!" });
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
   const renewAccountPost = useCallback(async (postId: string, term: 'weekly' | 'monthly') => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     await update(ref(rtdb, `accountPosts/${postId}`), { term, expiresAt: null, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, buyerReportedAt: null, sellerReported: false, sellerReportedAt: null, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null, warningDismissedAt: null });
     toast({ title: "Renewal Initiated!", description: "Waiting for admin to verify renewal payment." });
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
-  const deleteAccountPost = useCallback(async (pid: string) => { if (!rtdb) return; await remove(ref(rtdb, `accountPosts/${pid}`)); toast({ title: "Post Deleted" }); }, [rtdb]);
+  const deleteAccountPost = useCallback(async (pid: string) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true);
+    await remove(ref(rtdb, `accountPosts/${pid}`)); 
+    toast({ title: "Post Deleted" }); 
+    setIsGlobalLoading(false);
+  }, [rtdb]);
   
   const markAccountAsSold = useCallback(async (postId: string) => {
     if (!rtdb || !authUser) return;
+    setIsGlobalLoading(true);
     await update(ref(rtdb, `accountPosts/${postId}`), {
       sold: true,
       status: 'sold',
       completedAt: Date.now()
     });
     toast({ title: "Account marked as sold!" });
+    setIsGlobalLoading(false);
   }, [rtdb, authUser]);
 
-  const deleteOrder = useCallback(async (oid: string) => { if (!rtdb) return; await remove(ref(rtdb, `orders/${oid}`)); toast({ title: "Order Deleted" }); }, [rtdb]);
+  const deleteOrder = useCallback(async (oid: string) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true);
+    await remove(ref(rtdb, `orders/${oid}`)); 
+    toast({ title: "Order Deleted" }); 
+    setIsGlobalLoading(false);
+  }, [rtdb]);
 
   const buyAccountPost = useCallback((post: AccountPost) => {
     if (!authUser) {
@@ -1484,6 +1518,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       router.push('/login');
       return;
     }
+    setIsGlobalLoading(true);
     router.push(`/checkout-account?id=${post.id}`);
   }, [authUser, router]);
 
@@ -1509,6 +1544,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateOrderStatus = useCallback(async (orderId: string, status: string, cancellationReason?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
     const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
     
@@ -1539,10 +1575,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const body = status === 'successful' ? `Your order #${orderId.toUpperCase()} is complete!` : status === 'cancelled' ? `Order #${orderId.toUpperCase()} was cancelled: ${cancellationReason || 'Contact support'}` : `Order #${orderId.toUpperCase()} status is now: ${status}`;
       broadcastNotification(title, body, orderData.userId);
     }
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, allOrders, broadcastNotification]);
 
   const updateAccountPostStatus = useCallback(async (postId: string, status: string, boughtBy?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
     const updates: any = { 
       status, 
       processedBy: { 
@@ -1596,10 +1634,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
        const title = status === 'approved' ? "Post Approved! ✅" : status === 'rejected' ? "Post Rejected ❌" : "Listing Update 🎮";
        broadcastNotification(title, `Your account listing #${postId.toUpperCase()} is now ${status}.`, postData.uid);
     }
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
   const issueSellerWarning = useCallback(async (uid: string, postId: string, message: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
     const warningRef = push(ref(rtdb, `users/${uid}/warnings`));
     await set(warningRef, {
       id: warningRef.key,
@@ -1617,10 +1657,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     await broadcastNotification("Formal Warning Issued! ⚠️", `Security alert for Listing #${postId.toUpperCase()}: ${message}`, uid);
     toast({ title: "Warning Issued" });
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
   const suspendSeller = useCallback(async (uid: string, days: number) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
     const suspensionEnd = Date.now() + (days * 24 * 60 * 60 * 1000);
     await update(ref(rtdb, `users/${uid}`), { suspendedUntil: suspensionEnd });
     
@@ -1632,10 +1674,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     await broadcastNotification("Account Suspended! 🚫", `Your selling privileges are blocked for ${days} days due to security violations.`, uid);
     toast({ title: `Seller suspended for ${days} days` });
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
   const dismissAccountWarning = useCallback(async (postId: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
     await update(ref(rtdb, `accountPosts/${postId}`), { warningDismissedAt: Date.now() });
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
@@ -1643,10 +1687,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await broadcastNotification("Warning Dismissed! ✅", `Responsive guard for Listing #${postId.toUpperCase()} has been cleared.`, postData.uid);
     }
     toast({ title: "Warning Dismissed" });
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
   const reportAccountOutcome = useCallback(async (postId: string, outcome: 'bought' | 'not_bought') => {
     if (!rtdb || !authUser || !enhancedUser) return;
+    setIsGlobalLoading(true);
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
@@ -1695,10 +1741,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       await broadcastAdminNotification("Buyer Report!", `Buyer reported purchase for account #${postId.toUpperCase()}.`);
     }
+    setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, orders, broadcastNotification, broadcastAdminNotification]);
 
   const respondToSaleReport = useCallback(async (postId: string, confirmed: boolean, buyerId?: string) => {
     if (!rtdb || !authUser) return;
+    setIsGlobalLoading(true);
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
@@ -1751,10 +1799,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await broadcastAdminNotification("Conflict Detected! ⚠️", `Seller rejected buyer claim for account #${postId.toUpperCase()}.`);
     }
     await update(ref(rtdb), updates);
+    setIsGlobalLoading(false);
   }, [rtdb, authUser, broadcastNotification, broadcastAdminNotification]);
 
   const enforceAccountAction = useCallback(async (postId: string, action: 'delete' | 'holding' | 'approved' | 'pending', message: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
@@ -1804,19 +1854,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     broadcastNotification("Security Penalty Enforcement 👮", message, postData.uid);
     toast({ title: `Action "${action}" Applied` });
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
-  const markDeletionAsSeen = useCallback(async (postId: string) => { if (!rtdb) return; await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() }); }, [rtdb]);
+  const markDeletionAsSeen = useCallback(async (postId: string) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true);
+    await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() }); 
+    setIsGlobalLoading(false);
+  }, [rtdb]);
 
   const updateUserProfile = useCallback(async (updates: any) => { 
     if (!rtdb || !authUser) return; 
+    setIsGlobalLoading(true);
     await update(ref(rtdb, `users/${authUser.uid}`), updates); 
     const isComplete = updates.phoneNumber && updates.name;
     if (isComplete) localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
     toast({ title: "Profile updated!" }); 
+    setIsGlobalLoading(false);
   }, [rtdb, authUser]);
 
-  const manageUser = useCallback(async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; await update(ref(rtdb, `users/${uid}`), updates); toast({ title: "User updated!" }); }, [rtdb]);
+  const manageUser = useCallback(async (uid: string, updates: Partial<UserProfile>) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true);
+    await update(ref(rtdb, `users/${uid}`), updates); 
+    toast({ title: "User updated!" }); 
+    setIsGlobalLoading(false);
+  }, [rtdb]);
   
   const deleteUser = useCallback(async (uid: string) => { 
     if (!rtdb || !enhancedUser?.isAdmin) return; 
@@ -1858,22 +1922,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const saveGame = useCallback(async (g: any) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     const { id, ...data } = g;
     if (id) await update(ref(rtdb, `games/${id}`), data);
     else await push(ref(rtdb, 'games'), { ...data, createdAt: Date.now() });
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
   const deleteGame = useCallback(async (id: string) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     await remove(ref(rtdb, `games/${id}`));
     const associatedProducts = products.filter(p => p.gameId === id);
     const dbUpdates: any = {};
     associatedProducts.forEach(p => dbUpdates[`products/${p.id}`] = null);
     await update(ref(rtdb), dbUpdates);
+    setIsGlobalLoading(false);
   }, [rtdb, products]);
 
   const saveProduct = useCallback(async (p: any) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     const { id, ...data } = p;
     const cleanData: any = {};
     Object.keys(data).forEach(key => {
@@ -1882,22 +1951,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     if (id) await update(ref(rtdb, `products/${id}`), cleanData);
     else await push(ref(rtdb, 'products'), cleanData);
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
-  const deleteProduct = useCallback(async (id: string) => remove(ref(rtdb, `products/${id}`)), [rtdb]);
+  const deleteProduct = useCallback(async (id: string) => {
+    setIsGlobalLoading(true);
+    await remove(ref(rtdb, `products/${id}`));
+    setIsGlobalLoading(false);
+  }, [rtdb]);
 
   const updateProductsOrder = useCallback(async (updates: {id: string, orderIndex: number}[]) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     const dbUpdates: any = {};
     updates.forEach(u => {
       dbUpdates[`products/${u.id}/orderIndex`] = u.orderIndex;
     });
     await update(ref(rtdb), dbUpdates);
     toast({ title: "Order saved" });
+    setIsGlobalLoading(false);
   }, [rtdb]);
   
   const saveEvent = useCallback(async (e: any) => { 
     if (!rtdb) return; 
+    setIsGlobalLoading(true);
     const { id, duration, durationUnit, ...data } = e;
     let expiresAt = data.expiresAt || null;
     if (duration && durationUnit) {
@@ -1910,26 +1987,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const eventToSave = { ...data, expiresAt, createdAt: Date.now() };
     if (id) await update(ref(rtdb, `events/${id}`), eventToSave); 
     else await push(ref(rtdb, 'events'), eventToSave); 
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
-  const deleteEvent = useCallback(async (id: string) => remove(ref(rtdb, `events/${id}`)), [rtdb]);
+  const deleteEvent = useCallback(async (id: string) => {
+    setIsGlobalLoading(true);
+    await remove(ref(rtdb, `events/${id}`));
+    setIsGlobalLoading(false);
+  }, [rtdb]);
 
-  const saveBanner = useCallback(async (b: any) => { if (!rtdb) return; const { id, ...data } = b; if (id) await update(ref(rtdb, `banners/${id}`), data); else await push(ref(rtdb, 'banners'), { ...data, createdAt: Date.now(), active: true }); }, [rtdb]);
-  const deleteBanner = useCallback(async (id: string) => remove(ref(rtdb, `banners/${id}`)), [rtdb]);
+  const saveBanner = useCallback(async (b: any) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true);
+    const { id, ...data } = b; 
+    if (id) await update(ref(rtdb, `banners/${id}`), data); 
+    else await push(ref(rtdb, 'banners'), { ...data, createdAt: Date.now(), active: true }); 
+    setIsGlobalLoading(false);
+  }, [rtdb]);
+
+  const deleteBanner = useCallback(async (id: string) => {
+    setIsGlobalLoading(true);
+    await remove(ref(rtdb, `banners/${id}`));
+    setIsGlobalLoading(false);
+  }, [rtdb]);
 
   const savePaymentMethod = useCallback(async (m: any) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     const { id, ...data } = m;
     if (id) await update(ref(rtdb, `settings/paymentMethods/${id}`), data);
     else { const newRef = push(ref(rtdb, 'settings/paymentMethods')); await set(newRef, { ...data, active: true }); }
     toast({ title: "Payment Method Saved" });
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
-  const deletePaymentMethod = useCallback(async (id: string) => { if (!rtdb) return; await remove(ref(rtdb, `settings/paymentMethods/${id}`)); toast({ title: "Payment Method Removed" }); }, [rtdb]);
+  const deletePaymentMethod = useCallback(async (id: string) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true);
+    await remove(ref(rtdb, `settings/paymentMethods/${id}`)); 
+    toast({ title: "Payment Method Removed" }); 
+    setIsGlobalLoading(false);
+  }, [rtdb]);
   
   const savePromoCode = useCallback(async (promo: any) => {
     if (!rtdb || !promo.code) return;
-    
+    setIsGlobalLoading(true);
     const { duration, durationUnit, discount, ...rest } = promo;
     let expiresAt = 0;
     
@@ -1961,41 +2063,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       expired: false
     });
     toast({ title: "Promo Code Created!" });
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
   const deletePromoCode = useCallback(async (id: string) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     await remove(ref(rtdb, `promo_codes/${id}`));
     toast({ title: "Promo Code Deleted" });
+    setIsGlobalLoading(false);
   }, [rtdb]);
 
   const checkPromoCode = useCallback(async (code: string): Promise<number> => {
     if (!rtdb || !authUser) throw new Error("Connection error");
-    const standardizedCode = code.trim().toUpperCase();
-    const promoSnap = await get(ref(rtdb, `promo_codes/${standardizedCode}`));
-    if (!promoSnap.exists()) throw new Error("Invalid code");
-    
-    const data = promoSnap.val() as PromoCode;
-    if (data.claimed) throw new Error("Code already claimed");
-    
-    const expiryTime = Number(data.expiresAt) || 0;
-    if (expiryTime && expiryTime < Date.now()) throw new Error("Code expired");
-    
-    if (data.usedBy === authUser.uid) throw new Error("You have already used this code");
-    
-    return Number(data.discount) || 0;
+    setIsGlobalLoading(true);
+    try {
+      const standardizedCode = code.trim().toUpperCase();
+      const promoSnap = await get(ref(rtdb, `promo_codes/${standardizedCode}`));
+      if (!promoSnap.exists()) throw new Error("Invalid code");
+      
+      const data = promoSnap.val() as PromoCode;
+      if (data.claimed) throw new Error("Code already claimed");
+      
+      const expiryTime = Number(data.expiresAt) || 0;
+      if (expiryTime && expiryTime < Date.now()) throw new Error("Code expired");
+      
+      if (data.usedBy === authUser.uid) throw new Error("You have already used this code");
+      
+      return Number(data.discount) || 0;
+    } finally {
+      setIsGlobalLoading(false);
+    }
   }, [rtdb, authUser]);
 
   const updateStoreSettings = useCallback(async (s: any) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     await update(ref(rtdb, 'settings'), s);
     await broadcastAdminNotification("Store Settings Updated ⚙️", `Global configuration was updated by ${enhancedUser?.name || 'an admin'}.`);
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastAdminNotification]);
   
   const updateAdminSettings = useCallback(async (s: any) => {
     if (!rtdb) return;
+    setIsGlobalLoading(true);
     await update(ref(rtdb, 'admin_settings'), s);
     await broadcastAdminNotification("Admin Settings Updated 🔒", `Security parameters were updated.`);
+    setIsGlobalLoading(false);
   }, [rtdb, broadcastAdminNotification]);
 
   const acceptTerms = useCallback(async () => {

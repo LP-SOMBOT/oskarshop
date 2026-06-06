@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -7,6 +6,7 @@ import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import OfflinePage from "./OfflinePage";
 import SellerResponsiveGuard from "./SellerResponsiveGuard";
+import GlobalLoading from "./GlobalLoading";
 import { useApp } from "@/lib/context";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,12 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
   }
 
   if (isAuthPage || isAdminPage) {
-    return <>{children}</>;
+    return (
+      <>
+        <GlobalLoading />
+        {children}
+      </>
+    );
   }
 
   return (
@@ -37,6 +42,7 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
 
       <div className="flex-1 flex flex-col min-w-0 relative">
         <SellerResponsiveGuard />
+        <GlobalLoading />
 
         {!isSpecialFlow && (
           <div className="md:hidden">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -17,7 +16,8 @@ import {
   MessageCircle,
   Ticket,
   Trophy,
-  Lock
+  Lock,
+  Loader2
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function OrdersView() {
-  const { orders, isInitialLoading, setActiveTab, user, t } = useApp();
+  const { orders, isInitialLoading, isGlobalLoading, setActiveTab, user, t, storeSettings } = useApp();
   const router = useRouter();
 
   if (isInitialLoading) {
@@ -70,25 +70,45 @@ export default function OrdersView() {
   }
 
   return (
-    <div className="min-h-screen pb-32 px-4 py-10 lg:max-w-2xl mx-auto page-transition">
+    <div className="min-h-screen pb-32 px-4 py-10 lg:max-w-2xl mx-auto page-transition relative">
+      {/* View-level Loading State */}
+      {isGlobalLoading && (
+        <div className="absolute inset-0 z-50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm rounded-[3rem] flex items-center justify-center">
+           <div className="flex flex-col items-center gap-4">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+                <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                <div className="absolute inset-0 rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                <div className="absolute inset-2 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center">
+                   {storeSettings.logo ? (
+                     <div className="relative w-full h-full p-2">
+                       <Image src={storeSettings.logo} alt="" fill className="object-contain" unoptimized />
+                     </div>
+                   ) : <Gamepad2 className="w-6 h-6 text-primary" />}
+                </div>
+              </div>
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] animate-pulse">Syncing Orders...</p>
+           </div>
+        </div>
+      )}
+
       {orders.length === 0 ? (
         <div className="py-20 md:py-40 text-center space-y-6 md:space-y-8 opacity-30 flex flex-col items-center">
-           <div className="w-20 h-20 md:w-32 md:h-32 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center shadow-inner">
-              <ShoppingBag size={40} className="md:size-16 text-slate-300 dark:text-slate-700" />
-           </div>
-           <div className="space-y-2 md:space-y-3 px-4">
-              <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white uppercase tracking-tighter">{t('no_orders')}</h3>
-              <p className="text-sm md:text-lg max-w-md mx-auto">{t('no_orders_desc')}</p>
-           </div>
-           <button 
-            onClick={() => setActiveTab('games')}
-            className="text-primary font-black text-base md:text-xl flex items-center gap-2 md:gap-3 hover:gap-5 transition-all group"
-           >
-             {t('continue_shopping')} <ChevronRight size={20} className="md:size-6 group-hover:translate-x-2 transition-transform" />
-           </button>
+          <div className="w-20 h-20 md:w-32 md:h-32 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center shadow-inner">
+             <ShoppingBag size={40} className="md:size-16 text-slate-300 dark:text-slate-700" />
+          </div>
+          <div className="space-y-2 md:space-y-3 px-4">
+             <h3 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white uppercase tracking-tighter">{t('no_orders')}</h3>
+             <p className="text-sm md:text-lg max-w-md mx-auto">{t('no_orders_desc')}</p>
+          </div>
+          <button 
+           onClick={() => setActiveTab('games')}
+           className="text-primary font-black text-base md:text-xl flex items-center gap-2 md:gap-3 hover:gap-5 transition-all group"
+          >
+            {t('continue_shopping')} <ChevronRight size={20} className="md:size-6 group-hover:translate-x-2 transition-transform" />
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:gap-8">
+        <div className={cn("grid grid-cols-1 gap-6 md:gap-8 transition-all", isGlobalLoading && "opacity-20 blur-[2px]")}>
            {orders.map((order) => ( <OrderCard key={order.id} order={order} /> ))}
         </div>
       )}
