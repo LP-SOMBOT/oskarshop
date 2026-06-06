@@ -89,6 +89,11 @@ function CheckoutContent() {
 
   const isAutoDetectEnabled = !!game?.autoDetectName;
 
+  // Clear global loading overlay once component is ready
+  useEffect(() => {
+    setGlobalLoading(false);
+  }, [setGlobalLoading]);
+
   // Debounced auto-detection for Free Fire
   useEffect(() => {
     if (!isAutoDetectEnabled) return;
@@ -305,7 +310,7 @@ function CheckoutContent() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => router.push('/')} 
+              onClick={() => { setGlobalLoading(false); router.push('/#games'); }} 
               className="rounded-full text-muted-foreground hover:text-foreground h-9 w-9 md:h-12 md:w-12"
             >
               <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={3} />

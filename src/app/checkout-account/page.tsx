@@ -54,6 +54,11 @@ function CheckoutAccountContent() {
 
   const hasBought = associatedOrder?.buyerOutcome === 'bought';
 
+  // Clear global loading overlay once component is ready
+  useEffect(() => {
+    setGlobalLoading(false);
+  }, [setGlobalLoading]);
+
   useEffect(() => {
     if (!loading && !user && step < 3) {
       router.push('/login');

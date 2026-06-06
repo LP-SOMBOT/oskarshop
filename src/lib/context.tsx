@@ -1001,6 +1001,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     setIsGlobalLoading(true);
     router.push(`/checkout?id=${item.id}`);
+    // Safety timeout to prevent stuck loader
+    setTimeout(() => setIsGlobalLoading(false), 2000);
   }, [authUser, router]);
 
   const createOrder = useCallback(async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
@@ -1520,6 +1522,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     setIsGlobalLoading(true);
     router.push(`/checkout-account?id=${post.id}`);
+    // Safety timeout to prevent stuck loader
+    setTimeout(() => setIsGlobalLoading(false), 2000);
   }, [authUser, router]);
 
   const markNotificationsAsRead = useCallback(async (nid?: string) => {
