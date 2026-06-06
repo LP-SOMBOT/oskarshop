@@ -280,7 +280,7 @@ function CheckoutContent() {
     return (
       <div className="space-y-6 px-4">
         <Skeleton className="h-10 w-3/4 mx-auto rounded-full" />
-        <Card className="rounded-[2.5rem] p-6 md:p-8">
+        <Card className="rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8">
            <Skeleton className="h-8 w-1/2 mb-4" />
            <Skeleton className="h-12 w-full mb-4" />
            <Skeleton className="h-12 w-full" />
@@ -317,7 +317,7 @@ function CheckoutContent() {
                 <div key={s} className="flex flex-col items-center gap-1 md:gap-2">
                   <div className={cn(
                     "w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold transition-all shadow-sm text-[9px] md:text-sm relative", 
-                    step >= s ? "bg-primary text-white scale-110 shadow-primary/20" : "bg-white dark:bg-slate-900 text-gray-400 dark:text-gray-600 border-2 border-gray-100 dark:border-white/5"
+                    step >= s ? "bg-primary text-white scale-110 shadow-primary/20" : "bg-white dark:bg-slate-900 text-gray-400 dark:text-slate-600 border-2 border-gray-100 dark:border-white/5"
                   )}>
                     {step === s && <div className="absolute inset-0 bg-primary/20 rounded-full blur-[8px] animate-pulse" />}
                     {step > s ? <CheckCircle2 className="w-3.5 h-3.5 md:w-5 md:h-5" /> : s}
@@ -578,14 +578,14 @@ function CheckoutContent() {
               <Button 
                 variant="ghost" 
                 onClick={() => setStep(1)} 
-                className="order-2 sm:order-1 flex-1 h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] gap-2 font-bold dark:text-slate-300 text-xs md:text-xl transition-all active:scale-95"
+                className="order-2 sm:order-1 w-full sm:w-auto flex-1 h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] gap-2 font-bold dark:text-slate-300 text-xs md:text-xl transition-all active:scale-95"
               >
                 <ArrowLeft className="w-3.5 h-3.5 md:w-5 md:h-5" /> {language === 'so' ? 'Dib U noqo' : 'Back'}
               </Button>
               <Button 
                 onClick={handlePaymentInitiation} 
                 disabled={paymentMethods.length === 0} 
-                className="order-1 sm:order-2 flex-[2] h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] text-sm xs:text-lg md:text-2xl font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest"
+                className="order-1 sm:order-2 w-full flex-[2] h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] text-base xs:text-lg md:text-2xl font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest"
               >
                 Ku bixi {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'lacagta'}
               </Button>
@@ -609,7 +609,7 @@ function CheckoutContent() {
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">
               <Button onClick={handleFinalConfirm} disabled={isProcessing} className="w-full h-14 xs:h-16 md:h-20 rounded-xl md:rounded-[2.5rem] text-sm xs:text-lg md:text-2xl font-bold shadow-xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest">{isProcessing ? <div className="flex items-center justify-center gap-2 md:gap-3"><Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" /><span>Verifying...</span></div> : "Waan Bixiyay (Xaqiiji)"}</Button>
-              <Button variant="ghost" onClick={() => setStep(2)} className="h-11 md:h-14 rounded-xl text-[10px] md:text-sm text-muted-foreground dark:text-slate-500 hover:dark:text-slate-300 font-bold uppercase tracking-widest">Dib u noqo</Button>
+              <Button variant="ghost" onClick={() => setStep(2)} className="w-full h-11 md:h-14 rounded-xl text-[10px] md:text-sm text-muted-foreground dark:text-slate-500 hover:dark:text-slate-300 font-bold uppercase tracking-widest">Dib u noqo</Button>
             </div>
           </CardContent>
         </Card>
