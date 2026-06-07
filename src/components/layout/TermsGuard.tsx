@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -91,10 +90,6 @@ export default function TermsGuard({ children }: { children: React.ReactNode }) 
               >
                 {t('read_terms')} <ArrowRight size={20} />
               </Button>
-              
-              <p className="mt-6 text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-widest">
-                {t('compliance_protocol')}
-              </p>
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
