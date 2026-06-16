@@ -25,12 +25,10 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import EidModal from "@/components/modals/EidModal";
 
 export default function HomeView() {
   const { storeSettings, games, events, setActiveTab, isInitialLoading, t, setGlobalLoading } = useApp();
   const [localDismiss, setLocalDismiss] = useState(false);
-  const [showEidModal, setShowEidModal] = useState(false);
   const router = useRouter();
 
   const isVisible = storeSettings?.isLive && !localDismiss;
@@ -39,20 +37,6 @@ export default function HomeView() {
     const now = Date.now();
     return (events || []).filter(e => e.active && (!e.expiresAt || e.expiresAt > now));
   }, [events]);
-
-  useEffect(() => {
-    // Check if user has already seen the Eid promotion
-    const isEidDismissed = localStorage.getItem('oskar_eid_dismissed_2024');
-    if (!isEidDismissed) {
-      setShowEidModal(true);
-    }
-  }, []);
-
-  const handleEidClose = () => {
-    localStorage.setItem('oskar_eid_dismissed_2024', 'true');
-    setShowEidModal(false);
-    setActiveTab('games');
-  };
 
   if (isInitialLoading) {
     return (
@@ -196,8 +180,6 @@ export default function HomeView() {
           </div>
         </section>
       </main>
-
-      {showEidModal && <EidModal onClose={handleEidClose} />}
     </div>
   );
 }
