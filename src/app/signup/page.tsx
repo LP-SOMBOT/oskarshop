@@ -92,9 +92,7 @@ export default function SignupPage() {
         verificationConfig.serviceId,
         verificationConfig.templateId,
         {
-          from_name: 'OskarShop',
           from_email: 'no-reply@oskarshop.so',
-          to_name: name,
           to_email: email,
           otp_code: data.otp,
         },

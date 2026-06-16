@@ -86,7 +86,6 @@ export default function LoginPage() {
         recoveryConfig.serviceId,
         recoveryConfig.templateId,
         {
-          from_name: 'OskarShop',
           from_email: 'no-reply@oskarshop.so',
           to_email: data.targetEmail,
           otp_code: data.otp,
@@ -297,8 +296,8 @@ export default function LoginPage() {
                     placeholder="000000" 
                     required 
                     maxLength={6}
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                     className="h-12 sm:h-16 text-center text-xl sm:text-3xl tracking-[0.4em] sm:tracking-[0.6em] rounded-2xl bg-gray-50 border-gray-100 focus:border-[#7C3AED] focus:bg-white font-black text-gray-900 shadow-inner transition-all"
                   />
                 </div>

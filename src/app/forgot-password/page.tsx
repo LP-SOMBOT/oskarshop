@@ -65,7 +65,6 @@ export default function ForgotPasswordPage() {
         recoveryConfig.serviceId,
         recoveryConfig.templateId,
         {
-          from_name: 'OskarShop',
           from_email: 'no-reply@oskarshop.so',
           to_email: data.targetEmail,
           otp_code: data.otp,
