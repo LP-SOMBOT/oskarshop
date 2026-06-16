@@ -92,6 +92,8 @@ export default function SignupPage() {
         verificationConfig.serviceId,
         verificationConfig.templateId,
         {
+          from_name: 'OskarShop',
+          from_email: 'no-reply@oskarshop.so',
           to_name: name,
           to_email: email,
           otp_code: data.otp,
@@ -103,7 +105,7 @@ export default function SignupPage() {
       toast({ title: "Verification code sent!", description: "Check your email." });
     } catch (err: any) {
       console.error("EmailJS Error:", err);
-      toast({ variant: "destructive", title: "Failed", description: "Email-ka waa lagu guul darraystay in la diro." });
+      toast({ variant: "destructive", title: "Failed", description: "Email-ka waa lagu guul darraystay in la diro. (Bad Sender Syntax)" });
     } finally {
       setIsSubmitting(false);
     }

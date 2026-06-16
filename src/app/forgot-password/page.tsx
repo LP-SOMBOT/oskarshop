@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -66,6 +65,8 @@ export default function ForgotPasswordPage() {
         recoveryConfig.serviceId,
         recoveryConfig.templateId,
         {
+          from_name: 'OskarShop',
+          from_email: 'no-reply@oskarshop.so',
           to_email: data.targetEmail,
           otp_code: data.otp,
         },
@@ -76,7 +77,7 @@ export default function ForgotPasswordPage() {
       setStep('verify');
     } catch (err: any) {
       console.error('Request OTP Error:', err);
-      setError("Wuu ku guul darraystay diritaanka code-ka.");
+      setError("Wuu ku guul darraystay diritaanka code-ka. (Bad Sender Syntax)");
     } finally {
       setIsLoading(false);
     }

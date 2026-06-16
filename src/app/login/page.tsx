@@ -86,6 +86,8 @@ export default function LoginPage() {
         recoveryConfig.serviceId,
         recoveryConfig.templateId,
         {
+          from_name: 'OskarShop',
+          from_email: 'no-reply@oskarshop.so',
           to_email: data.targetEmail,
           otp_code: data.otp,
         },
@@ -95,7 +97,7 @@ export default function LoginPage() {
       toast({ title: "Code Sent!", description: `Check email: ${data.targetEmail}` });
       setView('verify');
     } catch (err: any) {
-      setServerError("Wuu ku guul darraystay diritaanka code-ka.");
+      setServerError("Wuu ku guul darraystay diritaanka code-ka. (Bad Sender Syntax)");
     } finally {
       setIsSubmitting(false);
     }
@@ -295,8 +297,8 @@ export default function LoginPage() {
                     placeholder="000000" 
                     required 
                     maxLength={6}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                     className="h-12 sm:h-16 text-center text-xl sm:text-3xl tracking-[0.4em] sm:tracking-[0.6em] rounded-2xl bg-gray-50 border-gray-100 focus:border-[#7C3AED] focus:bg-white font-black text-gray-900 shadow-inner transition-all"
                   />
                 </div>
