@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useApp } from '@/lib/context';
@@ -55,9 +54,6 @@ import { Loader2 } from 'lucide-react';
 export default function MyAccountsView() {
   const { accountPosts, user, setActiveTab, deleteAccountPost, respondToSaleReport, renewAccountPost, markDeletionAsSeen, markAccountAsSold, storeSettings, isInitialLoading, language, t } = useApp();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [renewingPost, setRenewingPost] = useState<any>(null);
-  const [renewTerm, setRenewTerm] = useState<'weekly' | 'monthly'>('weekly');
-  const [hasTriggeredRenewUssd, setHasTriggeredRenewUssd] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const myPosts = useMemo(() => {
@@ -97,26 +93,6 @@ export default function MyAccountsView() {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const handleRenewUssd = () => {
-    const fee = renewTerm === 'monthly' 
-      ? (storeSettings?.config?.shop?.listingFeeMonthly || 3.00)
-      : (storeSettings?.config?.shop?.listingFeeWeekly || 1.00);
-    
-    const paymentNum = storeSettings.paymentNumber || "613982172";
-    const formattedFee = fee.toString().replace('.', '*');
-    const ussdCode = `*712*${paymentNum}*${formattedFee}#`;
-    
-    window.location.href = `tel:${ussdCode.replace(/#/g, '%23')}`;
-    setHasTriggeredRenewUssd(true);
-  };
-
-  const handleRenewFinal = async () => {
-    if (!renewingPost) return;
-    await renewAccountPost(renewingPost.id, renewTerm);
-    setRenewingPost(null);
-    setHasTriggeredRenewUssd(false);
   };
 
   if (isInitialLoading) {
@@ -190,47 +166,12 @@ export default function MyAccountsView() {
               post={post} 
               onDelete={() => setDeletingId(post.id)}
               onRespond={(buyerId, confirmed) => respondToSaleReport(post.id, confirmed, buyerId)}
-              onRenew={() => setRenewingPost(post)}
               onSeen={() => markDeletionAsSeen(post.id)}
               onMarkAsSold={() => markAccountAsSold(post.id)}
             />
           ))}
         </div>
       )}
-
-      <Dialog open={!!renewingPost} onOpenChange={(v) => { if(!v) { setRenewingPost(null); setHasTriggeredRenewUssd(false); } }}>
-        <DialogContent className="max-md w-[95vw] rounded-[2.5rem] p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader className="mb-8">
-             <DialogTitle className="text-2xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('renew_listing_btn')}</DialogTitle>
-             <DialogDescription className="text-xs sm:text-sm font-bold text-slate-50">{t('renew_listing_desc')}</DialogDescription>
-           </DialogHeader>
-           
-           <div className="space-y-8">
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">{t('choose_term_label')}</label>
-                 <Select value={renewTerm} onValueChange={(val: any) => setRenewTerm(val)}>
-                    <SelectTrigger className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
-                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl dark:bg-slate-900 border-none shadow-2xl z-[200]">
-                       <SelectItem value="weekly" className="rounded-xl p-4 font-bold text-xs">{t('weekly_term')} - ${storeSettings?.config?.shop?.listingFeeWeekly || 1.00}</SelectItem>
-                       <SelectItem value="monthly" className="rounded-xl p-4 font-bold text-xs">{t('monthly_term')} - ${storeSettings?.config?.shop?.listingFeeMonthly || 3.00}</SelectItem>
-                    </SelectContent>
-                 </Select>
-              </div>
-
-              {!hasTriggeredRenewUssd ? (
-                <Button onClick={handleRenewUssd} className="w-full h-20 rounded-3xl text-lg font-black uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90">
-                   {t('pay_renewal_btn')}
-                </Button>
-              ) : (
-                <Button onClick={handleRenewFinal} className="w-full h-20 rounded-3xl text-lg font-black uppercase tracking-widest shadow-2xl shadow-green-500/30 bg-green-600 hover:bg-green-700">
-                   {t('confirm_reactivate_btn')}
-                </Button>
-              )}
-           </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!deletingId} onOpenChange={(v) => !v && setDeletingId(null)}>
         <DialogContent className="max-sm rounded-[2rem] p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
@@ -249,11 +190,10 @@ export default function MyAccountsView() {
   );
 }
 
-function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMarkAsSold }: { post: any, onDelete: () => void, onRespond: (buyerId: string, conf: boolean) => void, onRenew: () => void, onSeen: () => void, onMarkAsSold: () => void }) {
+function AccountManagedCard({ post, onDelete, onRespond, onSeen, onMarkAsSold }: { post: any, onDelete: () => void, onRespond: (buyerId: string, conf: boolean) => void, onSeen: () => void, onMarkAsSold: () => void }) {
   const { deleteAccountPost, allUsers, language, t } = useApp();
-  const isExpired = post.expiresAt ? post.expiresAt < Date.now() : false;
   const isRejected = post.status === 'rejected';
-  const [timeLeft, setTimeLeft] = useState("");
+  const [ageText, setAgeText] = useState("");
   const [autoDeleteTime, setAutoDeleteTime] = useState("");
 
   const claimants = useMemo(() => Object.values(post.claimants || {}), [post.claimants]);
@@ -267,25 +207,14 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
   }, [post.sold, post.boughtBy, allUsers, post.claimants]);
 
   useEffect(() => {
-    if (!post.expiresAt || post.sold) {
-      if (post.sold) setTimeLeft("N/A");
-      return;
-    }
+    if (!post.createdAt) return;
     const updateCountdown = () => {
-      const now = Date.now();
-      const diff = post.expiresAt - now;
-      if (diff <= 0) setTimeLeft("EXPIRED");
-      else {
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft(`${d}d ${h}h ${m}m`);
-      }
+      setAgeText(formatDistanceToNow(new Date(post.createdAt)));
     };
     updateCountdown();
     const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
-  }, [post.expiresAt, post.sold]);
+  }, [post.createdAt]);
 
   useEffect(() => {
     if (post.sellerSeenDeletionAt) {
@@ -317,7 +246,6 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
   return (
     <Card className={cn(
       "rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group transition-all relative",
-      isExpired && !post.sold && "ring-2 ring-red-500/20",
       showVerification && "ring-2 ring-primary shadow-2xl shadow-primary/10",
       post.sold && "ring-2 ring-green-500/30 grayscale-[0.2]"
     )}>
@@ -335,9 +263,9 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                     </Badge>
                  </div>
                )}
-               {(isExpired || isRejected) && !post.sold && (
+               {isRejected && !post.sold && (
                  <div className="absolute inset-0 bg-red-900/70 backdrop-blur-sm flex items-center justify-center z-10">
-                    <Badge className="bg-red-600 text-white border-none font-black uppercase tracking-[0.2em] text-[10px] px-4 py-1.5 shadow-2xl">{isRejected ? 'REJECTED' : 'EXPIRED'}</Badge>
+                    <Badge className="bg-red-600 text-white border-none font-black uppercase tracking-[0.2em] text-[10px] px-4 py-1.5 shadow-2xl">REJECTED</Badge>
                  </div>
                )}
             </div>
@@ -362,7 +290,7 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t dark:border-white/5">
                   <StatusInfo icon={Calendar} label={t('posted_label')} value={post.createdAt ? format(new Date(post.createdAt), 'MMM d') : '...'} />
                   <StatusInfo icon={Star} label={t('level_label')} value={post.level || '0'} />
-                  <StatusInfo icon={Clock} label={t('expires_label')} value={timeLeft || 'N/A'} color={isExpired && !post.sold ? "text-red-500" : "text-amber-500"} />
+                  <StatusInfo icon={Clock} label="Posted" value={ageText || 'N/A'} color="text-amber-500" />
                   <StatusInfo icon={DollarSign} label={t('price_label')} value={`$${post.price || 0}`} color="text-primary" />
                </div>
 
@@ -513,13 +441,8 @@ function AccountManagedCard({ post, onDelete, onRespond, onRenew, onSeen, onMark
              )}
              
              <div className="flex flex-wrap gap-3">
-                {!post.sold && isExpired && !isRejected && (
-                  <Button onClick={onRenew} className="h-12 md:h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 px-8">
-                     <RefreshCw className="w-4 h-4" /> {t('renew_listing_btn')}
-                  </Button>
-                )}
                 <Button variant="ghost" className="h-12 md:h-14 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 font-black text-xs uppercase tracking-widest gap-2 px-6" onClick={onDelete}>
-                   <Trash2 className="w-4 h-4" /> {t('delete_record_btn')}
+                   <Trash2 size={14} /> {t('delete_record_btn')}
                 </Button>
              </div>
           </div>

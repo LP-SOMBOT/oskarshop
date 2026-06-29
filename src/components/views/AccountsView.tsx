@@ -49,7 +49,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from 'next/image';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { cn, formatWhatsAppNumber } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -86,7 +86,6 @@ export default function AccountsView() {
   }, [isPosting, editingPost, setIsPostingAccount]);
 
   const filteredPosts = useMemo(() => {
-    const now = Date.now();
     const isAdmin = !!user?.isAdmin;
     const userId = user?.uid;
 
@@ -103,9 +102,6 @@ export default function AccountsView() {
 
         if (p.status !== 'approved') return false;
         if (p.hiddenFromMarket === true) return false;
-
-        const isExpired = p.expiresAt ? p.expiresAt < now : false;
-        if (isExpired) return false;
 
         return true;
       })
@@ -645,7 +641,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
 function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, isAdmin }: { post: any, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isBuyer: boolean, isAdmin?: boolean }) {
   const { language } = useApp();
   const isGoogle = post.platform === 'Google';
-  const isExpired = post.expiresAt ? post.expiresAt < Date.now() : false;
   
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -659,36 +654,23 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
     }
   };
 
-  const [timeLeft, setTimeLeft] = useState("");
+  const [waitText, setWaitTime] = useState("");
 
   useEffect(() => {
-    if (!post.expiresAt || (!isOwner && !isAdmin) || post.sold || post.status === 'sold') {
-      setTimeLeft("");
-      return;
-    }
+    if (!post.createdAt) return;
     const updateTime = () => {
-      const now = Date.now();
-      const diff = post.expiresAt - now;
-      if (diff <= 0) {
-        setTimeLeft("DHAMAADAY");
-      } else {
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft(`${d}d ${h}h ${m}m remaining`);
-      }
+      setWaitTime(formatDistanceToNow(new Date(post.createdAt)));
     };
     updateTime();
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
-  }, [post.expiresAt, isOwner, isAdmin, post.sold, post.status]);
+  }, [post.createdAt]);
   
   return (
     <Card 
       onClick={onClick}
       className={cn(
         "rounded-[2rem] md:rounded-[3rem] border-none shadow-lg md:shadow-xl bg-white dark:bg-slate-900 overflow-hidden transition-all hover:-translate-y-1 md:hover:-translate-y-2 hover:shadow-2xl active:scale-[0.98] group cursor-pointer h-full flex flex-col relative",
-        isExpired && "opacity-60 grayscale-[0.5]",
         isBuyer && "ring-2 ring-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.2)]"
       )}
     >
@@ -754,12 +736,6 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
              </Badge>
            )}
         </div>
-
-        {isExpired && !post.sold && (
-          <div className="absolute inset-0 bg-red-950/70 backdrop-blur-sm flex items-center justify-center z-10 px-4 md:px-8">
-             <div className="px-4 md:px-8 py-1.5 md:py-3 bg-red-600 text-white font-headline font-bold text-base md:text-2xl rounded-xl md:rounded-3xl transform -rotate-12 shadow-[0_15px_40px_rgba(239,68,68,0.5)] border-2 md:border-4 border-white/20">DHAMAADAY</div>
-          </div>
-        )}
       </div>
 
       <div className="p-4 md:p-8 space-y-4 md:space-y-6 flex-1 flex flex-col">
@@ -767,11 +743,9 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isBuyer, is
            <div className="flex gap-1 md:gap-2 min-w-0">
               <Badge variant="secondary" className="text-[7px] md:text-[10px] uppercase font-black tracking-widest rounded-md md:rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 md:px-4 py-0.5 md:py-1 truncate">{post.gameType}</Badge>
            </div>
-           {(isOwner || isAdmin) && timeLeft && (
-             <Badge variant="outline" className={cn("text-[7px] md:text-[10px] font-black border-2 rounded-md md:rounded-xl py-0.5 md:py-1 px-1.5 md:px-3 shrink-0", isExpired ? "text-red-500 border-red-500/20" : "text-primary border-primary/20 bg-primary/5")}>
-               <Clock className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1 md:mr-1.5" /> {timeLeft}
-             </Badge>
-           )}
+           <Badge variant="outline" className="text-[7px] md:text-[10px] font-black border-2 rounded-md md:rounded-xl py-0.5 md:py-1 px-1.5 md:px-3 shrink-0 text-primary border-primary/20 bg-primary/5">
+              <Clock className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1 md:mr-1.5" /> {waitText}
+           </Badge>
         </div>
 
         <div className="flex flex-wrap gap-2 md:gap-3">

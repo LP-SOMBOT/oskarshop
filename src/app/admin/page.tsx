@@ -173,39 +173,29 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
-function MarketplaceExpiration({ expiresAt, status }: { expiresAt?: number, status: string }) {
-  const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0 });
+function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, status: string }) {
+  const [age, setAge] = useState("Just now");
 
   useEffect(() => {
-    if (!expiresAt || status === 'sold') return;
+    if (!createdAt) return;
     
     const update = () => {
-      const now = Date.now();
-      const diff = expiresAt - now;
-      if (diff <= 0) {
-        setTimeLeft({ d: 0, h: 0, m: 0 });
-      } else {
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        setTimeLeft({ d, h, m });
-      }
+      setAge(formatDistanceToNow(new Date(createdAt)));
     };
     update();
     const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
-  }, [expiresAt, status]);
+  }, [createdAt]);
 
   if (status === 'sold') return <Badge className="bg-slate-100 text-slate-400 border-none text-[8px] font-black uppercase">SOLD</Badge>;
-  if (!expiresAt) return <span className="text-[10px] text-slate-300 italic font-medium uppercase">Awaiting Live</span>;
 
   return (
     <div className="flex flex-col items-start text-left">
       <span className="text-[11px] font-black text-primary uppercase tracking-tight">
-        {timeLeft.d}D {timeLeft.h}H {timeLeft.m}M
+        {age}
       </span>
       <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">
-        ENDS {format(new Date(expiresAt), "MMM d").toUpperCase()}
+        WAIT TIME
       </span>
     </div>
   );
@@ -740,7 +730,7 @@ export default function AdminPage() {
     <div className="flex flex-col h-full">
       {!isMobile && (
         <div className="h-20 px-6 flex items-center justify-between shrink-0">
-          {isSidebarExpanded && <span className="font-headline font-bold text-lg text-slate-900 dark:text-white uppercase tracking-tight text-nowrap">Oskar Control</span>}
+          {isSidebarExpanded && <span className="font-headline font-bold text-lg text-slate-900 dark:white uppercase tracking-tight text-nowrap">Oskar Control</span>}
           <button onClick={() => setIsSidebarExpanded(!isSidebarExpanded)} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"><Menu size={20} /></button>
         </div>
       )}
@@ -1161,7 +1151,7 @@ export default function AdminPage() {
                                 </div>
 
                                 <div className="flex items-center justify-between pt-2 border-t dark:border-white/5">
-                                   <MarketplaceExpiration expiresAt={p.expiresAt} status={p.status} />
+                                   <MarketplaceExpiration createdAt={p.createdAt} status={p.status} />
                                    <div className="flex gap-2">
                                       <button 
                                         onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
@@ -1192,7 +1182,7 @@ export default function AdminPage() {
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Active Claims</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Wait Time</TableHead>
-                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Expiration</TableHead>
+                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Age</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Status</TableHead>
                                 <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                              </TableRow>
@@ -1255,7 +1245,7 @@ export default function AdminPage() {
                                     </TableCell>
                                     <TableCell><WaitTime post={p} /></TableCell>
                                     <TableCell>
-                                       <MarketplaceExpiration expiresAt={p.expiresAt} status={p.status} />
+                                       <MarketplaceExpiration createdAt={p.createdAt} status={p.status} />
                                     </TableCell>
                                     <TableCell><StatusBadge status={p.status} /></TableCell>
                                     <TableCell className="text-right px-10">
@@ -1596,7 +1586,7 @@ export default function AdminPage() {
                                  </div>
                                  <div className="space-y-1 text-right">
                                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Expires</p>
-                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                    <p className="text-10px] font-bold text-slate-600 dark:text-slate-400">
                                       {expiryTime ? format(new Date(expiryTime), 'MMM d, HH:mm') : 'N/A'}
                                     </p>
                                  </div>
