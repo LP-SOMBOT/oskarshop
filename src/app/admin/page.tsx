@@ -1029,7 +1029,9 @@ export default function AdminPage() {
                              {topUpOrders.length === 0 ? (
                                <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
                              ) : (
-                               topUpOrders.map(o => (
+                               topUpOrders.map(o => {
+                                 const item = o.items?.[0];
+                                 return (
                                  <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
                                     <TableCell className="px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
                                     <TableCell>
@@ -1066,7 +1068,8 @@ export default function AdminPage() {
                                        </div>
                                     </TableCell>
                                  </TableRow>
-                               ))
+                               );
+                               })
                              )}
                           </TableBody>
                        </Table>
@@ -3049,4 +3052,3 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
     </div>
   );
 }
-
