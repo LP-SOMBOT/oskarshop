@@ -407,12 +407,10 @@ export default function AdminPage() {
   const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
   
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
-  const [economyForm, setEconomyForm] = useState({ paymentNumber: "", listingFeeWeekly: 1.00, listingFeeMonthly: 3.00 });
+  const [economyForm, setEconomyForm] = useState({ paymentNumber: "" });
   const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", tutorialThumbnail: "", tutorialBannerActive: false, whatsappNumber: "", tiktokUrl: "" });
   const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
   const [termsForm, setTermsForm] = useState({ en: "", so: "" });
-  const [emailjsForm, setEmailjsForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
-  const [emailjsVerificationForm, setEmailjsVerificationForm] = useState({ serviceId: "", templateId: "", publicKey: "" });
   const [telegramForm, setTelegramForm] = useState({ telegramBotToken: "", telegramAdminChatIds: "" });
 
   const [leaderboardForm, setLeaderboardForm] = useState({
@@ -461,15 +459,11 @@ export default function AdminPage() {
         logo: storeSettings.logo || ""
       });
       setEconomyForm({
-        paymentNumber: storeSettings.paymentNumber || "",
-        listingFeeWeekly: storeSettings.config?.shop?.listingFeeWeekly || 1.00,
-        listingFeeMonthly: storeSettings.config?.shop?.listingFeeMonthly || 3.00
+        paymentNumber: storeSettings.paymentNumber || ""
       });
       setHelpLinksForm(storeSettings.helpLinks || { tutorialUrl: "", tutorialThumbnail: "", tutorialBannerActive: false, whatsappNumber: "", tiktokUrl: "" });
       setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
       setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
-      setEmailjsForm(storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" });
-      setEmailjsVerificationForm(storeSettings.emailjs_verification || { serviceId: "", templateId: "", publicKey: "" });
       setTelegramForm({
         telegramBotToken: storeSettings.telegramBotToken || "",
         telegramAdminChatIds: storeSettings.telegramAdminChatIds || ""
@@ -698,15 +692,7 @@ export default function AdminPage() {
 
   const syncEconomySettings = async () => {
     await updateStoreSettings({
-      paymentNumber: economyForm.paymentNumber,
-      config: {
-        ...storeSettings.config,
-        shop: {
-          ...storeSettings.config?.shop,
-          listingFeeWeekly: parseFloat(economyForm.listingFeeWeekly.toString()),
-          listingFeeMonthly: parseFloat(economyForm.listingFeeMonthly.toString())
-        }
-      }
+      paymentNumber: economyForm.paymentNumber
     });
     toast({ title: "Economy settings updated" });
   };
@@ -828,7 +814,7 @@ export default function AdminPage() {
                   <button className="relative p-2.5 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-500 hover:text-primary transition-all active:scale-90">
                      <Bell size={20} />
                      {adminNotifications.filter(n => !n.readBy?.[user.uid]).length > 0 && (
-                       <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
+                       <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
                           {adminNotifications.filter(n => !n.readBy?.[user.uid]).length}
                        </span>
                      )}
@@ -878,7 +864,7 @@ export default function AdminPage() {
                         <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize:10, fontWeight:'bold'}} />
                         <YAxis hide />
                         <Tooltip contentStyle={{borderRadius: '16px', border:'none', boxShadow:'0 10px 40px rgba(0,0,0,0.1)'}} />
-                        <Area type="monotone" dataKey="v" stroke="#0EA5E9" fillOpacity={0.1} fill="#0EA5E9" strokeWidth={4} />
+                        <Area type="monotone" dataKey="v" stroke="#7B5CE5" fillOpacity={0.1} fill="#7B5CE5" strokeWidth={4} />
                      </AreaChart>
                   </ResponsiveContainer>
                </Card>
@@ -1187,7 +1173,7 @@ export default function AdminPage() {
                                         onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
                                         className="w-10 h-10 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
                                       >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} />
                                       </button>
                                    </div>
                                 </div>
@@ -1861,19 +1847,15 @@ export default function AdminPage() {
                            <div className="flex items-center gap-4 text-amber-500">
                               <HandCoins className="w-6 h-6" />
                               <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Marketplace Economy</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Payment number & listing fees</p>
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Financial Settings</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Payment number & config</p>
                               </div>
                            </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-6 sm:space-y-10">
                               <SettingInput label="EVC / Premier Payment Number" value={economyForm.paymentNumber} onChange={v => setEconomyForm(f => ({ ...f, paymentNumber: v }))} placeholder="613982172" />
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                                 <SettingInput label="Weekly Listing Fee ($)" type="number" value={economyForm.listingFeeWeekly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeWeekly: parseFloat(v) }))} placeholder="1.00" />
-                                 <SettingInput label="Monthly Listing Fee ($)" type="number" value={economyForm.listingFeeMonthly.toString()} onChange={v => setEconomyForm(f => ({ ...f, listingFeeMonthly: parseFloat(v) }))} placeholder="3.00" />
-                              </div>
-                              <Button onClick={syncEconomySettings} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-amber-500 hover:bg-amber-600">Update Economy</Button>
+                              <Button onClick={syncEconomySettings} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-amber-500 hover:bg-amber-600">Update Financials</Button>
                            </div>
                         </AccordionContent>
                      </Card>
@@ -2084,82 +2066,6 @@ export default function AdminPage() {
                         </AccordionContent>
                      </Card>
                   </AccordionItem>
-
-                  <AccordionItem value="emailjs-verification" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-blue-600">
-                              <ShieldCheck className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Verification Infrastructure</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">EmailJS Template for Signups</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-8">
-                              <div className="p-4 sm:p-6 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
-                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-blue-700 dark:text-blue-300">
-                                    <Info className="w-5 h-5 shrink-0 mt-0.5" />
-                                    These keys are used specifically for the OTP verification during user registration.
-                                 </p>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                                 <div className="space-y-4 sm:space-y-6">
-                                    <SettingInput label="Service ID" value={emailjsVerificationForm.serviceId || ''} onChange={v => setEmailjsVerificationForm(f => ({ ...f, serviceId: v }))} placeholder="service_xxxxxxxx" />
-                                    <SettingInput label="Template ID" value={emailjsVerificationForm.templateId || ''} onChange={v => setEmailjsVerificationForm(f => ({ ...f, templateId: v }))} placeholder="template_xxxxxxxx" />
-                                 </div>
-                                 <div className="space-y-4 sm:space-y-6">
-                                    <SettingInput label="Public Key" value={emailjsVerificationForm.publicKey || ''} onChange={v => setEmailjsVerificationForm(f => ({ ...f, publicKey: v }))} placeholder="xxxxxxxxxxxxxxxxx" />
-                                    <div className="pt-2">
-                                       <Button onClick={() => updateStoreSettings({ emailjs_verification: emailjsVerificationForm }).then(()=>toast({title:"Verification Infrastructure Synced"}))} disabled={isUploading} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-blue-600 hover:bg-blue-700">
-                                          {isUploading ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Sync Verification Keys</>}
-                                       </Button>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="emailjs" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-purple-500">
-                              <Mail className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Recovery Infrastructure</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">EmailJS Template for Resets</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-8">
-                              <div className="p-4 sm:p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl border border-purple-100 dark:border-blue-900/30">
-                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-purple-700 dark:text-blue-300">
-                                    <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5" />
-                                    These keys allow the application to send password reset codes.
-                                 </p>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                                 <div className="space-y-4 sm:space-y-6">
-                                    <SettingInput label="Service ID" value={emailjsForm.serviceId || ''} onChange={v => setEmailjsForm(f => ({ ...f, serviceId: v }))} placeholder="service_xxxxxxxx" />
-                                    <SettingInput label="Template ID" value={emailjsForm.templateId || ''} onChange={v => setEmailjsForm(f => ({ ...f, templateId: v }))} placeholder="template_xxxxxxxx" />
-                                 </div>
-                                 <div className="space-y-4 sm:space-y-6">
-                                    <SettingInput label="Public Key" value={emailjsForm.publicKey || ''} onChange={v => setEmailjsForm(f => ({ ...f, publicKey: v }))} placeholder="xxxxxxxxxxxxxxxxx" />
-                                    <div className="pt-2">
-                                       <Button onClick={() => updateStoreSettings({ emailjs: emailjsForm }).then(()=>toast({title:"Recovery Infrastructure Synced"}))} disabled={isUploading} className="w-full h-12 sm:h-16 rounded-xl sm:rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-purple-600 hover:bg-purple-700">
-                                          {isUploading ? <Loader2 className="animate-spin" /> : <><Send className="w-4 h-4 mr-2" /> Sync Recovery Keys</>}
-                                       </Button>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
                </Accordion>
             </div>
           )}
@@ -2170,7 +2076,7 @@ export default function AdminPage() {
         <DialogContent className="max-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
-           <div className="h-28 md:h-32 bg-gradient-to-r from-[#0EA5E9] to-[#2563EB] relative shrink-0">
+           <div className="h-28 md:h-32 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
               <button 
                 onClick={() => setIsUserManageOpen(false)}
                 className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
@@ -2927,7 +2833,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 icon={Clock} 
                 isPrimary={isWaiting}
              />
-             <InsightStat label="Term" value={post.term || "Weekly"} icon={CalendarIcon} />
+             <InsightStat label="Category" value={post.gameType} icon={LayoutGrid} />
           </div>
        </div>
     </Card>
@@ -2965,7 +2871,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       </div>
                       {post.senderNumber && (
                          <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight">
-                            NUMBER KA LACAGTA (SENDER): <span className="text-slate-900 ml-1">{post.senderNumber}</span>
+                            XOGTA: <span className="text-slate-900 ml-1">{post.senderNumber}</span>
                          </div>
                       )}
                    </div>
@@ -3014,7 +2920,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                             <div className="flex items-center gap-2 mt-1">
                                <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">{c.whatsapp || "No Number"}</Badge>
                             </div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CLAIMED: {formatDistanceToNow(new Date(validTimestamp)).toUpperCase() + " AGO"}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CONTACTED: {formatDistanceToNow(new Date(validTimestamp)).toUpperCase() + " AGO"}</p>
                          </div>
                       </div>
                       <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">

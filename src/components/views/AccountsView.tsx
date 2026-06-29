@@ -99,7 +99,6 @@ export default function AccountsView() {
           return true;
         }
 
-        // HIDDEN logic: Hide sold accounts from public feed (non-owners/non-admins)
         if (p.sold === true || p.status === 'sold') return false;
 
         if (p.status !== 'approved') return false;
@@ -246,7 +245,7 @@ export default function AccountsView() {
       </Dialog>
 
       <Dialog open={isActivityModalOpen} onOpenChange={setIsActivityModalOpen}>
-         <DialogContent className="max-w-xl rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 mx-4">
+         <DialogContent className="max-xl rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 mx-4">
             <DialogHeader className="p-6 md:p-10 pb-4 md:pb-6">
                <DialogTitle className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white">My Market Activity</DialogTitle>
                <DialogDescription className="text-xs md:text-sm font-bold text-slate-50">Track the status of your listed and pending accounts.</DialogDescription>
@@ -295,8 +294,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
   const { postAccount, updateAccountPost, storeSettings, user, enhancedUser, t, language } = useApp();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedMethodId, setSelectedMethodId] = useState<string>("");
-  const [hasTriggeredUssd, setHasTriggeredUssd] = useState(false);
 
   const [formData, setFormData] = useState({
     gameType: editingPost?.gameType || 'freefire',
@@ -320,33 +317,14 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     senderNumber: editingPost?.senderNumber ? editingPost.senderNumber.replace("+252", "") : ''
   });
 
-  const paymentMethods = useMemo(() => {
-    if (!storeSettings.paymentMethods) return [];
-    return Object.entries(storeSettings.paymentMethods)
-      .map(([id, m]) => ({ ...m, id }))
-      .filter(m => m.active);
-  }, [storeSettings.paymentMethods]);
-
-  useEffect(() => {
-    if (paymentMethods.length > 0 && !selectedMethodId) {
-      setSelectedMethodId(paymentMethods[0].id);
-    }
-  }, [paymentMethods, selectedMethodId]);
-
   const isFreeFire = formData.gameType === 'freefire';
 
-  const listingFee = useMemo(() => {
-    if (formData.term === 'monthly') return storeSettings?.config?.shop?.listingFeeMonthly || 3.00;
-    return storeSettings?.config?.shop?.listingFeeWeekly || 1.00;
-  }, [formData.term, storeSettings]);
-
-  const handleNext = () => {
+  const handleInitialSubmit = async () => {
     if (!formData.level || !formData.price || !formData.phone || !formData.senderNumber || formData.imageUrls.length === 0) {
       toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
       return;
     }
 
-    // Validation: Phone and Sender Number must be at least 9 digits
     const cleanPhone = formData.phone.replace(/\D/g, '');
     const cleanSender = formData.senderNumber.replace(/\D/g, '');
     const isSo = language === 'so';
@@ -369,26 +347,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
       return;
     }
 
-    setStep(2);
-  };
-
-  const handleTriggerUssd = () => {
-    const method = paymentMethods.find(m => m.id === selectedMethodId);
-    if (!method) return;
-
-    const formattedPrice = listingFee.toFixed(2).replace('.', '*');
-    const ussd = method.ussdTemplate.replace('$', formattedPrice);
-    
-    toast({
-      title: "Opening Dialer",
-      description: `Please complete the ${method.name} transaction.`,
-    });
-    
-    window.location.href = `tel:${ussd.replace(/#/g, '%23')}`;
-    setHasTriggeredUssd(true);
-  };
-
-  const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       const payload = {
@@ -406,7 +364,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
         dharka: parseInt(formData.dharka || '0'),
         primeLevel: parseInt(formData.primeLevel || '1'),
         internalWeapons: parseInt(formData.internalWeapons || '0'),
-        fee: listingFee
+        fee: 0
       };
 
       if (editingPost) {
@@ -414,7 +372,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
       } else {
         await postAccount(payload);
       }
-      setStep(3);
+      setStep(2); // Go straight to success
     } catch (e) {
       toast({ title: "Failed to post", variant: "destructive" });
     } finally {
@@ -461,7 +419,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
           </div>
           
           <div className="flex items-center gap-1.5 md:gap-4 bg-slate-50 dark:bg-slate-800 px-3 md:px-6 py-1.5 md:py-2.5 rounded-full border border-slate-100 dark:border-white/5">
-             {[1, 2, 3].map(s => (
+             {[1, 2].map(s => (
                <div key={s} className="flex items-center gap-1 md:gap-2">
                   <div className={cn(
                     "w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500", 
@@ -471,7 +429,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                     "text-[8px] md:text-[10px] font-black uppercase tracking-tighter hidden xs:inline",
                     step === s ? 'text-primary' : 'text-slate-400'
                   )}>
-                    {s === 1 ? 'Xogta' : s === 2 ? 'Payment' : 'Done'}
+                    {s === 1 ? 'Xogta' : 'Done'}
                   </span>
                </div>
              ))}
@@ -482,7 +440,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
           <div className="max-w-3xl mx-auto w-full">
              {step === 1 && (
                <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  {/* Hero Gallery Section */}
                   <div className="space-y-4">
                      <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">{t('account_gallery')}</p>
                      
@@ -517,7 +474,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      </div>
                   </div>
 
-                  {/* Core Settings Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                      <Card className="p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-6 md:space-y-8">
                         <div className="flex items-center gap-3 text-primary mb-2">
@@ -579,7 +535,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      </Card>
                   </div>
 
-                  {/* Asset Management Grid */}
                   <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900">
                      <div className="flex items-center gap-3 text-indigo-500 mb-8 md:mb-12">
                         <TargetIcon size={20} />
@@ -609,19 +564,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      </div>
                   </Card>
 
-                  {/* Final Listing Settings */}
-                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
-                     <FormGroup label={t('listing_duration')}>
-                        <Select value={formData.term} onValueChange={v => setFormData({...formData, term: v as any})}>
-                           <SelectTrigger className="h-12 md:h-20 rounded-xl md:rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-xl shadow-inner">
-                              <SelectValue />
-                           </SelectTrigger>
-                           <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                              <SelectItem value="weekly" className="p-4 rounded-xl font-bold uppercase text-xs">Weekly - ${storeSettings?.config?.shop?.listingFeeWeekly || 1.00}</SelectItem>
-                              <SelectItem value="monthly" className="p-4 rounded-xl font-bold uppercase text-xs">Monthly - ${storeSettings?.config?.shop?.listingFeeMonthly || 3.00}</SelectItem>
-                           </SelectContent>
-                        </Select>
-                     </FormGroup>
+                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                      <div className="space-y-2 md:space-y-3">
                         <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
                            {t('whatsapp_number_support')}
@@ -641,7 +584,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      </div>
                      <div className="space-y-2 md:space-y-3">
                         <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
-                           <CreditCard size={12} className="text-primary/60" /> {t('sender_number_label')}
+                           <CreditCard size={12} className="text-primary/60" /> Xogta
                         </label>
                         <div className="relative">
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
@@ -659,140 +602,14 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                   </Card>
 
                   <div className="pt-4 md:pt-10">
-                     <Button onClick={handleNext} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-3xl shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.1em] active:scale-95 transition-all">
-                        {language === 'so' ? "Horeye usoco" : "Continue"} <ChevronRight size={28} className="ml-2 md:ml-4" />
+                     <Button onClick={handleInitialSubmit} disabled={isSubmitting} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-3xl shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.1em] active:scale-95 transition-all">
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : (language === 'so' ? "Soo geli" : "Submit Listing")} <ArrowRight size={28} className="ml-2 md:ml-4" />
                      </Button>
                   </div>
                </div>
              )}
 
              {step === 2 && (
-               <div className="space-y-6 sm:space-y-12 animate-in fade-in slide-in-from-right-4 duration-700 text-center max-w-2xl mx-auto">
-                  <div className="relative mx-auto w-24 h-24 md:w-32 md:h-32">
-                     <div className="absolute inset-0 bg-primary/20 rounded-full blur-[60px] animate-pulse" />
-                     <div className="relative w-full h-full bg-white dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center text-primary shadow-2xl border border-slate-100 dark:border-white/5">
-                        <CreditCard className="w-10 h-10 md:w-14 md:h-14" />
-                     </div>
-                  </div>
-                  
-                  <div className="space-y-3 md:space-y-4">
-                     <h3 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white leading-tight">{t('pay_listing_fee_title')}</h3>
-                     <p className="text-[11px] md:text-lg text-muted-foreground font-medium leading-relaxed max-w-md mx-auto">
-                        {t('pay_listing_fee_desc')} <span className="text-primary font-black ml-1">${listingFee.toFixed(2)}</span>
-                     </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 md:gap-10">
-                     {/* Method Selection Card */}
-                     <Card className="rounded-[1.5rem] md:rounded-[3rem] shadow-xl border-none p-1 md:p-2 bg-white dark:bg-slate-900">
-                       <div className="p-5 md:p-10 space-y-6">
-                          <p className="text-left text-[10px] md:text-xs font-black uppercase text-slate-400 tracking-widest ml-1">Dooro qaabka aad u bixinayso</p>
-                          
-                          {paymentMethods.length === 0 ? (
-                            <div className="py-12 opacity-40 italic font-bold">No payment methods configured.</div>
-                          ) : (
-                            <RadioGroup value={selectedMethodId} onValueChange={setSelectedMethodId} className="space-y-3 md:space-y-4">
-                               {paymentMethods.map((method) => (
-                                 <div 
-                                   key={method.id}
-                                   onClick={() => setSelectedMethodId(method.id)}
-                                   className={cn(
-                                     "flex items-center justify-between p-4 md:p-6 border-2 rounded-2xl md:rounded-[2rem] cursor-pointer transition-all active:scale-[0.98]",
-                                     selectedMethodId === method.id 
-                                       ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-lg shadow-primary/5' 
-                                       : 'border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                                   )}
-                                 >
-                                   <Label htmlFor={method.id} className="flex items-center gap-4 md:gap-6 cursor-pointer w-full">
-                                     <div className={cn(
-                                       "w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-[1.25rem] flex items-center justify-center transition-colors relative overflow-hidden shrink-0",
-                                       selectedMethodId === method.id ? "bg-primary text-white shadow-lg" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                                     )}>
-                                       {method.icon ? <Image src={method.icon} alt={method.name} fill className="object-cover" unoptimized /> : <Smartphone className="w-6 h-6 md:w-8 md:h-8" />}
-                                     </div>
-                                     <div className="flex-1 text-left min-w-0">
-                                       <p className="font-bold text-sm md:text-xl dark:text-white truncate">{method.name}</p>
-                                     </div>
-                                     <RadioGroupItem value={method.id} id={method.id} className="dark:border-white/20 h-4 w-4 md:h-6 md:w-6" />
-                                   </Label>
-                                 </div>
-                               ))}
-                            </RadioGroup>
-                          )}
-                       </div>
-                     </Card>
-
-                     {/* Summary and USSD Block */}
-                     <Card className="rounded-[1.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative">
-                        <div className="absolute top-0 left-0 right-0 h-2 bg-primary" />
-                        <div className="p-6 md:p-10 space-y-8">
-                           <div className="flex justify-between items-center text-[10px] md:text-sm font-black uppercase tracking-widest text-muted-foreground border-b dark:border-white/5 pb-4 md:pb-6">
-                              <span>Listing Type</span>
-                              <span>Total Fee</span>
-                           </div>
-                           
-                           <div className="flex justify-between items-center text-left">
-                              <div>
-                                 <p className="font-headline font-bold text-lg md:text-3xl text-slate-900 dark:text-white uppercase tracking-tight">{formData.gameType} Account</p>
-                                 <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase mt-1.5">{formData.term} access</Badge>
-                              </div>
-                              <p className="font-headline font-bold text-3xl md:text-6xl text-primary tracking-tighter">${listingFee.toFixed(2)}</p>
-                           </div>
-
-                           <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
-
-                           {!hasTriggeredUssd ? (
-                             <Button 
-                               onClick={handleTriggerUssd} 
-                               disabled={!selectedMethodId}
-                               className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-slate-900 text-white hover:bg-black font-black text-xs md:text-2xl gap-3 shadow-2xl active:scale-95 transition-all uppercase tracking-widest"
-                             >
-                                <Smartphone className="w-6 h-6 md:w-10 md:h-10" /> 
-                                {language === 'so' ? `KU BIXI ${paymentMethods.find(m => m.id === selectedMethodId)?.name || ''}` : `PAY WITH ${paymentMethods.find(m => m.id === selectedMethodId)?.name || 'MOBILE'}`}
-                             </Button>
-                           ) : (
-                             <div className="space-y-4 md:space-y-8 animate-in zoom-in duration-500">
-                                <div className="p-4 md:p-8 bg-green-50 dark:bg-green-500/10 rounded-2xl md:rounded-[2rem] border-2 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-[10px] md:text-xl lg:text-2xl flex flex-col items-center justify-center gap-3 md:gap-5 shadow-inner">
-                                   <CheckCircle2 className="w-6 h-6 md:w-12 md:h-12" />
-                                   <p className="text-center px-4">
-                                      Iska hubi Number Kan <span className="text-slate-900 dark:text-white font-black underline decoration-primary/30">({storeSettings.paymentNumber || "613982172"})</span> inaad Ku dirtay Lacag dhan <span className="text-primary font-black underline decoration-primary/30">(${listingFee.toFixed(2)})</span>.
-                                   </p>
-                                </div>
-                                <Button 
-                                  onClick={handleSubmit} 
-                                  disabled={isSubmitting} 
-                                  className="w-full h-16 md:h-24 rounded-2xl md:rounded-[2rem] bg-primary text-white font-black text-xs md:text-3xl gap-4 shadow-2xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest"
-                                >
-                                   {isSubmitting ? <Loader2 className="animate-spin w-8 h-8 md:w-12 md:h-12" /> : (language === 'so' ? "Waan bixiyay" : "I'VE PAID (SUBMIT LISTING)")}
-                                </Button>
-                             </div>
-                           )}
-                           
-                           <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-2xl md:rounded-[2.5rem] border dark:border-white/5 flex gap-4 text-left">
-                              <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                                 <Info className="text-primary w-6 h-6 md:w-8 md:h-8" />
-                              </div>
-                              <p className="text-[9px] md:text-sm text-muted-foreground italic leading-relaxed font-medium">
-                                 Dalabkaaga waxey qaadan kartaa 1-24 saac, Fadlan dulqaadka badi, Mahadsanid!.
-                              </p>
-                           </div>
-                        </div>
-                     </Card>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3 md:gap-6 justify-center">
-                     <Button 
-                       variant="ghost" 
-                       onClick={() => setStep(1)} 
-                       className="text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white uppercase text-[10px] md:text-sm tracking-widest h-12 md:h-16 px-8 rounded-xl md:rounded-2xl"
-                     >
-                        <ArrowLeft size={16} className="mr-2" /> Back to Account Details
-                     </Button>
-                  </div>
-               </div>
-             )}
-
-             {step === 3 && (
                <div className="py-10 md:py-24 flex flex-col items-center justify-center text-center space-y-8 md:space-y-16 animate-in zoom-in duration-1000">
                   <div className="relative">
                      <div className="absolute inset-0 bg-green-400 rounded-full blur-[100px] opacity-30 animate-pulse" />
@@ -805,7 +622,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                   <div className="space-y-3 md:space-y-6">
                      <h2 className="text-3xl md:text-7xl font-headline font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">Waa lagu guuleystay!</h2>
                      <p className="text-sm md:text-2xl text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed">
-                        Waad ku mahadsantahay! Post-kaaga waa "Pending". Admin-ka ayaa hadda hubinaya payment-kaaga si loo fasaxo Account-kaaga.
+                        Waad ku mahadsantahay! Post-kaaga waa "Pending". Admin-ka ayaa hadda hubinaya xogtaada si loo fasaxo Account-kaaga.
                      </p>
                   </div>
 

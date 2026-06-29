@@ -434,7 +434,7 @@ const translations: Record<Language, Record<string, string>> = {
     platform: "Platform",
     final_amount: "Final Amount",
     verifying_payment: "Verifying Payment...",
-    delivering_diamonds: "Delivering Diamonds...",
+    delivering_diamonds: "Diamonds are being processed...",
     delivered_success: "Successfully Delivered!",
     order_cancelled: "Order Cancelled",
     admin_message: "Admin Message",
@@ -467,8 +467,8 @@ const translations: Record<Language, Record<string, string>> = {
     listing_duration: "Listing Duration",
     whatsapp_number_support: "WhatsApp for Support",
     sender_number_label: "Enter sender's number",
-    pay_listing_fee_title: "Pay Listing Fee",
-    pay_listing_fee_desc: "Please pay the account listing fee to proceed.",
+    pay_listing_fee_title: "Free Listing",
+    pay_listing_fee_desc: "Your account will be listed for free after admin approval.",
     premium_assets: "Premium Assets",
     verify_assets_desc: "Confirm the account features",
     contact_number: "Contact Number",
@@ -487,21 +487,21 @@ const translations: Record<Language, Record<string, string>> = {
     no_listings_desc: "You haven't posted any accounts in the Marketplace yet.",
     start_selling: "Start Selling",
     respond_accounts_warning_title: "Respond to your accounts",
-    respond_accounts_warning_desc: "Someone said \"I bought it\" for your account, and the admin will contact you via WhatsApp. Please respond to the verification quickly. If you don't respond within 24 hours, the account will be removed from the listing.",
+    respond_accounts_warning_desc: "Check your listings and respond to potential buyers.",
     reference_label: "Reference",
     posted_label: "Posted",
     level_label: "Level",
     expires_label: "Expires",
     price_label: "Price",
-    sold_confirmation_prompt: "If this account was bought, please click below",
+    sold_confirmation_prompt: "If this account was sold, please mark it accordingly",
     mark_as_sold_btn: "Sold",
     delete_record_btn: "Delete this account",
     renew_listing_btn: "Renew Listing",
-    renew_listing_desc: "Choose a new term for your account to return to the marketplace.",
-    choose_term_label: "Choose New Term",
-    weekly_term: "Weekly (7 Days)",
-    monthly_term: "Monthly (30 Days)",
-    pay_renewal_btn: "PAY FOR RENEWAL",
+    renew_listing_desc: "Renew your account to return to the marketplace.",
+    choose_term_label: "Choose Term",
+    weekly_term: "Standard Listing",
+    monthly_term: "Extended Listing",
+    pay_renewal_btn: "REACTIVATE",
     confirm_reactivate_btn: "CONFIRM & REACTIVATE",
     finalized_sale_title: "Finalized Sale",
     final_buyer_label: "Final Buyer",
@@ -511,7 +511,7 @@ const translations: Record<Language, Record<string, string>> = {
     read_decision_btn: "I have read the decision",
     auto_delete_prefix: "Auto-Deleting record in:",
     purchase_claims_title: "Purchase Claims",
-    verify_buyer_desc: "Verify the person who bought your account",
+    verify_buyer_desc: "Verify the person who contacted you",
     requests_count_label: "Requests",
     final_decision_recorded: "Final Decision Recorded",
     delete_confirm_title: "Are you sure?",
@@ -600,13 +600,13 @@ const translations: Record<Language, Record<string, string>> = {
     login_method: "Qaabka lagu Soo galo",
     account_age: "Geli da' da account tiga",
     selling_price: "Qiimaha aad Ku rabtid ( $ )",
-    listing_duration: "Dooro Term ka",
+    listing_duration: "Dooro Muda",
     whatsapp_number_support: "Geli WhatsApp kaga",
-    sender_number_label: "Geli number ka lacagta kasoo direesid",
-    pay_listing_fee_title: "Bixi Qarashka",
-    pay_listing_fee_desc: "Fadlan bixi qarashka Soo gelinta account-ka (listing fee), qiimuhu waa",
+    sender_number_label: "Geli number ka xogta",
+    pay_listing_fee_title: "Soo geli Bilaash",
+    pay_listing_fee_desc: "Account-kaaga si bilaash ah ayaa loo soo gelinayaa ka dib markii la xaqiijiyo.",
     premium_assets: "Waxyabaha account tiga yaalo",
-    verify_assets_desc: "Confirm correctly and check carefully",
+    verify_assets_desc: "Si fiican u xaqiiji xogta",
     contact_number: "Whatsapp number kaaga",
     phone_digits_error: "Lambarka waa inuu ka koobnaadaa ugu yaraan 9 nambar.",
     save: "Keydi",
@@ -622,23 +622,23 @@ const translations: Record<Language, Record<string, string>> = {
     no_listings_title: "No Listings Found",
     no_listings_desc: "Wali wax account ah maadan soo dhigin Marketplace-ka.",
     start_selling: "Start Selling",
-    respond_accounts_warning_title: "Kaja Waab Account-yadaada",
-    respond_accounts_warning_desc: "Someone said \"I bought it\" for your account, and the admin will contact you via WhatsApp. Please respond to the verification quickly. If you don't respond within 24 hours, the account will be removed from the listing.",
+    respond_accounts_warning_title: "Ka jawaab account yadaada",
+    respond_accounts_warning_desc: "Hubi account yadaada oo ka jawaab hadii lala soo xiriiray.",
     reference_label: "Reference",
     posted_label: "Posted",
     level_label: "Level",
     expires_label: "Expires",
     price_label: "Qiimaha",
-    sold_confirmation_prompt: "Hadii la iibsatay account kaan fadlan Riix halkaan hoose",
+    sold_confirmation_prompt: "Hadii account-ka la iibiyay, fadlan calaamadee",
     mark_as_sold_btn: "Wuu gatay",
     delete_record_btn: "Delete account kaan",
     renew_listing_btn: "Renew Listing",
-    renew_listing_desc: "Muda cusub u door account-kaaga si uu marketplace-ka ugu soo laabto.",
-    choose_term_label: "Dooro Muda Cusub",
-    weekly_term: "Weekly (Isbuucle)",
-    monthly_term: "Monthly (Bile)",
-    pay_renewal_btn: "PAY FOR RENEWAL",
-    confirm_reactivate_btn: "CONFIRM & REACTIVATE",
+    renew_listing_desc: "Account-kaaga dib ugu soo celi suuqa.",
+    choose_term_label: "Dooro Muda",
+    weekly_term: "Soo geli",
+    monthly_term: "Muda dheer",
+    pay_renewal_btn: "DIB U FUR",
+    confirm_reactivate_btn: "XAQUIIJI",
     finalized_sale_title: "Finalized Sale",
     final_buyer_label: "Final Buyer",
     sold_at_label: "Sold at",
@@ -647,7 +647,7 @@ const translations: Record<Language, Record<string, string>> = {
     read_decision_btn: "Waan akhriyay go'aanka",
     auto_delete_prefix: "Record-ka waxaa si toos ah loo tirtiri doonaa:",
     purchase_claims_title: "Purchase Claims",
-    verify_buyer_desc: "Xaqiiji qofka kaa iibsaday account-ka",
+    verify_buyer_desc: "Xaqiiji qofka kula soo xiriiray",
     requests_count_label: "Requests",
     final_decision_recorded: "Final Decision Recorded",
     delete_confirm_title: "Ma hubtaa?",
@@ -1078,7 +1078,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId, itemTitle: directItem.title })
-    }).catch(err => console.error("OneSignal admin notify failed", err));
+    }).catch(err => console.error("OneSignal admin broadcast failed", err));
 
     await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`, true);
     setIsGlobalLoading(false);
@@ -1440,10 +1440,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     const postRef = push(ref(rtdb, 'accountPosts'));
     await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
-    toast({ title: "Successfully posted!", description: "Waiting for admin approval of listing fee payment." });
+    toast({ title: "Successfully posted!", description: "Waiting for admin approval." });
     
     // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
-    const listingFee = data.fee || 0;
     fetch('/api/notify-telegram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1452,7 +1451,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         customerName: enhancedUser?.name || 'Seller',
         customerPhone: enhancedUser?.phoneNumber || 'N/A',
         itemName: `${data.gameType} Account Listing`,
-        amount: listingFee,
+        amount: 0,
         ffUid: null,
         ffPlayerName: null,
       }),
@@ -1482,7 +1481,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb) return;
     setIsGlobalLoading(true);
     await update(ref(rtdb, `accountPosts/${postId}`), { term, expiresAt: null, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, buyerReportedAt: null, sellerReported: false, sellerReportedAt: null, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null, warningDismissedAt: null });
-    toast({ title: "Renewal Initiated!", description: "Waiting for admin to verify renewal payment." });
+    toast({ title: "Renewal Initiated!", description: "Waiting for admin review." });
     setIsGlobalLoading(false);
   }, [rtdb]);
 
@@ -1602,12 +1601,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     
     if (status === 'approved') {
-      const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
-      const postData = postSnap.val();
       const now = Date.now();
-      const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
-      
-      updates.expiresAt = now + duration;
+      updates.expiresAt = now + (30 * 24 * 60 * 60 * 1000); // Default to 30 days
       updates.createdAt = now;
       updates.warningDismissedAt = null;
       updates.holdingBy = null;
@@ -1725,16 +1720,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await update(ref(rtdb, `accountPosts/${postId}/claimants/${authUser.uid}`), claimantInfo);
       await update(postRef, { buyerReported: true, buyerReportedAt: reportTime });
       if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
-      toast({ title: "Report Sent!", description: "Seller has been notified to verify the sale." });
+      toast({ title: "Report Sent!", description: "Seller has been notified." });
 
       // Notify seller via server-side
       if (postData.uid) {
         fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUids: [postData.uid], title: "New Purchase Claim! 💰", message: `A buyer reported they bought your ${postData.gameType} account.` })
+          body: JSON.stringify({ targetUids: [postData.uid], title: "New Contact! 💰", message: `Someone is interested in your ${postData.gameType} account.` })
         }).catch(e => console.error(e));
-        broadcastNotification("New Purchase Claim! 💰", `A buyer reported they bought your ${postData.gameType} account. Please verify in My Accounts!`, postData.uid);
+        broadcastNotification("New Contact! 💰", `Someone is interested in your ${postData.gameType} account. Check your listings!`, postData.uid);
       }
 
       fetch('/api/notify-new-order', {
@@ -1743,7 +1738,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ orderId: postId, itemTitle: 'Marketplace Claim' })
       }).catch(e => console.error(e));
 
-      await broadcastAdminNotification("Buyer Report!", `Buyer reported purchase for account #${postId.toUpperCase()}.`);
+      await broadcastAdminNotification("Buyer Report!", `Buyer reported interest for account #${postId.toUpperCase()}.`);
     }
     setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, orders, broadcastNotification, broadcastAdminNotification]);
@@ -1779,20 +1774,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updates[`accountPosts/${postId}/completedAt`] = reportTime;
         updates[`accountPosts/${postId}/claimants`] = null; 
       }
-      toast({ title: "Response Recorded!", description: "Sale confirmed. Waiting for finalization." });
+      toast({ title: "Response Recorded!" });
       
       fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUids: [buyerId], title: "Purchase Update! 🤑", message: "Seller has accepted your purchase claim!" })
+        body: JSON.stringify({ targetUids: [buyerId], title: "Purchase Update! 🤑", message: "Seller has confirmed your interest!" })
       }).catch(e => console.error(e));
 
-      broadcastNotification("Purchase Update! 🤑", "Seller has accepted your purchase claim!", buyerId);
+      broadcastNotification("Purchase Update! 🤑", "Seller has confirmed your interest!", buyerId);
     } else {
       updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'rejected';
       updates[`accountPosts/${postId}/status`] = 'holding';
       updates[`accountPosts/${postId}/conflict`] = true;
-      toast({ title: "Claim Rejected", description: "This will be reviewed by an admin." });
+      toast({ title: "Claim Rejected" });
       
       fetch('/api/notify-new-order', {
         method: 'POST',
@@ -1835,9 +1830,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (action === 'approved') {
        const now = Date.now();
-       const duration = postData?.term === 'monthly' ? (30 * 24 * 60 * 60 * 1000) : (7 * 24 * 60 * 60 * 1000);
-       
-       updates.expiresAt = now + duration;
+       updates.expiresAt = now + (30 * 24 * 60 * 60 * 1000);
        updates.createdAt = now;
        updates.sellerReported = false; 
        updates.sold = false;
@@ -2104,9 +2097,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb) return;
     setIsGlobalLoading(true);
     await update(ref(rtdb, 'settings'), s);
-    await broadcastAdminNotification("Store Settings Updated ⚙️", `Global configuration was updated by ${enhancedUser?.name || 'an admin'}.`);
+    await broadcastAdminNotification("Store Settings Updated ⚙️", `Global configuration was updated.`);
     setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastAdminNotification]);
+  }, [rtdb, broadcastAdminNotification]);
   
   const updateAdminSettings = useCallback(async (s: any) => {
     if (!rtdb) return;
