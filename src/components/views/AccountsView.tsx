@@ -310,19 +310,17 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
     accountId: editingPost?.accountId || '',
     accountName: editingPost?.accountName || '',
     internalWeapons: editingPost?.internalWeapons?.toString() || '',
-    senderNumber: editingPost?.senderNumber ? editingPost.senderNumber.replace("+252", "") : ''
   });
 
   const isFreeFire = formData.gameType === 'freefire';
 
   const handleInitialSubmit = async () => {
-    if (!formData.level || !formData.price || !formData.phone || !formData.senderNumber || formData.imageUrls.length === 0) {
+    if (!formData.level || !formData.price || !formData.phone || formData.imageUrls.length === 0) {
       toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
       return;
     }
 
     const cleanPhone = formData.phone.replace(/\D/g, '');
-    const cleanSender = formData.senderNumber.replace(/\D/g, '');
     const isSo = language === 'so';
 
     if (cleanPhone.length < 9) {
@@ -334,21 +332,11 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
       return;
     }
 
-    if (cleanSender.length < 9) {
-      toast({ 
-        title: isSo ? "Lacag Diraha khaldan" : "Invalid Sender No.", 
-        description: isSo ? "Number-ka lacagta laga soo diray waa inuu ka koobnaadaa ugu yaraan 9 nambar." : "Sender number must be at least 9 digits.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
         phone: "+252" + formData.phone.replace(/\D/g, ""),
-        senderNumber: "+252" + formData.senderNumber.replace(/\D/g, ""),
         thumbnailUrl: formData.imageUrls[0] || '', 
         level: parseInt(formData.level || '0'),
         price: parseFloat(formData.price || '0'),
@@ -560,7 +548,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                      </div>
                   </Card>
 
-                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 gap-6 md:gap-10">
                      <div className="space-y-2 md:space-y-3">
                         <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
                            {t('whatsapp_number_support')}
@@ -574,23 +562,6 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                             placeholder="613982172" 
                             value={formData.phone} 
                             onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
-                            className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none pl-16 md:pl-24 pr-4 bg-slate-50 dark:bg-slate-800 font-bold text-xs md:text-lg shadow-inner focus:ring-2 focus:ring-primary" 
-                          />
-                        </div>
-                     </div>
-                     <div className="space-y-2 md:space-y-3">
-                        <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
-                           <CreditCard size={12} className="text-primary/60" /> Xogta
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
-                            <span className="font-bold text-[10px] md:text-sm text-gray-400 border-r border-gray-200 pr-2">+252</span>
-                          </div>
-                          <Input 
-                            type="tel" 
-                            placeholder="613982172" 
-                            value={formData.senderNumber} 
-                            onChange={e => setFormData({...formData, senderNumber: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
                             className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none pl-16 md:pl-24 pr-4 bg-slate-50 dark:bg-slate-800 font-bold text-xs md:text-lg shadow-inner focus:ring-2 focus:ring-primary" 
                           />
                         </div>
@@ -842,3 +813,4 @@ function ProfileInput({ label, value, onChange, type = "text", inputMode }: { la
     </div>
   );
 }
+

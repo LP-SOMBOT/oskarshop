@@ -1035,7 +1035,7 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex flex-col">
                                           <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || "Guest"}</span>
-                                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{o.items?.[0]?.title || "Unknown Item"}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{item?.title || "Unknown Item"}</span>
                                        </div>
                                     </TableCell>
                                     <TableCell>
@@ -2859,11 +2859,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                             <MessageCircle size={12} />
                          </div>
                       </div>
-                      {post.senderNumber && (
-                         <div className="bg-amber-50 text-amber-600 border border-amber-200 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight">
-                            XOGTA: <span className="text-slate-900 ml-1">{post.senderNumber}</span>
-                         </div>
-                      )}
                    </div>
                 </div>
              </div>
@@ -3054,3 +3049,4 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
     </div>
   );
 }
+
