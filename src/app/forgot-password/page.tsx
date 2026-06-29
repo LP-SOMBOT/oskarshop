@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
       setStep('verify');
     } catch (err: any) {
       console.error('Request OTP Error:', err);
-      setError("Wuu ku guul darraystay diritaanka code-ka. (Bad Sender Syntax)");
+      setError("Wuu ku guul darraystay (Bad Sender Syntax)");
     } finally {
       setIsLoading(false);
     }
