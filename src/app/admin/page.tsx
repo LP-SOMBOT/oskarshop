@@ -290,7 +290,10 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
           {p.thumbnail ? <Image src={p.thumbnail} alt="" fill className="object-cover" unoptimized /> : <div className="w-full h-full bg-slate-200" />}
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight truncate">{p.title}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight truncate">{p.title}</p>
+            {p.isOneTime && <Badge className="bg-red-500 text-white text-[7px] uppercase font-black px-1.5 h-4">One Time</Badge>}
+          </div>
           <p className="text-[10px] md:text-sm font-black text-primary mt-0.5">${p.price}</p>
         </div>
       </div>
@@ -371,6 +374,7 @@ export default function AdminPage() {
   const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
   const [isPaymentMethodDialogOpen, setIsPaymentMethodDialogOpen] = useState(false);
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
+  const [isPromoUsageOpen, setIsPromoUsageOpen] = useState(false);
   const [isUserManageOpen, setIsUserManageOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
@@ -379,6 +383,7 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editingPaymentMethod, setEditingPaymentMethod] = useState<any>(null);
+  const [selectedPromo, setSelectedPromo] = useState<any>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   
   const [pendingOrderStatus, setPendingStatus] = useState<string>("");
@@ -390,11 +395,11 @@ export default function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: string } | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
-  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
+  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
-  const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
+  const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
   
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
   const [economyForm, setEconomyForm] = useState({ paymentNumber: "" });
@@ -524,7 +529,7 @@ export default function AdminPage() {
 
   const handleOpenProductDialog = (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "" });
+    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
     setIsProductDialogOpen(true);
   };
 
@@ -590,7 +595,7 @@ export default function AdminPage() {
     try {
       await savePromoCode(promoForm);
       setIsPromoDialogOpen(false);
-      setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "" });
+      setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' });
       toast({ title: "Promo Saved" });
     } finally {
       setIsSavingStatus(false);
@@ -976,41 +981,44 @@ export default function AdminPage() {
                        {topUpOrders.length === 0 ? (
                          <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No orders found.</div>
                        ) : (
-                         topUpOrders.map(o => (
-                           <Card key={o.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
-                              <div className="flex items-center justify-between">
-                                 <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{o.id.toUpperCase()}</p>
-                                 <StatusBadge status={o.status} />
-                              </div>
-                              <div className="space-y-1">
-                                 <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || "Guest"}</p>
-                                 <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{o.items?.[0]?.title || "Unknown Item"}</p>
-                              </div>
-                              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
-                                 <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
-                                    {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
-                                 </div>
-                                 <div className="min-w-0">
-                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
-                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Wali lama furin"}</p>
-                                 </div>
-                              </div>
-                              <div className="flex gap-2 pt-2 border-t dark:border-white/5">
-                                 <button 
-                                   onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
-                                   className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
-                                 >
-                                   <Eye size={16} /> View
-                                 </button>
-                                 <button 
-                                   onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
-                                   className="w-12 h-12 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
-                                 >
-                                   <Trash2 size={16} />
-                                 </button>
-                              </div>
-                           </Card>
-                         ))
+                         topUpOrders.map(o => {
+                           const item = o.items?.[0];
+                           return (
+                             <Card key={o.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
+                                <div className="flex items-center justify-between">
+                                   <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{o.id.toUpperCase()}</p>
+                                   <StatusBadge status={o.status} />
+                                </div>
+                                <div className="space-y-1">
+                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || "Guest"}</p>
+                                   <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{item?.title || "Unknown Item"}</p>
+                                </div>
+                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
+                                   <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
+                                      {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
+                                   </div>
+                                   <div className="min-w-0">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
+                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Wali lama furin"}</p>
+                                   </div>
+                                </div>
+                                <div className="flex gap-2 pt-2 border-t dark:border-white/5">
+                                   <button 
+                                     onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                     className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
+                                   >
+                                     <Eye size={16} /> View
+                                   </button>
+                                   <button 
+                                     onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                     className="w-12 h-12 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
+                                   >
+                                     <Trash2 size={16} />
+                                   </button>
+                                </div>
+                             </Card>
+                           );
+                         })
                        )}
                     </div>
 
@@ -1473,7 +1481,7 @@ export default function AdminPage() {
                       </div>
                    </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
                       {events.map(e => (
                         <Card key={e.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-xl bg-white dark:bg-slate-900 group">
                            <div className="aspect-[16/10] relative">
@@ -1492,7 +1500,7 @@ export default function AdminPage() {
                            </div>
                            <div className="p-6 md:p-8 space-y-4">
                               <h4 className="font-headline font-bold text-xl uppercase truncate text-slate-900 dark:text-white">{e.title}</h4>
-                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[2.5rem]">{e.shortDescription}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-medium min-h-[2.5rem]">{e.shortDescription}</p>
                               <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest pt-2">
                                  <Clock size={14} />
                                  <span>ENDS {e.expiresAt ? format(new Date(e.expiresAt), "MMM d, HH:mm").toUpperCase() : "SOON"}</span>
@@ -1545,9 +1553,10 @@ export default function AdminPage() {
                     promoCodes.map(promo => {
                       const expiryTime = Number(promo.expiresAt) || 0;
                       const isExpired = expiryTime ? expiryTime < Date.now() : false;
-                      const status = promo.claimed ? 'Claimed' : isExpired ? 'Expired' : 'Unclaimed';
-                      const badgeColor = promo.claimed ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
-                      const claimedUser = promo.claimed ? allUsers.find(u => u.uid === promo.usedBy) : null;
+                      const isMulti = promo.type === 'multi_use';
+                      const usageCount = isMulti ? Object.keys(promo.usedByUsers || {}).length : (promo.claimed ? 1 : 0);
+                      const status = promo.claimed && !isMulti ? 'Claimed' : isExpired ? 'Expired' : 'Active';
+                      const badgeColor = promo.claimed && !isMulti ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
 
                       return (
                         <Card key={promo.id} className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group">
@@ -1562,7 +1571,10 @@ export default function AdminPage() {
                               </div>
 
                               <div className="space-y-1">
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Promo Code</p>
+                                 <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Promo Code</p>
+                                    <Badge variant="outline" className="text-[7px] font-bold uppercase py-0">{isMulti ? 'Multi-Use' : 'Single-Use'}</Badge>
+                                 </div>
                                  <div className="flex items-center gap-2">
                                     <h4 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white truncate">{promo.code}</h4>
                                     <button 
@@ -1575,11 +1587,6 @@ export default function AdminPage() {
                                       <Copy size={16} />
                                     </button>
                                  </div>
-                                 {promo.note && (
-                                   <p className="text-[10px] font-medium text-muted-foreground italic line-clamp-1 mt-1">
-                                     Note: {promo.note}
-                                   </p>
-                                 )}
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
@@ -1588,33 +1595,21 @@ export default function AdminPage() {
                                     <p className="font-bold text-lg text-primary">{promo.discount}% OFF</p>
                                  </div>
                                  <div className="space-y-1 text-right">
-                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Expires</p>
+                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Usage</p>
                                     <p className="text-10px] font-bold text-slate-600 dark:text-slate-400">
-                                      {expiryTime ? format(new Date(expiryTime), 'MMM d, HH:mm') : 'N/A'}
+                                      {usageCount} Used
                                     </p>
                                  </div>
                               </div>
 
-                              {promo.claimed && (
-                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
-                                   <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden relative shrink-0">
-                                      {claimedUser?.photoURL ? (
-                                        <Image src={claimedUser.photoURL} alt="" fill className="object-cover" />
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
-                                          <User size={14} />
-                                        </div>
-                                      )}
-                                   </div>
-                                   <div className="min-w-0 flex-1">
-                                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Claimed By</p>
-                                      <p className="text-[10px] font-bold text-slate-900 dark:text-white truncate">{claimedUser?.name || 'Unknown User'}</p>
-                                      <p className="text-[8px] text-muted-foreground truncate">{claimedUser?.phoneNumber || promo.usedBy}</p>
-                                   </div>
-                                </div>
-                              )}
-
-                              <div className="pt-4 border-t dark:border-white/5">
+                              <div className="pt-4 border-t dark:border-white/5 space-y-2">
+                                 <Button 
+                                   variant="outline" 
+                                   onClick={() => { setSelectedPromo(promo); setIsPromoUsageOpen(true); }}
+                                   className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-2"
+                                 >
+                                    <Users size={14} className="mr-2" /> View Usage
+                                 </Button>
                                  <Button 
                                    variant="ghost" 
                                    onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
@@ -2094,7 +2089,7 @@ export default function AdminPage() {
                     <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
                     <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
                        <Smartphone size={12} />
-                       <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                       <span className="text-[10px] md:text-11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
                     </div>
                  </div>
                  <Badge className={cn(
@@ -2263,6 +2258,16 @@ export default function AdminPage() {
                     </SelectContent>
                  </Select>
               </div>
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5">
+                 <div className="flex items-center gap-3">
+                    <ShieldAlert className="text-red-500 w-5 h-5" />
+                    <div>
+                       <p className="text-sm font-bold">One Time Only</p>
+                       <p className="text-[10px] text-muted-foreground">Force high-visibility warning at checkout</p>
+                    </div>
+                 </div>
+                 <Switch checked={productForm.isOneTime} onCheckedChange={v => setProductForm(f => ({ ...f, isOneTime: v }))} />
+              </div>
               {productForm.category === 'booyah-pass' && <SettingInput label="Admin WhatsApp for Direct Sale" value={productForm.whatsappNumber || ""} onChange={v => setProductForm({ ...productForm, whatsappNumber: v })} placeholder="252613982172" />}
               <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-2xl md:rounded-[2.5rem] font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest active:scale-[0.98] transition-all">
                 {isUploading ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Package"}
@@ -2303,6 +2308,20 @@ export default function AdminPage() {
                    className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase" 
                  />
               </div>
+
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Type</Label>
+                 <Select value={promoForm.type} onValueChange={v => setPromoForm({...promoForm, type: v})}>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
+                       <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                       <SelectItem value="single_use" className="p-3 font-bold uppercase text-[10px]">Single Use (One Person Only)</SelectItem>
+                       <SelectItem value="multi_use" className="p-3 font-bold uppercase text-[10px]">Multi-Use / Time Limited (Global)</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+
               <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
@@ -2339,6 +2358,39 @@ export default function AdminPage() {
               </Button>
            </form>
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPromoUsageOpen} onOpenChange={setIsPromoUsageOpen}>
+         <DialogContent className="max-md w-[95%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
+            <div className="bg-primary p-6 text-white">
+               <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Usage History</DialogTitle>
+               <p className="text-white/60 text-[10px] font-bold uppercase mt-1">Clients who used code: {selectedPromo?.code}</p>
+            </div>
+            <div className="p-6 max-h-[60vh] overflow-y-auto scrollbar-hide space-y-3">
+               {selectedPromo && (selectedPromo.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo.claimed ? [{ uid: selectedPromo.usedBy, timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).length === 0 ? (
+                 <div className="py-12 text-center opacity-30 italic font-bold uppercase text-xs">No users have used this code yet.</div>
+               ) : (
+                 (selectedPromo?.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo?.claimed ? [{ uid: selectedPromo.usedBy, name: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.name || 'User', whatsapp: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.phoneNumber || 'N/A', timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).map((usage: any) => (
+                    <div key={usage.uid} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><User size={20} /></div>
+                          <div>
+                             <p className="text-sm font-bold">{usage.name || 'Gamer'}</p>
+                             <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp}</p>
+                          </div>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-[10px] font-black text-primary uppercase">{formatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
+                          <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{format(usage.timestamp, 'MMM d, HH:mm')}</p>
+                       </div>
+                    </div>
+                 ))
+               )}
+            </div>
+            <div className="p-6 pt-0">
+               <Button onClick={() => setIsPromoUsageOpen(false)} className="w-full rounded-xl">Close</Button>
+            </div>
+         </DialogContent>
       </Dialog>
 
       <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
@@ -2486,9 +2538,12 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
           <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
              <div>
-                <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white mb-2">
-                   {item?.title || "ACCOUNT: UNKNOWN"}
-                </h2>
+                <div className="flex items-center gap-2 mb-2">
+                   <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
+                      {item?.title || "ACCOUNT: UNKNOWN"}
+                   </h2>
+                   {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase">ONE TIME</Badge>}
+                </div>
                 <div className="flex items-center gap-4">
                    <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
                       {order.paymentMethod || "WHATSAPP DIRECT"}

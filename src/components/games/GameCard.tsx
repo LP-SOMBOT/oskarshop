@@ -1,8 +1,7 @@
-
 "use client";
 
 import Image from "next/image";
-import { ShoppingCart, Tag, Sparkles } from "lucide-react";
+import { ShoppingCart, Tag, Sparkles, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +17,11 @@ type GameCardProps = {
   discountedPrice?: number | string;
   gameId: string;
   imageHint?: string;
+  isOneTime?: boolean;
 };
 
-export default function GameCard({ id, title, description, thumbnail, price, discountedPrice, gameId, imageHint }: GameCardProps) {
-  const { buyNow, user, t } = useApp();
+export default function GameCard({ id, title, description, thumbnail, price, discountedPrice, gameId, imageHint, isOneTime }: GameCardProps) {
+  const { buyNow, user, t, language } = useApp();
 
   const numPrice = Number(price);
   const numDiscounted = discountedPrice ? Number(discountedPrice) : 0;
@@ -40,7 +40,7 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
-    buyNow({ id, title, price: currentPrice, gameId, thumbnail });
+    buyNow({ id, title, price: currentPrice, gameId, thumbnail, isOneTime });
   };
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
@@ -78,6 +78,14 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
             {gameId.substring(0,2).toUpperCase()}
           </div>
         )}
+
+        {isOneTime && (
+           <div className="absolute bottom-2 left-2 right-2 z-10">
+              <Badge className="w-full bg-slate-900/80 backdrop-blur-md text-amber-400 border border-amber-400/30 font-black px-2 py-1 rounded-lg shadow-xl uppercase text-[7px] md:text-[9px] tracking-widest flex items-center justify-center gap-1.5">
+                 <ShieldAlert size={10} /> Special Limited Item
+              </Badge>
+           </div>
+        )}
       </div>
       
       <CardContent className="p-3 md:p-5 flex flex-col flex-grow">
@@ -86,6 +94,15 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
            <p className="text-[9px] md:text-xs text-muted-foreground line-clamp-2 leading-relaxed opacity-70">{description}</p>
         </div>
         
+        {isOneTime && (
+          <div className="mb-3 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30 flex gap-2 items-start">
+             <ShieldAlert size={12} className="text-amber-600 shrink-0 mt-0.5" />
+             <p className="text-[7px] md:text-[9px] font-bold text-amber-700 dark:text-amber-500 leading-tight">
+                {language === 'so' ? 'Item-kan waa hal-mar (One Time Only). Hubi ID-ga.' : 'This item is limited to one purchase per user account/ID.'}
+             </p>
+          </div>
+        )}
+
         <div className="flex flex-col mt-auto bg-slate-50 dark:bg-slate-800/50 p-2 md:p-4 rounded-xl border border-slate-100 dark:border-white/5 shadow-inner">
           <div className="flex flex-col items-center justify-center">
              {(hasStoreDiscount || hasRankDiscount) && (

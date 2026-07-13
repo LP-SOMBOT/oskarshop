@@ -21,7 +21,8 @@ import {
   DollarSign,
   Ticket,
   UserCheck,
-  User
+  User,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,7 @@ function CheckoutContent() {
   }, [games, item?.gameId]);
 
   const isAutoDetectEnabled = !!game?.autoDetectName;
+  const isOneTime = !!item?.isOneTime;
 
   useEffect(() => {
     setGlobalLoading(false);
@@ -241,7 +243,7 @@ function CheckoutContent() {
     if (!item) return;
     setIsProcessing(true);
     setGlobalLoading(true);
-    const purchaseItem = { id: item.id, title: item.title, price: total, quantity: 1, gameId: item.gameId, thumbnail: item.thumbnail };
+    const purchaseItem = { id: item.id, title: item.title, price: total, quantity: 1, gameId: item.gameId, thumbnail: item.thumbnail, isOneTime: !!item.isOneTime };
     const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId);
     
     const finalDetails = { 
@@ -339,6 +341,7 @@ function CheckoutContent() {
             <CardTitle className="font-headline font-bold text-lg md:text-2xl flex items-center gap-2 text-slate-900 dark:text-white">
               {isBooyahPass ? <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-primary" /> : <Gamepad2 className="w-5 h-5 md:w-6 md:h-6 text-primary" />} 
               {isBooyahPass ? "Booyah pass" : (game?.title || "Xogta Dalabka")}
+              {isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase ml-2">ONE TIME</Badge>}
             </CardTitle>
             <CardDescription className="dark:text-slate-400 text-[10px] md:text-sm">
               {isBooyahPass ? "Fadlan buuxi form-ka Si saxan." : `Fadlan buuxi xogta saxda ah si laguugu soo diro ${item?.title}.`}
@@ -346,10 +349,17 @@ function CheckoutContent() {
           </CardHeader>
           <CardContent className="p-4 md:p-8 pt-0 md:pt-0">
             <form onSubmit={!isBooyahPass ? handleDetailsSubmit : (e) => e.preventDefault()} className="space-y-4 md:space-y-6">
-              <div className={cn("p-3 md:p-4 rounded-xl md:rounded-2xl flex gap-2 md:gap-3", isBooyahPass ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/20 text-blue-600 dark:text-blue-400" : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400")}>
-                 <AlertTriangle className="shrink-0 w-4 h-4 md:w-6 md:h-6" />
+              <div className={cn(
+                "p-3 md:p-5 rounded-xl md:rounded-2xl flex gap-3 md:gap-4 items-start shadow-inner", 
+                isOneTime 
+                  ? "bg-red-500 text-white border-none" 
+                  : isBooyahPass 
+                    ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/20 text-blue-600 dark:text-blue-400" 
+                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400"
+              )}>
+                 {isOneTime ? <ShieldAlert className="shrink-0 w-5 h-5 md:w-8 md:h-8 animate-pulse" /> : <AlertTriangle className="shrink-0 w-4 h-4 md:w-6 md:h-6" />}
                  {isBooyahPass ? (
-                   <div className="flex flex-col gap-1.5 md:gap-2 min-w-0">
+                   <div className="flex flex-col gap-1.5 md:gap-2 min-w-0 text-blue-800 dark:text-blue-300">
                      <p className="text-[9px] md:text-xs font-bold leading-relaxed">Number kaan ku dir lacag dhan <span className="text-[11px] md:text-sm font-headline text-foreground dark:text-white">${total.toFixed(2)}</span></p>
                      <div className="flex items-center gap-2 bg-white/50 dark:bg-black/20 px-2 md:px-4 py-1 md:py-2 rounded-lg md:rounded-xl border border-blue-200/50 dark:border-blue-800/30 w-fit">
                         <span className="text-[10px] md:text-sm font-mono font-bold tracking-wider">{item?.whatsappNumber || "252613982172"}</span>
@@ -358,6 +368,15 @@ function CheckoutContent() {
                         </button>
                      </div>
                    </div>
+                 ) : isOneTime ? (
+                    <div className="flex flex-col gap-1 min-w-0">
+                       <p className="text-[10px] md:text-sm font-black uppercase tracking-widest">SECURITY ALERT: ONE-TIME ITEM</p>
+                       <p className="text-[9px] md:text-xs font-bold leading-relaxed opacity-90">
+                          {language === 'so' 
+                            ? 'Fadlan item-kan waa hal mar. Aad u hubi Game ID-gaaga kahor inta aadan lacagta bixin. Wixii qaldama OskarShop masuliyad kama qaadeyso.' 
+                            : 'This item is limited to ONE PURCHASE per user. Double-check your ID carefully. OskarShop is not responsible for errors after submission.'}
+                       </p>
+                    </div>
                  ) : (
                    <p className="text-[9px] md:text-xs font-bold leading-relaxed">Fadlan iska hubi Xogta sida ID gaga inta aadan dalabka dirin, dalabka mar hadii la diro lama Soo celin karo FADLAN ISKA HUBI, Mahadsanid!.</p>
                  )}
@@ -433,7 +452,7 @@ function CheckoutContent() {
                 <div className="space-y-1 md:space-y-2">
                   <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">WhatsApp Number</Label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
                       <span className="font-bold text-[10px] md:text-sm text-gray-400 border-r border-gray-200 pr-2">+252</span>
                     </div>
                     <Input 

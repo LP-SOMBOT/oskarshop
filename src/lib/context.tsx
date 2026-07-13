@@ -57,6 +57,7 @@ type CartItem = {
   gameId: string;
   thumbnail?: string;
   details?: Record<string, string>;
+  isOneTime?: boolean;
 };
 
 type Order = {
@@ -193,14 +194,23 @@ type PaymentMethod = {
   active: boolean;
 };
 
+type PromoCodeUsage = {
+  uid: string;
+  name: string;
+  whatsapp: string;
+  timestamp: number;
+};
+
 type PromoCode = {
   id: string;
   code: string;
   discount: number; // percentage
   createdAt: number;
   expiresAt: number;
-  usedBy: string | null;
-  claimed: boolean;
+  type: 'single_use' | 'multi_use';
+  usedBy: string | null; // For single_use
+  usedByUsers?: Record<string, PromoCodeUsage>; // For tracking multi_use
+  claimed: boolean; // For single_use
   expired: boolean;
   note?: string;
 };
@@ -984,7 +994,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || pathname === "/terms";
         if (isSpecialFlow || pathname !== '/') {
-          router.push(tab === 'home' ? '/' : `/#${tab}`);
+          router.push(tab === 'home' ? '/' : `/#tab`);
         } else {
           window.location.hash = tab === 'home' ? '' : tab;
         }
@@ -1050,10 +1060,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (promoCode) {
       const standardizedCode = promoCode.trim().toUpperCase();
-      await update(ref(rtdb, `promo_codes/${standardizedCode}`), {
-        claimed: true,
-        usedBy: authUser.uid
-      });
+      const promoRef = ref(rtdb, `promo_codes/${standardizedCode}`);
+      const promoSnap = await get(promoRef);
+      const promoData = promoSnap.val();
+      
+      if (promoData) {
+        if (promoData.type === 'single_use' || !promoData.type) {
+          await update(promoRef, {
+            claimed: true,
+            usedBy: authUser.uid
+          });
+        } else {
+          // Multi-use tracking
+          await update(ref(rtdb, `promo_codes/${standardizedCode}/usedByUsers/${authUser.uid}`), {
+            uid: authUser.uid,
+            name: userProfile?.name || 'Guest',
+            whatsapp: userProfile?.phoneNumber || 'N/A',
+            timestamp: Date.now()
+          });
+        }
+      }
     }
 
     // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
@@ -2029,7 +2055,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const savePromoCode = useCallback(async (promo: any) => {
     if (!rtdb || !promo.code) return;
     setIsGlobalLoading(true);
-    const { duration, durationUnit, discount, ...rest } = promo;
+    const { duration, durationUnit, discount, type, ...rest } = promo;
     let expiresAt = 0;
     
     if (duration && durationUnit) {
@@ -2052,6 +2078,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await set(ref(rtdb, `promo_codes/${standardizedCode}`), {
       ...rest,
       code: standardizedCode,
+      type: type || 'single_use',
       discount: parseFloat(discount) || 0,
       expiresAt,
       createdAt: Date.now(),
@@ -2080,12 +2107,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!promoSnap.exists()) throw new Error("Invalid code");
       
       const data = promoSnap.val() as PromoCode;
-      if (data.claimed) throw new Error("Code already claimed");
       
       const expiryTime = Number(data.expiresAt) || 0;
       if (expiryTime && expiryTime < Date.now()) throw new Error("Code expired");
-      
-      if (data.usedBy === authUser.uid) throw new Error("You have already used this code");
+
+      if (data.type === 'single_use' || !data.type) {
+        if (data.claimed) throw new Error("Code already claimed");
+      } else {
+        // Multi-use: Check if this user already used it
+        if (data.usedByUsers?.[authUser.uid]) throw new Error("You have already used this code");
+      }
       
       return Number(data.discount) || 0;
     } finally {
