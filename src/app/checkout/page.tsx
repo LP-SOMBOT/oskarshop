@@ -42,7 +42,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const productId = searchParams.get('id');
 
-  const [step, setStep] = useState(1);
+  const [step, setSet] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
@@ -208,7 +208,7 @@ function CheckoutContent() {
       toast({ title: "Lacag Diraha khaldan", description: "Number-ka lacagta laga soo diray waa inuu ka koobnaadaa ugu yaraan 9 nambar.", variant: "destructive" });
       return;
     }
-    setStep(2);
+    setSet(2);
   };
 
   const handleBooyahRedirect = () => {
@@ -226,7 +226,7 @@ function CheckoutContent() {
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${adminWa}?text=${encoded}`, '_blank');
     setIsSuccess(true);
-    setStep(4);
+    setSet(4);
   };
 
   const handlePaymentInitiation = () => {
@@ -236,7 +236,7 @@ function CheckoutContent() {
     const ussd = method.ussdTemplate.replace('$', formattedPrice);
     toast({ title: "Opening Dialer", description: `Please complete the ${method.name} transaction.` });
     window.location.href = `tel:${ussd.replace(/#/g, '%23')}`;
-    setStep(3);
+    setSet(3);
   };
 
   const handleFinalConfirm = () => {
@@ -267,7 +267,7 @@ function CheckoutContent() {
     setTimeout(() => {
       setIsProcessing(false);
       setIsSuccess(true);
-      setStep(4);
+      setSet(4);
       setGlobalLoading(false);
       toast({ title: "Order Confirmed!", description: "Your diamonds are on the way!" });
     }, 1500);
@@ -375,7 +375,7 @@ function CheckoutContent() {
                        </p>
                        <p className="text-[9px] md:text-xs font-bold leading-relaxed opacity-90">
                           {language === 'so' 
-                            ? 'Fadlan Kan waxaad iibsan kartaa halmar, hadii aad iibsato adoo horey u iibsaday ogoow lacag laguuma soo ceelin doono. Fadlan iska hubi xogta, inta aadan iibsan.' 
+                            ? 'Fadlan iska fiiri bahashaan waa wax Hal mar la furan karo ( one time use) hada horo u Soo furate mar kale ma furan kartid❗ iska firi intaa ku dhaqaaqin.' 
                             : 'This item is limited to ONE PURCHASE per user. Double-check your ID carefully. OskarShop is not responsible for errors after submission.'}
                        </p>
                     </div>
@@ -598,7 +598,7 @@ function CheckoutContent() {
             <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
               <Button 
                 variant="ghost" 
-                onClick={() => setStep(1)} 
+                onClick={() => setSet(1)} 
                 className="order-2 sm:order-1 w-full sm:w-auto flex-1 h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] gap-2 font-bold dark:text-slate-300 text-xs md:text-xl transition-all active:scale-95"
               >
                 <ArrowLeft className="w-3.5 h-3.5 md:w-5 md:h-5" /> {language === 'so' ? 'Dib U noqo' : 'Back'}
@@ -630,7 +630,7 @@ function CheckoutContent() {
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">
               <Button onClick={handleFinalConfirm} disabled={isProcessing} className="w-full h-14 xs:h-16 md:h-20 rounded-xl md:rounded-[2.5rem] text-sm xs:text-lg md:text-2xl font-bold shadow-xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest">{isProcessing ? <div className="flex items-center justify-center gap-2 md:gap-3"><Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" /><span>Verifying...</span></div> : "Waan Bixiyay (Xaqiiji)"}</Button>
-              <Button variant="ghost" onClick={() => setStep(2)} className="w-full h-11 md:h-14 rounded-xl text-[10px] md:text-sm text-muted-foreground dark:text-slate-500 hover:dark:text-slate-300 font-bold uppercase tracking-widest">Dib u noqo</Button>
+              <Button variant="ghost" onClick={() => setSet(2)} className="w-full h-11 md:h-14 rounded-xl text-[10px] md:text-sm text-muted-foreground dark:text-slate-500 hover:dark:text-slate-300 font-bold uppercase tracking-widest">Dib u noqo</Button>
             </div>
           </CardContent>
         </Card>
