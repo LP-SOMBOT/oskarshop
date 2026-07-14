@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -81,7 +82,8 @@ import {
   Video,
   UserCheck,
   Globe,
-  BellRing
+  BellRing,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -515,6 +517,13 @@ export default function AdminPage() {
       u.uid?.toLowerCase().includes(userSearch.toLowerCase())
     );
   }, [allUsers, userSearch]);
+
+  const onlineUsersCount = useMemo(() => {
+    return allUsers.filter(u => {
+      const lastActive = Number(u.lastActive);
+      return !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
+    }).length;
+  }, [allUsers]);
 
   const paymentMethods = useMemo(() => {
     if (!storeSettings?.paymentMethods) return [];
@@ -1629,15 +1638,19 @@ export default function AdminPage() {
 
           {activeView === 'users' && (
             <div className="space-y-8 fade-in duration-700">
-               <div className="flex flex-col lg:flex-row lg:items-center justify-end gap-6">
-                  <div className="relative w-full lg:w-96">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <Input 
-                      placeholder="Search users..." 
-                      className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold"
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                    />
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <StatCard label="Total Registered" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
+                  <StatCard label="Online Now" value={onlineUsersCount.toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" pulse={onlineUsersCount > 0} />
+                  <div className="flex flex-col justify-center gap-4">
+                     <div className="relative w-full">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <Input 
+                          placeholder="Search users..." 
+                          className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold"
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                        />
+                     </div>
                   </div>
                </div>
 
@@ -2398,7 +2411,7 @@ export default function AdminPage() {
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
+                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
                     {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
