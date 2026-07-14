@@ -2322,35 +2322,26 @@ export default function AdminPage() {
                  />
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Type</Label>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div 
-                      onClick={() => setPromoForm({...promoForm, type: 'single_use'})}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-3",
-                        promoForm.type === 'single_use' ? "border-primary bg-primary/5" : "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/50"
-                      )}
-                    >
-                       <Checkbox checked={promoForm.type === 'single_use'} onCheckedChange={() => setPromoForm({...promoForm, type: 'single_use'})} className="rounded-full h-5 w-5" />
-                       <div className="min-w-0">
-                          <p className="text-xs font-bold uppercase">Single Use</p>
-                          <p className="text-[9px] text-muted-foreground font-medium leading-none mt-1">One person only</p>
-                       </div>
-                    </div>
-                    <div 
-                      onClick={() => setPromoForm({...promoForm, type: 'multi_use'})}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-3",
-                        promoForm.type === 'multi_use' ? "border-primary bg-primary/5" : "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/50"
-                      )}
-                    >
-                       <Checkbox checked={promoForm.type === 'multi_use'} onCheckedChange={() => setPromoForm({...promoForm, type: 'multi_use'})} className="rounded-full h-5 w-5" />
-                       <div className="min-w-0">
-                          <p className="text-xs font-bold uppercase">Multi-Use</p>
-                          <p className="text-[9px] text-muted-foreground font-medium leading-none mt-1">Global / Limited</p>
-                       </div>
-                    </div>
+                 <div className="flex items-center space-x-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border dark:border-white/5">
+                   <Checkbox 
+                     id="multi-use-toggle"
+                     checked={promoForm.type === 'multi_use'} 
+                     onCheckedChange={(checked) => setPromoForm({...promoForm, type: checked ? 'multi_use' : 'single_use'})}
+                     className="h-5 w-5"
+                   />
+                   <div className="grid gap-1.5 leading-none">
+                     <label
+                       htmlFor="multi-use-toggle"
+                       className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase"
+                     >
+                       Multi-use / Global Code
+                     </label>
+                     <p className="text-[10px] text-muted-foreground">
+                       Allows multiple users to claim this code. Leave unticked for single use.
+                     </p>
+                   </div>
                  </div>
               </div>
 
@@ -2574,7 +2565,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                    <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
                       {item?.title || "ACCOUNT: UNKNOWN"}
                    </h2>
-                   {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase">ONE TIME</Badge>}
+                   {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase ml-2">ONE TIME</Badge>}
                 </div>
                 <div className="flex items-center gap-4">
                    <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
