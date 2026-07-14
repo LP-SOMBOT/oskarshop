@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -92,6 +91,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Table, 
   TableBody, 
@@ -2322,17 +2322,36 @@ export default function AdminPage() {
                  />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Type</Label>
-                 <Select value={promoForm.type} onValueChange={v => setPromoForm({...promoForm, type: v})}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
-                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                       <SelectItem value="single_use" className="p-3 font-bold uppercase text-[10px]">Single Use (One Person Only)</SelectItem>
-                       <SelectItem value="multi_use" className="p-3 font-bold uppercase text-[10px]">Multi-Use / Time Limited (Global)</SelectItem>
-                    </SelectContent>
-                 </Select>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div 
+                      onClick={() => setPromoForm({...promoForm, type: 'single_use'})}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-3",
+                        promoForm.type === 'single_use' ? "border-primary bg-primary/5" : "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/50"
+                      )}
+                    >
+                       <Checkbox checked={promoForm.type === 'single_use'} onCheckedChange={() => setPromoForm({...promoForm, type: 'single_use'})} className="rounded-full h-5 w-5" />
+                       <div className="min-w-0">
+                          <p className="text-xs font-bold uppercase">Single Use</p>
+                          <p className="text-[9px] text-muted-foreground font-medium leading-none mt-1">One person only</p>
+                       </div>
+                    </div>
+                    <div 
+                      onClick={() => setPromoForm({...promoForm, type: 'multi_use'})}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-3",
+                        promoForm.type === 'multi_use' ? "border-primary bg-primary/5" : "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/50"
+                      )}
+                    >
+                       <Checkbox checked={promoForm.type === 'multi_use'} onCheckedChange={() => setPromoForm({...promoForm, type: 'multi_use'})} className="rounded-full h-5 w-5" />
+                       <div className="min-w-0">
+                          <p className="text-xs font-bold uppercase">Multi-Use</p>
+                          <p className="text-[9px] text-muted-foreground font-medium leading-none mt-1">Global / Limited</p>
+                       </div>
+                    </div>
+                 </div>
               </div>
 
               <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
