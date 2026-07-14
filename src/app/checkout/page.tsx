@@ -370,10 +370,12 @@ function CheckoutContent() {
                    </div>
                  ) : isOneTime ? (
                     <div className="flex flex-col gap-1 min-w-0">
-                       <p className="text-[10px] md:text-sm font-black uppercase tracking-widest">SECURITY ALERT: ONE-TIME ITEM</p>
+                       <p className="text-[10px] md:text-sm font-black uppercase tracking-widest">
+                         {language === 'so' ? 'DIGNIIN' : 'SECURITY ALERT: ONE-TIME ITEM'}
+                       </p>
                        <p className="text-[9px] md:text-xs font-bold leading-relaxed opacity-90">
                           {language === 'so' 
-                            ? 'Fadlan item-kan waa hal mar. Aad u hubi Game ID-gaaga kahor inta aadan lacagta bixin. Wixii qaldama OskarShop masuliyad kama qaadeyso.' 
+                            ? 'Fadlan Kan waxaad iibsan kartaa halmar, hadii aad iibsato adoo horey u iibsaday ogoow lacag laguuma soo ceelin doono. Fadlan iska hubi xogta, inta aadan iibsan.' 
                             : 'This item is limited to ONE PURCHASE per user. Double-check your ID carefully. OskarShop is not responsible for errors after submission.'}
                        </p>
                     </div>
