@@ -236,7 +236,7 @@ function WaitTime({ post }: { post: any }) {
     };
     update();
     const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
+    return () => typeof window !== 'undefined' && clearInterval(interval);
   }, [post]);
 
   return (
@@ -2336,10 +2336,10 @@ export default function AdminPage() {
                        htmlFor="multi-use-toggle"
                        className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase"
                      >
-                       Multi-use / Global Code
+                       dad badan
                      </label>
                      <p className="text-[10px] text-muted-foreground">
-                       Allows multiple users to claim this code. Leave unticked for single use.
+                       macamiil badan ayaa isticmaali karto. ka qaad tick ta si hal qof u isticmaalo.
                      </p>
                    </div>
                  </div>
