@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from "react";
@@ -35,7 +34,7 @@ function CheckoutEventContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
-  const { eventAccounts, user, createOrder, setGlobalLoading, storeSettings, language, t } = useApp();
+  const { eventAccounts, user, createOrder, setGlobalLoading, storeSettings, language, t, setActiveTab } = useApp();
   
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
