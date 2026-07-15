@@ -1012,7 +1012,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank2} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank2: v }
+                            rewards: { ...leaderboardForm.rewards, rank1: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />
@@ -1021,7 +1021,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank3} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank3: v }
+                            rewards: { ...leaderboardForm.rewards, rank1: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />

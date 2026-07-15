@@ -50,7 +50,7 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
         isVisible ? "translate-x-0 opacity-100 scale-100" : "translate-x-12 opacity-0 scale-95"
       )}>
          <Avatar className="w-10 h-10 border-2 border-primary/10 shadow-sm">
-            <AvatarImage src={currentTap.avatar} unoptimized />
+            <AvatarImage src={currentTap.avatar} />
             <AvatarFallback className="bg-primary/10 text-primary">
               <User size={16}/>
             </AvatarFallback>
