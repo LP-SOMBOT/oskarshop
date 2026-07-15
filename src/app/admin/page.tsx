@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -323,6 +324,11 @@ export default function AdminPage() {
     games,
     products, 
     accountPosts,
+    eventAccounts,
+    saveEventAccount,
+    deleteEventAccount,
+    assignEventWinner,
+    updateEventStatus,
     promoCodes,
     savePromoCode,
     deletePromoCode,
@@ -359,12 +365,13 @@ export default function AdminPage() {
 
   const router = useRouter();
 
-  const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'events' | 'users' | 'settings' | 'promo-codes' | 'leaderboard'>('dashboard');
+  const [activeView, setActiveTab] = useState<'dashboard' | 'orders' | 'inventory' | 'account-posts' | 'account-events' | 'events' | 'users' | 'settings' | 'promo-codes' | 'leaderboard'>('dashboard');
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
@@ -372,6 +379,7 @@ export default function AdminPage() {
 
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [isEventAccountDialogOpen, setIsEventAccountDialogOpen] = useState(false);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
   const [isPaymentMethodDialogOpen, setIsPaymentMethodDialogOpen] = useState(false);
@@ -383,6 +391,7 @@ export default function AdminPage() {
 
   const [editingGame, setEditingGame] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingEventAccount, setEditingEventAccount] = useState<any>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editingPaymentMethod, setEditingPaymentMethod] = useState<any>(null);
   const [selectedPromo, setSelectedPromo] = useState<any>(null);
@@ -398,6 +407,7 @@ export default function AdminPage() {
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
   const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
+  const [eventAccountForm, setEventAccountForm] = useState({ title: "", gameName: "", description: "", details: "", initialPrice: "", tapPrice: "0.50", startTime: "", endTime: "", imageUrls: [] as string[] });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -507,6 +517,7 @@ export default function AdminPage() {
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
+  const selectedEventAccount = useMemo(() => eventAccounts.find(e => e.id === selectedEventId), [selectedEventId, eventAccounts]);
 
   const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
 
@@ -542,6 +553,32 @@ export default function AdminPage() {
     setIsProductDialogOpen(true);
   };
 
+  const handleOpenEventAccountDialog = (e?: any) => {
+    setEditingEventAccount(e || null);
+    setEventAccountForm(e ? { 
+      title: e.title, 
+      gameName: e.gameName, 
+      description: e.description || "", 
+      details: e.details || "", 
+      initialPrice: e.initialPrice.toString(), 
+      tapPrice: e.tapPrice.toString(), 
+      startTime: format(new Date(e.startTime), "yyyy-MM-dd'T'HH:mm"), 
+      endTime: format(new Date(e.endTime), "yyyy-MM-dd'T'HH:mm"),
+      imageUrls: e.imageUrls || []
+    } : { 
+      title: "", 
+      gameName: "", 
+      description: "", 
+      details: "", 
+      initialPrice: "", 
+      tapPrice: "0.50", 
+      startTime: "", 
+      endTime: "",
+      imageUrls: []
+    });
+    setIsEventAccountDialogOpen(true);
+  };
+
   const handleOpenPaymentMethodDialog = (m?: any) => {
     setEditingPaymentMethod(m || null);
     setPaymentMethodForm(m ? { name: m.name, icon: m.icon || "", ussdTemplate: m.ussdTemplate || "", active: m.active } : { name: "", icon: "", ussdTemplate: "", active: true });
@@ -566,6 +603,24 @@ export default function AdminPage() {
       }); 
       setIsProductDialogOpen(false); 
       toast({ title: "Item Saved" }); 
+    } finally { setIsUploading(false); }
+  };
+
+  const handleSaveEventAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+    try {
+      const payload = {
+        ...eventAccountForm,
+        initialPrice: parseFloat(eventAccountForm.initialPrice),
+        tapPrice: parseFloat(eventAccountForm.tapPrice),
+        startTime: new Date(eventAccountForm.startTime).getTime(),
+        endTime: new Date(eventAccountForm.endTime).getTime(),
+        id: editingEventAccount?.id
+      };
+      await saveEventAccount(payload);
+      setIsEventAccountDialogOpen(false);
+      toast({ title: "Event Saved", description: "Marketplace event created successfully." });
     } finally { setIsUploading(false); }
   };
 
@@ -661,6 +716,7 @@ export default function AdminPage() {
     try {
       if (deleteTarget.type === 'order') await deleteOrder(deleteTarget.id);
       if (deleteTarget.type === 'account') await deleteAccountPost(deleteTarget.id);
+      if (deleteTarget.type === 'eventAccount') await deleteEventAccount(deleteTarget.id);
       if (deleteTarget.type === 'game') await deleteGame(deleteTarget.id);
       if (deleteTarget.type === 'product') await deleteProduct(deleteTarget.id);
       if (deleteTarget.type === 'user') await deleteUserFn(deleteTarget.id);
@@ -684,6 +740,7 @@ export default function AdminPage() {
       const url = await uploadToImgbb(file);
       if (target === 'game') setGameForm(f => ({ ...f, icon: url }));
       if (target === 'product') setProductForm(f => ({ ...f, thumbnail: url }));
+      if (target === 'eventAccount') setEventAccountForm(f => ({ ...f, imageUrls: [...f.imageUrls, url] }));
       if (target === 'event') setEventForm(f => ({ ...f, thumbnailUrl: url }));
       if (target === 'banner') setBannerForm(f => ({ ...f, imageUrl: url }));
       if (target === 'logo') setBrandForm(f => ({ ...f, logo: url }));
@@ -754,6 +811,7 @@ export default function AdminPage() {
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />
         <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
+        <SideNavItem icon={Sparkles} label="Account Events" active={activeView === 'account-events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-events'); setSelectedEventId(null); setIsMobileMenuOpen(false); }} badge={eventAccounts.filter(e => e.status === 'active').length} />
         <SideNavItem icon={Trophy} label="Leaderboard" active={activeView === 'leaderboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('leaderboard'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
@@ -775,6 +833,7 @@ export default function AdminPage() {
     switch (type) {
       case 'user': return "Are you sure you want to permanently delete this user? This cannot be undone.";
       case 'account': return "Are you sure you want to delete this marketplace listing?";
+      case 'eventAccount': return "Are you sure you want to delete this auction event?";
       case 'order': return "Are you sure you want to delete this order record?";
       case 'game': return "Are you sure you want to delete this game collection? This will also remove all its items.";
       case 'product': return "Are you sure you want to delete this inventory package?";
@@ -806,7 +865,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
-               {selectedOrderId ? "Order Insight" : selectedAccountId ? "Listing Hub" : activeView.toUpperCase().replace('-', ' ')}
+               {selectedOrderId ? "Order Insight" : selectedAccountId ? "Listing Hub" : selectedEventId ? "Auction Manager" : activeView.toUpperCase().replace('-', ' ')}
              </h2>
           </div>
           <div className="flex items-center gap-4">
@@ -853,7 +912,7 @@ export default function AdminPage() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
-          {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && (
+          {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                   <StatCard label="Total Revenue" value={`$${allOrders.filter(o => o.status === 'successful').reduce((acc, o) => acc + o.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
@@ -879,7 +938,6 @@ export default function AdminPage() {
             <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700">
                <Card className="rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                   <div className="relative p-4 sm:p-8 md:p-12 space-y-12 md:space-y-12">
-                     {/* Background Decorative Accent */}
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5">
@@ -967,6 +1025,49 @@ export default function AdminPage() {
                      </div>
                   </div>
                </Card>
+            </div>
+          )}
+
+          {activeView === 'account-events' && (
+            <div className="space-y-12 animate-in fade-in duration-700">
+               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                  <div className="space-y-2">
+                     <h2 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Account Events</h2>
+                     <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest">Manage real-time auction-style account taps</p>
+                  </div>
+                  <Button 
+                    onClick={() => handleOpenEventAccountDialog()} 
+                    className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                  >
+                    <PlusCircle size={20} /> Add Event
+                  </Button>
+               </div>
+
+               {selectedEventId ? (
+                 <EventAccountParticipantsView 
+                    eventId={selectedEventId}
+                    eventAccount={selectedEventAccount}
+                    onBack={() => setSelectedEventId(null)}
+                    onAssignWinner={assignEventWinner}
+                 />
+               ) : (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {eventAccounts.map(event => (
+                      <EventAccountAdminCard 
+                        key={event.id}
+                        event={event}
+                        onEdit={() => handleOpenEventAccountDialog(event)}
+                        onDelete={() => { setDeleteTarget({id: event.id, type: 'eventAccount'}); setIsDeleteDialogOpen(true); }}
+                        onViewParticipants={() => setSelectedEventId(event.id)}
+                        onEndEarly={() => updateEventStatus(event.id, 'ended')}
+                        onAssignWinner={() => setSelectedEventId(event.id)}
+                      />
+                    ))}
+                    {eventAccounts.length === 0 && (
+                      <div className="col-span-full py-20 border-2 border-dashed rounded-[3rem] text-center opacity-30 italic font-bold uppercase text-xs">No account events scheduled</div>
+                    )}
+                 </div>
+               )}
             </div>
           )}
 
@@ -2289,6 +2390,64 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isEventAccountDialogOpen} onOpenChange={setIsEventAccountDialogOpen}>
+        <DialogContent className="max-w-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+           <div className="h-2 bg-primary w-full" />
+           <DialogHeader className="p-6 md:p-10 pb-0">
+              <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
+                {editingEventAccount ? 'Edit Auction Event' : 'New Account Event'}
+              </DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleSaveEventAccount} className="p-6 md:p-10 space-y-6 md:space-y-8">
+              <div className="space-y-4">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Event Gallery</Label>
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {eventAccountForm.imageUrls.map((url, idx) => (
+                       <div key={url + idx} className="relative aspect-square rounded-xl overflow-hidden border">
+                          <Image src={url} alt="" fill className="object-cover" unoptimized />
+                          <button 
+                            type="button" 
+                            onClick={() => setEventAccountForm(f => ({ ...f, imageUrls: f.imageUrls.filter((_, i) => i !== idx) }))}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                          >
+                             <X size={10} />
+                          </button>
+                       </div>
+                    ))}
+                    <div className="relative aspect-square rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed flex flex-col items-center justify-center">
+                       <ImageIcon className="text-slate-300 w-8 h-8" />
+                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'eventAccount')} />
+                    </div>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                 <SettingInput label="Listing Title" value={eventAccountForm.title} onChange={v => setEventAccountForm({ ...eventAccountForm, title: v })} placeholder="e.g. Max FF Account" />
+                 <SettingInput label="Game Name" value={eventAccountForm.gameName} onChange={v => setEventAccountForm({ ...eventAccountForm, gameName: v })} placeholder="e.g. Free Fire" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                 <SettingInput label="Initial Price ($)" type="number" value={eventAccountForm.initialPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, initialPrice: v })} placeholder="10.00" />
+                 <SettingInput label="Price Per Tap ($)" type="number" value={eventAccountForm.tapPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, tapPrice: v })} placeholder="0.50" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                 <SettingInput label="Start Time" type="datetime-local" value={eventAccountForm.startTime} onChange={v => setEventAccountForm({ ...eventAccountForm, startTime: v })} placeholder="" />
+                 <SettingInput label="End Time" type="datetime-local" value={eventAccountForm.endTime} onChange={v => setEventAccountForm({ ...eventAccountForm, endTime: v })} placeholder="" />
+              </div>
+
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Account Specs (Level, Rank, etc.)</Label>
+                 <Textarea value={eventAccountForm.details} onChange={e => setEventAccountForm({ ...eventAccountForm, details: e.target.value })} placeholder="Lv 75, Rank Master, 5 Evo Skins..." className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[100px] p-4 font-bold shadow-inner" />
+              </div>
+
+              <Button type="submit" disabled={isUploading || eventAccountForm.imageUrls.length === 0} className="w-full h-14 md:h-18 rounded-2xl font-black text-lg shadow-2xl uppercase tracking-widest active:scale-[0.98] transition-all">
+                {isUploading ? <Loader2 className="animate-spin" /> : "Keydi"}
+              </Button>
+           </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">New Promotion Banner</DialogTitle></DialogHeader>
@@ -3127,6 +3286,137 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
     <div className="space-y-2">
        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">{label}</Label>
        <Input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all" />
+    </div>
+  );
+}
+
+function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, onEndEarly, onAssignWinner }: { event: any, onEdit: ()=>void, onDelete: ()=>void, onViewParticipants: ()=>void, onEndEarly: ()=>void, onAssignWinner: ()=>void }) {
+  const statusColors = {
+    upcoming: "bg-blue-100 text-blue-700",
+    active: "bg-green-100 text-green-700 animate-pulse",
+    ended: "bg-slate-100 text-slate-600",
+    claimed: "bg-purple-100 text-purple-700"
+  };
+
+  return (
+    <Card className="rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 overflow-hidden group">
+       <div className="aspect-video relative">
+          {event.imageUrls?.[0] ? <Image src={event.imageUrls[0]} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300 font-bold">O</div>}
+          <Badge className={cn("absolute top-4 left-4 border-none font-black uppercase text-[8px]", statusColors[event.status as keyof typeof statusColors])}>
+             {event.status}
+          </Badge>
+       </div>
+       <div className="p-6 space-y-4">
+          <div>
+             <h4 className="font-headline font-bold text-lg uppercase truncate">{event.title}</h4>
+             <p className="text-[10px] text-muted-foreground uppercase font-black">{event.gameName}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t dark:border-white/5">
+             <div>
+                <p className="text-[8px] font-black text-slate-400 uppercase">Initial Price</p>
+                <p className="font-bold text-sm text-primary">${event.initialPrice}</p>
+             </div>
+             <div>
+                <p className="text-[8px] font-black text-slate-400 uppercase">Participants</p>
+                <p className="font-bold text-sm">{event.participantsCount || 0}</p>
+             </div>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-4">
+             <Button size="sm" variant="outline" className="rounded-xl h-8 text-[9px] uppercase font-bold border-2" onClick={onEdit}>Edit</Button>
+             <Button size="sm" variant="outline" className="rounded-xl h-8 text-[9px] uppercase font-bold border-2" onClick={onViewParticipants}>Participants</Button>
+             {event.status === 'active' && <Button size="sm" variant="outline" className="rounded-xl h-8 text-[9px] uppercase font-bold border-2 text-red-500" onClick={onEndEarly}>End Early</Button>}
+             {event.status === 'ended' && <Button size="sm" className="rounded-xl h-8 text-[9px] uppercase font-bold bg-primary text-white" onClick={onAssignWinner}>Assign Winner</Button>}
+             <button onClick={onDelete} className="ml-auto text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+          </div>
+       </div>
+    </Card>
+  );
+}
+
+function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignWinner }: { eventId: string, eventAccount: any, onBack: ()=>void, onAssignWinner: (eid: string, uid: string)=>void }) {
+  const { rtdb } = useApp();
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!rtdb || !eventId) return;
+    const participantsRef = ref(rtdb, `eventParticipants/${eventId}`);
+    const unsub = onValue(participantsRef, (snap) => {
+      const data = snap.val();
+      if (data) {
+        setParticipants(Object.values(data).sort((a: any, b: any) => b.taps - a.taps));
+      } else {
+        setParticipants([]);
+      }
+      setLoading(false);
+    });
+    return () => off(participantsRef);
+  }, [rtdb, eventId]);
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4">
+       <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={24}/></button>
+             <div>
+                <h3 className="font-headline font-bold text-2xl uppercase tracking-tight">{eventAccount?.title}</h3>
+                <p className="text-[10px] font-black text-muted-foreground uppercase">Real-time Participants List</p>
+             </div>
+          </div>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard label="Participants" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50" />
+          <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50" />
+          <StatCard label="Leader" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
+          <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50" />
+       </div>
+
+       <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <Table>
+             <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                <TableRow className="border-none h-16">
+                   <TableHead className="px-10 font-black text-[10px] uppercase">Rank</TableHead>
+                   <TableHead className="font-black text-[10px] uppercase">User</TableHead>
+                   <TableHead className="font-black text-[10px] uppercase">Taps</TableHead>
+                   <TableHead className="font-black text-[10px] uppercase">Value</TableHead>
+                   <TableHead className="font-black text-[10px] uppercase">Last Tap</TableHead>
+                   <TableHead className="text-right px-10 font-black text-[10px] uppercase">Actions</TableHead>
+                </TableRow>
+             </TableHeader>
+             <TableBody>
+                {loading ? (
+                  <TableRow><TableCell colSpan={6} className="h-64 text-center">Loading Participants...</TableCell></TableRow>
+                ) : participants.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="h-64 text-center opacity-30 italic font-bold">No participants yet</TableCell></TableRow>
+                ) : (
+                  participants.map((p, idx) => (
+                    <TableRow key={p.uid} className="h-24 hover:bg-slate-50/50 border-slate-50">
+                       <TableCell className="px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
+                       <TableCell>
+                          <div className="flex items-center gap-3">
+                             <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
+                                <AvatarImage src={p.avatar} />
+                                <AvatarFallback>{p.name?.[0]}</AvatarFallback>
+                             </Avatar>
+                             <div>
+                                <p className="font-bold text-sm">{p.name}</p>
+                                <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
+                             </div>
+                          </div>
+                       </TableCell>
+                       <TableCell className="font-bold text-lg">{p.taps}</TableCell>
+                       <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
+                       <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
+                       <TableCell className="text-right px-10">
+                          <Button size="sm" variant="outline" className="rounded-xl h-10 uppercase font-black text-[9px] tracking-widest gap-2 bg-primary text-white border-none shadow-lg" onClick={() => onAssignWinner(eventId, p.uid)}>Make Winner</Button>
+                       </TableCell>
+                    </TableRow>
+                  ))
+                )}
+             </TableBody>
+          </Table>
+       </Card>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -60,6 +61,7 @@ import { useRouter } from 'next/navigation';
 export default function AccountsView() {
   const { 
     accountPosts, 
+    eventAccounts,
     user, 
     orders, 
     setActiveTab, 
@@ -89,29 +91,31 @@ export default function AccountsView() {
     const isAdmin = !!user?.isAdmin;
     const userId = user?.uid;
 
-    return (accountPosts || [])
+    const posts = (accountPosts || [])
       .filter(p => {
         const isOwner = userId && p.uid === userId;
         const isInvolvedInDeal = userId && (orders || []).some(o => o.gameDetails?.postId === p.id && o.userId === userId);
         
-        if (isAdmin || isOwner || isInvolvedInDeal) {
-          return true;
-        }
-
+        if (isAdmin || isOwner || isInvolvedInDeal) return true;
         if (p.sold === true || p.status === 'sold') return false;
-
         if (p.status !== 'approved') return false;
         if (p.hiddenFromMarket === true) return false;
-
         return true;
-      })
+      });
+
+    const events = (eventAccounts || [])
+      .filter(e => e.status === 'active' || e.status === 'upcoming')
+      .map(e => ({ ...e, isEvent: true }));
+
+    return [...posts, ...events]
       .filter(p => 
+        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         p.authorName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         p.gameType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.platform?.toLowerCase().includes(searchQuery.toLowerCase())
+        p.gameName?.toLowerCase().includes(searchQuery.toLowerCase())
       )
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [accountPosts, searchQuery, user, orders]);
+  }, [accountPosts, eventAccounts, searchQuery, user, orders]);
 
   const myActivity = useMemo(() => {
     if (!user) return [];
@@ -175,7 +179,16 @@ export default function AccountsView() {
            </div>
            
            <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
-              <button onClick={() => setIsActivityModalOpen(true)} className="hidden md:flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-sm text-slate-400 hover:text-primary transition-colors border border-gray-100 dark:border-white/5 ml-auto">
+              <div className="relative flex-1 md:w-64 lg:w-96">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Input 
+                  placeholder={language === 'so' ? 'Raadi...' : 'Search listings...'} 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="h-14 lg:h-16 rounded-2xl md:rounded-[1.5rem] bg-white dark:bg-slate-900 border-none pl-12 font-bold shadow-sm"
+                />
+              </div>
+              <button onClick={() => setIsActivityModalOpen(true)} className="hidden md:flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-sm text-slate-400 hover:text-primary transition-colors border border-gray-100 dark:border-white/5">
                  <Activity className="w-7 h-7 lg:w-8 lg:h-8" />
               </button>
            </div>
@@ -197,7 +210,17 @@ export default function AccountsView() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-8 lg:gap-10">
-            {filteredPosts.map((post) => {
+            {filteredPosts.map((post: any) => {
+              if (post.isEvent) {
+                return (
+                  <EventAccountCard 
+                    key={post.id} 
+                    event={post} 
+                    onClick={() => { setGlobalLoading(true); router.push(`/events/${post.id}`); }}
+                  />
+                );
+              }
+
               const isBuyer = (orders || []).some(o => o.gameDetails?.postId === post.id && o.userId === user?.uid);
               return (
                 <AccountPostCard 
@@ -283,6 +306,85 @@ export default function AccountsView() {
          </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function EventAccountCard({ event, onClick }: { event: any, onClick: () => void }) {
+  const { t } = useApp();
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const diff = event.endTime - now;
+      if (diff <= 0) {
+        setTimeLeft(t('dhammaatay'));
+        clearInterval(timer);
+        return;
+      }
+      const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+      const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+      const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+      setTimeLeft(`${h}:${m}:${s}`);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [event.endTime, t]);
+
+  const currentPrice = event.initialPrice + ((event.topTapsCount || 0) * event.tapPrice);
+
+  return (
+    <Card 
+      onClick={onClick}
+      className="rounded-[2.5rem] md:rounded-[3.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group hover:-translate-y-2 transition-all cursor-pointer relative ring-4 ring-amber-400/20"
+    >
+       <div className="aspect-[4/3] relative bg-slate-900 overflow-hidden">
+          {event.imageUrls?.[0] ? (
+            <Image src={event.imageUrls[0]} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-1000" unoptimized />
+          ) : <div className="w-full h-full bg-slate-800" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          
+          <div className="absolute top-4 left-4 flex flex-col gap-2">
+             <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-none font-black text-[10px] px-4 py-1 shadow-lg tracking-widest uppercase">
+                {t('event')}
+             </Badge>
+             {event.status === 'active' && (
+               <div className="flex items-center gap-2 bg-green-500 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg w-fit">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
+               </div>
+             )}
+          </div>
+
+          <div className="absolute bottom-6 left-6 right-6">
+             <div className="flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-widest mb-2">
+                <Clock size={12} className="text-amber-400" />
+                <span>Waxay dhamaanaysaa: {timeLeft}</span>
+             </div>
+             <h4 className="text-white font-headline font-bold text-xl md:text-3xl uppercase leading-none truncate">{event.title}</h4>
+          </div>
+       </div>
+
+       <div className="p-6 md:p-8 space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-1">
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Participants</p>
+                <div className="flex items-center gap-2">
+                   <div className="flex -space-x-2">
+                      {[1,2,3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200" />)}
+                   </div>
+                   <span className="text-xs font-bold text-slate-900 dark:text-white">+{event.participantsCount || 0}</span>
+                </div>
+             </div>
+             <div className="text-right space-y-1">
+                <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Highest Bid</p>
+                <p className="text-2xl font-headline font-bold text-amber-500 tracking-tighter">${currentPrice.toFixed(2)}</p>
+             </div>
+          </div>
+
+          <Button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">
+             {t('ka_qeeb_gal')} <ChevronRight size={18} className="ml-2" />
+          </Button>
+       </div>
+    </Card>
   );
 }
 
@@ -491,7 +593,7 @@ function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: 
                           <>
                             <FormGroup label="Prime Level">
                               <Select value={formData.primeLevel} onValueChange={v => setFormData({...formData, primeLevel: v})}>
-                                  <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-lg shadow-inner">
+                                  <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-lg shadow-inner">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 z-[200]">
@@ -813,4 +915,3 @@ function ProfileInput({ label, value, onChange, type = "text", inputMode }: { la
     </div>
   );
 }
-

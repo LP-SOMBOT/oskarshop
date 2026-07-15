@@ -16,6 +16,7 @@ import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 import SplashScreen from "@/components/layout/SplashScreen";
 import BannedModal from "@/components/layout/BannedModal";
 import OneSignalInitializer from "@/components/layout/OneSignalInitializer";
+import WinnerClaimGuard from "@/components/events/WinnerClaimGuard";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -92,6 +93,7 @@ export default function RootLayout({
               <PWAInstaller />
               <BannedModal />
               <OneSignalInitializer />
+              <WinnerClaimGuard />
               <NotificationGuard>
                 <TermsGuard>
                   <OnboardingGuard>

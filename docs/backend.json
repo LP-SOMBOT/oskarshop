@@ -65,6 +65,25 @@
         "senderNumber": { "type": "string" }
       }
     },
+    "EventAccount": {
+      "title": "Event Account",
+      "description": "An auction-style account event.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "gameName": { "type": "string" },
+        "description": { "type": "string" },
+        "details": { "type": "string" },
+        "initialPrice": { "type": "number" },
+        "tapPrice": { "type": "number" },
+        "startTime": { "type": "number" },
+        "endTime": { "type": "number" },
+        "status": { "type": "string", "enum": ["upcoming", "active", "ended", "claimed"] },
+        "imageUrls": { "type": "array" },
+        "winnerId": { "type": "string" },
+        "winnerClaim": { "type": "object" }
+      }
+    },
     "Notification": {
       "title": "Notification",
       "description": "User notification document.",
@@ -113,6 +132,9 @@
     "users": { "description": "User profiles" },
     "games": { "description": "Game collections (Free Fire, PUBG, etc.)" },
     "accountPosts": { "description": "Marketplace account listings" },
+    "eventAccounts": { "description": "Auction-style account events" },
+    "eventParticipants": { "description": "Real-time participant data for auctions" },
+    "eventTaps": { "description": "Live tap feed for auctions" },
     "orders": { "description": "Unified orders node for top-ups and accounts" },
     "notifications": { "description": "User-specific notifications" },
     "settings": { "description": "Global shop configuration, fees, and payment methods" },

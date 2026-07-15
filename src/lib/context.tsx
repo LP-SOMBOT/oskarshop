@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -147,6 +148,40 @@ type AccountPost = {
     name: string;
     photoURL?: string;
   };
+};
+
+type EventAccount = {
+  id: string;
+  title: string;
+  gameName: string;
+  description?: string;
+  details?: string;
+  initialPrice: number;
+  tapPrice: number;
+  startTime: number;
+  endTime: number;
+  status: 'upcoming' | 'active' | 'ended' | 'claimed';
+  imageUrls: string[];
+  winnerId?: string;
+  winnerClaim?: {
+    status: 'pending' | 'accepted' | 'ignored';
+    finalPrice?: number;
+  };
+  participantsCount?: number;
+  topBidderName?: string;
+  topTapperId?: string;
+  topTapsCount?: number;
+};
+
+type EventParticipant = {
+  uid: string;
+  name: string;
+  phone: string;
+  avatar: string;
+  taps: number;
+  value: number;
+  lastTapTime: number;
+  status: 'active' | 'banned';
 };
 
 type AppNotification = {
@@ -322,6 +357,7 @@ type AppContextType = {
   products: GamePackage[];
   allUsers: UserProfile[];
   accountPosts: AccountPost[];
+  eventAccounts: EventAccount[];
   promoCodes: PromoCode[];
   notifications: AppNotification[];
   adminNotifications: AppNotification[];
@@ -389,6 +425,14 @@ type AppContextType = {
   userProfile: UserProfile | null;
   t: (key: string) => string;
   resetLeaderboard: () => Promise<void>;
+  
+  // Event Account Functions
+  saveEventAccount: (event: Partial<EventAccount>) => Promise<void>;
+  deleteEventAccount: (id: string) => Promise<void>;
+  tapEventAccount: (eventId: string) => Promise<void>;
+  assignEventWinner: (eventId: string, winnerId: string) => Promise<void>;
+  updateEventStatus: (eventId: string, status: string) => Promise<void>;
+  respondToEventClaim: (eventId: string, outcome: 'accepted' | 'ignored') => Promise<void>;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -539,7 +583,14 @@ const translations: Record<Language, Record<string, string>> = {
     listing_flagged_fallback: "This account listing has been cancelled. Please contact OskarShop for more information.",
     login_to_view_orders: "Login to view your orders",
     login_required_desc: "Sign in to access your purchase history and tracking details.",
-    login_button: "Login"
+    login_button: "Login",
+    ka_qeeb_gal: "Join",
+    dhammaatay: "Ended",
+    upcoming: "Upcoming",
+    active: "Active",
+    ended: "Ended",
+    claimed: "Claimed",
+    event: "EVENT"
   },
   so: {
     home: "HOME",
@@ -675,7 +726,14 @@ const translations: Record<Language, Record<string, string>> = {
     listing_flagged_fallback: "account listing kaan waala kansalay fadlan la xariir OskarShop waxii fahfahin ah",
     login_to_view_orders: "Login si aad dalabaadkaaga u arakto",
     login_required_desc: "Soo gal si aad u aragtid dalabaadkaagii ugu danbeeyay, ama ula socotid dalabaadyadada.",
-    login_button: "Login"
+    login_button: "Login",
+    ka_qeeb_gal: "Ka Qeeb Gal",
+    dhammaatay: "Dhammaatay",
+    upcoming: "Upcoming",
+    active: "Active",
+    ended: "Ended",
+    claimed: "Claimed",
+    event: "EVENT"
   }
 };
 
@@ -769,13 +827,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     banners: false,
     allUsers: false,
     games: false,
-    promoCodes: false
+    promoCodes: false,
+    eventAccounts: false
   });
 
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => getCache(SETTINGS_CACHE_KEY, {}));
   const [games, setGames] = useState<Game[]>(() => getCache(GAMES_CACHE_KEY, []));
   const [products, setProducts] = useState<GamePackage[]>(() => getCache(PRODUCTS_CACHE_KEY, []));
   const [accountPosts, setAccountPosts] = useState<AccountPost[]>([]);
+  const [eventAccounts, setEventAccounts] = useState<EventAccount[]>([]);
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [events, setEvents] = useState<GameEvent[]>(() => getCache(EVENTS_CACHE_KEY, []));
   const [banners, setBanners] = useState<Banner[]>(() => getCache(BANNERS_CACHE_KEY, []));
@@ -1210,6 +1270,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const gamesRef = ref(rtdb, 'games');
     const productsRef = ref(rtdb, 'products');
     const accPostsRef = ref(rtdb, 'accountPosts');
+    const eventAccountsRef = ref(rtdb, 'eventAccounts');
     const promoCodesRef = ref(rtdb, 'promo_codes');
     const eventsRef = ref(rtdb, 'events');
     const bannersRef = ref(rtdb, 'banners');
@@ -1247,6 +1308,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSyncStatus(prev => ({ ...prev, accPosts: true }));
     });
 
+    onValue(eventAccountsRef, (s) => {
+      const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
+      setEventAccounts(data);
+      setSyncStatus(prev => ({ ...prev, eventAccounts: true }));
+    });
+
     onValue(promoCodesRef, (s) => {
       const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
       setPromoCodes(data);
@@ -1276,7 +1343,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      off(settingsRef); off(gamesRef); off(productsRef); off(accPostsRef); off(promoCodesRef); off(eventsRef); off(bannersRef); off(usersRef);
+      off(settingsRef); off(gamesRef); off(productsRef); off(accPostsRef); off(eventAccountsRef); off(promoCodesRef); off(eventsRef); off(bannersRef); off(usersRef);
     };
   }, [rtdb, syncStatus.settings, storeSettings.isLive, storeSettings.appStatus?.offline, showPushNotification]);
 
@@ -2145,15 +2212,183 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (authUser && rtdb) try { await update(ref(rtdb, `users/${authUser.uid}`), { termsAccepted: true }); } catch (e) {}
   }, [authUser, rtdb]);
 
+  // --- EVENT ACCOUNT FUNCTIONS ---
+
+  const saveEventAccount = useCallback(async (event: Partial<EventAccount>) => {
+    if (!rtdb) return;
+    setIsGlobalLoading(true);
+    try {
+      const { id, ...data } = event;
+      const status = Date.now() < (data.startTime || 0) ? 'upcoming' : 'active';
+      const eventToSave = { ...data, status, createdAt: Date.now() };
+      
+      if (id) {
+        await update(ref(rtdb, `eventAccounts/${id}`), data);
+      } else {
+        const newRef = push(ref(rtdb, 'eventAccounts'));
+        await set(newRef, eventToSave);
+      }
+      toast({ title: "Event Account Saved" });
+    } catch (error) {
+      toast({ title: "Failed to save event account", variant: "destructive" });
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  }, [rtdb]);
+
+  const deleteEventAccount = useCallback(async (id: string) => {
+    if (!rtdb) return;
+    setIsGlobalLoading(true);
+    try {
+      await remove(ref(rtdb, `eventAccounts/${id}`));
+      await remove(ref(rtdb, `eventParticipants/${id}`));
+      await remove(ref(rtdb, `eventTaps/${id}`));
+      toast({ title: "Event Account Deleted" });
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  }, [rtdb]);
+
+  const tapEventAccount = useCallback(async (eventId: string) => {
+    if (!rtdb || !authUser || !enhancedUser) return;
+    
+    const participantRef = ref(rtdb, `eventParticipants/${eventId}/${authUser.uid}`);
+    const snap = await get(participantRef);
+    const participantData = snap.val() as EventParticipant | null;
+    
+    if (participantData?.status === 'banned') {
+      toast({ title: "You are banned from this event", variant: "destructive" });
+      return;
+    }
+
+    const now = Date.now();
+    const lastTap = participantData?.lastTapTime || 0;
+    const cooldown = 2 * 60 * 1000; // 2 minutes
+
+    if (now - lastTap < cooldown) {
+      toast({ title: "Please wait for cooldown", variant: "destructive" });
+      return;
+    }
+
+    const eventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
+    const eventData = eventSnap.val() as EventAccount;
+    
+    if (eventData.status !== 'active') {
+      toast({ title: "Event is not active", variant: "destructive" });
+      return;
+    }
+
+    // Perform the tap transaction
+    const newTaps = (participantData?.taps || 0) + 1;
+    const newValue = eventData.initialPrice + (newTaps * eventData.tapPrice);
+    
+    const updates: any = {};
+    updates[`eventParticipants/${eventId}/${authUser.uid}`] = {
+      uid: authUser.uid,
+      name: enhancedUser.name || "Gamer",
+      phone: enhancedUser.phoneNumber || "N/A",
+      avatar: enhancedUser.photoURL || "",
+      taps: newTaps,
+      value: newValue,
+      lastTapTime: now,
+      status: 'active'
+    };
+    
+    // Log to tap feed
+    const tapFeedRef = push(ref(rtdb, `eventTaps/${eventId}`));
+    updates[`eventTaps/${eventId}/${tapFeedRef.key}`] = {
+      name: enhancedUser.name || "Gamer",
+      avatar: enhancedUser.photoURL || "",
+      timestamp: now
+    };
+
+    // Update top stats on event directly for easy listing display
+    const currentTopTaps = eventData.topTapsCount || 0;
+    if (newTaps >= currentTopTaps) {
+      updates[`eventAccounts/${eventId}/topTapperId`] = authUser.uid;
+      updates[`eventAccounts/${eventId}/topTapsCount`] = newTaps;
+      updates[`eventAccounts/${eventId}/topBidderName`] = enhancedUser.name;
+    }
+
+    await update(ref(rtdb), updates);
+  }, [rtdb, authUser, enhancedUser]);
+
+  const assignEventWinner = useCallback(async (eventId: string, winnerId: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
+    try {
+      const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+      const participants = participantsSnap.val() || {};
+      const winnerData = participants[winnerId];
+      
+      if (!winnerData) throw new Error("Participant not found");
+
+      await update(ref(rtdb, `eventAccounts/${eventId}`), {
+        winnerId,
+        status: 'ended',
+        winnerClaim: {
+          status: 'pending',
+          finalPrice: winnerData.value
+        }
+      });
+      toast({ title: "Winner Assigned" });
+    } catch (error: any) {
+      toast({ title: "Assignment Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  }, [rtdb, enhancedUser]);
+
+  const updateEventStatus = useCallback(async (eventId: string, status: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    await update(ref(rtdb, `eventAccounts/${eventId}`), { status });
+    toast({ title: `Status updated to ${status}` });
+  }, [rtdb, enhancedUser]);
+
+  const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored') => {
+    if (!rtdb || !authUser) return;
+    setIsGlobalLoading(true);
+    try {
+      if (outcome === 'accepted') {
+        // Redirect to specialized checkout handled in WinnerClaimGuard
+      } else {
+        // Re-assign winner logic: Find next in line
+        const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+        const participants = Object.values(participantsSnap.val() || {}).sort((a: any, b: any) => b.taps - a.taps);
+        
+        const currentIndex = participants.findIndex((p: any) => p.uid === authUser.uid);
+        const nextWinner = participants[currentIndex + 1] as any;
+
+        if (nextWinner) {
+          await update(ref(rtdb, `eventAccounts/${eventId}`), {
+            winnerId: nextWinner.uid,
+            winnerClaim: {
+              status: 'pending',
+              finalPrice: nextWinner.value
+            }
+          });
+        } else {
+          await update(ref(rtdb, `eventAccounts/${eventId}`), {
+            status: 'ended',
+            winnerClaim: { status: 'ignored' }
+          });
+        }
+      }
+    } finally {
+      setIsGlobalLoading(false);
+    }
+  }, [rtdb, authUser]);
+
   return (
     <AppContext.Provider value={{ 
       user: enhancedUser, loading, isGlobalLoading, isInitialLoading, authError, activeTab, setActiveTab, setGlobalLoading: setIsGlobalLoading,
-      login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, promoCodes, notifications, adminNotifications, events, banners,
+      login, signup, logout, buyNow, orders, allOrders, games, products, allUsers, accountPosts, eventAccounts, promoCodes, notifications, adminNotifications, events, banners,
       createOrder, postAccount, updateAccountPost, renewAccountPost, deleteAccountPost, markAccountAsSold, deleteOrder, buyAccountPost, markNotificationsAsRead, markAdminNotificationsAsRead, updateOrderStatus, updateAccountPostStatus, reportAccountOutcome, respondToSaleReport, enforceAccountAction, issueSellerWarning, suspendSeller, dismissAccountWarning, markDeletionAsSeen,
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, updateProductsOrder, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData, refreshFcmToken,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
-      acceptTerms, language, setLanguage, userProfile, t, resetLeaderboard
+      acceptTerms, language, setLanguage, userProfile, t, resetLeaderboard,
+      saveEventAccount, deleteEventAccount, tapEventAccount, assignEventWinner, updateEventStatus, respondToEventClaim
     }}>
       {children}
     </AppContext.Provider>
