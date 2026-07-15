@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -425,6 +424,7 @@ type AppContextType = {
   userProfile: UserProfile | null;
   t: (key: string) => string;
   resetLeaderboard: () => Promise<void>;
+  rtdb: any;
   
   // Event Account Functions
   saveEventAccount: (event: Partial<EventAccount>) => Promise<void>;
@@ -590,7 +590,10 @@ const translations: Record<Language, Record<string, string>> = {
     active: "Active",
     ended: "Ended",
     claimed: "Claimed",
-    event: "EVENT"
+    event: "EVENT",
+    kaalmaha: "Ranking",
+    Qiimaha_Asalka: "Initial Price",
+    Qiimaha_Hadda: "Highest Bid"
   },
   so: {
     home: "HOME",
@@ -733,7 +736,10 @@ const translations: Record<Language, Record<string, string>> = {
     active: "Active",
     ended: "Ended",
     claimed: "Claimed",
-    event: "EVENT"
+    event: "EVENT",
+    kaalmaha: "Kaalmaha",
+    Qiimaha_Asalka: "Qiimaha Asalka",
+    Qiimaha_Hadda: "Qiimaha Hadda"
   }
 };
 
@@ -2220,7 +2226,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const { id, ...data } = event;
       const status = Date.now() < (data.startTime || 0) ? 'upcoming' : 'active';
-      const eventToSave = { ...data, status, createdAt: Date.now() };
+      const eventToSave = { ...data, status, createdAt: Date.now(), participantsCount: 0 };
       
       if (id) {
         await update(ref(rtdb, `eventAccounts/${id}`), data);
@@ -2310,6 +2316,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updates[`eventAccounts/${eventId}/topBidderName`] = enhancedUser.name;
     }
 
+    // If it's the first time tapping, increment participant count
+    if (!participantData) {
+      updates[`eventAccounts/${eventId}/participantsCount`] = increment(1);
+    }
+
     await update(ref(rtdb), updates);
   }, [rtdb, authUser, enhancedUser]);
 
@@ -2387,7 +2398,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, updateProductsOrder, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData, refreshFcmToken,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
-      acceptTerms, language, setLanguage, userProfile, t, resetLeaderboard,
+      acceptTerms, language, setLanguage, userProfile, t, resetLeaderboard, rtdb,
       saveEventAccount, deleteEventAccount, tapEventAccount, assignEventWinner, updateEventStatus, respondToEventClaim
     }}>
       {children}

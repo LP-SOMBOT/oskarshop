@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
 
@@ -13,26 +13,41 @@ interface TapNotification {
 export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
   const [currentTap, setCurrentTap] = useState<TapNotification | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const lastProcessedTime = useRef<number>(0);
 
   useEffect(() => {
     if (taps && taps.length > 0) {
       const latestTap = taps[taps.length - 1];
-      setCurrentTap(latestTap);
-      setIsVisible(true);
-
-      const timer = setTimeout(() => {
+      
+      // Ensure we only show a tap once based on timestamp
+      if (latestTap.timestamp > lastProcessedTime.current) {
+        lastProcessedTime.current = latestTap.timestamp;
+        
+        // Instant visual swap for high frequency
         setIsVisible(false);
-      }, 3000);
+        
+        setTimeout(() => {
+          setCurrentTap(latestTap);
+          setIsVisible(true);
+        }, 50);
 
-      return () => clearTimeout(timer);
+        const timer = setTimeout(() => {
+          setIsVisible(false);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+      }
     }
   }, [taps]);
 
-  if (!currentTap || !isVisible) return null;
+  if (!currentTap) return null;
 
   return (
     <div className="fixed top-24 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
-      <div className="bg-white/90 backdrop-blur-xl border border-primary/20 rounded-2xl p-3 pr-6 flex items-center gap-3 shadow-2xl animate-in slide-in-from-right-4 fade-in duration-300">
+      <div className={cn(
+        "bg-white/90 backdrop-blur-xl border border-primary/20 rounded-2xl p-3 pr-6 flex items-center gap-3 shadow-2xl transition-all duration-300 transform",
+        isVisible ? "translate-x-0 opacity-100 scale-100" : "translate-x-12 opacity-0 scale-95"
+      )}>
          <Avatar className="w-10 h-10 border-2 border-primary/10 shadow-sm">
             <AvatarImage src={currentTap.avatar} unoptimized />
             <AvatarFallback className="bg-primary/10 text-primary">

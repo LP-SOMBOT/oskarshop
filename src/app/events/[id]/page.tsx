@@ -30,6 +30,8 @@ import { format } from 'date-fns';
 import EventGetButton from '@/components/events/EventGetButton';
 import EventLiveFeed from '@/components/events/EventLiveFeed';
 
+const EVENT_CACHE_PREFIX = 'oskar_event_cache_';
+
 export default function EventDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -43,9 +45,21 @@ export default function EventDetailPage() {
   const [isSyncing, setIsSyncing] = useState(true);
   const [cooldown, setCooldown] = useState(0);
 
+  // Local Storage Caching
+  const [cachedEvent, setCachedEvent] = useState<any>(() => {
+    if (typeof window === 'undefined') return null;
+    const saved = localStorage.getItem(EVENT_CACHE_PREFIX + id);
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const event = useMemo(() => {
-    return (eventAccounts || []).find(e => e.id === id);
-  }, [eventAccounts, id]);
+    const liveEvent = (eventAccounts || []).find(e => e.id === id);
+    if (liveEvent) {
+      localStorage.setItem(EVENT_CACHE_PREFIX + id, JSON.stringify(liveEvent));
+      return liveEvent;
+    }
+    return cachedEvent;
+  }, [eventAccounts, id, cachedEvent]);
 
   const myStats = useMemo(() => {
     if (!user) return null;
@@ -129,6 +143,11 @@ export default function EventDetailPage() {
     await tapEventAccount(id as string);
   };
 
+  const handleBack = () => {
+    setGlobalLoading(true);
+    router.push('/#accounts');
+  };
+
   if (!event) {
     return (
       <div className="min-h-screen bg-slate-50 p-6 flex flex-col gap-6">
@@ -153,7 +172,7 @@ export default function EventDetailPage() {
          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-transparent to-transparent" />
          
          <header className="absolute top-0 left-0 right-0 h-20 flex items-center justify-between px-6 z-50">
-            <button onClick={() => router.back()} className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-2xl flex items-center justify-center text-slate-900 border border-slate-200 active:scale-90 transition-all shadow-sm">
+            <button onClick={handleBack} className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-2xl flex items-center justify-center text-slate-900 border border-slate-200 active:scale-90 transition-all shadow-sm">
                <ArrowLeft size={24} />
             </button>
             <div className="flex items-center gap-2">
@@ -191,11 +210,11 @@ export default function EventDetailPage() {
 
             <div className="grid grid-cols-2 gap-6 pt-8 border-t border-slate-50">
                <div className="space-y-1">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('Qiimaha Asalka') || 'Initial Price'}</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('Qiimaha_Asalka') || 'Initial Price'}</p>
                   <p className="text-xl md:text-3xl font-headline font-bold text-slate-400">${event.initialPrice.toFixed(2)}</p>
                </div>
                <div className="text-right space-y-1">
-                  <p className="text-[9px] font-black text-primary uppercase tracking-widest">{t('Qiimaha Hadda') || 'Highest Bid'}</p>
+                  <p className="text-[9px] font-black text-primary uppercase tracking-widest">{t('Qiimaha_Hadda') || 'Highest Bid'}</p>
                   <p className="text-4xl md:text-6xl font-headline font-bold text-primary tracking-tighter">
                     ${currentPrice.toFixed(2)}
                   </p>
