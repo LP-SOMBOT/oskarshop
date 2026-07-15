@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -20,6 +19,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { ref, onValue, off } from 'firebase/database';
 import { useDatabase } from '@/firebase';
+import Image from 'next/image';
 
 export default function EventLeaderboardPage() {
   const { id } = useParams();
@@ -117,11 +117,11 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
             borderClasses
           )}>
              {user.avatar ? (
-                <Image src={user.avatar} alt="" fill className="object-cover" />
+                <Image src={user.avatar} alt="" fill className="object-cover" unoptimized />
              ) : <div className="w-full h-full flex items-center justify-center bg-slate-800"><User size={24} className="text-white/20" /></div>}
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:text-sm",
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:text-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:text-sm",
             isGold ? "bg-amber-400 text-black" : isSilver ? "bg-slate-400 text-black" : "bg-orange-800 text-white"
           )}>
             {rank}

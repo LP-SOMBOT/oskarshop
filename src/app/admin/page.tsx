@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -3424,4 +3423,3 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     </div>
   );
 }
-
