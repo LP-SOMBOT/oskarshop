@@ -15,12 +15,12 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, tapPrice }:
   const isCooldown = cooldown > 0;
   
   return (
-    <div className="w-full space-y-2">
+    <div className="w-full space-y-1.5 sm:space-y-2">
       <button 
         onClick={onTap}
         disabled={isCooldown || isSyncing}
         className={cn(
-          "w-full h-16 md:h-24 rounded-2xl md:rounded-3xl flex items-center justify-center relative overflow-hidden transition-all active:scale-95 group",
+          "w-full h-12 sm:h-16 md:h-24 rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center relative overflow-hidden transition-all active:scale-95 group",
           isSyncing 
             ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
             : isCooldown 
@@ -29,14 +29,14 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, tapPrice }:
         )}
       >
          {isSyncing ? (
-            <div className="flex items-center gap-3">
-               <Loader2 className="w-6 h-6 md:w-8 md:h-8 animate-spin" />
-               <span className="font-black text-sm md:text-2xl uppercase tracking-widest">Syncing Status...</span>
+            <div className="flex items-center gap-2 sm:gap-3">
+               <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 animate-spin" />
+               <span className="font-black text-xs sm:text-lg md:text-2xl uppercase tracking-widest">Syncing...</span>
             </div>
          ) : isCooldown ? (
             <div className="flex flex-col items-center">
                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                  <svg className="w-16 h-16 md:w-24 md:h-24 transform -rotate-90">
+                  <svg className="w-10 h-10 sm:w-14 sm:h-14 md:w-24 md:h-24 transform -rotate-90">
                      <circle 
                        cx="50%" cy="50%" r="20%" 
                        fill="none" 
@@ -48,14 +48,14 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, tapPrice }:
                      />
                   </svg>
                </div>
-               <span className="font-black text-sm md:text-2xl uppercase tracking-widest relative z-10">Sug: {format(new Date(cooldown), 'mm:ss')}</span>
+               <span className="font-black text-xs sm:text-base md:text-2xl uppercase tracking-widest relative z-10">Sug: {format(new Date(cooldown), 'mm:ss')}</span>
             </div>
          ) : (
-            <span className="font-black text-3xl md:text-6xl uppercase tracking-[0.2em] group-hover:scale-110 transition-transform">GET 👆</span>
+            <span className="font-black text-xl sm:text-3xl md:text-6xl uppercase tracking-[0.1em] sm:tracking-[0.2em] group-hover:scale-110 transition-transform">GET 👆</span>
          )}
          {!isCooldown && !isSyncing && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
       </button>
-      <p className="text-[10px] md:text-sm font-bold text-slate-400 text-center uppercase tracking-widest">
+      <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-slate-400 text-center uppercase tracking-widest">
          +${tapPrice.toFixed(2)} markaa taabatid
       </p>
     </div>
