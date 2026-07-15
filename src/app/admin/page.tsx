@@ -1012,7 +1012,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank2} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank1: v }
+                            rewards: { ...leaderboardForm.rewards, rank2: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />
@@ -1021,7 +1021,7 @@ export default function AdminPage() {
                           value={leaderboardForm.rewards.rank3} 
                           onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
-                            rewards: { ...leaderboardForm.rewards, rank1: v }
+                            rewards: { ...leaderboardForm.rewards, rank3: v }
                           })}
                           onSave={handleSaveLeaderboard}
                         />
@@ -1033,16 +1033,17 @@ export default function AdminPage() {
 
           {activeView === 'account-events' && (
             <div className="space-y-12 animate-in fade-in duration-700">
-               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                  <div className="space-y-2">
-                     <h2 className="text-3xl font-headline font-bold text-slate-900 dark:text-white uppercase tracking-tight">Account Events</h2>
-                     <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest">Manage real-time auction-style account taps</p>
-                  </div>
+               <div className="space-y-4">
+                  <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">Account Events</h2>
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-widest">Manage real-time auction-style account taps</p>
+               </div>
+
+               <div className="pt-2">
                   <Button 
                     onClick={() => handleOpenEventAccountDialog()} 
-                    className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                    className="rounded-full h-14 md:h-20 px-10 md:px-16 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto text-sm md:text-xl"
                   >
-                    <PlusCircle size={20} /> Add Event
+                    <PlusCircle size={24} /> Add New Event
                   </Button>
                </div>
 
@@ -1054,7 +1055,7 @@ export default function AdminPage() {
                     onAssignWinner={assignEventWinner}
                  />
                ) : (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 md:gap-12">
                     {eventAccounts.map(event => (
                       <EventAccountAdminCard 
                         key={event.id}
@@ -1067,7 +1068,7 @@ export default function AdminPage() {
                       />
                     ))}
                     {eventAccounts.length === 0 && (
-                      <div className="col-span-full py-20 border-2 border-dashed rounded-[3rem] text-center opacity-30 italic font-bold uppercase text-xs">No account events scheduled</div>
+                      <div className="col-span-full py-32 border-4 border-dashed rounded-[3rem] text-center opacity-30 italic font-black uppercase text-sm md:text-xl">No account events scheduled</div>
                     )}
                  </div>
                )}
@@ -1254,7 +1255,7 @@ export default function AdminPage() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                    <div className="space-y-1">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{language === 'so' ? 'Dooro nooca Game ka' : 'Game Type'}</p>
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Game Type</p>
                                       <p className="font-bold text-xs uppercase">{p.gameType} - LV {p.level}</p>
                                    </div>
                                    <div className="space-y-1">
@@ -3297,42 +3298,93 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
 }
 
 function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, onEndEarly, onAssignWinner }: { event: any, onEdit: ()=>void, onDelete: ()=>void, onViewParticipants: ()=>void, onEndEarly: ()=>void, onAssignWinner: ()=>void }) {
-  const statusColors = {
-    upcoming: "bg-blue-100 text-blue-700",
-    active: "bg-green-100 text-green-700 animate-pulse",
-    ended: "bg-slate-100 text-slate-600",
-    claimed: "bg-purple-100 text-purple-700"
+  const statusColors: Record<string, { border: string, badge: string, dot?: boolean }> = {
+    upcoming: { border: "border-blue-500", badge: "bg-blue-500 text-white" },
+    active: { border: "border-green-500", badge: "bg-green-600 text-white", dot: true },
+    ended: { border: "border-amber-700", badge: "bg-slate-600 text-white" },
+    claimed: { border: "border-purple-600", badge: "bg-purple-600 text-white" }
   };
 
+  const status = event.status || 'pending';
+  const config = statusColors[status] || statusColors.upcoming;
+
   return (
-    <Card className="rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 overflow-hidden group">
-       <div className="aspect-video relative">
-          {event.imageUrls?.[0] ? <Image src={event.imageUrls[0]} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300 font-bold">O</div>}
-          <Badge className={cn("absolute top-4 left-4 border-none font-black uppercase text-[8px]", statusColors[event.status as keyof typeof statusColors])}>
-             {event.status}
-          </Badge>
+    <Card className={cn(
+      "rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden group border-l-[12px] transition-all",
+      config.border
+    )}>
+       <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
+          {event.imageUrls?.[0] ? (
+            <Image src={event.imageUrls[0]} alt="" fill className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized />
+          ) : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">IMAGE</div>}
+          
+          <div className="absolute top-6 left-6">
+             <Badge className={cn("border-none font-black uppercase text-[10px] px-4 py-1.5 shadow-xl tracking-widest flex items-center gap-2", config.badge)}>
+                {config.dot && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                {status}
+             </Badge>
+          </div>
        </div>
-       <div className="p-6 space-y-4">
-          <div>
-             <h4 className="font-headline font-bold text-lg uppercase truncate">{event.title}</h4>
-             <p className="text-[10px] text-muted-foreground uppercase font-black">{event.gameName}</p>
+
+       <div className="p-8 md:p-10 space-y-8">
+          <div className="space-y-1">
+             <h4 className="font-black text-2xl md:text-3xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
+             <p className="text-sm font-bold text-[#D97706] uppercase tracking-[0.2em]">{event.gameName}</p>
           </div>
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t dark:border-white/5">
-             <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase">Initial Price</p>
-                <p className="font-bold text-sm text-primary">${event.initialPrice}</p>
+
+          <div className="h-px bg-slate-100 dark:bg-white/5 w-full" />
+
+          <div className="grid grid-cols-2 gap-8">
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Initial Price</p>
+                <div className="flex items-center gap-1.5">
+                   <span className="text-primary font-black text-2xl">$</span>
+                   <span className="text-2xl font-black text-slate-900 dark:text-white">{event.initialPrice}</span>
+                </div>
              </div>
-             <div>
-                <p className="text-[8px] font-black text-slate-400 uppercase">Participants</p>
-                <p className="font-bold text-sm">{event.participantsCount || 0}</p>
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Participants</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">{event.participantsCount || 0}</p>
              </div>
           </div>
-          <div className="flex flex-wrap gap-2 pt-4">
-             <Button size="sm" variant="outline" className="rounded-xl h-8 text-[9px] uppercase font-bold border-2" onClick={onEdit}>Edit</Button>
-             <Button size="sm" variant="outline" className="rounded-xl h-8 text-[9px] uppercase font-bold border-2" onClick={onViewParticipants}>Participants</Button>
-             {event.status === 'active' && <Button size="sm" variant="outline" className="rounded-xl h-8 text-[9px] uppercase font-bold border-2 text-red-500" onClick={onEndEarly}>End Early</Button>}
-             {event.status === 'ended' && <Button size="sm" className="rounded-xl h-8 text-[9px] uppercase font-bold bg-primary text-white" onClick={onAssignWinner}>Assign Winner</Button>}
-             <button onClick={onDelete} className="ml-auto text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+
+          <div className="flex flex-wrap items-center gap-4 pt-2">
+             <button 
+               onClick={onEdit}
+               className="w-14 h-14 rounded-full border-2 border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 font-black text-[10px] uppercase hover:bg-slate-50 transition-colors active:scale-95"
+             >
+                Edit
+             </button>
+             
+             <button 
+               onClick={onViewParticipants}
+               className="px-8 h-14 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+             >
+                Participants
+             </button>
+
+             <button 
+               onClick={onAssignWinner}
+               className="w-16 h-16 rounded-full bg-primary text-white font-black text-[9px] uppercase tracking-tighter flex items-center justify-center leading-tight text-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
+             >
+                Assign<br/>Winner
+             </button>
+
+             {status === 'active' && (
+               <button 
+                 onClick={onEndEarly}
+                 className="px-6 h-14 rounded-full border-2 border-red-500 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition-all ml-auto"
+               >
+                  End Early
+               </button>
+             )}
+
+             <button 
+               onClick={onDelete}
+               className="ml-auto p-3 text-slate-300 hover:text-red-500 transition-colors active:scale-90"
+             >
+                <Trash2 size={24} />
+             </button>
           </div>
        </div>
     </Card>
@@ -3426,3 +3478,4 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     </div>
   );
 }
+
