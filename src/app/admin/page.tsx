@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -61,6 +60,7 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
+  X,
   History,
   LayoutGrid,
   Target as TargetIcon,
@@ -154,6 +154,8 @@ import {
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
+import { ref, onValue, off } from "firebase/database";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 // DND Kit Imports
 import {
@@ -360,7 +362,8 @@ export default function AdminPage() {
     isInitialLoading,
     refreshAdminData,
     resetLeaderboard,
-    setGlobalLoading
+    setGlobalLoading,
+    rtdb
   } = useApp();
 
   const router = useRouter();
@@ -1251,7 +1254,7 @@ export default function AdminPage() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                    <div className="space-y-1">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Game Type</p>
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{language === 'so' ? 'Dooro nooca Game ka' : 'Game Type'}</p>
                                       <p className="font-bold text-xs uppercase">{p.gameType} - LV {p.level}</p>
                                    </div>
                                    <div className="space-y-1">
