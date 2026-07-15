@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TapNotification {
   name: string;
