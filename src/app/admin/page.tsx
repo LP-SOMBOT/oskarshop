@@ -2186,7 +2186,7 @@ export default function AdminPage() {
                 onClick={() => setIsUserManageOpen(false)}
                 className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
               >
-                 <XCircle size={20} />
+                 <X size={20} />
               </button>
               
               <div className="absolute -bottom-12 left-8">
@@ -2602,10 +2602,10 @@ export default function AdminPage() {
 
       <Dialog open={isEnforceDialogOpen} onOpenChange={setIsEnforceDialogOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
-           <div className="bg-red-600 p-6 md:p-8 text-white">
+           <DialogHeader className="p-6 md:p-8 bg-red-600 text-white rounded-t-[2rem] md:rounded-t-[3rem]">
               <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Security Penalty</DialogTitle>
-              <p className="text-white/60 text-[9px] md:text-[10px] font-bold uppercase mt-1">Enforcing policy for Listing #{selectedAccount?.id.toUpperCase()}</p>
-           </div>
+              <DialogDescription className="text-white/60 text-[9px] md:text-[10px] font-bold uppercase mt-1">Enforcing policy for Listing #{selectedAccount?.id.toUpperCase()}</DialogDescription>
+           </DialogHeader>
            <div className="p-6 md:p-8 space-y-5 md:space-y-6">
               <div className="grid grid-cols-2 gap-3">
                  {(['delete', 'holding', 'approved', 'pending'] as const).map(act => (
@@ -2623,10 +2623,13 @@ export default function AdminPage() {
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
+           <DialogHeader className="sr-only">
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>{getDeleteDescription()}</DialogDescription>
+           </DialogHeader>
            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
-           <DialogTitle className="text-xl md:text-2xl font-headline font-bold">Are you sure?</DialogTitle>
-           <DialogTitle className="sr-only">Delete confirmation</DialogTitle>
-           <DialogDescription className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">{getDeleteDescription()}</DialogDescription>
+           <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white">Are you sure?</h3>
+           <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">{getDeleteDescription()}</p>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
               <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>

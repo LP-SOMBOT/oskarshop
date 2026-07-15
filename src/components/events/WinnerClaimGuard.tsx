@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -69,6 +68,11 @@ export default function WinnerClaimGuard() {
   return (
     <Dialog open={showModal} onOpenChange={() => {}}>
       <DialogContent className="max-w-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-500">
+         <DialogHeader className="sr-only">
+            <DialogTitle>Winner Notification</DialogTitle>
+            <DialogDescription>Congratulations! You have won an auction event.</DialogDescription>
+         </DialogHeader>
+         
          <div className="bg-primary p-8 text-white relative overflow-hidden text-center">
             <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy size={160} /></div>
             <div className="relative z-10 space-y-4">
