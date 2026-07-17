@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -116,7 +115,7 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from "@/components/select";
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -663,7 +662,7 @@ export default function AdminPage() {
     try {
       await savePromoCode(promoForm);
       setIsPromoDialogOpen(false);
-      setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' });
+      setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
       toast({ title: "Promo Saved" });
     } finally {
       setIsSavingStatus(false);
@@ -915,7 +914,7 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
@@ -924,7 +923,7 @@ export default function AdminPage() {
                   <StatCard label="Active Users" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
                   <StatCard label="Market Supply" value={accountPosts.filter(p => p.status === 'approved' && !p.sold).length.toString()} icon={ShieldCheck} color="text-emerald-500" bgColor="bg-emerald-50 dark:bg-emerald-500/10" />
                </div>
-               <Card className="rounded-[2.5rem] p-6 sm:p-10 border-none shadow-xl bg-white dark:bg-slate-900 h-[400px]">
+               <Card className="rounded-[2.5rem] p-4 sm:p-8 md:p-10 border-none shadow-xl bg-white dark:bg-slate-900 h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                      <AreaChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
@@ -1138,14 +1137,15 @@ export default function AdminPage() {
                     </div>
 
                     <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-                       <Table>
+                       <div className="overflow-x-auto">
+                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
-                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Reference</TableHead>
+                                <TableHead className="px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Reference</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Player & Item</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Status</TableHead>
-                                <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
+                                <TableHead className="text-right px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                              </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1156,7 +1156,7 @@ export default function AdminPage() {
                                  const item = o.items?.[0];
                                  return (
                                  <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
-                                    <TableCell className="px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
+                                    <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
                                     <TableCell>
                                        <div className="flex flex-col">
                                           <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || "Guest"}</span>
@@ -1174,7 +1174,7 @@ export default function AdminPage() {
                                        </div>
                                     </TableCell>
                                     <TableCell><StatusBadge status={o.status} /></TableCell>
-                                    <TableCell className="text-right px-10">
+                                    <TableCell className="text-right px-6 lg:px-10">
                                        <div className="flex justify-end items-center gap-3">
                                           <button 
                                             onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
@@ -1195,7 +1195,8 @@ export default function AdminPage() {
                                })
                              )}
                           </TableBody>
-                       </Table>
+                        </Table>
+                       </div>
                     </Card>
                  </div>
                )}
@@ -1300,17 +1301,18 @@ export default function AdminPage() {
                     </div>
 
                     <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-                       <Table>
+                       <div className="overflow-x-auto">
+                        <Table>
                           <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
                              <TableRow className="border-none h-16">
-                                <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller Info</TableHead>
+                                <TableHead className="px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Seller Info</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Game Info</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Active Claims</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Wait Time</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Age</TableHead>
                                 <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Status</TableHead>
-                                <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
+                                <TableHead className="text-right px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
                              </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1334,7 +1336,7 @@ export default function AdminPage() {
                                       isOverdue ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-slate-50/50"
                                     )}
                                  >
-                                    <TableCell className="px-10">
+                                    <TableCell className="px-6 lg:px-10">
                                        <div className="flex items-center gap-3">
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
@@ -1374,7 +1376,7 @@ export default function AdminPage() {
                                        <MarketplaceExpiration createdAt={p.createdAt} status={p.status} />
                                     </TableCell>
                                     <TableCell><StatusBadge status={p.status} /></TableCell>
-                                    <TableCell className="text-right px-10">
+                                    <TableCell className="text-right px-6 lg:px-10">
                                       <div className="flex justify-end items-center gap-3">
                                         <button 
                                           onClick={() => { setSelectedAccountId(p.id); setPendingAccountStatus(p.status); setAssignBuyerId(p.boughtBy || ""); }}
@@ -1395,7 +1397,8 @@ export default function AdminPage() {
                                })
                              )}
                           </TableBody>
-                       </Table>
+                        </Table>
+                       </div>
                     </Card>
                  </div>
                )}
@@ -1807,98 +1810,100 @@ export default function AdminPage() {
                   )}
                </div>
 
-               <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden overflow-x-auto scrollbar-hide">
-                  <Table className="min-w-[1000px]">
-                     <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
-                        <TableRow className="border-none h-20">
-                           <TableHead className="px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">User Identity</TableHead>
-                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Contact & Role</TableHead>
-                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Reward Balance</TableHead>
-                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Presence</TableHead>
-                           <TableHead className="font-bold uppercase text-[11px] tracking-widest text-center">Status</TableHead>
-                           <TableHead className="text-right px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
-                        </TableRow>
-                     </TableHeader>
-                     <TableBody>
-                        {filteredUsers.length === 0 ? (
-                          <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
-                        ) : (
-                          filteredUsers.map(u => {
-                            const lastActive = Number(u.lastActive);
-                            const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
-                            return (
-                              <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
-                                 <TableCell className="px-10">
-                                    <div className="flex items-center gap-4">
-                                       <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                          {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
-                                       </div>
-                                       <div className="flex flex-col min-w-0">
-                                          <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
-                                          <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
-                                       </div>
-                                    </div>
-                                 </TableCell>
-                                 <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                       <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
-                                       <Badge className={cn(
-                                         "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
-                                         u.role === 'admin' || u.role === 'super_admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
-                                       )}>
-                                         {u.role || "USER"}
-                                       </Badge>
-                                    </div>
-                                 </TableCell>
-                                 <TableCell className="text-center">
-                                    <div className="flex items-center justify-center gap-2">
-                                       <Star size={14} className="text-amber-500 fill-amber-500" />
-                                       <span className="font-headline font-bold text-lg md:text-2xl text-slate-900 dark:text-white">{u.points || 0}</span>
-                                    </div>
-                                 </TableCell>
-                                 <TableCell>
-                                    <div className="flex flex-col">
-                                       <div className="flex items-center gap-1.5">
-                                          <div className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
-                                          <span className={cn("text-[10px] font-black uppercase tracking-widest", isOnline ? "text-green-600" : "text-slate-400")}>
-                                            {isOnline ? "Online" : "Offline"}
-                                          </span>
-                                       </div>
-                                       <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
-                                          {!isNaN(lastActive) ? formatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
-                                       </span>
-                                    </div>
-                                 </TableCell>
-                                 <TableCell className="text-center">
-                                    <Badge className={cn(
-                                      "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
-                                      u.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
-                                    )}>
-                                      {u.banned ? "Banned" : "Active"}
-                                    </Badge>
-                                 </TableCell>
-                                 <TableCell className="text-right px-10">
-                                    <div className="flex justify-end items-center gap-3">
-                                       <button 
-                                         onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
-                                         className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
-                                       >
-                                         <Edit size={18} />
-                                       </button>
-                                       <button 
-                                         onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
-                                         className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
+               <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <Table className="min-w-[1000px]">
+                      <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
+                          <TableRow className="border-none h-20">
+                            <TableHead className="px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">User Identity</TableHead>
+                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Contact & Role</TableHead>
+                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Reward Balance</TableHead>
+                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Presence</TableHead>
+                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-center">Status</TableHead>
+                            <TableHead className="text-right px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {filteredUsers.length === 0 ? (
+                            <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
+                          ) : (
+                            filteredUsers.map(u => {
+                              const lastActive = Number(u.lastActive);
+                              const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
+                              return (
+                                <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
+                                  <TableCell className="px-6 lg:px-10">
+                                      <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
+                                            {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
+                                            <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
+                                        </div>
+                                      </div>
+                                  </TableCell>
+                                  <TableCell>
+                                      <div className="flex flex-col gap-1">
+                                        <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
+                                        <Badge className={cn(
+                                          "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
+                                          u.role === 'admin' || u.role === 'super_admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
+                                        )}>
+                                          {u.role || "USER"}
+                                        </Badge>
+                                      </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Star size={14} className="text-amber-500 fill-amber-500" />
+                                        <span className="font-headline font-bold text-lg md:text-2xl text-slate-900 dark:text-white">{u.points || 0}</span>
+                                      </div>
+                                  </TableCell>
+                                  <TableCell>
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", isOnline ? "text-green-600" : "text-slate-400")}>
+                                              {isOnline ? "Online" : "Offline"}
+                                            </span>
+                                        </div>
+                                        <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
+                                            {!isNaN(lastActive) ? formatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
+                                        </span>
+                                      </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                      <Badge className={cn(
+                                        "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
+                                        u.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
+                                      )}>
+                                        {u.banned ? "Banned" : "Active"}
+                                      </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right px-6 lg:px-10">
+                                      <div className="flex justify-end items-center gap-3">
+                                        <button 
+                                          onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
+                                          className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
                                         >
-                                         <Trash2 size={18} />
-                                       </button>
-                                    </div>
-                                 </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        )}
-                     </TableBody>
-                  </Table>
+                                          <Edit size={18} />
+                                        </button>
+                                        <button 
+                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
+                                          className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
+                                          >
+                                          <Trash2 size={18} />
+                                        </button>
+                                      </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
+                          )}
+                      </TableBody>
+                    </Table>
+                  </div>
                </Card>
             </div>
           )}
@@ -2792,7 +2797,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                    {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center font-bold text-slate-400 text-2xl">O</div>}
                 </div>
                 <div className="min-w-0">
-                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Handling Admin</p>
+                   <p className="text-10px font-black text-muted-foreground uppercase tracking-widest mb-1">Handling Admin</p>
                    <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
                       {order.processedBy?.name || "Wali lama furin"}
                    </h5>
@@ -3349,8 +3354,8 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                    </div>
                    <Badge className={cn(
                      "text-[9px] font-black uppercase px-3 py-1 rounded-full border-none shadow-sm",
-                     event.winnerClaim?.status === 'accepted' ? "bg-green-500 text-white" : 
-                     event.winnerClaim?.status === 'ignored' ? "bg-red-500 text-white" : "bg-amber-500 text-white"
+                     event.winnerClaim?.status === 'accepted' ? "bg-green-50 text-white" : 
+                     event.winnerClaim?.status === 'ignored' ? "bg-red-50 text-white" : "bg-amber-500 text-white"
                    )}>
                       {event.winnerClaim?.status || 'PENDING'}
                    </Badge>
@@ -3469,7 +3474,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
       } else {
         setParticipants([]);
       }
-      setLoading(false);
+      loading && setLoading(false);
     });
     return () => off(participantsRef);
   }, [rtdb, eventId]);
@@ -3494,62 +3499,64 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
        </div>
 
        <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-          <Table>
-             <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
-                <TableRow className="border-none h-16">
-                   <TableHead className="px-10 font-black text-[10px] uppercase">Rank</TableHead>
-                   <TableHead className="font-black text-[10px] uppercase">User</TableHead>
-                   <TableHead className="font-black text-[10px] uppercase">Taps</TableHead>
-                   <TableHead className="font-black text-[10px] uppercase">Value</TableHead>
-                   <TableHead className="font-black text-[10px] uppercase">Last Tap</TableHead>
-                   <TableHead className="text-right px-10 font-black text-[10px] uppercase">Actions</TableHead>
-                </TableRow>
-             </TableHeader>
-             <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={6} className="h-64 text-center">Loading Participants...</TableCell></TableRow>
-                ) : participants.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="h-64 text-center opacity-30 italic font-bold">No participants yet</TableCell></TableRow>
-                ) : (
-                  participants.map((p, idx) => (
-                    <TableRow key={p.uid} className={cn(
-                      "h-24 hover:bg-slate-50/50 border-slate-50",
-                      p.uid === eventAccount?.winnerId && "bg-primary/5"
-                    )}>
-                       <TableCell className="px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
-                       <TableCell>
-                          <div className="flex items-center gap-3">
-                             <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                                <AvatarImage src={p.avatar} />
-                                <AvatarFallback>{p.name?.[0]}</AvatarFallback>
-                             </Avatar>
-                             <div>
-                                <p className="font-bold text-sm">{p.name}</p>
-                                <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
-                             </div>
-                          </div>
-                       </TableCell>
-                       <TableCell className="font-bold text-lg">{p.taps}</TableCell>
-                       <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
-                       <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
-                       <TableCell className="text-right px-10">
-                          <Button 
-                            size="sm" 
-                            variant={p.uid === eventAccount?.winnerId ? "default" : "outline"} 
-                            className={cn(
-                              "rounded-xl h-10 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg",
-                              p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 border-none" : "bg-primary text-white border-none"
-                            )} 
-                            onClick={() => onAssignWinner(eventId, p.uid)}
-                          >
-                             {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
-                          </Button>
-                       </TableCell>
-                    </TableRow>
-                  ))
-                )}
-             </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                  <TableRow className="border-none h-16">
+                    <TableHead className="px-6 lg:px-10 font-black text-[10px] uppercase">Rank</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">User</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Taps</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Value</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Last Tap</TableHead>
+                    <TableHead className="text-right px-6 lg:px-10 font-black text-[10px] uppercase">Actions</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {loading ? (
+                    <TableRow><TableCell colSpan={6} className="h-64 text-center">Loading Participants...</TableCell></TableRow>
+                  ) : participants.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="h-64 text-center opacity-30 italic font-bold">No participants yet</TableCell></TableRow>
+                  ) : (
+                    participants.map((p, idx) => (
+                      <TableRow key={p.uid} className={cn(
+                        "h-24 hover:bg-slate-50/50 border-slate-50",
+                        p.uid === eventAccount?.winnerId && "bg-primary/5"
+                      )}>
+                        <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
+                                  <AvatarImage src={p.avatar} />
+                                  <AvatarFallback>{p.name?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="font-bold text-sm">{p.name}</p>
+                                  <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
+                              </div>
+                            </div>
+                        </TableCell>
+                        <TableCell className="font-bold text-lg">{p.taps}</TableCell>
+                        <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
+                        <TableCell className="text-right px-6 lg:px-10">
+                            <Button 
+                              size="sm" 
+                              variant={p.uid === eventAccount?.winnerId ? "default" : "outline"} 
+                              className={cn(
+                                "rounded-xl h-10 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg",
+                                p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 border-none" : "bg-primary text-white border-none"
+                              )} 
+                              onClick={() => onAssignWinner(eventId, p.uid)}
+                            >
+                              {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
+                            </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+              </TableBody>
+            </Table>
+          </div>
        </Card>
     </div>
   );
