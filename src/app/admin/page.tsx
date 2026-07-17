@@ -416,7 +416,7 @@ export default function AdminPage() {
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
-  const [promoCodeForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
+  const [promoCodeForm, setPromoCodeInput] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
   
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
   const [economyForm, setEconomyForm] = useState({ paymentNumber: "" });
@@ -637,7 +637,7 @@ export default function AdminPage() {
       setIsEditingEvent(false);
       setEditingEvent(null);
       toast({ title: "Event Saved" });
-    } finally { setIsUploading(false); }
+    } finally { setIsUploading(true); }
   };
 
   const handleSaveBanner = async (e: React.FormEvent) => {
@@ -664,7 +664,7 @@ export default function AdminPage() {
     try {
       await savePromoCode(promoCodeForm);
       setIsPromoDialogOpen(false);
-      setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
+      setPromoCodeInput({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
       toast({ title: "Promo Saved" });
     } finally {
       setIsSavingStatus(false);
@@ -2496,7 +2496,7 @@ export default function AdminPage() {
                  <Input 
                    placeholder="e.g. DEVL26%OFF" 
                    value={promoCodeForm.code} 
-                   onChange={e => setPromoForm({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
+                   onChange={e => setPromoCodeInput({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
                    className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase" 
                  />
               </div>
@@ -2507,7 +2507,7 @@ export default function AdminPage() {
                    <Checkbox 
                      id="multi-use-toggle"
                      checked={promoCodeForm.type === 'multi_use'} 
-                     onCheckedChange={(checked) => setPromoForm({...promoCodeForm, type: checked ? 'multi_use' : 'single_use'})}
+                     onCheckedChange={(checked) => setPromoCodeInput({...promoCodeForm, type: checked ? 'multi_use' : 'single_use'})}
                      className="h-5 w-5"
                    />
                    <div className="grid gap-1.5 leading-none">
@@ -2524,13 +2524,13 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              <SettingInput label="Discount Percentage (%)" value={promoCodeForm.discount} type="number" onChange={v => setPromoForm({...promoCodeForm, discount: v})} placeholder="e.g. 15" />
+              <SettingInput label="Discount Percentage (%)" value={promoCodeForm.discount} type="number" onChange={v => setPromoCodeInput({...promoCodeForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
-                 <SettingInput label="Duration Value" value={promoCodeForm.duration} type="number" onChange={v => setPromoCodeForm({...promoCodeForm, duration: v})} placeholder="e.g. 7" />
+                 <SettingInput label="Duration Value" value={promoCodeForm.duration} type="number" onChange={v => setPromoCodeInput({...promoCodeForm, duration: v})} placeholder="e.g. 7" />
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
-                    <Select value={promoCodeForm.durationUnit} onValueChange={v => setPromoForm({...promoCodeForm, durationUnit: v})}>
+                    <Select value={promoCodeForm.durationUnit} onValueChange={v => setPromoCodeInput({...promoCodeForm, durationUnit: v})}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                           <SelectItem value="minutes" className="p-3 font-bold uppercase text-[10px]">Minutes</SelectItem>
@@ -2550,7 +2550,7 @@ export default function AdminPage() {
                 <Textarea 
                   placeholder="Internal note for admins..."
                   value={promoCodeForm.note}
-                  onChange={e => setPromoForm({...promoCodeForm, note: e.target.value})}
+                  onChange={e => setPromoCodeInput({...promoCodeForm, note: e.target.value})}
                   className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[80px] p-4 font-medium shadow-inner"
                 />
               </div>
@@ -2666,12 +2666,12 @@ export default function AdminPage() {
       <Dialog open={isEndEarlyDialogOpen} onOpenChange={setIsEndEarlyDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <DialogHeader className="sr-only">
-              <DialogTitle>Confirm End Early</DialogTitle>
-              <DialogDescription>Are you sure you want to end this auction early? The current leader will be selected as the winner.</DialogDescription>
+              <DialogTitle>Jooji event ga?</DialogTitle>
+              <DialogDescription>Ma hubtaa inaad hadda joojiso?</DialogDescription>
            </DialogHeader>
            <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-4 md:mb-6"><Clock size={32} className="md:size-10" /></div>
-           <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white">Jooji Kulanka?</h3>
-           <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Ma hubtaa inaad rabto inaad hadda joojiso auction-ka?</p>
+           <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white">Jooji event ga?</h3>
+           <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Ma hubtaa inaad hadda joojiso?</p>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsEndEarlyDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isSavingStatus}>Maya</Button>
               <Button variant="destructive" onClick={executeEndEarly} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isSavingStatus}>
@@ -2988,7 +2988,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   )}
                </div>
                <div>
-                  <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
+                  <p className="text-[10px] md:text-11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
                   <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
                   <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
                </div>
@@ -3470,7 +3470,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                     className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2"
                   >
                      <Clock className="w-4 h-4" />
-                     <span>End Early</span>
+                     <span>Jooji event ga</span>
                   </Button>
                 )}
 
@@ -3480,7 +3480,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                   title="Delete Event"
                   className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-slate-300 hover:text-red-600 active:scale-95 transition-all shrink-0"
                 >
-                   <Trash2 className="w-5 h-5 md:w-6 md:h-6" />
+                   <Trash2 size={16} />
                 </Button>
              </div>
           </div>
@@ -3633,3 +3633,4 @@ function StatItem({ label, value, icon: Icon, color }: { label: string, value: a
     </div>
   );
 }
+
