@@ -19,20 +19,23 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
   useEffect(() => {
     if (taps && taps.length > 0) {
       const latestTap = taps[taps.length - 1];
+      const now = Date.now();
       
-      // Ensure we only show a tap once based on timestamp
-      if (latestTap.timestamp > lastProcessedTime.current) {
+      // RULE 1: Only show if we haven't processed this specific timestamp yet
+      // RULE 2: Only show if the tap happened within the last 3 seconds (Freshness check)
+      if (latestTap.timestamp > lastProcessedTime.current && (now - latestTap.timestamp) < 3000) {
         lastProcessedTime.current = latestTap.timestamp;
         
-        // Instant visual swap for high frequency
+        // Instant visual reset to trigger entry animation for the new item
         setIsVisible(false);
         
+        // Short delay to allow the DOM to reset before sliding in the new one
         setTimeout(() => {
           setCurrentTap(latestTap);
           setIsVisible(true);
         }, 50);
 
-        // Disappear after 3 seconds
+        // Auto-expire after 3 seconds
         const timer = setTimeout(() => {
           setIsVisible(false);
         }, 3000);
@@ -47,31 +50,31 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
   return (
     <div className="fixed top-20 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none">
       <div className={cn(
-        "bg-white rounded-2xl md:rounded-full py-3 px-4 flex items-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.08)] transition-all duration-500 transform border-l-[6px] border-orange-500 pointer-events-auto",
+        "bg-white rounded-full py-3 px-5 flex items-center gap-3 shadow-[0_15px_40px_rgba(0,0,0,0.12)] transition-all duration-500 transform border-l-[6px] border-orange-500 pointer-events-auto",
         "w-full max-w-[340px] sm:max-w-sm relative",
-        isVisible ? "translate-y-0 opacity-100 scale-100" : "-translate-y-12 opacity-0 scale-95"
+        isVisible ? "translate-y-0 opacity-100 scale-100" : "-translate-y-12 opacity-0 scale-90"
       )}>
-         <Avatar className="w-10 h-10 border-2 border-slate-100 shrink-0">
+         <Avatar className="w-10 h-10 border-2 border-slate-50 shrink-0 shadow-sm">
             <AvatarImage src={currentTap.avatar} />
             <AvatarFallback className="bg-slate-100 text-slate-400">
               <User size={20}/>
             </AvatarFallback>
          </Avatar>
          
-         <div className="flex-1 min-w-0 pr-4">
-            <p className="text-[13px] sm:text-[15px] font-bold text-slate-900 leading-tight truncate">
-               {currentTap.name} ayaa ku biiray!
+         <div className="flex-1 min-w-0 pr-2">
+            <p className="text-[13px] sm:text-[14px] font-black text-slate-900 leading-tight truncate">
+               {currentTap.name} <span className="font-bold text-slate-500">ayaa ku biiray!</span>
             </p>
-            <p className="text-[11px] sm:text-[12px] text-slate-400 font-medium mt-0.5">
+            <p className="text-[10px] sm:text-[11px] text-orange-500 font-black uppercase tracking-widest mt-0.5">
                Kulan cusub
             </p>
          </div>
 
          <button 
            onClick={() => setIsVisible(false)}
-           className="text-slate-300 hover:text-slate-500 transition-colors shrink-0"
+           className="text-slate-300 hover:text-slate-500 transition-colors shrink-0 p-1"
          >
-           <X size={16} />
+           <X size={16} strokeWidth={3} />
          </button>
       </div>
     </div>
