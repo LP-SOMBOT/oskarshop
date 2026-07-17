@@ -8,30 +8,34 @@ interface EventGetButtonProps {
   onTap: () => void;
   cooldown: number;
   isSyncing: boolean;
+  isTapping?: boolean;
   tapPrice: number;
 }
 
-export default function EventGetButton({ onTap, cooldown, isSyncing, tapPrice }: EventGetButtonProps) {
+export default function EventGetButton({ onTap, cooldown, isSyncing, isTapping, tapPrice }: EventGetButtonProps) {
   const isCooldown = cooldown > 0;
+  const isLoading = isSyncing || isTapping;
   
   return (
     <div className="w-full space-y-1.5 sm:space-y-2">
       <button 
         onClick={onTap}
-        disabled={isCooldown || isSyncing}
+        disabled={isCooldown || isLoading}
         className={cn(
           "w-full h-12 sm:h-16 md:h-24 rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center relative overflow-hidden transition-all active:scale-95 group",
-          isSyncing 
+          isLoading 
             ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
             : isCooldown 
               ? "bg-slate-100 text-slate-400" 
               : "bg-gradient-to-r from-primary to-blue-500 text-white shadow-2xl shadow-primary/30 hover:shadow-primary/50"
         )}
       >
-         {isSyncing ? (
+         {isLoading ? (
             <div className="flex items-center gap-2 sm:gap-3">
                <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 animate-spin" />
-               <span className="font-black text-xs sm:text-lg md:text-2xl uppercase tracking-widest">Syncing...</span>
+               <span className="font-black text-xs sm:text-lg md:text-2xl uppercase tracking-widest">
+                  {isSyncing ? "Syncing..." : "Processing..."}
+               </span>
             </div>
          ) : isCooldown ? (
             <div className="flex flex-col items-center">
@@ -53,7 +57,7 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, tapPrice }:
          ) : (
             <span className="font-black text-xl sm:text-3xl md:text-6xl uppercase tracking-[0.1em] sm:tracking-[0.2em] group-hover:scale-110 transition-transform">GET 👆</span>
          )}
-         {!isCooldown && !isSyncing && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
+         {!isCooldown && !isLoading && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
       </button>
       <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-slate-400 text-center uppercase tracking-widest">
          +${tapPrice.toFixed(2)} markaa taabatid

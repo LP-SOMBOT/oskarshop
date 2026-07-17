@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -44,6 +43,7 @@ export default function EventDetailPage() {
   const [tapFeed, setTapFeed] = useState<any[]>([]);
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [isTapping, setIsTapping] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
   // Local Storage Caching
@@ -141,8 +141,14 @@ export default function EventDetailPage() {
       return;
     }
     const isEndedByTime = event.endTime && Date.now() > event.endTime;
-    if (cooldown > 0 || isSyncing || isEndedByTime) return;
-    await tapEventAccount(id as string);
+    if (cooldown > 0 || isSyncing || isEndedByTime || isTapping) return;
+    
+    setIsTapping(true);
+    try {
+      await tapEventAccount(id as string);
+    } finally {
+      setIsTapping(false);
+    }
   };
 
   const handleBack = () => {
@@ -355,6 +361,7 @@ export default function EventDetailPage() {
                        onTap={handleTap}
                        cooldown={cooldown}
                        isSyncing={isSyncing}
+                       isTapping={isTapping}
                        tapPrice={event.tapPrice}
                      />
                      
