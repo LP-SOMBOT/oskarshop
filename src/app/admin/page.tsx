@@ -174,7 +174,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@at-dnd-kit/sortable';
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -2602,7 +2602,7 @@ export default function AdminPage() {
                  <Label className="font-bold text-sm">Active</Label>
                  <Switch checked={paymentMethodForm.active} onCheckedChange={v => setPaymentMethodForm(f => ({ ...f, active: v }))} />
               </div>
-              <Button type="submit" disabled={isUploading} className="w-full h-12 md:h-14 rounded-2xl font-bold uppercase tracking-widest shadow-lg bg-primary">Save Method</Button>
+              <Button type="submit" disabled={isUploading} className="w-full h-12 md:h-14 rounded-2xl font-bold uppercase tracking-widest shadow-lg bg-primary text-white">Save Method</Button>
            </form>
         </DialogContent>
       </Dialog>
