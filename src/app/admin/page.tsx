@@ -116,7 +116,7 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from "@/components/ui/select";
+} from "@/components/select";
 import {
   Sheet,
   SheetContent,
@@ -3318,113 +3318,131 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
 
   return (
     <Card className={cn(
-      "rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden group border-l-[12px] transition-all",
+      "rounded-[3rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden group border-l-[12px] transition-all hover:shadow-primary/5",
       config.border
     )}>
-       <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
+       <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
           {event.imageUrls?.[0] ? (
-            <Image src={event.imageUrls[0]} alt="" fill className="object-cover transition-transform duration-700 group-hover:scale-105" unoptimized />
+            <Image src={event.imageUrls[0]} alt="" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" unoptimized />
           ) : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">IMAGE</div>}
           
           <div className="absolute top-6 left-6">
-             <Badge className={cn("border-none font-black uppercase text-[10px] px-4 py-1.5 shadow-xl tracking-widest flex items-center gap-2", config.badge)}>
+             <Badge className={cn("border-none font-black uppercase text-[10px] px-4 py-2 shadow-xl tracking-widest flex items-center gap-2 rounded-xl backdrop-blur-md bg-opacity-90", config.badge)}>
                 {config.dot && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
                 {status}
              </Badge>
           </div>
        </div>
 
-       <div className="p-8 md:p-10 space-y-8">
+       <div className="p-6 md:p-10 space-y-8">
           <div className="space-y-1">
-             <h4 className="font-black text-2xl md:text-3xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
+             <h4 className="font-black text-2xl md:text-4xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
              <p className="text-sm font-bold text-[#D97706] uppercase tracking-[0.2em]">{event.gameName}</p>
           </div>
 
           {(status === 'ended' || status === 'claimed') && winnerProfile && (
-             <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20 space-y-3 animate-in slide-in-from-top-2">
+             <div className="p-5 md:p-8 bg-primary/5 dark:bg-primary/10 rounded-[1.5rem] md:rounded-[2.5rem] border border-primary/20 space-y-4 animate-in slide-in-from-top-2">
                 <div className="flex items-center justify-between">
                    <div className="flex items-center gap-2 text-primary">
-                      <Trophy size={16} />
-                      <span className="font-black text-[10px] uppercase tracking-widest">Current Winner</span>
+                      <Trophy size={18} />
+                      <span className="font-black text-[10px] uppercase tracking-widest">Auction Winner</span>
                    </div>
                    <Badge className={cn(
-                     "text-[8px] font-black uppercase px-2 py-0 border-none",
-                     event.winnerClaim?.status === 'accepted' ? "bg-green-500" : 
-                     event.winnerClaim?.status === 'ignored' ? "bg-red-500" : "bg-amber-500"
+                     "text-[9px] font-black uppercase px-3 py-1 rounded-full border-none shadow-sm",
+                     event.winnerClaim?.status === 'accepted' ? "bg-green-500 text-white" : 
+                     event.winnerClaim?.status === 'ignored' ? "bg-red-500 text-white" : "bg-amber-500 text-white"
                    )}>
                       {event.winnerClaim?.status || 'PENDING'}
                    </Badge>
                 </div>
-                <div className="flex items-center gap-3">
-                   <Avatar className="w-8 h-8 border-2 border-white dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-4">
+                   <Avatar className="w-12 h-12 md:w-16 md:h-16 border-4 border-white dark:border-slate-800 shadow-lg">
                       <AvatarImage src={winnerProfile.photoURL} />
-                      <AvatarFallback>{winnerProfile.name?.[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
                    </Avatar>
-                   <div className="min-w-0">
-                      <p className="font-bold text-xs truncate">{winnerProfile.name}</p>
-                      <p className="text-[9px] font-medium text-muted-foreground">{winnerProfile.phoneNumber}</p>
+                   <div className="min-w-0 flex-1">
+                      <p className="font-bold text-base md:text-xl truncate">{winnerProfile.name}</p>
+                      <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
+                         <Smartphone size={14} />
+                         <p className="text-[11px] md:text-sm font-medium">{winnerProfile.phoneNumber}</p>
+                      </div>
                    </div>
-                   <div className="ml-auto text-right">
-                      <p className="text-[9px] font-black text-primary uppercase leading-none">Offer</p>
-                      <p className="text-base font-headline font-bold text-primary">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
+                   <div className="text-right shrink-0">
+                      <p className="text-[10px] font-black text-primary uppercase leading-none mb-1">Offer</p>
+                      <p className="text-2xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
                    </div>
                 </div>
              </div>
           )}
 
-          <div className="h-px bg-slate-100 dark:bg-white/5 w-full" />
-
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-2 gap-6 md:gap-10 py-6 border-y dark:border-white/5">
              <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Initial Price</p>
-                <div className="flex items-center gap-1.5">
-                   <span className="text-primary font-black text-2xl">$</span>
-                   <span className="text-2xl font-black text-slate-900 dark:text-white">{event.initialPrice}</span>
+                <div className="flex items-center gap-2">
+                   <span className="text-primary font-black text-2xl md:text-4xl">$</span>
+                   <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.initialPrice}</span>
                 </div>
              </div>
              <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Participants</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">{event.participantsCount || 0}</p>
+                <div className="flex items-center gap-3">
+                   <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
+                   <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.participantsCount || 0}</span>
+                </div>
              </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 pt-2">
-             <button 
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 pt-2">
+             <Button 
+               variant="outline" 
+               size="lg" 
                onClick={onEdit}
-               className="w-14 h-14 rounded-full border-2 border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 font-black text-[10px] uppercase hover:bg-slate-50 transition-colors active:scale-95"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex-1 sm:flex-none"
              >
-                Edit
-             </button>
+                <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                <span>Edit</span>
+             </Button>
              
-             <button 
+             <Button 
+               variant="outline" 
+               size="lg"
                onClick={onViewParticipants}
-               className="px-8 h-14 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex-1 sm:flex-none"
              >
-                Participants
-             </button>
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-500" />
+                <span>Leaderboard</span>
+             </Button>
 
-             <button 
+             <Button 
+               size="lg"
                onClick={onAssignWinner}
-               className="w-16 h-16 rounded-full bg-primary text-white font-black text-[9px] uppercase tracking-tighter flex items-center justify-center leading-tight text-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
+               className="rounded-2xl h-12 md:h-16 px-6 md:px-10 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] md:text-xs gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
              >
-                Assign<br/>Winner
-             </button>
+                <Trophy className="w-4 h-4 md:w-5 md:h-5" />
+                <span>Assign Winner</span>
+             </Button>
 
-             {status === 'active' && (
-               <button 
-                 onClick={onEndEarly}
-                 className="px-6 h-14 rounded-full border-2 border-red-500 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-50 transition-all ml-auto"
-               >
-                  End Early
-               </button>
-             )}
+             <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
+                {status === 'active' && (
+                  <Button 
+                    variant="ghost" 
+                    onClick={onEndEarly}
+                    title="End Auction Early"
+                    className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0"
+                  >
+                     <Clock className="w-5 h-5 md:w-6 md:h-6" />
+                  </Button>
+                )}
 
-             <button 
-               onClick={onDelete}
-               className="ml-auto p-3 text-slate-300 hover:text-red-500 transition-colors active:scale-90"
-             >
-                <Trash2 size={24} />
-             </button>
+                <Button 
+                  variant="ghost" 
+                  onClick={onDelete}
+                  title="Delete Event"
+                  className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-slate-300 hover:text-red-600 active:scale-95 transition-all shrink-0"
+                >
+                   <Trash2 className="w-5 h-5 md:w-6 md:h-6" />
+                </Button>
+             </div>
           </div>
        </div>
     </Card>
@@ -3533,6 +3551,20 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
              </TableBody>
           </Table>
        </Card>
+    </div>
+  );
+}
+
+function StatBox({ icon: Icon, label, value, color, bgColor }: { icon: any, label: string, value: string, color: string, bgColor: string }) {
+  return (
+    <div className={cn("p-4 rounded-2xl flex items-center gap-4", bgColor)}>
+       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", color, "bg-white dark:bg-slate-900 shadow-sm")}>
+          <Icon size={20} />
+       </div>
+       <div>
+          <p className="text-xl font-headline font-bold leading-none">{value}</p>
+          <p className="text-[10px] font-black uppercase text-slate-400 mt-1">{label}</p>
+       </div>
     </div>
   );
 }
