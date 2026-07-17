@@ -1215,7 +1215,7 @@ export default function AdminPage() {
                    setStatus={setPendingAccountStatus}
                    buyerId={assignBuyerId}
                    setBuyerId={setAssignBuyerId}
-                   isSaving={isSavingStatus}
+                   isSaving={isSaving}
                    onDelete={() => { setDeleteTarget({id:selectedAccountId, type:'account'}); setIsDeleteDialogOpen(true); }}
                    onEnforce={() => setIsEnforceDialogOpen(true)}
                    enforceAccountAction={enforceAccountAction}
@@ -3350,7 +3350,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                 <div className="flex items-center justify-between">
                    <div className="flex items-center gap-2 text-primary">
                       <Trophy size={18} />
-                      <span className="font-black text-[10px] uppercase tracking-widest">Auction Winner</span>
+                      <span className="font-black text-[10px] uppercase tracking-widest">Guuleystaha</span>
                    </div>
                    <Badge className={cn(
                      "text-[9px] font-black uppercase px-3 py-1 rounded-full border-none shadow-sm",
@@ -3382,7 +3382,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
 
           <div className="grid grid-cols-2 gap-6 md:gap-10 py-6 border-y dark:border-white/5">
              <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Initial Price</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Qiimaha asalka</p>
                 <div className="flex items-center gap-2">
                    <span className="text-primary font-black text-2xl md:text-4xl">$</span>
                    <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.initialPrice}</span>
@@ -3424,7 +3424,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                className="rounded-2xl h-12 md:h-16 px-6 md:px-10 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] md:text-xs gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
              >
                 <Trophy className="w-4 h-4 md:w-5 md:h-5" />
-                <span>Assign Winner</span>
+                <span>Dooro guuleystaha</span>
              </Button>
 
              <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
