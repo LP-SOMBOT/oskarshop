@@ -174,7 +174,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
+} from '@at-dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -414,7 +414,7 @@ export default function AdminPage() {
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
-  const [promoForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
+  const [promoCodeForm, setPromoForm] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
   
   const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
   const [economyForm, setEconomyForm] = useState({ paymentNumber: "" });
@@ -660,7 +660,7 @@ export default function AdminPage() {
     e.preventDefault();
     setIsSavingStatus(true);
     try {
-      await savePromoCode(promoForm);
+      await savePromoCode(promoCodeForm);
       setIsPromoDialogOpen(false);
       setPromoForm({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
       toast({ title: "Promo Saved" });
@@ -2485,8 +2485,8 @@ export default function AdminPage() {
                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Code</Label>
                  <Input 
                    placeholder="e.g. DEVL26%OFF" 
-                   value={promoForm.code} 
-                   onChange={e => setPromoForm({...promoForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
+                   value={promoCodeForm.code} 
+                   onChange={e => setPromoForm({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
                    className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase" 
                  />
               </div>
@@ -2496,8 +2496,8 @@ export default function AdminPage() {
                  <div className="flex items-center space-x-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border dark:border-white/5">
                    <Checkbox 
                      id="multi-use-toggle"
-                     checked={promoForm.type === 'multi_use'} 
-                     onCheckedChange={(checked) => setPromoForm({...promoForm, type: checked ? 'multi_use' : 'single_use'})}
+                     checked={promoCodeForm.type === 'multi_use'} 
+                     onCheckedChange={(checked) => setPromoForm({...promoCodeForm, type: checked ? 'multi_use' : 'single_use'})}
                      className="h-5 w-5"
                    />
                    <div className="grid gap-1.5 leading-none">
@@ -2514,13 +2514,13 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              <SettingInput label="Discount Percentage (%)" value={promoForm.discount} type="number" onChange={v => setPromoForm({...promoForm, discount: v})} placeholder="e.g. 15" />
+              <SettingInput label="Discount Percentage (%)" value={promoCodeForm.discount} type="number" onChange={v => setPromoForm({...promoCodeForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
-                 <SettingInput label="Duration Value" value={promoForm.duration} type="number" onChange={v => setPromoForm({...promoForm, duration: v})} placeholder="e.g. 7" />
+                 <SettingInput label="Duration Value" value={promoCodeForm.duration} type="number" onChange={v => setPromoForm({...promoCodeForm, duration: v})} placeholder="e.g. 7" />
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
-                    <Select value={promoForm.durationUnit} onValueChange={v => setPromoForm({...promoForm, durationUnit: v})}>
+                    <Select value={promoCodeForm.durationUnit} onValueChange={v => setPromoForm({...promoCodeForm, durationUnit: v})}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                           <SelectItem value="minutes" className="p-3 font-bold uppercase text-[10px]">Minutes</SelectItem>
@@ -2539,8 +2539,8 @@ export default function AdminPage() {
                 </Label>
                 <Textarea 
                   placeholder="Internal note for admins..."
-                  value={promoForm.note}
-                  onChange={e => setPromoForm({...promoForm, note: e.target.value})}
+                  value={promoCodeForm.note}
+                  onChange={e => setPromoForm({...promoCodeForm, note: e.target.value})}
                   className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[80px] p-4 font-medium shadow-inner"
                 />
               </div>
@@ -3389,7 +3389,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                 </div>
              </div>
              <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Participants</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Ka qeeybalayaal</p>
                 <div className="flex items-center gap-3">
                    <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
                    <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.participantsCount || 0}</span>
@@ -3492,7 +3492,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard label="Participants" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50" />
+          <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50" />
           <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50" />
           <StatCard label="Current Leader" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
           <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50" />
