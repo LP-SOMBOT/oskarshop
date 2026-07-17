@@ -2284,7 +2284,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const eventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
     const eventData = eventSnap.val() as EventAccount;
     
-    if (eventData.status !== 'active') {
+    // STRICT END TIME CHECK
+    if (eventData.status !== 'active' || (eventData.endTime && now > eventData.endTime)) {
       toast({ title: "Event is not active", variant: "destructive" });
       return;
     }

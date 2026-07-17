@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -139,7 +140,8 @@ export default function EventDetailPage() {
       router.push('/login');
       return;
     }
-    if (cooldown > 0 || isSyncing) return;
+    const isEndedByTime = event.endTime && Date.now() > event.endTime;
+    if (cooldown > 0 || isSyncing || isEndedByTime) return;
     await tapEventAccount(id as string);
   };
 
@@ -158,7 +160,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const isEnded = event.status === 'ended' || event.status === 'claimed';
+  const isEnded = event.status === 'ended' || event.status === 'claimed' || (event.endTime && Date.now() > event.endTime);
   const isUpcoming = event.status === 'upcoming';
   const currentPrice = event.initialPrice + ((participants[0]?.taps || 0) * event.tapPrice);
 
@@ -176,13 +178,13 @@ export default function EventDetailPage() {
                <ArrowLeft size={20} className="sm:size-6" />
             </button>
             <div className="flex items-center gap-2">
-               {event.status === 'active' ? (
+               {event.status === 'active' && !isEnded ? (
                  <Badge className="bg-red-500 text-white border-none rounded-full px-2 py-0.5 sm:px-3 sm:py-1 font-black flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs">
                     <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
                  </Badge>
                ) : (
                  <Badge className="bg-blue-500 text-white border-none rounded-full px-2 py-0.5 sm:px-3 sm:py-1 font-black uppercase text-[8px] sm:text-[10px]">
-                    {event.status}
+                    {isEnded ? 'ENDED' : event.status}
                  </Badge>
                )}
             </div>

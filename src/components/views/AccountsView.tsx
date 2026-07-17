@@ -90,6 +90,7 @@ export default function AccountsView() {
   const filteredPosts = useMemo(() => {
     const isAdmin = !!user?.isAdmin;
     const userId = user?.uid;
+    const now = Date.now();
 
     const posts = (accountPosts || [])
       .filter(p => {
@@ -104,7 +105,14 @@ export default function AccountsView() {
       });
 
     const events = (eventAccounts || [])
-      .filter(e => e.status === 'active' || e.status === 'upcoming')
+      .filter(e => {
+        // HIDE if status is ended/claimed
+        if (e.status === 'ended' || e.status === 'claimed') return false;
+        // HIDE if timer is expired
+        if (e.endTime && now > e.endTime) return false;
+        // ONLY SHOW active or upcoming
+        return e.status === 'active' || e.status === 'upcoming';
+      })
       .map(e => ({ ...e, isEvent: true }));
 
     return [...posts, ...events]
@@ -145,14 +153,6 @@ export default function AccountsView() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-8">
            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-[400px] md:h-[450px] rounded-[2rem] md:rounded-[3rem] w-full" />)}
         </div>
-      </div>
-    );
-  }
-
-  if (isPosting || editingPost) {
-    return (
-      <div className="min-h-screen pb-24 max-w-4xl mx-auto p-4 md:p-8">
-         {/* Form content placeholder - assuming existing implementation */}
       </div>
     );
   }
