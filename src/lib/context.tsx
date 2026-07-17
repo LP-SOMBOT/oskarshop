@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -644,7 +645,7 @@ const translations: Record<Language, Record<string, string>> = {
     admin_message: "Fariinta Admin-ka",
     buy_now: "IIBSO",
     login_to_buy: "Login",
-    select_game: "Dooro Game ka",
+    select_game: "Select Game",
     active_events: "Event yada",
     take_advantage: "Ka faa'ideeyso intuusan dhamaan!",
     ranking_desc: "iib sameey Si aad u gasho kaalmaha hore una heshid discount gaaraya ilaa %3, halkii iibin top up waxaad Ku heleesaa 1 points (pts). Hadiyado kalena coming soon I.a.",
@@ -2366,8 +2367,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateEventStatus = useCallback(async (eventId: string, status: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
-    await update(ref(rtdb, `eventAccounts/${eventId}`), { status });
-    toast({ title: `Status updated to ${status}` });
+    
+    const updates: any = { status };
+
+    // If ending the event, pick the winner if not manually assigned
+    if (status === 'ended') {
+      const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+      const participants = participantsSnap.val();
+      
+      if (participants) {
+        const sorted = Object.values(participants).sort((a: any, b: any) => {
+          // Rule: Most taps wins. In case of tie, earliest reaching that count wins.
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        });
+
+        const top1 = sorted[0] as any;
+        if (top1) {
+          updates.winnerId = top1.uid;
+          updates.winnerClaim = {
+            status: 'pending',
+            finalPrice: top1.value
+          };
+        }
+      }
+    }
+
+    await update(ref(rtdb, `eventAccounts/${eventId}`), updates);
+    toast({ title: `Event is now ${status}` });
   }, [rtdb, enhancedUser]);
 
   const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored') => {
@@ -2377,11 +2404,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (outcome === 'accepted') {
         // Redirect to specialized checkout handled in WinnerClaimGuard
       } else {
-        // Just mark as ignored, admin will manually assign a new winner later as per requirements
-        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
-          status: 'ignored'
+        // MARK AS IGNORED AND FIND NEXT WINNER
+        const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+        const participants = participantsSnap.val() || {};
+        const sorted = Object.values(participants).sort((a: any, b: any) => {
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
         });
-        toast({ title: "Report Sent", description: "You have ignored the claim." });
+
+        const currentIndex = sorted.findIndex((p: any) => p.uid === authUser.uid);
+        const nextWinner = sorted[currentIndex + 1] as any;
+
+        if (nextWinner) {
+          // Re-assign to next person
+          await update(ref(rtdb, `eventAccounts/${eventId}`), {
+            winnerId: nextWinner.uid,
+            winnerClaim: {
+              status: 'pending',
+              finalPrice: nextWinner.value
+            }
+          });
+          toast({ title: "Offer Ignored", description: "Listing offered to next in line." });
+        } else {
+          // No one left, just mark as ignored for admin review
+          await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
+            status: 'ignored'
+          });
+          toast({ title: "Offer Ignored" });
+        }
       }
     } finally {
       setIsGlobalLoading(false);

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -3298,6 +3299,8 @@ function SettingInput({ label, value, onChange, placeholder, type = "text" }: { 
 }
 
 function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, onEndEarly, onAssignWinner }: { event: any, onEdit: ()=>void, onDelete: ()=>void, onViewParticipants: ()=>void, onEndEarly: ()=>void, onAssignWinner: ()=>void }) {
+  const { allUsers } = useApp();
+  
   const statusColors: Record<string, { border: string, badge: string, dot?: boolean }> = {
     upcoming: { border: "border-blue-500", badge: "bg-blue-500 text-white" },
     active: { border: "border-green-500", badge: "bg-green-600 text-white", dot: true },
@@ -3307,6 +3310,11 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
 
   const status = event.status || 'pending';
   const config = statusColors[status] || statusColors.upcoming;
+
+  const winnerProfile = useMemo(() => {
+    if (!event.winnerId) return null;
+    return allUsers.find(u => u.uid === event.winnerId);
+  }, [event.winnerId, allUsers]);
 
   return (
     <Card className={cn(
@@ -3331,6 +3339,38 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
              <h4 className="font-black text-2xl md:text-3xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
              <p className="text-sm font-bold text-[#D97706] uppercase tracking-[0.2em]">{event.gameName}</p>
           </div>
+
+          {(status === 'ended' || status === 'claimed') && winnerProfile && (
+             <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20 space-y-3 animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-primary">
+                      <Trophy size={16} />
+                      <span className="font-black text-[10px] uppercase tracking-widest">Current Winner</span>
+                   </div>
+                   <Badge className={cn(
+                     "text-[8px] font-black uppercase px-2 py-0 border-none",
+                     event.winnerClaim?.status === 'accepted' ? "bg-green-500" : 
+                     event.winnerClaim?.status === 'ignored' ? "bg-red-500" : "bg-amber-500"
+                   )}>
+                      {event.winnerClaim?.status || 'PENDING'}
+                   </Badge>
+                </div>
+                <div className="flex items-center gap-3">
+                   <Avatar className="w-8 h-8 border-2 border-white dark:border-slate-800 shadow-sm">
+                      <AvatarImage src={winnerProfile.photoURL} />
+                      <AvatarFallback>{winnerProfile.name?.[0]}</AvatarFallback>
+                   </Avatar>
+                   <div className="min-w-0">
+                      <p className="font-bold text-xs truncate">{winnerProfile.name}</p>
+                      <p className="text-[9px] font-medium text-muted-foreground">{winnerProfile.phoneNumber}</p>
+                   </div>
+                   <div className="ml-auto text-right">
+                      <p className="text-[9px] font-black text-primary uppercase leading-none">Offer</p>
+                      <p className="text-base font-headline font-bold text-primary">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
+                   </div>
+                </div>
+             </div>
+          )}
 
           <div className="h-px bg-slate-100 dark:bg-white/5 w-full" />
 
@@ -3402,7 +3442,12 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     const unsub = onValue(participantsRef, (snap) => {
       const data = snap.val();
       if (data) {
-        setParticipants(Object.values(data).sort((a: any, b: any) => b.taps - a.taps));
+        // Sorting Logic: Taps DESC, then earliest lastTapTime ASC (Tie-breaker)
+        const sorted = Object.values(data).sort((a: any, b: any) => {
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        });
+        setParticipants(sorted);
       } else {
         setParticipants([]);
       }
@@ -3426,7 +3471,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard label="Participants" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50" />
           <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50" />
-          <StatCard label="Leader" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
+          <StatCard label="Current Leader" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
           <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50" />
        </div>
 
@@ -3449,7 +3494,10 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                   <TableRow><TableCell colSpan={6} className="h-64 text-center opacity-30 italic font-bold">No participants yet</TableCell></TableRow>
                 ) : (
                   participants.map((p, idx) => (
-                    <TableRow key={p.uid} className="h-24 hover:bg-slate-50/50 border-slate-50">
+                    <TableRow key={p.uid} className={cn(
+                      "h-24 hover:bg-slate-50/50 border-slate-50",
+                      p.uid === eventAccount?.winnerId && "bg-primary/5"
+                    )}>
                        <TableCell className="px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
                        <TableCell>
                           <div className="flex items-center gap-3">
@@ -3467,7 +3515,17 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                        <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
                        <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
                        <TableCell className="text-right px-10">
-                          <Button size="sm" variant="outline" className="rounded-xl h-10 uppercase font-black text-[9px] tracking-widest gap-2 bg-primary text-white border-none shadow-lg" onClick={() => onAssignWinner(eventId, p.uid)}>Make Winner</Button>
+                          <Button 
+                            size="sm" 
+                            variant={p.uid === eventAccount?.winnerId ? "default" : "outline"} 
+                            className={cn(
+                              "rounded-xl h-10 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg",
+                              p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 border-none" : "bg-primary text-white border-none"
+                            )} 
+                            onClick={() => onAssignWinner(eventId, p.uid)}
+                          >
+                             {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
+                          </Button>
                        </TableCell>
                     </TableRow>
                   ))
@@ -3478,4 +3536,3 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     </div>
   );
 }
-
