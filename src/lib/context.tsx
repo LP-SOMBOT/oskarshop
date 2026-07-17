@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -2378,27 +2377,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (outcome === 'accepted') {
         // Redirect to specialized checkout handled in WinnerClaimGuard
       } else {
-        // Re-assign winner logic: Find next in line
-        const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
-        const participants = Object.values(participantsSnap.val() || {}).sort((a: any, b: any) => b.taps - a.taps);
-        
-        const currentIndex = participants.findIndex((p: any) => p.uid === authUser.uid);
-        const nextWinner = participants[currentIndex + 1] as any;
-
-        if (nextWinner) {
-          await update(ref(rtdb, `eventAccounts/${eventId}`), {
-            winnerId: nextWinner.uid,
-            winnerClaim: {
-              status: 'pending',
-              finalPrice: nextWinner.value
-            }
-          });
-        } else {
-          await update(ref(rtdb, `eventAccounts/${eventId}`), {
-            status: 'ended',
-            winnerClaim: { status: 'ignored' }
-          });
-        }
+        // Just mark as ignored, admin will manually assign a new winner later as per requirements
+        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
+          status: 'ignored'
+        });
+        toast({ title: "Report Sent", description: "You have ignored the claim." });
       }
     } finally {
       setIsGlobalLoading(false);
