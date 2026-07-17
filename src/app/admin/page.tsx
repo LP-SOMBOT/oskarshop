@@ -781,6 +781,26 @@ export default function AdminPage() {
     }
   };
 
+  const handleSaveLeaderboardAdmin = async () => {
+    setIsSavingStatus(true);
+    try {
+      const finalLeaderboard = {
+        rewardsActive: leaderboardForm.rewardsActive,
+        rewards: {
+          rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
+          rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
+          rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
+        }
+      };
+      await updateStoreSettings({
+        leaderboard: finalLeaderboard
+      });
+      toast({ title: "Leaderboard Updated", description: "Rewards settings have been updated live." });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
   const handleSaveTelegram = async () => {
     setIsSavingStatus(true);
     try {
@@ -1364,7 +1384,7 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {p.processedBy?.photoURL ? <Image src={p.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
                                             {p.processedBy?.name || "Wali lama furin"}
@@ -1714,7 +1734,7 @@ export default function AdminPage() {
                                  </div>
                                  <div className="space-y-1 text-right">
                                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Usage</p>
-                                    <p className="text-10px] font-bold text-slate-600 dark:text-slate-400">
+                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
                                       {usageCount} Used
                                     </p>
                                  </div>
@@ -2452,7 +2472,7 @@ export default function AdminPage() {
               </div>
 
               <Button type="submit" disabled={isUploading || eventAccountForm.imageUrls.length === 0} className="w-full h-14 md:h-18 rounded-2xl font-black text-lg shadow-2xl uppercase tracking-widest active:scale-[0.98] transition-all">
-                {isUploading ? <Loader2 className="animate-spin" /> : "Keydi"}
+                {isUploading ? <Loader2 className="animate-spin" /> : "Save"}
               </Button>
            </form>
         </DialogContent>
@@ -2590,7 +2610,7 @@ export default function AdminPage() {
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
+                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
                     {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
@@ -2681,7 +2701,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
             onClick={onSave} 
             className="h-10 sm:h-12 md:h-16 px-4 sm:px-6 md:px-10 rounded-lg sm:rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform text-[10px] sm:text-xs md:text-sm"
           >
-             <Save size={16} className="sm:size-5" /> <span className="hidden lg:inline">Keydi</span>
+             <Save size={16} className="sm:size-5" /> <span className="hidden lg:inline">Save</span>
           </Button>
        </div>
     </div>
@@ -3575,3 +3595,4 @@ function StatBox({ icon: Icon, label, value, color, bgColor }: { icon: any, labe
     </div>
   );
 }
+
