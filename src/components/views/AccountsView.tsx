@@ -331,6 +331,7 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
   }, [event.endTime, t]);
 
   const currentPrice = event.initialPrice + ((event.topTapsCount || 0) * event.tapPrice);
+  const topParticipants = event.topParticipants || [];
 
   return (
     <Card 
@@ -369,7 +370,21 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Participants</p>
                 <div className="flex items-center gap-2">
                    <div className="flex -space-x-2">
-                      {[1,2,3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200" />)}
+                      {topParticipants.length > 0 ? (
+                        topParticipants.map((p: any, i: number) => (
+                          <div key={p.uid + i} className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 relative overflow-hidden shrink-0">
+                             {p.avatar ? (
+                               <Image src={p.avatar} alt="" fill className="object-cover" unoptimized />
+                             ) : (
+                               <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                 <User size={8} className="text-slate-400" />
+                               </div>
+                             )}
+                          </div>
+                        ))
+                      ) : (
+                        [1,2,3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200" />)
+                      )}
                    </div>
                    <span className="text-xs font-bold text-slate-900 dark:text-white">+{event.participantsCount || 0}</span>
                 </div>
@@ -385,329 +400,6 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
           </Button>
        </div>
     </Card>
-  );
-}
-
-function PostAccountView({ editingPost, onCancel, onComplete }: { editingPost?: any, onCancel: () => void, onComplete: () => void }) {
-  const { postAccount, updateAccountPost, storeSettings, user, enhancedUser, t, language } = useApp();
-  const [step, setStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [formData, setFormData] = useState({
-    gameType: editingPost?.gameType || 'freefire',
-    platform: editingPost?.platform || 'Google',
-    level: editingPost?.level?.toString() || '',
-    price: editingPost?.price?.toString() || '',
-    phone: editingPost?.phone ? editingPost.phone.replace("+252", "") : '',
-    imageUrls: editingPost?.imageUrls || (editingPost?.thumbnailUrl ? [editingPost.thumbnailUrl] : []),
-    evoWeapons: editingPost?.evoWeapons?.toString() || '',
-    totalWeapons: editingPost?.totalWeapons?.toString() || '',
-    emotes: editingPost?.emotes?.toString() || '',
-    executionEmotes: editingPost?.executionEmotes?.toString() || '',
-    arrivalEmotes: editingPost?.arrivalEmotes?.toString() || '',
-    dharka: editingPost?.dharka?.toString() || '',
-    term: editingPost?.term || 'weekly',
-    primeLevel: editingPost?.primeLevel?.toString() || '1',
-    age: editingPost?.age || '',
-    accountId: editingPost?.accountId || '',
-    accountName: editingPost?.accountName || '',
-    internalWeapons: editingPost?.internalWeapons?.toString() || '',
-  });
-
-  const isFreeFire = formData.gameType === 'freefire';
-
-  const handleInitialSubmit = async () => {
-    if (!formData.level || !formData.price || !formData.phone || formData.imageUrls.length === 0) {
-      toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
-      return;
-    }
-
-    const cleanPhone = formData.phone.replace(/\D/g, '');
-    const isSo = language === 'so';
-
-    if (cleanPhone.length < 9) {
-      toast({ 
-        title: isSo ? "WhatsApp No. khaldan" : "Invalid WhatsApp No.", 
-        description: isSo ? "WhatsApp number-ka waa inuu ka koobnaadaa ugu yaraan 9 nambar." : "WhatsApp number must be at least 9 digits.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        ...formData,
-        phone: "+252" + formData.phone.replace(/\D/g, ""),
-        thumbnailUrl: formData.imageUrls[0] || '', 
-        level: parseInt(formData.level || '0'),
-        price: parseFloat(formData.price || '0'),
-        evoWeapons: parseInt(formData.evoWeapons || '0'),
-        totalWeapons: parseInt(formData.totalWeapons || '0'),
-        emotes: parseInt(formData.emotes || '0'),
-        executionEmotes: parseInt(formData.executionEmotes || '0'),
-        arrivalEmotes: parseInt(formData.arrivalEmotes || '0'),
-        dharka: parseInt(formData.dharka || '0'),
-        primeLevel: parseInt(formData.primeLevel || '1'),
-        internalWeapons: parseInt(formData.internalWeapons || '0'),
-        fee: 0
-      };
-
-      if (editingPost) {
-        await updateAccountPost(editingPost.id, payload);
-      } else {
-        await postAccount(payload);
-      }
-      setStep(2); // Go straight to success
-    } catch (e) {
-      toast({ title: "Failed to post", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleImageUpload = async (file: File) => {
-    setIsSubmitting(true);
-    try {
-      const url = await uploadToImgbb(file);
-      setFormData(prev => ({ 
-        ...prev, 
-        imageUrls: [...prev.imageUrls, url] 
-      }));
-      toast({ title: "Sawirka waa la galiyay!" });
-    } catch (e) {
-      toast({ title: "Upload failed", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      imageUrls: prev.imageUrls.filter((_, i) => i !== index)
-    }));
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-[#F8FAFC] dark:bg-slate-950 flex flex-col overflow-hidden animate-in slide-in-from-right-4 duration-500">
-       <header className="h-16 md:h-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-100 dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-             <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-full h-10 w-10 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                <ArrowLeft className="w-6 h-6 text-slate-900 dark:text-white" />
-             </Button>
-             <div>
-                <h2 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">
-                  {editingPost ? 'Edit Listing' : 'Post Account'}
-                </h2>
-                <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-widest leading-none mt-1">Verified Marketplace</p>
-             </div>
-          </div>
-          
-          <div className="flex items-center gap-1.5 md:gap-4 bg-slate-50 dark:bg-slate-800 px-3 md:px-6 py-1.5 md:py-2.5 rounded-full border border-slate-100 dark:border-white/5">
-             {[1, 2].map(s => (
-               <div key={s} className="flex items-center gap-1 md:gap-2">
-                  <div className={cn(
-                    "w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500", 
-                    step === s ? "bg-primary scale-125 shadow-[0_0_8px_rgba(14,165,233,0.6)]" : "bg-slate-300 dark:bg-slate-700"
-                  )} />
-                  <span className={cn(
-                    "text-[8px] md:text-[10px] font-black uppercase tracking-tighter hidden xs:inline",
-                    step === s ? 'text-primary' : 'text-slate-400'
-                  )}>
-                    {s === 1 ? 'Xogta' : 'Done'}
-                  </span>
-               </div>
-             ))}
-          </div>
-       </header>
-
-       <div className="flex-1 overflow-y-auto p-4 sm:p-10 space-y-8 scrollbar-hide">
-          <div className="max-w-3xl mx-auto w-full">
-             {step === 1 && (
-               <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                  <div className="space-y-4">
-                     <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">{t('account_gallery')}</p>
-                     
-                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-                        {formData.imageUrls.map((url, idx) => (
-                           <div key={url + idx} className="group relative aspect-square rounded-2xl md:rounded-[2rem] overflow-hidden bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-white/5 shadow-sm">
-                              <Image src={url} alt="" fill className="object-cover" unoptimized />
-                              {idx === 0 && <Badge className="absolute top-2 left-2 bg-primary text-white text-[8px] font-black uppercase px-2 py-0">Main</Badge>}
-                              <button 
-                                onClick={() => removeImage(idx)}
-                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                 <X size={12} />
-                              </button>
-                           </div>
-                        ))}
-                        
-                        <div className={cn(
-                          "relative aspect-square rounded-2xl md:rounded-[2rem] bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center overflow-hidden transition-all hover:border-primary/40 group",
-                          formData.imageUrls.length === 0 && "col-span-full aspect-video md:rounded-[3rem]"
-                        )}>
-                           <ImageIcon size={formData.imageUrls.length === 0 ? 32 : 24} className="text-slate-300 group-hover:text-primary transition-colors" />
-                           <p className={cn(
-                             "font-black uppercase tracking-widest mt-2 transition-colors group-hover:text-primary text-center px-4",
-                             formData.imageUrls.length === 0 ? t('upload_photos_prompt') : (language === 'so' ? 'Ku dar' : 'Add More')
-                           )}>
-                             {formData.imageUrls.length === 0 ? t('upload_photos_prompt') : (language === 'so' ? 'Ku dar' : 'Add More')}
-                           </p>
-                           <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
-                           {isSubmitting && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center z-20"><Loader2 className="animate-spin text-primary" /></div>}
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                     <Card className="p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-6 md:space-y-8">
-                        <div className="flex items-center gap-3 text-primary mb-2">
-                           <Layers size={18} />
-                           <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">{t('game_identity')}</h4>
-                        </div>
-                        <FormGroup label={t('game_type')}>
-                           <Select value={formData.gameType} onValueChange={v => setFormData({...formData, gameType: v as any})}>
-                              <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-lg focus:ring-2 focus:ring-primary shadow-inner">
-                                 <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 z-[200]">
-                                 <SelectItem value="freefire" className="rounded-xl font-bold uppercase text-xs p-3">Free Fire</SelectItem>
-                                 <SelectItem value="bloodstrike" className="rounded-xl font-bold uppercase text-xs p-3">Blood Strike</SelectItem>
-                              </SelectContent>
-                           </Select>
-                        </FormGroup>
-                        <FormGroup label={t('login_method')}>
-                           <Select value={formData.platform} onValueChange={v => setFormData({...formData, platform: v})}>
-                              <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold text-sm md:text-lg focus:ring-2 focus:ring-primary shadow-inner">
-                                 <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 z-[200]">
-                                 <SelectItem value="Google" className="rounded-xl font-bold uppercase text-xs p-3">Google Account</SelectItem>
-                                 <SelectItem value="Facebook" className="rounded-xl font-bold uppercase text-xs p-3">Facebook Login</SelectItem>
-                              </SelectContent>
-                           </Select>
-                        </FormGroup>
-                        
-                        {isFreeFire ? (
-                          <>
-                            <FormGroup label="Prime Level">
-                              <Select value={formData.primeLevel} onValueChange={v => setFormData({...formData, primeLevel: v})}>
-                                  <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-lg shadow-inner">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 z-[200]">
-                                    {[1,2,3,4,5,6,7,8].map(l => <SelectItem key={l} value={l.toString()} className="rounded-xl font-bold uppercase text-xs p-3">Level {l}</SelectItem>)}
-                                  </SelectContent>
-                              </Select>
-                            </FormGroup>
-                            <FormInput label={t('account_age')} value={formData.age} onChange={v => setFormData({...formData, age: v})} placeholder="e.g. 2 years" />
-                          </>
-                        ) : (
-                          <>
-                             <ProfileInput label="In-Game Name (Alias)" value={formData.accountName} onChange={v => setFormData({...formData, accountName: v})} placeholder="e.g. Ghost_01" />
-                             <ProfileInput label="Account ID" value={formData.accountId} onChange={v => setFormData({...formData, accountId: v})} placeholder="e.g. 982172" />
-                          </>
-                        )}
-                     </Card>
-
-                     <Card className="p-5 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-6 md:space-y-8">
-                        <div className="flex items-center gap-3 text-amber-500 mb-2">
-                           <Star size={18} />
-                           <h4 className="font-headline font-bold text-sm md:text-lg uppercase tracking-tight">Level & Pricing</h4>
-                        </div>
-                        <FormInput label="ACCOUNT LEVEL" value={formData.level} type="number" onChange={v => setFormData({...formData, level: v.replace(/\D/g, '')})} placeholder="e.g. 65" />
-                        <FormInput label={t('selling_price')} value={formData.price} type="number" onChange={v => setFormData({...formData, price: v.replace(/[^\d.]/g, '')})} placeholder="e.g. 50" highlight />
-                     </Card>
-                  </div>
-
-                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900">
-                     <div className="flex items-center gap-3 text-indigo-500 mb-8 md:mb-12">
-                        <TargetIcon size={20} />
-                        <div>
-                           <h4 className="font-headline font-bold text-base md:text-2xl uppercase tracking-tight">{t('premium_assets')}</h4>
-                           <p className="text-[10px] md:text-xs text-muted-foreground font-black uppercase tracking-widest mt-0.5">{t('verify_assets_desc')}</p>
-                        </div>
-                     </div>
-                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-8 lg:gap-12">
-                        {isFreeFire ? (
-                          <>
-                            <FormInput label="Evo Guns" icon={Sword} value={formData.evoWeapons} type="number" onChange={v => setFormData({...formData, evoWeapons: v.replace(/\D/g, '')})} placeholder="0" />
-                            <FormInput label="Total Weapons" icon={Target} value={formData.totalWeapons} type="number" onChange={v => setFormData({...formData, totalWeapons: v.replace(/\D/g, '')})} placeholder="0" />
-                            <FormInput label="Emotes" icon={Zap} value={formData.emotes} type="number" onChange={v => setFormData({...formData, emotes: v.replace(/\D/g, '')})} placeholder="0" />
-                            <FormInput label="Arrival Emotes" icon={Star} value={formData.arrivalEmotes} type="number" onChange={v => setFormData({...formData, arrivalEmotes: v.replace(/\D/g, '')})} placeholder="0" />
-                            <FormInput label="Dharka" icon={ShoppingBag} value={formData.dharka} type="number" onChange={v => setFormData({...formData, dharka: v.replace(/\D/g, '')})} placeholder="0" />
-                          </>
-                        ) : (
-                          <>
-                             <FormInput label="Evo Weapons" icon={Sword} value={formData.evoWeapons} type="number" onChange={v => setFormData({...formData, evoWeapons: v.replace(/\D/g, '')})} placeholder="0" />
-                             <FormInput label="Internal Weapons" icon={Target} value={formData.internalWeapons} type="number" onChange={v => setFormData({...formData, internalWeapons: v.replace(/\D/g, '')})} placeholder="0" />
-                             <FormInput label="Emotes" icon={Zap} value={formData.emotes} type="number" onChange={v => setFormData({...formData, emotes: v.replace(/\D/g, '')})} placeholder="0" />
-                             <FormInput label="Execution Emotes" icon={Bomb} value={formData.executionEmotes} type="number" onChange={v => setFormData({...formData, executionEmotes: v.replace(/\D/g, '')})} placeholder="0" />
-                             <FormInput label="Arrival Emotes" icon={Star} value={formData.arrivalEmotes} type="number" onChange={v => setFormData({...formData, arrivalEmotes: v.replace(/\D/g, '')})} placeholder="0" />
-                          </>
-                        )}
-                     </div>
-                  </Card>
-
-                  <Card className="p-6 md:p-10 rounded-[1.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 grid grid-cols-1 gap-6 md:gap-10">
-                     <div className="space-y-2 md:space-y-3">
-                        <label className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-1.5">
-                           {t('whatsapp_number_support')}
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
-                            <span className="font-bold text-[10px] md:text-sm text-gray-400 border-r border-gray-200 pr-2">+252</span>
-                          </div>
-                          <Input 
-                            type="tel" 
-                            placeholder="613982172" 
-                            value={formData.phone} 
-                            onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
-                            className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none pl-16 md:pl-24 pr-4 bg-slate-50 dark:bg-slate-800 font-bold text-xs md:text-lg shadow-inner focus:ring-2 focus:ring-primary" 
-                          />
-                        </div>
-                     </div>
-                  </Card>
-
-                  <div className="pt-4 md:pt-10">
-                     <Button onClick={handleInitialSubmit} disabled={isSubmitting} className="w-full h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-3xl shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.1em] active:scale-95 transition-all">
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : (language === 'so' ? "Soo geli" : "Submit Listing")} <ArrowRight size={28} className="ml-2 md:ml-4" />
-                     </Button>
-                  </div>
-               </div>
-             )}
-
-             {step === 2 && (
-               <div className="py-10 md:py-24 flex flex-col items-center justify-center text-center space-y-8 md:space-y-16 animate-in zoom-in duration-1000">
-                  <div className="relative">
-                     <div className="absolute inset-0 bg-green-400 rounded-full blur-[100px] opacity-30 animate-pulse" />
-                     <div className="relative w-28 h-28 md:w-56 md:h-56 bg-green-50 dark:bg-green-500/20 rounded-[2rem] md:rounded-[4rem] flex items-center justify-center text-green-600 dark:text-green-400 shadow-2xl border-4 md:border-8 border-white dark:border-slate-900 ring-8 md:ring-[16px] ring-green-500/5">
-                        <CheckCircle2 size={48} className="md:size-32" />
-                     </div>
-                     <Sparkles className="absolute -top-4 -right-4 md:-top-8 md:-right-8 w-10 h-10 md:w-20 md:h-20 text-amber-400 animate-bounce" />
-                  </div>
-                  
-                  <div className="space-y-3 md:space-y-6">
-                     <h2 className="text-3xl md:text-7xl font-headline font-bold tracking-tight text-slate-900 dark:text-white uppercase leading-none">Waa lagu guuleystay!</h2>
-                     <p className="text-sm md:text-2xl text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed">
-                        Waad ku mahadsantahay! Post-kaaga waa "Pending". Admin-ka ayaa hadda hubinaya xogtaada si loo fasaxo Account-kaaga.
-                     </p>
-                  </div>
-
-                  <div className="flex flex-col gap-3 md:gap-5 w-full max-md mx-auto">
-                     <Button onClick={onComplete} className="h-14 md:h-24 rounded-2xl md:rounded-[2.5rem] font-black text-sm md:text-2xl shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest transition-transform active:scale-95">
-                        Eeg Marketplace-ka
-                     </Button>
-                     <Button variant="ghost" onClick={onComplete} className="h-12 md:h-16 rounded-xl text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white uppercase tracking-widest text-[10px] md:text-base">
-                        Back to Home
-                     </Button>
-                  </div>
-               </div>
-             )}
-          </div>
-       </div>
-    </div>
   );
 }
 

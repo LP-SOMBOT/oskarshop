@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -170,6 +171,10 @@ type EventAccount = {
   topBidderName?: string;
   topTapperId?: string;
   topTapsCount?: number;
+  topParticipants?: {
+    uid: string;
+    avatar: string;
+  }[];
 };
 
 type EventParticipant = {
@@ -2299,6 +2304,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastTapTime: now,
       status: 'active'
     };
+    
+    // Maintain top 3 recent participants on the event object for Marketplace card display
+    let topParticipants = eventData.topParticipants || [];
+    topParticipants = topParticipants.filter((p: any) => p.uid !== authUser.uid);
+    topParticipants.unshift({
+      uid: authUser.uid,
+      avatar: enhancedUser.photoURL || ""
+    });
+    updates[`eventAccounts/${eventId}/topParticipants`] = topParticipants.slice(0, 3);
     
     // Log to tap feed
     const tapFeedRef = push(ref(rtdb, `eventTaps/${eventId}`));
