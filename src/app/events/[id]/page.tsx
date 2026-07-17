@@ -46,7 +46,7 @@ export default function EventDetailPage() {
   const [isTapping, setIsTapping] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Local Storage Caching
+  // Local Storage Caching for Event Data
   const [cachedEvent, setCachedEvent] = useState<any>(() => {
     if (typeof window === 'undefined') return null;
     const saved = localStorage.getItem(EVENT_CACHE_PREFIX + id);
@@ -111,11 +111,18 @@ export default function EventDetailPage() {
     const timer = setInterval(() => {
       const now = Date.now();
       
-      // Cooldown check
-      if (myStats?.lastTapTime) {
-        const diff = now - myStats.lastTapTime;
-        const remaining = Math.max(0, 120000 - diff);
+      // Persistence: Check both DB and LocalStorage for the most recent tap
+      const localCooldownKey = `oskar_cooldown_${id}_${user?.uid}`;
+      const localLastTap = Number(localStorage.getItem(localCooldownKey)) || 0;
+      const dbLastTap = myStats?.lastTapTime || 0;
+      const effectiveLastTap = Math.max(localLastTap, dbLastTap);
+
+      if (effectiveLastTap) {
+        const diff = now - effectiveLastTap;
+        const remaining = Math.max(0, 120000 - diff); // 2 minutes cooldown
         setCooldown(remaining);
+      } else {
+        setCooldown(0);
       }
 
       // Event countdown
@@ -133,7 +140,7 @@ export default function EventDetailPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [event, myStats]);
+  }, [event, myStats, id, user?.uid]);
 
   const handleTap = async () => {
     if (!user) {
@@ -146,6 +153,11 @@ export default function EventDetailPage() {
     setIsTapping(true);
     try {
       await tapEventAccount(id as string);
+      // Immediately cache the tap timestamp locally to prevent refresh bypass
+      if (typeof window !== 'undefined') {
+        const localCooldownKey = `oskar_cooldown_${id}_${user.uid}`;
+        localStorage.setItem(localCooldownKey, Date.now().toString());
+      }
     } finally {
       setIsTapping(false);
     }
