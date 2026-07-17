@@ -1230,7 +1230,7 @@ export default function AdminPage() {
                    setStatus={setPendingAccountStatus}
                    buyerId={assignBuyerId}
                    setBuyerId={setAssignBuyerId}
-                   isSaving={isSaving}
+                   isSaving={isSavingStatus}
                    onDelete={() => { setDeleteTarget({id:selectedAccountId, type:'account'}); setIsDeleteDialogOpen(true); }}
                    onEnforce={() => setIsEnforceDialogOpen(true)}
                    enforceAccountAction={enforceAccountAction}
@@ -2570,28 +2570,35 @@ export default function AdminPage() {
       <Dialog open={isPromoUsageOpen} onOpenChange={setIsPromoUsageOpen}>
          <DialogContent className="max-md w-[95%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
             <div className="bg-primary p-6 text-white">
-               <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Usage History</DialogTitle>
-               <p className="text-white/60 text-[10px] font-bold uppercase mt-1">Clients who used code: {selectedPromo?.code}</p>
+               <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka (promocode)</DialogTitle>
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto scrollbar-hide space-y-3">
                {selectedPromo && (selectedPromo.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo.claimed ? [{ uid: selectedPromo.usedBy, timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).length === 0 ? (
                  <div className="py-12 text-center opacity-30 italic font-bold uppercase text-xs">No users have used this code yet.</div>
                ) : (
-                 (selectedPromo?.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo?.claimed ? [{ uid: selectedPromo.usedBy, name: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.name || 'User', whatsapp: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.phoneNumber || 'N/A', timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).map((usage: any) => (
-                    <div key={usage.uid} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><User size={20} /></div>
-                          <div>
-                             <p className="text-sm font-bold">{usage.name || 'Gamer'}</p>
-                             <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp}</p>
-                          </div>
-                       </div>
-                       <div className="text-right">
-                          <p className="text-[10px] font-black text-primary uppercase">{formatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
-                          <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{format(usage.timestamp, 'MMM d, HH:mm')}</p>
-                       </div>
-                    </div>
-                 ))
+                 (selectedPromo?.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo?.claimed ? [{ uid: selectedPromo.usedBy, name: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.name || 'User', whatsapp: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.phoneNumber || 'N/A', timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).map((usage: any) => {
+                    const profile = allUsers.find(u => u.uid === usage.uid);
+                    return (
+                      <div key={usage.uid} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                            <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm">
+                               <AvatarImage src={profile?.photoURL} />
+                               <AvatarFallback className="bg-primary/10 text-primary">
+                                 <User size={20}/>
+                               </AvatarFallback>
+                            </Avatar>
+                            <div>
+                               <p className="text-sm font-bold">{usage.name || profile?.name || 'Gamer'}</p>
+                               <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp || profile?.phoneNumber || 'N/A'}</p>
+                            </div>
+                         </div>
+                         <div className="text-right">
+                            <p className="text-[10px] font-black text-primary uppercase">{formatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
+                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{format(usage.timestamp, 'MMM d, HH:mm')}</p>
+                         </div>
+                      </div>
+                    );
+                 })
                )}
             </div>
             <div className="p-6 pt-0">
@@ -2635,7 +2642,7 @@ export default function AdminPage() {
                  ))}
               </div>
               <span className="text-red-500 font-bold text-[10px]">Reason:</span>
-              <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="e.g. Account listing was flagged by security. Penalty enforcement applied." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
+              <Textarea value={enforceMessage} onChange={e => setEditAction(e.target.value)} placeholder="e.g. Account listing was flagged by security. Penalty enforcement applied." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
               <Button onClick={async () => { await enforceAccountAction(selectedAccount!.id, enforceAction, enforceMessage); setIsEnforceDialogOpen(false); setSelectedAccountId(null); setEnforceMessage(""); }} disabled={isSavingStatus || !enforceMessage} className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest shadow-2xl">
                  Apply Enforcement
               </Button>
