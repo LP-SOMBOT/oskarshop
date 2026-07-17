@@ -1053,11 +1053,6 @@ export default function AdminPage() {
 
           {activeView === 'account-events' && (
             <div className="space-y-12 animate-in fade-in duration-700">
-               <div className="space-y-4">
-                  <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">Account Events</h2>
-                  <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-widest">Manage real-time auction-style account taps</p>
-               </div>
-
                <div className="pt-2">
                   <Button 
                     onClick={() => handleOpenEventAccountDialog()} 
@@ -1384,7 +1379,7 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                             {userProfile?.photoURL ? <Image src={userProfile.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
                                             {p.processedBy?.name || "Wali lama furin"}
@@ -1430,7 +1425,7 @@ export default function AdminPage() {
                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                   <Button 
                     onClick={() => handleOpenGameDialog()} 
-                    className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                    className="rounded-2xl h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:auto"
                   >
                     <PlusCircle size={20} /> New Game
                   </Button>
@@ -1513,7 +1508,7 @@ export default function AdminPage() {
                                              key={p.id} 
                                              p={p} 
                                              onEdit={() => handleOpenProductDialog(p)}
-                                             onDelete={(e) => { setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
+                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
                                            />
                                          ))}
                                        </div>
@@ -3595,4 +3590,3 @@ function StatBox({ icon: Icon, label, value, color, bgColor }: { icon: any, labe
     </div>
   );
 }
-
