@@ -164,8 +164,8 @@ import {
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  useSensor,
   useSensors,
+  useSensor,
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
@@ -3374,7 +3374,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                    </div>
                    <div className="text-right shrink-0">
                       <p className="text-[10px] font-black text-primary uppercase leading-none mb-1">Offer</p>
-                      <p className="text-2xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
+                      <p className="text-2xl font-headline font-bold text-primary tracking-tighter">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
                    </div>
                 </div>
              </div>
@@ -3494,7 +3494,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50" />
           <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50" />
-          <StatCard label="Current Leader" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
+          <StatCard label="Kaaalinta 1aad" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
           <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50" />
        </div>
 
