@@ -1374,7 +1374,7 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {userProfile?.photoURL ? <Image src={userProfile.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
+                                             {user?.photoURL ? <Image src={user.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">O</div>}
                                           </div>
                                           <span className={cn("text-xs font-bold", p.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
                                             {p.processedBy?.name || "Wali lama furin"}
@@ -1535,7 +1535,7 @@ export default function AdminPage() {
 
                     <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <form onSubmit={handleSaveEvent} className="p-8 md:p-12 space-y-8">
-                          <div className="relative w-full aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
+                          <div className="relative w-full aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner group">
                              {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-xs font-black uppercase text-slate-400">Add Event Poster</span></>}
                              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'event')} />
                           </div>
@@ -2527,7 +2527,7 @@ export default function AdminPage() {
               <SettingInput label="Discount Percentage (%)" value={promoCodeForm.discount} type="number" onChange={v => setPromoForm({...promoCodeForm, discount: v})} placeholder="e.g. 15" />
               
               <div className="grid grid-cols-2 gap-4">
-                 <SettingInput label="Duration Value" value={promoCodeForm.duration} type="number" onChange={v => setPromoForm({...promoCodeForm, duration: v})} placeholder="e.g. 7" />
+                 <SettingInput label="Duration Value" value={promoCodeForm.duration} type="number" onChange={v => setPromoCodeForm({...promoCodeForm, duration: v})} placeholder="e.g. 7" />
                  <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
                     <Select value={promoCodeForm.durationUnit} onValueChange={v => setPromoForm({...promoCodeForm, durationUnit: v})}>
@@ -2608,7 +2608,7 @@ export default function AdminPage() {
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
-                    {paymentMethodIcon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
+                    {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
               </div>
@@ -3470,7 +3470,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                     className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2"
                   >
                      <Clock className="w-4 h-4" />
-                     <span>Jooji</span>
+                     <span>End Early</span>
                   </Button>
                 )}
 
