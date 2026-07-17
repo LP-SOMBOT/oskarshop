@@ -83,7 +83,11 @@ export default function EventDetailPage() {
     const partUnsub = onValue(partRef, (snap) => {
       const data = snap.val();
       if (data) {
-        setParticipants(Object.values(data).sort((a: any, b: any) => b.taps - a.taps));
+        // STRICT Top 1 logic: most taps, then earliest tap wins tie
+        setParticipants(Object.values(data).sort((a: any, b: any) => {
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        }));
       } else {
         setParticipants([]);
       }
@@ -111,7 +115,6 @@ export default function EventDetailPage() {
     const timer = setInterval(() => {
       const now = Date.now();
       
-      // Persistence: Check both DB and LocalStorage for the most recent tap
       const localCooldownKey = `oskar_cooldown_${id}_${user?.uid}`;
       const localLastTap = Number(localStorage.getItem(localCooldownKey)) || 0;
       const dbLastTap = myStats?.lastTapTime || 0;
@@ -119,13 +122,12 @@ export default function EventDetailPage() {
 
       if (effectiveLastTap) {
         const diff = now - effectiveLastTap;
-        const remaining = Math.max(0, 120000 - diff); // 2 minutes cooldown
+        const remaining = Math.max(0, 120000 - diff); 
         setCooldown(remaining);
       } else {
         setCooldown(0);
       }
 
-      // Event countdown
       const diff = event.endTime - now;
       if (diff <= 0) {
         setTimeLeft({ h: '00', m: '00', s: '00' });
@@ -153,7 +155,6 @@ export default function EventDetailPage() {
     setIsTapping(true);
     try {
       await tapEventAccount(id as string);
-      // Immediately cache the tap timestamp locally to prevent refresh bypass
       if (typeof window !== 'undefined') {
         const localCooldownKey = `oskar_cooldown_${id}_${user.uid}`;
         localStorage.setItem(localCooldownKey, Date.now().toString());
@@ -184,7 +185,6 @@ export default function EventDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-32 page-transition relative overflow-x-hidden">
-      {/* SECTION 1: HEADER */}
       <div className="relative h-[25vh] sm:h-[35vh] w-full overflow-hidden">
          {event.imageUrls?.[0] ? (
             <Image src={event.imageUrls[0]} alt="" fill className="object-cover" unoptimized />
@@ -215,7 +215,6 @@ export default function EventDetailPage() {
       </div>
 
       <main className="px-4 sm:px-6 space-y-6 sm:space-y-12 max-w-4xl mx-auto relative z-10">
-         {/* COUNTDOWN & PRICE */}
          <Card className="p-4 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border-slate-100 shadow-xl space-y-6 sm:space-y-8">
             <div className="text-center space-y-1.5 sm:space-y-2">
                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] sm:tracking-[0.4em]">{isUpcoming ? 'BILAABMAYSA' : isEnded ? 'DHAMMAATAY' : 'ENDS IN'}</p>
@@ -254,7 +253,6 @@ export default function EventDetailPage() {
             )}
          </Card>
 
-         {/* SECTION 2: IMAGES */}
          <div className="space-y-3 sm:space-y-4">
             <h3 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] ml-1 sm:ml-2 text-slate-400">{t('account_gallery')}</h3>
             <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 sm:pb-4 snap-x">
@@ -266,7 +264,6 @@ export default function EventDetailPage() {
             </div>
          </div>
 
-         {/* SECTION 6: DETAILS */}
          <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border-slate-100 overflow-hidden shadow-sm">
             <button 
               onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
@@ -298,7 +295,6 @@ export default function EventDetailPage() {
             )}
          </Card>
 
-         {/* SECTION 7: LEADERBOARD BUTTON */}
          <button 
            onClick={() => router.push(`/events/${id}/leaderboard`)}
            className="w-full p-4 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border border-slate-100 flex items-center justify-between group active:scale-[0.98] transition-all shadow-md"
@@ -317,7 +313,6 @@ export default function EventDetailPage() {
             </div>
          </button>
 
-         {/* SECTION 8: RULES */}
          <Card className="p-6 sm:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border-slate-100 shadow-sm space-y-4 sm:space-y-6">
             <h4 className="font-headline font-bold uppercase tracking-tight flex items-center gap-2 text-slate-900 text-sm sm:text-lg">
                <Info size={16} className="text-primary sm:size-[18px]" /> Event Rules
@@ -343,10 +338,8 @@ export default function EventDetailPage() {
          </Card>
       </main>
 
-      {/* SECTION 4: LIVE TAP FEED */}
       <EventLiveFeed taps={tapFeed} />
 
-      {/* SECTION 5: GET BUTTON AREA */}
       <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-8 bg-white/80 backdrop-blur-md border-t border-slate-100 z-[70]">
          <div className="max-w-4xl mx-auto">
             <Card className="p-3 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] bg-white border-slate-100 shadow-2xl flex flex-col items-center gap-3 sm:gap-4">

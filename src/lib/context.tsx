@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -1170,7 +1169,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }),
     }).catch(() => {});
 
-    // Trigger SERVER-SIDE admin notification
+    // Server-side notify admins
     fetch('/api/notify-new-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1196,7 +1195,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (!settings.rewardsActive) return { rank: null, discount: 0 };
 
-    const sorted = [...allUsers].sort((a, b) => (b.points || 0) - (a.points || 0));
+    const sorted = [...allUsers].sort((a, b) => {
+       if (b.points !== a.points) return b.points - a.points;
+       return (a.createdAt || 0) - (b.createdAt || 0); // Tie-breaker: older account wins
+    });
     const top50 = sorted.slice(0, 50);
     const rankIndex = top50.findIndex(u => u.uid === authUser.uid);
     const rank = rankIndex !== -1 ? rankIndex + 1 : null;
@@ -2370,14 +2372,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const updates: any = { status };
 
-    // If ending the event, pick the winner if not manually assigned
+    // If ending the event, pick the winner based on strict Top 1 logic
     if (status === 'ended') {
       const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
       const participants = participantsSnap.val();
       
       if (participants) {
         const sorted = Object.values(participants).sort((a: any, b: any) => {
-          // Rule: Most taps wins. In case of tie, earliest reaching that count wins.
+          // RULE: Most taps wins. TIE-BREAKER: Earliest reaching that count wins.
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
         });
@@ -2402,9 +2404,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     try {
       if (outcome === 'accepted') {
-        // Redirect to specialized checkout handled in WinnerClaimGuard
+        // Handled in WinnerClaimGuard
       } else {
-        // MARK AS IGNORED AND FIND NEXT WINNER
+        // MARK AS IGNORED AND FIND NEXT WINNER (Top 1 in current list)
         const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
         const participants = participantsSnap.val() || {};
         const sorted = Object.values(participants).sort((a: any, b: any) => {
@@ -2416,7 +2418,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const nextWinner = sorted[currentIndex + 1] as any;
 
         if (nextWinner) {
-          // Re-assign to next person
+          // Re-assign to next best person
           await update(ref(rtdb, `eventAccounts/${eventId}`), {
             winnerId: nextWinner.uid,
             winnerClaim: {
@@ -2426,7 +2428,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           });
           toast({ title: "Offer Ignored", description: "Listing offered to next in line." });
         } else {
-          // No one left, just mark as ignored for admin review
+          // No one left
           await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
             status: 'ignored'
           });

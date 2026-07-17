@@ -39,7 +39,13 @@ export default function EventLeaderboardPage() {
     const participantsRef = ref(rtdb, `eventParticipants/${id}`);
     const unsub = onValue(participantsRef, (snap) => {
       const data = snap.val();
-      if (data) setParticipants(Object.values(data).sort((a: any, b: any) => b.taps - a.taps));
+      if (data) {
+        // Deterministic Top 1 sorting: Most taps, then earliest tap time
+        setParticipants(Object.values(data).sort((a: any, b: any) => {
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        }));
+      }
       else setParticipants([]);
       setLoading(false);
     });
