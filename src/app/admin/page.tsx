@@ -390,6 +390,7 @@ export default function AdminPage() {
   const [isPromoUsageOpen, setIsPromoUsageOpen] = useState(false);
   const [isUserManageOpen, setIsUserManageOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEndEarlyDialogOpen, setIsEndEarlyDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
 
   const [editingGame, setEditingGame] = useState<any>(null);
@@ -407,6 +408,7 @@ export default function AdminPage() {
   const [enforceMessage, setEnforceMessage] = useState("");
   const [enforceAction, setEnforceAction] = useState<'delete' | 'holding' | 'approved' | 'pending'>('delete');
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: string } | null>(null);
+  const [endEarlyTargetId, setEndEarlyTargetId] = useState<string | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
   const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
@@ -737,6 +739,19 @@ export default function AdminPage() {
     }
   };
 
+  const executeEndEarly = async () => {
+    if (!endEarlyTargetId) return;
+    setIsSavingStatus(true);
+    try {
+      await updateEventStatus(endEarlyTargetId, 'ended');
+      toast({ title: "Event Ended Early" });
+      setIsEndEarlyDialogOpen(false);
+    } finally {
+      setIsSavingStatus(false);
+      setEndEarlyTargetId(null);
+    }
+  };
+
   const handleImageUpload = async (file: File, target: string) => {
     setIsUploading(true);
     try {
@@ -762,26 +777,6 @@ export default function AdminPage() {
   };
 
   const handleSaveLeaderboard = async () => {
-    setIsSavingStatus(true);
-    try {
-      const finalLeaderboard = {
-        rewardsActive: leaderboardForm.rewardsActive,
-        rewards: {
-          rank1: parseInt(leaderboardForm.rewards.rank1) || 0,
-          rank2: parseInt(leaderboardForm.rewards.rank2) || 0,
-          rank3: parseInt(leaderboardForm.rewards.rank3) || 0,
-        }
-      };
-      await updateStoreSettings({
-        leaderboard: finalLeaderboard
-      });
-      toast({ title: "Leaderboard Updated", description: "Rewards settings have been updated live." });
-    } finally {
-      setIsSavingStatus(false);
-    }
-  };
-
-  const handleSaveLeaderboardAdmin = async () => {
     setIsSavingStatus(true);
     try {
       const finalLeaderboard = {
@@ -1078,7 +1073,7 @@ export default function AdminPage() {
                         onEdit={() => handleOpenEventAccountDialog(event)}
                         onDelete={() => { setDeleteTarget({id: event.id, type: 'eventAccount'}); setIsDeleteDialogOpen(true); }}
                         onViewParticipants={() => setSelectedEventId(event.id)}
-                        onEndEarly={() => updateEventStatus(event.id, 'ended')}
+                        onEndEarly={() => { setEndEarlyTargetId(event.id); setIsEndEarlyDialogOpen(true); }}
                         onAssignWinner={() => setSelectedEventId(event.id)}
                       />
                     ))}
@@ -2612,8 +2607,8 @@ export default function AdminPage() {
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
-                    {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
+                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
+                    {paymentMethodIcon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
               </div>
@@ -2642,7 +2637,7 @@ export default function AdminPage() {
                  ))}
               </div>
               <span className="text-red-500 font-bold text-[10px]">Reason:</span>
-              <Textarea value={enforceMessage} onChange={e => setEditAction(e.target.value)} placeholder="e.g. Account listing was flagged by security. Penalty enforcement applied." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
+              <Textarea value={enforceMessage} onChange={e => setEnforceMessage(e.target.value)} placeholder="e.g. Account listing was flagged by security. Penalty enforcement applied." className="rounded-xl md:rounded-2xl dark:bg-slate-800 border-none min-h-[100px] md:min-h-[120px] shadow-inner font-medium p-4" />
               <Button onClick={async () => { await enforceAccountAction(selectedAccount!.id, enforceAction, enforceMessage); setIsEnforceDialogOpen(false); setSelectedAccountId(null); setEnforceMessage(""); }} disabled={isSavingStatus || !enforceMessage} className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-slate-900 text-white font-black uppercase tracking-widest shadow-2xl">
                  Apply Enforcement
               </Button>
@@ -2663,6 +2658,24 @@ export default function AdminPage() {
               <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
               <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
+              </Button>
+           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEndEarlyDialogOpen} onOpenChange={setIsEndEarlyDialogOpen}>
+        <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
+           <DialogHeader className="sr-only">
+              <DialogTitle>Confirm End Early</DialogTitle>
+              <DialogDescription>Are you sure you want to end this auction early? The current leader will be selected as the winner.</DialogDescription>
+           </DialogHeader>
+           <div className="w-16 h-16 md:w-20 md:h-20 bg-amber-50 rounded-full flex items-center justify-center text-amber-500 mx-auto mb-4 md:mb-6"><Clock size={32} className="md:size-10" /></div>
+           <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white">Jooji Kulanka?</h3>
+           <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Ma hubtaa inaad rabto inaad hadda joojiso auction-ka?</p>
+           <div className="flex gap-3 mt-6 md:mt-10">
+              <Button variant="ghost" onClick={() => setIsEndEarlyDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isSavingStatus}>Maya</Button>
+              <Button variant="destructive" onClick={executeEndEarly} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isSavingStatus}>
+                {isSavingStatus ? <Loader2 className="animate-spin" /> : "Haa, Jooji"}
               </Button>
            </div>
         </DialogContent>
@@ -3454,10 +3467,10 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                   <Button 
                     variant="ghost" 
                     onClick={onEndEarly}
-                    title="End Auction Early"
-                    className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0"
+                    className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2"
                   >
-                     <Clock className="w-5 h-5 md:w-6 md:h-6" />
+                     <Clock className="w-4 h-4" />
+                     <span>Jooji</span>
                   </Button>
                 )}
 
@@ -3593,6 +3606,29 @@ function StatBox({ icon: Icon, label, value, color, bgColor }: { icon: any, labe
        <div>
           <p className="text-xl font-headline font-bold leading-none">{value}</p>
           <p className="text-[10px] font-black uppercase text-slate-400 mt-1">{label}</p>
+       </div>
+    </div>
+  );
+}
+
+function StatusInfo({ icon: Icon, label, value, color }: { icon: any, label: string, value: any, color?: string }) {
+  return (
+    <div className="space-y-1 min-w-0">
+      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
+        <Icon size={10} /> {label}
+      </p>
+      <p className={cn("text-xs sm:text-base font-bold truncate", color || "text-slate-900 dark:text-white")}>{value}</p>
+    </div>
+  );
+}
+
+function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
+  return (
+    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
+       <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
+       <div className="min-w-0 w-full">
+         <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
+         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
        </div>
     </div>
   );
