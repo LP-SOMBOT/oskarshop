@@ -346,7 +346,6 @@ export default function EventDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {language === 'so' ? (
                   <div className="space-y-4 col-span-full">
-                    <p className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-primary/10 pb-2">🇸🇴 Somali</p>
                     <ul className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
                        <li className="flex gap-2.5 items-start">
                           <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[8px] font-black shrink-0">1</span> 
