@@ -378,7 +378,7 @@ export default function AdminPage() {
 
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
-  const [userSearch, setUserSearch] = useState("");
+  const [userSearch, setSearchQuery] = useState("");
 
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -1773,7 +1773,7 @@ export default function AdminPage() {
                           placeholder="Search users..." 
                           className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold"
                           value={userSearch}
-                          onChange={(e) => setUserSearch(e.target.value)}
+                          onChange={(e) => setSearchQuery(e.target.value)}
                         />
                      </div>
                   </div>
@@ -2824,7 +2824,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       <Card className="rounded-[2.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+       <Card className="rounded-[3.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
           <div className="p-6 md:p-14 space-y-8 md:space-y-12">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-primary">
@@ -2832,23 +2832,15 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                   <ShieldCheck size={24} />
                 </div>
                 <div>
-                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Maamulka Dalabka</h4>
-                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-60">Administration Log</p>
+                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
                 </div>
               </div>
-              {order.processedAt && (
-                <Badge className="bg-primary/10 text-primary border-none rounded-full px-4 py-1.5 font-black text-[8px] md:text-[10px] uppercase tracking-widest">
-                  Active Session
-                </Badge>
-              )}
             </div>
 
             <div className="relative">
-              {/* Background Decorative Element */}
               <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              
-              <div className="p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
+              <div className="p-6 md:p-12 flex flex-row items-center justify-between gap-8">
+                <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
                   <div className="relative shrink-0">
                     <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
                       {order.processedBy?.photoURL ? (
@@ -2856,9 +2848,6 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
                       )}
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center shadow-lg">
-                       <div className="w-2 h-2 md:w-3 md:h-3 bg-white rounded-full animate-pulse" />
                     </div>
                   </div>
                   
@@ -2868,19 +2857,19 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                       {order.processedBy?.name || "Wali lama furin"}
                     </h5>
                     {order.processedAt && (
-                      <div className="flex items-center gap-2 text-muted-foreground justify-center md:justify-start">
+                      <div className="flex items-center gap-2 text-muted-foreground justify-start">
                          <Clock size={14} className="opacity-40" />
                          <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
-                            Bedelay: {formatDistanceToNow(new Date(order.processedAt))} ago
+                            {formatDistanceToNow(new Date(order.processedAt))} ago
                          </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="w-full md:w-px h-px md:h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
+                <div className="w-px h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
 
-                <div className="text-center md:text-right space-y-2 shrink-0">
+                <div className="text-right space-y-2 shrink-0">
                   <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
                   <div className="space-y-1">
                      <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
