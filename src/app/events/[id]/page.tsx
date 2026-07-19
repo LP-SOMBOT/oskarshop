@@ -277,16 +277,21 @@ export default function EventDetailPage() {
             )}
          </Card>
 
-         <div className="space-y-3 sm:space-y-4">
-            <h3 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] ml-1 sm:ml-2 text-slate-400">{t('account_gallery')}</h3>
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 sm:pb-4 snap-x">
-               {event.imageUrls.map((url, idx) => (
-                  <div key={url + idx} className="relative aspect-[4/3] w-[240px] sm:w-[400px] rounded-2xl sm:rounded-3xl overflow-hidden shrink-0 snap-center shadow-md border border-slate-100 dark:border-white/5 bg-white dark:bg-slate-800">
-                     <Image src={url} alt="" fill className="object-cover" unoptimized />
-                  </div>
-               ))}
-            </div>
-         </div>
+         {/* Smart Gallery Logic: Hide if only one image is present */}
+         {event.imageUrls && event.imageUrls.length > 1 && (
+           <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] ml-1 sm:ml-2 text-slate-400">
+                sawirda ciwaanka
+              </h3>
+              <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 sm:pb-4 snap-x">
+                 {event.imageUrls.map((url: string, idx: number) => (
+                    <div key={url + idx} className="relative aspect-[4/3] w-[240px] sm:w-[400px] rounded-2xl sm:rounded-3xl overflow-hidden shrink-0 snap-center shadow-md border border-slate-100 dark:border-white/5 bg-white dark:bg-slate-800">
+                       <Image src={url} alt="" fill className="object-cover" unoptimized />
+                    </div>
+                 ))}
+              </div>
+           </div>
+         )}
 
          <Card className="rounded-[1.5rem] sm:rounded-[2.5rem] bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 overflow-hidden shadow-sm">
             <button 
