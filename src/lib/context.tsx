@@ -2403,7 +2403,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    await update(ref(rtdb, `eventAccounts/${eventId}`), updates);
+    await update(ref(rtdb), updates);
     toast({ title: `Event is now ${status}` });
   }, [rtdb, enhancedUser]);
 

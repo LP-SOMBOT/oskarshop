@@ -2885,56 +2885,60 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
-          <div className="flex items-center gap-4 text-amber-500">
-             <RefreshCw size={24} />
-             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Lifecycle Control</h4>
-          </div>
-
-          <div className="space-y-8">
-             <div className="space-y-3">
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
-                <Select value={status} onValueChange={setStatus}>
-                   <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                      <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                      {['pending', 'processing', 'successful', 'cancelled'].map(s => (
-                        <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
-                      ))}
-                   </SelectContent>
-                </Select>
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-12 space-y-8">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+                </div>
+                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
              </div>
 
-             {status === 'cancelled' && (
-               <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Reason for User</label>
-                  <Textarea 
-                    value={reason} 
-                    onChange={(e) => setReason(e.target.value)} 
-                    placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
-                    className="rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
-                  />
-               </div>
-             )}
+             <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
+                   <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="h-16 md:h-20 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                         {['pending', 'processing', 'successful', 'cancelled'].map(s => (
+                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                         ))}
+                      </SelectContent>
+                   </Select>
+                </div>
 
-             <Button 
-                onClick={onUpdate} 
-                disabled={isSaving} 
-                className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
-             >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Order"}
-             </Button>
+                {status === 'cancelled' && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                     <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Cancellation Reason</label>
+                     <Textarea 
+                       value={reason} 
+                       onChange={(e) => setReason(e.target.value)} 
+                       placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
+                       className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
+                     />
+                  </div>
+                )}
 
-             <div className="pt-8 space-y-6">
-                <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
-                <div className="grid grid-cols-2 gap-4">
-                   <button onClick={handleCopyId} className="h-14 rounded-full bg-slate-50 dark:bg-slate-800 border dark:border-white/5 font-black uppercase text-[11px] tracking-widest text-slate-500 hover:bg-slate-100 transition-colors">
-                      Copy ID
-                   </button>
-                   <button onClick={handleWhatsApp} className="h-14 rounded-full bg-slate-50 dark:bg-slate-800 border dark:border-white/5 font-black uppercase text-[11px] tracking-widest text-slate-500 hover:bg-slate-100 transition-colors">
-                      WhatsApp
-                   </button>
+                <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
+                </Button>
+
+                <div className="pt-6 space-y-6">
+                   <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
+                   <div className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" onClick={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                         <Copy size={16} /> Copy ID
+                      </Button>
+                      <Button variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                         <MessageCircle size={16} /> WhatsApp
+                      </Button>
+                   </div>
                 </div>
              </div>
           </div>
@@ -3252,55 +3256,59 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
        </div>
     </Card>
 
-    <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-12">
-       <div className="flex items-center gap-4 text-amber-500">
-          <RefreshCw size={24} />
-          <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Lifecycle Control</h4>
-       </div>
-
-       <div className="space-y-8">
-          <div className="space-y-3">
-             <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
-             <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                   <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                   {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
-                     <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
-                   ))}
-                </SelectContent>
-             </Select>
+    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+       <div className="p-6 md:p-12 space-y-8">
+          <div className="flex items-center gap-4 text-primary">
+             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+             </div>
+             <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
           </div>
 
-          {status === 'sold' && (
-             <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
-                <Select value={buyerId} onValueChange={setBuyerId}>
+          <div className="grid grid-cols-1 gap-8">
+             <div className="space-y-3">
+                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
+                <Select value={status} onValueChange={setStatus}>
                    <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                      <SelectValue placeholder="Select User..." />
+                      <SelectValue />
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                      <div className="max-h-[300px] overflow-y-auto">
-                         {allUsers.map((u: any) => (
-                           <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
-                              {u.name || "Unknown User"} ({u.phoneNumber})
-                           </SelectItem>
-                         ))}
-                      </div>
+                      {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
+                        <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                      ))}
                    </SelectContent>
                 </Select>
-                <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
              </div>
-          )}
 
-          <Button 
-             onClick={onUpdate} 
-             disabled={isSaving} 
-             className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
-          >
-             {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
-          </Button>
+             {status === 'sold' && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                   <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
+                   <Select value={buyerId} onValueChange={setBuyerId}>
+                      <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                         <SelectValue placeholder="Select User..." />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                         <div className="max-h-[300px] overflow-y-auto">
+                            {allUsers.map((u: any) => (
+                              <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
+                                 {u.name || "Unknown User"} ({u.phoneNumber})
+                              </SelectItem>
+                            ))}
+                         </div>
+                      </SelectContent>
+                   </Select>
+                   <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
+                </div>
+             )}
+
+             <Button 
+                onClick={onUpdate} 
+                disabled={isSaving} 
+                className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+             >
+                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
+             </Button>
+          </div>
        </div>
     </Card>
   </div>

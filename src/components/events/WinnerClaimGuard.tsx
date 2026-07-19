@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -143,4 +142,3 @@ export default function WinnerClaimGuard() {
     </Dialog>
   );
 }
-
