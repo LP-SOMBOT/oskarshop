@@ -367,7 +367,6 @@ export default function EventDetailPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-primary/10 pb-2">🇬🇧 English</p>
                   <ul className="space-y-3 text-xs sm:text-sm text-slate-600 font-medium">
                     {[
                       "Participants must use only one valid account.",
@@ -448,7 +447,7 @@ export default function EventDetailPage() {
 
       {/* Disclaimer Modal */}
       {showDisclaimer && (
-        <div className="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
+        <div className="fixed inset-0 z-[100002] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
            <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[90vh]">
               <div className="bg-primary p-6 sm:p-10 text-white text-center shrink-0">
                  <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 animate-bounce" />

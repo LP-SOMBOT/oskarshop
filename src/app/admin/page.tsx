@@ -174,7 +174,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@at-dnd-kit/sortable';
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -637,7 +637,7 @@ export default function AdminPage() {
       setIsEditingEvent(false);
       setEditingEvent(null);
       toast({ title: "Event Saved" });
-    } finally { setIsUploading(true); }
+    } finally { setIsUploading(false); }
   };
 
   const handleSaveBanner = async (e: React.FormEvent) => {
@@ -2135,6 +2135,7 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
+                                    <Button onClick={() => updateStoreSettings({ termsAndConditions: termsForm }).then(()=>toast({title:"Policy Updated"}))} className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl bg-emerald-600">Sync Legal Policy</Button>
                                     <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
                                  </div>
                                  <div className="space-y-3">
@@ -2142,7 +2143,6 @@ export default function AdminPage() {
                                     <Textarea value={termsForm.so} onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Geli shuruudaha afka Soomaaliga..." />
                                  </div>
                               </div>
-                              <Button onClick={() => updateStoreSettings({ termsAndConditions: termsForm }).then(()=>toast({title:"Policy Updated"}))} className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl bg-emerald-600">Sync Legal Policy</Button>
                            </div>
                         </AccordionContent>
                      </Card>
