@@ -454,7 +454,7 @@ export default function EventDetailPage() {
                  <h2 className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">ACCOUNT BID – DISCLAIMER & PARTICIPATION AGREEMENT</h2>
               </div>
               
-              <div className="p-6 sm:p-10 overflow-y-auto space-y-6 scrollbar-hide">
+              <div className="p-6 sm:p-10 overflow-y-auto space-y-6 scrollbar-hide text-left">
                  <div className="space-y-4">
                     <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
                        Please read this carefully before joining an Account Bid event.
@@ -486,7 +486,7 @@ export default function EventDetailPage() {
                          id="agree-event" 
                          checked={hasCheckedAgreement} 
                          onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
-                         className="h-5 w-5 rounded-md border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                         className="h-5 w-5 rounded-sm border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
                        />
                        <label htmlFor="agree-event" className="text-[11px] sm:text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none leading-tight">
                           I have read & accept
