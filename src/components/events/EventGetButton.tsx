@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from "@/lib/utils";
@@ -55,7 +56,7 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, isTapping, 
                <span className="font-black text-xs sm:text-base md:text-2xl uppercase tracking-widest relative z-10">Sug: {format(new Date(cooldown), 'mm:ss')}</span>
             </div>
          ) : (
-            <span className="font-black text-xl sm:text-3xl md:text-6xl uppercase tracking-[0.1em] sm:tracking-[0.2em] group-hover:scale-110 transition-transform">GET 👆</span>
+            <span className="font-black text-xl sm:text-3xl md:text-6xl uppercase tracking-[0.1em] sm:tracking-[0.2em] group-hover:scale-110 transition-transform">BID GAREE 👆</span>
          )}
          {!isCooldown && !isLoading && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
       </button>
@@ -65,3 +66,4 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, isTapping, 
     </div>
   );
 }
+

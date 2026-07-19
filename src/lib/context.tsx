@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -1182,7 +1183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const orders = useMemo(() => {
     if (!authUser) return [];
-    return allOrders.filter(o => o.userId === authUser.uid).sort((a,b)=>b.createdAt - a.createdAt);
+    return allOrders.filter(o => o.userId === authUser.uid).sort((a,b) => b.createdAt - a.createdAt);
   }, [allOrders, authUser]);
 
   const userRankData = useMemo(() => {
@@ -2336,6 +2337,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // If it's the first time tapping, increment participant count
     if (!participantData) {
       updates[`eventAccounts/${eventId}/participantsCount`] = increment(1);
+    }
+
+    // Bid Extension Rule: If a bid is placed in the last 2 seconds, reset timer to 2 seconds
+    if (eventData.endTime && now > (eventData.endTime - 2000)) {
+      updates[`eventAccounts/${eventId}/endTime`] = now + 2000;
     }
 
     await update(ref(rtdb), updates);

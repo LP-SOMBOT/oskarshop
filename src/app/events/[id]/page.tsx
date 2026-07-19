@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -16,12 +17,15 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { ref, onValue, off, limitToLast, query } from 'firebase/database';
@@ -31,6 +35,7 @@ import EventGetButton from '@/components/events/EventGetButton';
 import EventLiveFeed from '@/components/events/EventLiveFeed';
 
 const EVENT_CACHE_PREFIX = 'oskar_event_cache_';
+const EVENT_AGREEMENT_PREFIX = 'oskar_event_agreed_';
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -45,6 +50,10 @@ export default function EventDetailPage() {
   const [isSyncing, setIsSyncing] = useState(true);
   const [isTapping, setIsTapping] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  // Disclaimer Modal States
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [hasCheckedAgreement, setHasCheckedAgreement] = useState(false);
 
   // Local Storage Caching for Event Data
   const [cachedEvent, setCachedEvent] = useState<any>(() => {
@@ -72,6 +81,16 @@ export default function EventDetailPage() {
     const rank = participants.findIndex(p => p.uid === user.uid) + 1;
     return rank;
   }, [user, participants]);
+
+  // Check Disclaimer Status
+  useEffect(() => {
+    if (user && id) {
+      const agreed = localStorage.getItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`);
+      if (!agreed) {
+        setShowDisclaimer(true);
+      }
+    }
+  }, [user, id]);
 
   // Real-time Participants & Feed Listeners
   useEffect(() => {
@@ -136,7 +155,7 @@ export default function EventDetailPage() {
       }
 
       const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-      const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+      const m = Math.floor((diff % (3600000) / 60000)).toString().padStart(2, '0');
       const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
       setTimeLeft({ h, m, s });
     }, 1000);
@@ -167,6 +186,13 @@ export default function EventDetailPage() {
   const handleBack = () => {
     setGlobalLoading(true);
     router.push('/#accounts');
+  };
+
+  const handleDisclaimerJoin = () => {
+    if (hasCheckedAgreement && user && id) {
+      localStorage.setItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`, 'true');
+      setShowDisclaimer(false);
+    }
   };
 
   if (!event) {
@@ -313,28 +339,59 @@ export default function EventDetailPage() {
             </div>
          </button>
 
-         <Card className="p-6 sm:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border-slate-100 shadow-sm space-y-4 sm:space-y-6">
-            <h4 className="font-headline font-bold uppercase tracking-tight flex items-center gap-2 text-slate-900 text-sm sm:text-lg">
-               <Info size={16} className="text-primary sm:size-[18px]" /> Event Rules
-            </h4>
-            <ul className="space-y-3 sm:space-y-4 text-xs sm:text-base text-slate-600 font-medium">
-               <li className="flex gap-2.5 sm:gap-3 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" /> 
-                  <span>{language === 'so' ? 'Qof walba wuxuu taaban karaa badhanka "GET" mar walba oo ay u dhamaato 2-da daqiiqo.' : 'Everyone can tap the "GET" button every 2 minutes.'}</span>
-               </li>
-               <li className="flex gap-2.5 sm:gap-3 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" /> 
-                  <span>{language === 'so' ? 'Taabasho kasta waxay kordhineysaa qiimaha account-ka $0.50.' : 'Every tap increases the account value by $0.50.'}</span>
-               </li>
-               <li className="flex gap-2.5 sm:gap-3 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" /> 
-                  <span>{language === 'so' ? 'Qofka ugu taabashada badan marka uu wakhtigu dhamaado ayaa ku guuleysanaya.' : 'The person with the most taps at the end of the timer wins.'}</span>
-               </li>
-               <li className="flex gap-2.5 sm:gap-3 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1.5" /> 
-                  <span>{language === 'so' ? 'Hadii qofka guuleystay uu iibsan waayo mudo 24 saacadood ah, qofka labaad ayaa ku guuleysanaya.' : 'If the winner fails to buy within 24 hours, the next in line wins.'}</span>
-               </li>
-            </ul>
+         <Card className="p-6 sm:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border-slate-100 shadow-sm space-y-8">
+            <div className="space-y-4">
+              <h4 className="font-headline font-bold uppercase tracking-tight flex items-center gap-2 text-slate-900 text-sm sm:text-lg">
+                 <Info size={16} className="text-primary sm:size-[18px]" /> {language === 'so' ? 'Shuruucda Kulanka' : 'Event Rules'}
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-primary/10 pb-2">🇸🇴 Somali</p>
+                  <ul className="space-y-3 text-xs sm:text-sm text-slate-600 font-medium">
+                     <li className="flex gap-2.5 items-start">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black shrink-0">1</span> 
+                        <span>badhanka <strong className="text-primary">"BID GAREE"</strong> mar hadaa taabatid waa inaa sugta 2 daqiiqo inta taabanin mar kale.</span>
+                     </li>
+                     <li className="flex gap-2.5 items-start">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black shrink-0">2</span> 
+                        <span>mar kista aa taabatid badhanka <strong className="text-primary">"BID GAREE"</strong> Qiimaha account lagu gadaayo kor ayuu u kaca qiimaha ${event.tapPrice.toFixed(2)}.</span>
+                     </li>
+                     <li className="flex gap-2.5 items-start">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black shrink-0">3</span> 
+                        <span>Bid ka waqtigiisa marku dhamaado qof UGU sareeya <strong className="text-primary">"BIDKA"</strong> wuu inu baxiya qiimahaas.</span>
+                     </li>
+                     <li className="flex gap-2.5 items-start">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black shrink-0">4</span> 
+                        <span>12 saac gudahooda hadaa ku baxi weyso lacgta, qof ku kale ku xego kalinta ayuu u gudba.</span>
+                     </li>
+                  </ul>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-primary/10 pb-2">🇬🇧 English</p>
+                  <ul className="space-y-3 text-xs sm:text-sm text-slate-600 font-medium">
+                    {[
+                      "Participants must use only one valid account.",
+                      "Every click on the \"BID GAREE\" button places one valid bid.",
+                      "Each valid bid increases the auction price by the displayed amount.",
+                      "All bid fees are final and non-refundable.",
+                      "If a valid bid is placed within the last 2 seconds, the countdown timer will reset to 2 seconds.",
+                      "The participant with the highest valid bid when the timer reaches 0 will be declared the winner.",
+                      "The winner must complete payment within the specified time or may forfeit the winning position.",
+                      "The use of bots, scripts, fake accounts, or any unfair method is strictly prohibited.",
+                      "The organizer reserves the right to suspend, extend, restart, or cancel any auction if necessary to ensure fairness and security.",
+                      "Any participant who violates these rules may be disqualified, have their bids canceled, or have their account permanently suspended.",
+                      "The organizer's decisions regarding the auction are final, except where otherwise required by applicable law."
+                    ].map((rule, i) => (
+                      <li key={i} className="flex gap-2.5 items-start">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black shrink-0">{i+1}</span>
+                        <span>{rule}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
          </Card>
       </main>
 
@@ -389,6 +446,78 @@ export default function EventDetailPage() {
             </Card>
          </div>
       </div>
+
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-[1000] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500">
+           <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="bg-primary p-6 sm:p-10 text-white text-center shrink-0">
+                 <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 animate-bounce" />
+                 <h2 className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">ACCOUNT BID – DISCLAIMER & PARTICIPATION AGREEMENT</h2>
+              </div>
+              
+              <div className="p-6 sm:p-10 overflow-y-auto space-y-6 scrollbar-hide">
+                 <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase text-primary tracking-widest border-b border-primary/10 pb-1">🇬🇧 English</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
+                       Please read this carefully before joining an Account Bid event.
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">By selecting "I Agree & Join", you confirm that:</p>
+                    <ul className="space-y-3 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
+                       {[
+                         "I have read and agree to the Account Bid – Event Rules & Terms of Service.",
+                         "I understand that every bid is final and cannot be canceled or refunded.",
+                         "I understand that placing a bid does not guarantee that I will win the auction.",
+                         "I agree not to use bots, scripts, fake accounts, or any unfair methods.",
+                         "I understand that cheating or attempting to manipulate the auction may result in disqualification, account suspension, or permanent account termination.",
+                         "If I win, I agree to complete payment within the required time.",
+                         "I understand that the organizer may pause, extend, restart, or cancel the auction if necessary to ensure fairness.",
+                         "I accept that the organizer's decisions regarding the auction are final, except where otherwise required by applicable law.",
+                         "I participate voluntarily and at my own responsibility."
+                       ].map((item, i) => (
+                         <li key={i} className="flex gap-2 items-start">
+                            <span className="font-black text-primary shrink-0">{i+1}:</span>
+                            <span>{item}</span>
+                         </li>
+                       ))}
+                    </ul>
+                 </div>
+
+                 <div className="pt-4 border-t dark:border-white/10">
+                    <div className="flex items-start space-x-3 p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                       <Checkbox 
+                         id="agree-event" 
+                         checked={hasCheckedAgreement} 
+                         onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
+                         className="mt-0.5 border-primary" 
+                       />
+                       <label htmlFor="agree-event" className="text-[10px] sm:text-xs font-bold leading-relaxed cursor-pointer select-none">
+                          I have read, understood, and agree to the Account Bid – Disclaimer, Event Rules & Terms of Service.
+                       </label>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="p-6 sm:p-10 pt-0 flex flex-col sm:flex-row gap-3 shrink-0">
+                 <Button 
+                   onClick={handleDisclaimerJoin}
+                   disabled={!hasCheckedAgreement}
+                   className="w-full sm:flex-[2] h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-xs gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all"
+                 >
+                    <CheckCircle2 size={18} /> I Agree & Join
+                 </Button>
+                 <Button 
+                   variant="ghost" 
+                   onClick={handleBack}
+                   className="w-full sm:flex-1 h-14 rounded-2xl text-slate-400 font-bold uppercase tracking-widest text-[10px] gap-2"
+                 >
+                    <X size={18} /> Cancel
+                 </Button>
+              </div>
+           </Card>
+        </div>
+      )}
     </div>
   );
 }
+
