@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -1118,7 +1117,7 @@ export default function AdminPage() {
                                 <div className="space-y-1">
                                    <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</p>
                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
-                                     {item?.title?.replace("Auction Winner", "Guuleystaha") || "Unknown Item"}
+                                     {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                    </p>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
@@ -1168,6 +1167,7 @@ export default function AdminPage() {
                              ) : (
                                topUpOrders.map(o => {
                                  const item = o.items?.[0];
+                                 const isEventWinnerOrder = !!o.gameDetails?.isEventWinner;
                                  return (
                                  <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
                                     <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
@@ -1175,7 +1175,7 @@ export default function AdminPage() {
                                        <div className="flex flex-col">
                                           <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</span>
                                           <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
-                                            {item?.title?.replace("Auction Winner", "Guuleystaha") || "Unknown Item"}
+                                            {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                           </span>
                                        </div>
                                     </TableCell>
@@ -1608,7 +1608,7 @@ export default function AdminPage() {
                          </Button>
                          <Button 
                            onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" }); setIsEditingEvent(true); }}
-                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:auto"
                          >
                             <Megaphone size={18} /> Create Event
                          </Button>
@@ -2135,7 +2135,6 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
-                                    <span className="sr-only">English content</span>
                                     <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
                                  </div>
                                  <div className="space-y-3">
@@ -2825,37 +2824,75 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
-          <div className="flex items-center gap-4 text-primary">
-             <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                <ShieldCheck size={20} />
-             </div>
-             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
-          </div>
+       <Card className="rounded-[2.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-14 space-y-8 md:space-y-12">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Maamulka Dalabka</h4>
+                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-60">Administration Log</p>
+                </div>
+              </div>
+              {order.processedAt && (
+                <Badge className="bg-primary/10 text-primary border-none rounded-full px-4 py-1.5 font-black text-[8px] md:text-[10px] uppercase tracking-widest">
+                  Active Session
+                </Badge>
+              )}
+            </div>
 
-          <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0">
-                   {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center font-bold text-slate-400 text-2xl">O</div>}
-                </div>
-                <div className="min-w-0">
-                   <p className="text-10px font-black text-muted-foreground uppercase tracking-widest mb-1">Handling Admin</p>
-                   <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+            <div className="relative">
+              {/* Background Decorative Element */}
+              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
+              
+              <div className="p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
+                  <div className="relative shrink-0">
+                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                      {order.processedBy?.photoURL ? (
+                        <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
+                      )}
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center shadow-lg">
+                       <div className="w-2 h-2 md:w-3 md:h-3 bg-white rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 space-y-1.5">
+                    <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
+                    <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
                       {order.processedBy?.name || "Wali lama furin"}
-                   </h5>
-                   {order.processedAt && (
-                      <p className="text-[9px] font-black text-primary uppercase tracking-tighter mt-1">
-                         STATUS CHANGED AT {formatDistanceToNow(new Date(order.processedAt))} AGO
-                      </p>
-                   )}
+                    </h5>
+                    {order.processedAt && (
+                      <div className="flex items-center gap-2 text-muted-foreground justify-center md:justify-start">
+                         <Clock size={14} className="opacity-40" />
+                         <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
+                            Bedelay: {formatDistanceToNow(new Date(order.processedAt))} ago
+                         </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-             </div>
-             <div className="text-right shrink-0">
-                <p className="text-[10px] font-black text-muted-foreground uppercase opacity-40 mb-1">Resolved on</p>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
-                   {order.completedAt ? format(new Date(order.completedAt), "MMM d, HH:mm") : "PENDING..."}
-                </p>
-             </div>
+
+                <div className="w-full md:w-px h-px md:h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
+
+                <div className="text-center md:text-right space-y-2 shrink-0">
+                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-1">
+                     <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
+                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                     </p>
+                     <p className="text-sm md:text-lg font-bold text-primary">
+                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                     </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
        </Card>
 
@@ -3187,7 +3224,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                          )}>
                             {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
                          </div>
-                         <div className="min-w-0">
+                         <div className="min-w-0 space-y-1">
                             <div className="flex items-center gap-2">
                                <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
                                <Badge className={cn(
