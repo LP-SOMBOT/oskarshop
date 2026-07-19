@@ -174,7 +174,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
+} from '@at-dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -2610,7 +2610,7 @@ export default function AdminPage() {
 
       <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingPaymentMethod ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
+           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingGame ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
