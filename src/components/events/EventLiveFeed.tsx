@@ -50,20 +50,20 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
   return (
     <div className="fixed top-20 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none">
       <div className={cn(
-        "bg-white rounded-full py-3 px-5 flex items-center gap-3 shadow-[0_15px_40px_rgba(0,0,0,0.12)] transition-all duration-500 transform border-l-[6px] border-orange-500 pointer-events-auto",
+        "bg-white dark:bg-slate-900 rounded-full py-3 px-5 flex items-center gap-3 shadow-[0_15px_40px_rgba(0,0,0,0.12)] dark:shadow-primary/5 transition-all duration-500 transform border-l-[6px] border-orange-500 pointer-events-auto",
         "w-full max-w-[340px] sm:max-w-sm relative",
         isVisible ? "translate-y-0 opacity-100 scale-100" : "-translate-y-12 opacity-0 scale-90"
       )}>
-         <Avatar className="w-10 h-10 border-2 border-slate-50 shrink-0 shadow-sm">
+         <Avatar className="w-10 h-10 border-2 border-slate-50 dark:border-slate-800 shrink-0 shadow-sm">
             <AvatarImage src={currentTap.avatar} />
-            <AvatarFallback className="bg-slate-100 text-slate-400">
+            <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600">
               <User size={20}/>
             </AvatarFallback>
          </Avatar>
          
          <div className="flex-1 min-w-0 pr-2">
-            <p className="text-[13px] sm:text-[14px] font-black text-slate-900 leading-tight truncate">
-               {currentTap.name} <span className="font-bold text-slate-500">ayaa ku biiray!</span>
+            <p className="text-[13px] sm:text-[14px] font-black text-slate-900 dark:text-white leading-tight truncate">
+               {currentTap.name} <span className="font-bold text-slate-500 dark:text-slate-400">ayaa ku biiray!</span>
             </p>
             <p className="text-[10px] sm:text-[11px] text-orange-500 font-black uppercase tracking-widest mt-0.5">
                Kulan cusub
@@ -72,7 +72,7 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
 
          <button 
            onClick={() => setIsVisible(false)}
-           className="text-slate-300 hover:text-slate-500 transition-colors shrink-0 p-1"
+           className="text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 transition-colors shrink-0 p-1"
          >
            <X size={16} strokeWidth={3} />
          </button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { cn } from "@/lib/utils";
@@ -25,9 +24,9 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, isTapping, 
         className={cn(
           "w-full h-12 sm:h-16 md:h-24 rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center relative overflow-hidden transition-all active:scale-95 group",
           isLoading 
-            ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+            ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" 
             : isCooldown 
-              ? "bg-slate-100 text-slate-400" 
+              ? "bg-slate-100 dark:bg-slate-800 text-slate-400" 
               : "bg-gradient-to-r from-primary to-blue-500 text-white shadow-2xl shadow-primary/30 hover:shadow-primary/50"
         )}
       >
@@ -60,10 +59,9 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, isTapping, 
          )}
          {!isCooldown && !isLoading && <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />}
       </button>
-      <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-slate-400 text-center uppercase tracking-widest">
+      <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-slate-400 dark:text-slate-600 text-center uppercase tracking-widest">
          +${tapPrice.toFixed(2)} markaa taabatid
       </p>
     </div>
   );
 }
-

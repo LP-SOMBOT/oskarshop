@@ -277,7 +277,7 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
       ref={setNodeRef}
       style={style}
       className={cn(
-        "p-3 md:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex items-center justify-between group hover:bg-slate-100 transition-colors cursor-pointer",
+        "p-3 md:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex items-center justify-between group hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer",
         isDragging && "opacity-50 border-primary ring-2 ring-primary/20 shadow-2xl scale-[1.02]"
       )}
       onClick={onEdit}
@@ -3560,10 +3560,10 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50" />
-          <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50" />
-          <StatCard label="Kaaalinta 1aad" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50" />
-          <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50" />
+          <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
+          <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" />
+          <StatCard label="Kaaalinta 1aad" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" />
+          <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
        </div>
 
        <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
@@ -3587,13 +3587,13 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                   ) : (
                     participants.map((p, idx) => (
                       <TableRow key={p.uid} className={cn(
-                        "h-24 hover:bg-slate-50/50 border-slate-50",
+                        "h-24 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-slate-50 dark:border-white/5",
                         p.uid === eventAccount?.winnerId && "bg-primary/5"
                       )}>
                         <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
                         <TableCell>
                             <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
+                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm">
                                   <AvatarImage src={p.avatar} />
                                   <AvatarFallback>{p.name?.[0]}</AvatarFallback>
                               </Avatar>
@@ -3666,4 +3666,3 @@ function StatItem({ label, value, icon: Icon, color }: { label: string, value: a
     </div>
   );
 }
-
