@@ -2318,12 +2318,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     updates[`eventAccounts/${eventId}/topParticipants`] = topParticipants.slice(0, 3);
     
-    // Log to tap feed
+    // Log to tap feed with stats included
     const tapFeedRef = push(ref(rtdb, `eventTaps/${eventId}`));
     updates[`eventTaps/${eventId}/${tapFeedRef.key}`] = {
       name: enhancedUser.name || "Gamer",
       avatar: enhancedUser.photoURL || "",
-      timestamp: now
+      timestamp: now,
+      taps: newTaps,
+      value: newValue
     };
 
     // Update top stats on event directly for easy listing display
