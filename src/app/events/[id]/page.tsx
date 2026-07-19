@@ -101,7 +101,6 @@ export default function EventDetailPage() {
     const partUnsub = onValue(partRef, (snap) => {
       const data = snap.val();
       if (data) {
-        // STRICT Top 1 logic: most taps, then earliest tap wins tie
         setParticipants(Object.values(data).sort((a: any, b: any) => {
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
@@ -449,7 +448,7 @@ export default function EventDetailPage() {
       {/* Disclaimer Modal */}
       {showDisclaimer && (
         <div className="fixed inset-0 z-[100002] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
-           <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[90vh]">
+           <Card className="w-full max-w-[94%] sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[90vh]">
               <div className="bg-primary p-6 sm:p-10 text-white text-center shrink-0">
                  <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 animate-bounce" />
                  <h2 className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">ACCOUNT BID – DISCLAIMER & PARTICIPATION AGREEMENT</h2>
@@ -487,10 +486,10 @@ export default function EventDetailPage() {
                          id="agree-event" 
                          checked={hasCheckedAgreement} 
                          onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
-                         className="h-5 w-5 rounded-md border-slate-300 dark:border-slate-700 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                         className="h-5 w-5 rounded-md border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
                        />
                        <label htmlFor="agree-event" className="text-[11px] sm:text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none leading-tight">
-                          I have read, understood, and agree to the Account Bid – Disclaimer, Event Rules & Terms of Service.
+                          I have read & accept
                        </label>
                     </div>
                  </div>
