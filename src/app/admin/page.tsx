@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -2129,6 +2130,7 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
+                                    <span className="sr-only">English content</span>
                                     <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
                                  </div>
                                  <div className="space-y-3">
@@ -2565,7 +2567,7 @@ export default function AdminPage() {
       <Dialog open={isPromoUsageOpen} onOpenChange={setIsPromoUsageOpen}>
          <DialogContent className="max-md w-[95%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
             <div className="bg-primary p-6 text-white">
-               <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka (promocode)</DialogTitle>
+               <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka ({selectedPromo?.code})</DialogTitle>
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto scrollbar-hide space-y-3">
                {selectedPromo && (selectedPromo.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo.claimed ? [{ uid: selectedPromo.usedBy, timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).length === 0 ? (
@@ -3633,4 +3635,3 @@ function StatItem({ label, value, icon: Icon, color }: { label: string, value: a
     </div>
   );
 }
-
