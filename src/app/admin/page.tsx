@@ -1108,6 +1108,7 @@ export default function AdminPage() {
                        ) : (
                          topUpOrders.map(o => {
                            const item = o.items?.[0];
+                           const isEventWinnerOrder = !!o.gameDetails?.isEventWinner;
                            return (
                              <Card key={o.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                                 <div className="flex items-center justify-between">
@@ -1115,8 +1116,10 @@ export default function AdminPage() {
                                    <StatusBadge status={o.status} />
                                 </div>
                                 <div className="space-y-1">
-                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || "Guest"}</p>
-                                   <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{item?.title || "Unknown Item"}</p>
+                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</p>
+                                   <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
+                                     {item?.title?.replace("Auction Winner", "Guuleystaha") || "Unknown Item"}
+                                   </p>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
                                    <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
@@ -1170,8 +1173,10 @@ export default function AdminPage() {
                                     <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
                                     <TableCell>
                                        <div className="flex flex-col">
-                                          <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || "Guest"}</span>
-                                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{item?.title || "Unknown Item"}</span>
+                                          <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
+                                            {item?.title?.replace("Auction Winner", "Guuleystaha") || "Unknown Item"}
+                                          </span>
                                        </div>
                                     </TableCell>
                                     <TableCell>
@@ -2330,7 +2335,7 @@ export default function AdminPage() {
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingGame ? 'Edit Collection' : 'New Game Collection'}</DialogTitle></DialogHeader>
            <form onSubmit={handleSaveGame} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
-                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center overflow-hidden shadow-inner group">
+                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
                     {gameForm.icon ? <Image src={gameForm.icon} alt="" fill className="object-cover" /> : <ImageIcon className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'game')} />
                  </div>
@@ -2772,7 +2777,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
              <div>
                 <div className="flex items-center gap-2 mb-2">
                    <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
-                      {item?.title || "ACCOUNT: UNKNOWN"}
+                      {item?.title?.replace("Auction Winner", "Guuleystaha") || "ACCOUNT: UNKNOWN"}
                    </h2>
                    {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase ml-2">ONE TIME</Badge>}
                 </div>
@@ -2802,7 +2807,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                    <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
                 </div>
                 <div className="flex items-center gap-2">
-                   <p className="text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || "N/A"}</p>
+                   <p className="text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
                    {order.ffVerified ? (
                      <Badge className="bg-green-100 text-green-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Verified</Badge>
                    ) : order.ffUid ? (
