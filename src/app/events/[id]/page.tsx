@@ -482,14 +482,14 @@ export default function EventDetailPage() {
                  </div>
 
                  <div className="pt-4 border-t dark:border-white/10">
-                    <div className="flex items-start space-x-3 p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                    <div className="flex items-center space-x-3 px-2">
                        <Checkbox 
                          id="agree-event" 
                          checked={hasCheckedAgreement} 
                          onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
-                         className="mt-0.5 border-primary" 
+                         className="h-5 w-5 rounded-md border-slate-300 dark:border-slate-700 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
                        />
-                       <label htmlFor="agree-event" className="text-[10px] sm:text-xs font-bold leading-relaxed cursor-pointer select-none">
+                       <label htmlFor="agree-event" className="text-[11px] sm:text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none leading-tight">
                           I have read, understood, and agree to the Account Bid – Disclaimer, Event Rules & Terms of Service.
                        </label>
                     </div>
