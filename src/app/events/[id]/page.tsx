@@ -121,8 +121,8 @@ export default function EventDetailPage() {
     });
 
     return () => {
-      off(partRef);
-      off(feedUnsub);
+      partUnsub();
+      feedUnsub();
     };
   }, [rtdb, id]);
 
