@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -2380,14 +2381,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     const updates: any = { status };
 
-    // If ending the event, pick the winner based on strict Top 1 logic
+    // Real-time Top 1 Winner determination
     if (status === 'ended') {
       const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
       const participants = participantsSnap.val();
       
       if (participants) {
         const sorted = Object.values(participants).sort((a: any, b: any) => {
-          // RULE: Most taps wins. TIE-BREAKER: Earliest reaching that count wins.
+          // RULE: Most bids win. TIE-BREAKER: Earliest reaching that count wins.
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
         });
@@ -2403,7 +2404,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    await update(ref(rtdb), updates);
+    await update(ref(rtdb, `eventAccounts/${eventId}`), updates);
     toast({ title: `Event is now ${status}` });
   }, [rtdb, enhancedUser]);
 
@@ -2412,7 +2413,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     try {
       if (outcome === 'accepted') {
-        // Handled in WinnerClaimGuard
+        // Handle in component side
       } else {
         // MARK AS IGNORED AND FIND NEXT WINNER (Top 1 in current list)
         const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));

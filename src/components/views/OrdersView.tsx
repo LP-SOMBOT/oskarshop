@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -18,7 +19,8 @@ import {
   Trophy,
   Lock,
   Loader2,
-  Zap
+  Zap,
+  Globe
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

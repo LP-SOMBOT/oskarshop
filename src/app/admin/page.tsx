@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -3033,15 +3034,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
              <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
 
              <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
-                <InsightStat label="Level" value={post.level || "0"} icon={Star} />
-                <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
-                <InsightStat 
-                   label="Wait" 
-                   value={waitValue} 
-                   icon={Clock} 
-                   isPrimary={isWaiting}
-                />
-                <InsightStat label="Category" value={post.gameType} icon={LayoutGrid} />
+                <StatItem label="Level" value={post.level || "0"} icon={Star} color="text-amber-500" />
+                <StatItem label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} color="text-primary" />
+                <StatItem label="Wait" value={waitValue} icon={Clock} color="text-blue-500" />
+                <StatItem label="Category" value={post.gameType} icon={LayoutGrid} color="text-indigo-500" />
              </div>
           </div>
        </Card>

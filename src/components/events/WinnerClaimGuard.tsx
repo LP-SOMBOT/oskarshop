@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -74,7 +75,7 @@ export default function WinnerClaimGuard() {
         <DialogOverlay className="fixed inset-0 z-[100002] bg-black/90 backdrop-blur-md" />
         <DialogPrimitive.Content 
           className={cn(
-            "fixed left-[50%] top-[50%] z-[100003] grid w-[94%] max-w-md translate-x-[-50%] translate-y-[-50%] border bg-background shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-[2.5rem] border-none bg-white dark:bg-slate-900 outline-none overflow-hidden",
+            "fixed left-[50%] top-[50%] z-[100003] grid w-[94%] max-w-md translate-x-[-50%] translate-y-[-50%] border bg-background shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 rounded-[2.5rem] border-none bg-white dark:bg-slate-900 outline-none overflow-hidden",
             "[&>button]:hidden" // Hide the standard close X button
           )}
           onPointerDownOutside={(e) => e.preventDefault()}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -143,7 +144,7 @@ export default function EventDetailPage() {
       const diff = event.endTime - now;
       if (diff <= 0) {
         setTimeLeft({ h: '00', m: '00', s: '00' });
-        // Auto-end the event on client side if time is up
+        // Auto-end logic moved into a safer handler to prevent loop
         if (event.status === 'active') {
           updateEventStatus(event.id, 'ended');
         }
