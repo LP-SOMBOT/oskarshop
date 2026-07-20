@@ -1747,7 +1747,7 @@ export default function AdminPage() {
                                  <Button 
                                    variant="ghost" 
                                    onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
-                                   className="w-full rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
+                                   className="w-full text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
                                  >
                                     <Trash2 size={14} className="mr-2" /> Delete Voucher
                                  </Button>
@@ -2046,7 +2046,7 @@ export default function AdminPage() {
                            <div className="space-y-6 sm:space-y-8">
                               <div className="p-4 sm:p-6 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20">
                                  <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-primary dark:text-blue-300">
-                                    <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                                    <span className="w-5 h-5 shrink-0 mt-0.5"><Info /></span>
                                     Connect your Telegram Bot to receive real-time order alerts. Use @userinfobot to get Chat IDs.
                                  </p>
                               </div>
@@ -3543,7 +3543,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
       } else {
         setParticipants([]);
       }
-      loading && setLoading(false);
+      setLoading(false);
     });
     return () => off(participantsRef);
   }, [rtdb, eventId]);

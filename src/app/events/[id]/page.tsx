@@ -208,7 +208,7 @@ export default function EventDetailPage() {
   const currentPrice = event.initialPrice + ((participants[0]?.taps || 0) * event.tapPrice);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-32 page-transition relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-40 page-transition relative overflow-x-hidden">
       <div className="relative h-[25vh] sm:h-[35vh] w-full overflow-hidden">
          {event.imageUrls?.[0] ? (
             <Image src={event.imageUrls[0]} alt="" fill className="object-cover" unoptimized />
@@ -277,7 +277,7 @@ export default function EventDetailPage() {
             )}
          </Card>
 
-         {/* Smart Gallery Logic: Hide if only one image is present */}
+         {/* Smart Gallery Logic */}
          {event.imageUrls && event.imageUrls.length > 1 && (
            <div className="space-y-3 sm:space-y-4">
               <h3 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] ml-1 sm:ml-2 text-slate-400">
@@ -345,7 +345,7 @@ export default function EventDetailPage() {
          <Card className="p-6 sm:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 shadow-sm space-y-8">
             <div className="space-y-4">
               <h4 className="font-headline font-bold uppercase tracking-tight flex items-center gap-2 text-slate-900 dark:text-white text-sm sm:text-lg">
-                 <Info size={16} className="text-primary sm:size-[18px]" /> {language === 'so' ? 'Shuruucda Kulanka' : 'Event Rules'}
+                 <Info size={16} className="text-primary sm:size-[18px]" /> Event rules for somali
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {language === 'so' ? (

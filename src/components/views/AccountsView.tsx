@@ -104,16 +104,13 @@ export default function AccountsView() {
         return true;
       });
 
-    // Auction Event Posts
+    // Auction Event Posts - HIDE IF ENDED OR TIME EXPIRED
     const events = (eventAccounts || [])
       .filter(e => {
         const isEndedByStatus = e.status === 'ended' || e.status === 'claimed';
         const isEndedByTime = e.endTime && now > e.endTime;
-        
-        // ONLY display if it's "upcoming" or "active" AND hasn't reached its strict time limit
         if (isEndedByStatus || isEndedByTime) return false;
-        
-        return e.status === 'active' || e.status === 'upcoming';
+        return true;
       })
       .map(e => ({ ...e, isEvent: true }));
 
