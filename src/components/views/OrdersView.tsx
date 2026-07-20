@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -18,7 +17,8 @@ import {
   Ticket,
   Trophy,
   Lock,
-  Loader2
+  Loader2,
+  Zap
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,6 @@ export default function OrdersView() {
 
   return (
     <div className="min-h-screen pb-32 px-4 py-10 lg:max-w-2xl mx-auto page-transition relative">
-      {/* View-level Loading State */}
       {isGlobalLoading && (
         <div className="absolute inset-0 z-50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm rounded-[3rem] flex items-center justify-center">
            <div className="flex flex-col items-center gap-4">
@@ -134,7 +133,6 @@ function OrderCard({ order, language }: { order: any, language: string }) {
   const { t } = useApp();
   const item = order.items?.[0];
   
-  // Smart Title Support for Auction Winners
   const isAuctionWinner = !!order.gameDetails?.isEventWinner;
   const displayTitle = isAuctionWinner ? "Guuleystaha" : (item?.title || "Game Item");
   const isAccount = item?.gameId === 'accounts' || order.gameId === 'accounts' || isAuctionWinner;
@@ -148,7 +146,6 @@ function OrderCard({ order, language }: { order: any, language: string }) {
 
   const StatusIcon = order.status === 'successful' ? CheckCircle2 : order.status === 'pending' ? Clock : order.status === 'processing' ? RefreshCw : XCircle;
 
-  // Somali Status Mapping
   const getStatusLabel = (s: string) => {
     if (language !== 'so') return s;
     if (s === 'cancelled') return "La kansalay";

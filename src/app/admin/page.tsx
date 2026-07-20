@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -337,7 +336,6 @@ export default function AdminPage() {
     deletePromoCode,
     events,
     banners,
-    adminNotifications,
     markAdminNotificationsAsRead,
     updateOrderStatus,
     updateAccountPostStatus,
@@ -364,7 +362,8 @@ export default function AdminPage() {
     refreshAdminData,
     resetLeaderboard,
     setGlobalLoading,
-    rtdb
+    rtdb,
+    adminNotifications
   } = useApp();
 
   const router = useRouter();
@@ -453,7 +452,6 @@ export default function AdminPage() {
   );
 
   useEffect(() => {
-    // Clear global loader on mount
     setGlobalLoading(false);
   }, [setGlobalLoading]);
 
@@ -2182,7 +2180,7 @@ export default function AdminPage() {
                     <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
                     <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
                        <Smartphone size={12} />
-                       <span className="text-[10px] md:text-11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                       <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
                     </div>
                  </div>
                  <Badge className={cn(
@@ -2212,7 +2210,7 @@ export default function AdminPage() {
               <div className="space-y-2 md:space-y-3">
                  <div className="flex items-center gap-2 text-primary ml-1">
                     <LayoutGrid size={14} />
-                    <Label className="text-[9px] md:text-10px] font-black uppercase tracking-widest">Role Management</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
                  </div>
                  <Select 
                     value={selectedUser?.role || 'user'} 
@@ -2237,7 +2235,7 @@ export default function AdminPage() {
               <div className="space-y-3 md:space-y-4">
                  <div className="flex items-center gap-2 text-amber-500 ml-1">
                     <DollarSign size={14} />
-                    <Label className="text-[9px] md:text-10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
                  </div>
                  <div className="flex gap-2 md:gap-3">
                     <Input 
@@ -2344,7 +2342,7 @@ export default function AdminPage() {
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
                  <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Standard Delivery</SelectItem>
                        <SelectItem value="booyah-pass" className="p-3 font-bold text-xs">Booyah Pass (Direct WhatsApp)</SelectItem>
@@ -3048,106 +3046,64 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </Card>
 
-       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
-          <div className="flex items-center justify-between">
-             <div className="flex items-center gap-4 text-primary">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                   <LinkIcon size={20} />
+       <Card className="rounded-[3.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-14 space-y-8 md:space-y-12">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={24} />
                 </div>
-                <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholder Hub</h4>
-             </div>
-             <Badge className="bg-primary text-white border-none rounded-full px-6 py-2 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
-                {claimants.length} LIVE REQUESTS
-             </Badge>
-          </div>
+                <div>
+                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
+                </div>
+              </div>
+            </div>
 
-          <div className="space-y-6">
-             <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-6">
-                   <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
-                      {post.authorAvatar ? <Image src={post.authorAvatar} alt={post.authorName} fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
-                   </div>
-                   <div className="min-w-0">
-                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Original Seller</p>
-                      <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
-                         {post.authorName || "Market User"}
-                      </h5>
-                      <div className="flex flex-wrap items-center gap-3 mt-2">
-                         <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase whitespace-nowrap">{post.phone}</span>
-                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white cursor-pointer" onClick={() => handleWhatsApp(post.phone)}>
-                               <MessageCircle size={12} />
-                            </div>
-                         </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
+              <div className="p-6 md:p-12 flex flex-row items-center justify-between gap-8">
+                <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
+                  <div className="relative shrink-0">
+                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                      {order.processedBy?.photoURL ? (
+                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 space-y-1.5">
+                    <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
+                    <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
+                      {order.processedBy?.name || "Wali lama furin"}
+                    </h5>
+                    {order.processedAt && (
+                      <div className="flex items-center gap-2 text-muted-foreground justify-start">
+                         <Clock size={14} className="opacity-40" />
+                         <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
+                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                         </p>
                       </div>
-                   </div>
+                    )}
+                  </div>
                 </div>
-                <div className="opacity-10 shrink-0 hidden md:block">
-                   <User size={48} />
-                </div>
-             </div>
 
-             {claimants.length === 0 ? (
-               <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
-                  <ShieldCheck size={48} className="mb-4" />
-                  <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
-               </div>
-             ) : (
-               <div className="space-y-4">
-                  {claimants.map((c: any) => {
-                    const claimStatus = c.status || 'pending';
-                    const t = Number(c.timestamp);
-                    const validTimestamp = isNaN(t) ? Date.now() : t;
-                    return (
-                      <div key={c.uid} className={cn(
-                        "p-6 md:p-8 rounded-[2.5rem] border flex flex-col sm:flex-row items-center justify-between gap-6 transition-all",
-                        claimStatus === 'accepted' ? "bg-green-50 border-green-200 dark:bg-green-950/20" : 
-                        claimStatus === 'rejected' ? "bg-red-50 border-red-200 dark:bg-green-950/20" : 
-                        "bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 hover:bg-slate-100/50"
-                      )}>
-                         <div className="flex items-center gap-5 w-full sm:w-auto">
-                            <div className={cn(
-                              "w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center",
-                              claimStatus === 'accepted' ? "border-green-500" : claimStatus === 'rejected' ? "border-red-500" : "border-white dark:border-slate-700"
-                            )}>
-                               {c.photo ? <Image src={c.photo} alt={c.name} fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
-                            </div>
-                            <div className="min-w-0 space-y-1">
-                               <div className="flex items-center gap-2">
-                                  <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
-                                  <Badge className={cn(
-                                    "text-[8px] font-black uppercase px-2 py-0 h-5 border-none shadow-sm",
-                                    claimStatus === 'accepted' ? 'bg-green-500 text-white' : claimStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
-                                  )}>
-                                    {claimStatus === 'accepted' ? 'SELLER CONFIRMED' : claimStatus === 'rejected' ? 'SELLER REJECTED' : 'AWAITING SELLER'}
-                                  </Badge>
-                               </div>
-                               <div className="flex items-center gap-2 mt-1">
-                                  <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">{c.whatsapp || "No Number"}</Badge>
-                               </div>
-                               <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CONTACTED: {formatDistanceToNow(new Date(validTimestamp)).toUpperCase() + " AGO"}</p>
-                            </div>
-                         </div>
-                         <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-                            <Button 
-                              variant="outline" 
-                              className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2 text-[10px] sm:text-sm"
-                              onClick={() => handleWhatsApp(c.whatsapp)}
-                            >
-                               <MessageCircle size={18} /> WhatsApp
-                            </Button>
-                            <Button 
-                              className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20 text-[10px] sm:text-sm"
-                              onClick={() => handleForceSold(c.uid)}
-                            >
-                               <Check size={18} /> FORCE SOLD
-                            </Button>
-                         </div>
-                      </div>
-                    );
-                  })}
-               </div>
-             )}
+                <div className="w-px h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
+
+                <div className="text-right space-y-2 shrink-0">
+                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-1">
+                     <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
+                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                     </p>
+                     <p className="text-sm md:text-lg font-bold text-primary">
+                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                     </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
        </Card>
 

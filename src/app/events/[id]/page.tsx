@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -51,11 +50,9 @@ export default function EventDetailPage() {
   const [isTapping, setIsTapping] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Disclaimer Modal States
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasCheckedAgreement, setHasCheckedAgreement] = useState(false);
 
-  // Local Storage Caching for Event Data
   const [cachedEvent, setCachedEvent] = useState<any>(() => {
     if (typeof window === 'undefined') return null;
     const saved = localStorage.getItem(EVENT_CACHE_PREFIX + id);
@@ -82,7 +79,6 @@ export default function EventDetailPage() {
     return rank;
   }, [user, participants]);
 
-  // Check Disclaimer Status
   useEffect(() => {
     if (user && id) {
       const agreed = localStorage.getItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`);
@@ -92,7 +88,6 @@ export default function EventDetailPage() {
     }
   }, [user, id]);
 
-  // Real-time Participants & Feed Listeners
   useEffect(() => {
     if (!rtdb || !id) return;
 
@@ -126,7 +121,6 @@ export default function EventDetailPage() {
     };
   }, [rtdb, id]);
 
-  // Countdown & Cooldown Logic
   useEffect(() => {
     if (!event) return;
 
@@ -445,7 +439,6 @@ export default function EventDetailPage() {
          </div>
       </div>
 
-      {/* Disclaimer Modal */}
       {showDisclaimer && (
         <div className="fixed inset-0 z-[100002] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
            <Card className="w-full max-w-[94%] sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[90vh]">
