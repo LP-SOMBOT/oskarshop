@@ -3060,8 +3060,8 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
                   <div className="relative shrink-0">
                     <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
-                      {order.processedBy?.photoURL ? (
-                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      {post.processedBy?.photoURL ? (
+                        <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
                       )}
@@ -3071,13 +3071,13 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <div className="min-w-0 space-y-1.5">
                     <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
                     <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
-                      {order.processedBy?.name || "Wali lama furin"}
+                      {post.processedBy?.name || "Wali lama furin"}
                     </h5>
-                    {order.processedAt && (
+                    {post.processedAt && (
                       <div className="flex items-center gap-2 text-muted-foreground justify-start">
                          <Clock size={14} className="opacity-40" />
                          <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                            {formatDistanceToNow(new Date(post.processedAt))} ago
                          </p>
                       </div>
                     )}
@@ -3090,10 +3090,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
                   <div className="space-y-1">
                      <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
-                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                        {post.completedAt ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
                      </p>
                      <p className="text-sm md:text-lg font-bold text-primary">
-                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                        {post.completedAt ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
                 </div>

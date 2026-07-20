@@ -1,4 +1,3 @@
-
 "use client";
 
 import { House, ShoppingBag, ShieldCheck, Package, User } from "lucide-react";
