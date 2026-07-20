@@ -383,7 +383,6 @@ export default function AdminPage() {
 
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [isEventAccountDialogOpen, setIsEventAccountDialogOpen] = useState(false);
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
   const [isPaymentMethodDialogOpen, setIsPaymentMethodDialogOpen] = useState(false);
@@ -396,7 +395,6 @@ export default function AdminPage() {
 
   const [editingGame, setEditingGame] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [editingEventAccount, setEditingEventAccount] = useState<any>(null);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editingPaymentMethod, setEditingPaymentMethod] = useState<any>(null);
   const [selectedPromo, setSelectedPromo] = useState<any>(null);
@@ -413,7 +411,6 @@ export default function AdminPage() {
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
   const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
-  const [eventAccountForm, setEventAccountForm] = useState({ title: "", gameName: "", description: "", details: "", initialPrice: "", tapPrice: "0.50", startTime: "", endTime: "", imageUrls: [] as string[] });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -559,32 +556,6 @@ export default function AdminPage() {
     setIsProductDialogOpen(true);
   };
 
-  const handleOpenEventAccountDialog = (e?: any) => {
-    setEditingEventAccount(e || null);
-    setEventAccountForm(e ? { 
-      title: e.title, 
-      gameName: e.gameName, 
-      description: e.description || "", 
-      details: e.details || "", 
-      initialPrice: e.initialPrice.toString(), 
-      tapPrice: e.tapPrice.toString(), 
-      startTime: format(new Date(e.startTime), "yyyy-MM-dd'T'HH:mm"), 
-      endTime: format(new Date(e.endTime), "yyyy-MM-dd'T'HH:mm"),
-      imageUrls: e.imageUrls || []
-    } : { 
-      title: "", 
-      gameName: "", 
-      description: "", 
-      details: "", 
-      initialPrice: "", 
-      tapPrice: "0.50", 
-      startTime: "", 
-      endTime: "",
-      imageUrls: []
-    });
-    setIsEventAccountDialogOpen(true);
-  };
-
   const handleOpenPaymentMethodDialog = (m?: any) => {
     setEditingPaymentMethod(m || null);
     setPaymentMethodForm(m ? { name: m.name, icon: m.icon || "", ussdTemplate: m.ussdTemplate || "", active: m.active } : { name: "", icon: "", ussdTemplate: "", active: true });
@@ -609,24 +580,6 @@ export default function AdminPage() {
       }); 
       setIsProductDialogOpen(false); 
       toast({ title: "Item Saved" }); 
-    } finally { setIsUploading(false); }
-  };
-
-  const handleSaveEventAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUploading(true);
-    try {
-      const payload = {
-        ...eventAccountForm,
-        initialPrice: parseFloat(eventAccountForm.initialPrice),
-        tapPrice: parseFloat(eventAccountForm.tapPrice),
-        startTime: new Date(eventAccountForm.startTime).getTime(),
-        endTime: new Date(eventAccountForm.endTime).getTime(),
-        id: editingEventAccount?.id
-      };
-      await saveEventAccount(payload);
-      setIsEventAccountDialogOpen(false);
-      toast({ title: "Event Saved", description: "Marketplace event created successfully." });
     } finally { setIsUploading(false); }
   };
 
@@ -759,7 +712,6 @@ export default function AdminPage() {
       const url = await uploadToImgbb(file);
       if (target === 'game') setGameForm(f => ({ ...f, icon: url }));
       if (target === 'product') setProductForm(f => ({ ...f, thumbnail: url }));
-      if (target === 'eventAccount') setEventAccountForm(f => ({ ...f, imageUrls: [...f.imageUrls, url] }));
       if (target === 'event') setEventForm(f => ({ ...f, thumbnailUrl: url }));
       if (target === 'banner') setBannerForm(f => ({ ...f, imageUrl: url }));
       if (target === 'logo') setBrandForm(f => ({ ...f, logo: url }));
@@ -1051,7 +1003,7 @@ export default function AdminPage() {
             <div className="space-y-12 animate-in fade-in duration-700">
                <div className="pt-2">
                   <Button 
-                    onClick={() => handleOpenEventAccountDialog()} 
+                    onClick={() => router.push('/admin/event-accounts/edit')} 
                     className="rounded-full h-14 md:h-20 px-10 md:px-16 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto text-sm md:text-xl"
                   >
                     <PlusCircle size={24} /> Add New Event
@@ -1071,7 +1023,7 @@ export default function AdminPage() {
                       <EventAccountAdminCard 
                         key={event.id}
                         event={event}
-                        onEdit={() => handleOpenEventAccountDialog(event)}
+                        onEdit={() => router.push(`/admin/event-accounts/edit?id=${event.id}`)}
                         onDelete={() => { setDeleteTarget({id: event.id, type: 'eventAccount'}); setIsDeleteDialogOpen(true); }}
                         onViewParticipants={() => setSelectedEventId(event.id)}
                         onEndEarly={() => { setEndEarlyTargetId(event.id); setIsEndEarlyDialogOpen(true); }}
@@ -2417,64 +2369,6 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEventAccountDialogOpen} onOpenChange={setIsEventAccountDialogOpen}>
-        <DialogContent className="max-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
-           <div className="h-2 bg-primary w-full" />
-           <DialogHeader className="p-6 md:p-10 pb-0">
-              <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
-                {editingEventAccount ? 'Edit Auction Event' : 'New Account Event'}
-              </DialogTitle>
-           </DialogHeader>
-           <form onSubmit={handleSaveEventAccount} className="p-6 md:p-10 space-y-6 md:space-y-8">
-              <div className="space-y-4">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Event Gallery</Label>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {eventAccountForm.imageUrls.map((url, idx) => (
-                       <div key={url + idx} className="relative aspect-square rounded-xl overflow-hidden border">
-                          <Image src={url} alt="" fill className="object-cover" unoptimized />
-                          <button 
-                            type="button" 
-                            onClick={() => setEventAccountForm(f => ({ ...f, imageUrls: f.imageUrls.filter((_, i) => i !== idx) }))}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
-                          >
-                             <X size={10} />
-                          </button>
-                       </div>
-                    ))}
-                    <div className="relative aspect-square rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed flex flex-col items-center justify-center">
-                       <ImageIcon className="text-slate-300 w-8 h-8" />
-                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'eventAccount')} />
-                    </div>
-                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                 <SettingInput label="Listing Title" value={eventAccountForm.title} onChange={v => setEventAccountForm({ ...eventAccountForm, title: v })} placeholder="e.g. Max FF Account" />
-                 <SettingInput label="Game Name" value={eventAccountForm.gameName} onChange={v => setEventAccountForm({ ...eventAccountForm, gameName: v })} placeholder="e.g. Free Fire" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                 <SettingInput label="Initial Price ($)" type="number" value={eventAccountForm.initialPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, initialPrice: v })} placeholder="10.00" />
-                 <SettingInput label="Price Per BID ($)" type="number" value={eventAccountForm.tapPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, tapPrice: v })} placeholder="0.50" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                 <SettingInput label="Start Time" type="datetime-local" value={eventAccountForm.startTime} onChange={v => setEventAccountForm({ ...eventAccountForm, startTime: v })} placeholder="" />
-                 <SettingInput label="End Time" type="datetime-local" value={eventAccountForm.endTime} onChange={v => setEventAccountForm({ ...eventAccountForm, endTime: v })} placeholder="" />
-              </div>
-
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Account Specs (Level, Rank, etc.)</Label>
-                 <Textarea value={eventAccountForm.details} onChange={e => setEventAccountForm({ ...eventAccountForm, details: e.target.value })} placeholder="Lv 75, Rank Master, 5 Evo Skins..." className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[100px] p-4 font-bold shadow-inner" />
-              </div>
-
-              <Button type="submit" disabled={isUploading || eventAccountForm.imageUrls.length === 0} className="w-full h-14 md:h-18 rounded-2xl font-black text-lg shadow-2xl uppercase tracking-widest active:scale-[0.98] transition-all">
-                {isUploading ? <Loader2 className="animate-spin" /> : "Save"}
-              </Button>
-           </form>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">New Promotion Banner</DialogTitle></DialogHeader>
@@ -3129,191 +3023,191 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
                          ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
                       </span>
+                   </div>
+                </div>
+                <div className="text-right">
+                   <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                      ${post.price.toFixed(2)}
+                   </p>
                 </div>
              </div>
-             <div className="text-right">
-                <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
-                   ${post.price.toFixed(2)}
-                </p>
+
+             <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
+
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
+                <InsightStat label="Level" value={post.level || "0"} icon={Star} />
+                <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
+                <InsightStat 
+                   label="Wait" 
+                   value={waitValue} 
+                   icon={Clock} 
+                   isPrimary={isWaiting}
+                />
+                <InsightStat label="Category" value={post.gameType} icon={LayoutGrid} />
              </div>
           </div>
+       </Card>
 
-          <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
-             <InsightStat label="Level" value={post.level || "0"} icon={Star} />
-             <InsightStat label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} />
-             <InsightStat 
-                label="Wait" 
-                value={waitValue} 
-                icon={Clock} 
-                isPrimary={isWaiting}
-             />
-             <InsightStat label="Category" value={post.gameType} icon={LayoutGrid} />
-          </div>
-       </div>
-    </Card>
-
-    <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
-       <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-primary">
-             <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                <LinkIcon size={20} />
-             </div>
-             <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholder Hub</h4>
-          </div>
-          <Badge className="bg-primary text-white border-none rounded-full px-6 py-2 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
-             {claimants.length} LIVE REQUESTS
-          </Badge>
-       </div>
-
-       <div className="space-y-6">
-          <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
-                   {post.authorAvatar ? <Image src={post.authorAvatar} alt={post.authorName} fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-14 space-y-10">
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                   <LinkIcon size={20} />
                 </div>
-                <div className="min-w-0">
-                   <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Original Seller</p>
-                   <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
-                      {post.authorName || "Market User"}
-                   </h5>
-                   <div className="flex flex-wrap items-center gap-3 mt-2">
-                      <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full flex items-center gap-2">
-                         <span className="text-[10px] font-black uppercase whitespace-nowrap">{post.phone}</span>
-                         <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white cursor-pointer" onClick={() => handleWhatsApp(post.phone)}>
-                            <MessageCircle size={12} />
+                <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholder Hub</h4>
+             </div>
+             <Badge className="bg-primary text-white border-none rounded-full px-6 py-2 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20">
+                {claimants.length} LIVE REQUESTS
+             </Badge>
+          </div>
+
+          <div className="space-y-6">
+             <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                   <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
+                      {post.authorAvatar ? <Image src={post.authorAvatar} alt={post.authorName} fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
+                   </div>
+                   <div className="min-w-0">
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Original Seller</p>
+                      <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                         {post.authorName || "Market User"}
+                      </h5>
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
+                         <div className="bg-primary/10 text-primary px-4 py-1.5 rounded-full flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase whitespace-nowrap">{post.phone}</span>
+                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white cursor-pointer" onClick={() => handleWhatsApp(post.phone)}>
+                               <MessageCircle size={12} />
+                            </div>
                          </div>
                       </div>
                    </div>
                 </div>
+                <div className="opacity-10 shrink-0 hidden md:block">
+                   <User size={48} />
+                </div>
              </div>
-             <div className="opacity-10 shrink-0 hidden md:block">
-                <User size={48} />
-             </div>
-          </div>
 
-          {claimants.length === 0 ? (
-            <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
-               <ShieldCheck size={48} className="mb-4" />
-               <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-               {claimants.map((c: any) => {
-                 const claimStatus = c.status || 'pending';
-                 const t = Number(c.timestamp);
-                 const validTimestamp = isNaN(t) ? Date.now() : t;
-                 return (
-                   <div key={c.uid} className={cn(
-                     "p-6 md:p-8 rounded-[2.5rem] border flex flex-col sm:flex-row items-center justify-between gap-6 transition-all",
-                     claimStatus === 'accepted' ? "bg-green-50 border-green-200 dark:bg-green-950/20" : 
-                     claimStatus === 'rejected' ? "bg-red-50 border-red-200 dark:bg-green-950/20" : 
-                     "bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 hover:bg-slate-100/50"
-                   )}>
-                      <div className="flex items-center gap-5 w-full sm:w-auto">
-                         <div className={cn(
-                           "w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center",
-                           claimStatus === 'accepted' ? "border-green-500" : claimStatus === 'rejected' ? "border-red-500" : "border-white dark:border-slate-700"
-                         )}>
-                            {c.photo ? <Image src={c.photo} alt={c.name} fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
+             {claimants.length === 0 ? (
+               <div className="p-12 md:p-20 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-white/5 flex flex-col items-center justify-center text-center opacity-30">
+                  <ShieldCheck size={48} className="mb-4" />
+                  <p className="font-headline font-bold text-xl uppercase tracking-widest">Waiting for buyer reports...</p>
+               </div>
+             ) : (
+               <div className="space-y-4">
+                  {claimants.map((c: any) => {
+                    const claimStatus = c.status || 'pending';
+                    const t = Number(c.timestamp);
+                    const validTimestamp = isNaN(t) ? Date.now() : t;
+                    return (
+                      <div key={c.uid} className={cn(
+                        "p-6 md:p-8 rounded-[2.5rem] border flex flex-col sm:flex-row items-center justify-between gap-6 transition-all",
+                        claimStatus === 'accepted' ? "bg-green-50 border-green-200 dark:bg-green-950/20" : 
+                        claimStatus === 'rejected' ? "bg-red-50 border-red-200 dark:bg-green-950/20" : 
+                        "bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 hover:bg-slate-100/50"
+                      )}>
+                         <div className="flex items-center gap-5 w-full sm:w-auto">
+                            <div className={cn(
+                              "w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center",
+                              claimStatus === 'accepted' ? "border-green-500" : claimStatus === 'rejected' ? "border-red-500" : "border-white dark:border-slate-700"
+                            )}>
+                               {c.photo ? <Image src={c.photo} alt={c.name} fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
+                            </div>
+                            <div className="min-w-0 space-y-1">
+                               <div className="flex items-center gap-2">
+                                  <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
+                                  <Badge className={cn(
+                                    "text-[8px] font-black uppercase px-2 py-0 h-5 border-none shadow-sm",
+                                    claimStatus === 'accepted' ? 'bg-green-500 text-white' : claimStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
+                                  )}>
+                                    {claimStatus === 'accepted' ? 'SELLER CONFIRMED' : claimStatus === 'rejected' ? 'SELLER REJECTED' : 'AWAITING SELLER'}
+                                  </Badge>
+                               </div>
+                               <div className="flex items-center gap-2 mt-1">
+                                  <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">{c.whatsapp || "No Number"}</Badge>
+                               </div>
+                               <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CONTACTED: {formatDistanceToNow(new Date(validTimestamp)).toUpperCase() + " AGO"}</p>
+                            </div>
                          </div>
-                         <div className="min-w-0 space-y-1">
-                            <div className="flex items-center gap-2">
-                               <h5 className="text-xl font-bold text-slate-900 dark:text-white truncate">{c.name}</h5>
-                               <Badge className={cn(
-                                 "text-[8px] font-black uppercase px-2 py-0 h-5 border-none shadow-sm",
-                                 claimStatus === 'accepted' ? 'bg-green-500 text-white' : claimStatus === 'rejected' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
-                               )}>
-                                 {claimStatus === 'accepted' ? 'SELLER CONFIRMED' : claimStatus === 'rejected' ? 'SELLER REJECTED' : 'AWAITING SELLER'}
-                               </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                               <Badge className="bg-blue-100 text-blue-600 border-none text-[8px] font-black uppercase px-2 py-0">{c.whatsapp || "No Number"}</Badge>
-                            </div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-tight">CONTACTED: {formatDistanceToNow(new Date(validTimestamp)).toUpperCase() + " AGO"}</p>
+                         <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+                            <Button 
+                              variant="outline" 
+                              className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2 text-[10px] sm:text-sm"
+                              onClick={() => handleWhatsApp(c.whatsapp)}
+                            >
+                               <MessageCircle size={18} /> WhatsApp
+                            </Button>
+                            <Button 
+                              className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20 text-[10px] sm:text-sm"
+                              onClick={() => handleForceSold(c.uid)}
+                            >
+                               <Check size={18} /> FORCE SOLD
+                            </Button>
                          </div>
                       </div>
-                      <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-                         <Button 
-                           variant="outline" 
-                           className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl border-slate-200 dark:border-white/10 font-bold gap-2 text-[10px] sm:text-sm"
-                           onClick={() => handleWhatsApp(c.whatsapp)}
-                         >
-                            <MessageCircle size={18} /> WhatsApp
-                         </Button>
-                         <Button 
-                           className="flex-1 sm:flex-none h-14 px-4 sm:px-8 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 shadow-lg shadow-green-600/20 text-[10px] sm:text-sm"
-                           onClick={() => handleForceSold(c.uid)}
-                         >
-                            <Check size={18} /> FORCE SOLD
-                         </Button>
-                      </div>
-                   </div>
-                 );
-               })}
-            </div>
-          )}
-       </div>
-    </Card>
-
-    <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-       <div className="p-6 md:p-12 space-y-8">
-          <div className="flex items-center gap-4 text-primary">
-             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
-             </div>
-             <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
+                    );
+                  })}
+               </div>
+             )}
           </div>
+       </Card>
 
-          <div className="grid grid-cols-1 gap-8">
-             <div className="space-y-3">
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
-                <Select value={status} onValueChange={setStatus}>
-                   <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                      <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                      {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
-                        <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
-                      ))}
-                   </SelectContent>
-                </Select>
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-12 space-y-8">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+                </div>
+                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
              </div>
 
-             {status === 'sold' && (
-                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                   <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
-                   <Select value={buyerId} onValueChange={setBuyerId}>
+             <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
+                   <Select value={status} onValueChange={setStatus}>
                       <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                         <SelectValue placeholder="Select User..." />
+                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                         <div className="max-h-[300px] overflow-y-auto">
-                            {allUsers.map((u: any) => (
-                              <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
-                                 {u.name || "Unknown User"} ({u.phoneNumber})
-                              </SelectItem>
-                            ))}
-                         </div>
+                         {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
+                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                         ))}
                       </SelectContent>
                    </Select>
-                   <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
                 </div>
-             )}
 
-             <Button 
-                onClick={onUpdate} 
-                disabled={isSaving} 
-                className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
-             >
-                {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
-             </Button>
+                {status === 'sold' && (
+                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
+                      <Select value={buyerId} onValueChange={setBuyerId}>
+                         <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                            <SelectValue placeholder="Select User..." />
+                         </SelectTrigger>
+                         <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                            <div className="max-h-[300px] overflow-y-auto">
+                               {allUsers.map((u: any) => (
+                                 <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
+                                    {u.name || "Unknown User"} ({u.phoneNumber})
+                                 </SelectItem>
+                               ))}
+                            </div>
+                         </SelectContent>
+                      </Select>
+                      <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
+                   </div>
+                )}
+
+                <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
+                </Button>
+             </div>
           </div>
-       </div>
-    </Card>
-  </div>
-);
+       </Card>
+    </div>
+  );
 }
 
 function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number }) {
@@ -3535,7 +3429,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     const unsub = onValue(participantsRef, (snap) => {
       const data = snap.val();
       if (data) {
-        // Sorting Logic: Taps DESC, then earliest lastTapTime ASC (Tie-breaker)
+        // Sorting Logic: Bids DESC, then earliest lastBidTime ASC (Tie-breaker)
         const sorted = Object.values(data).sort((a: any, b: any) => {
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;

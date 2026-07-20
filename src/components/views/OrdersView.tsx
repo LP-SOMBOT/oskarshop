@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from "@/lib/context";
@@ -29,7 +30,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function OrdersView() {
-  const { orders, isInitialLoading, isGlobalLoading, setActiveTab, user, t, storeSettings } = useApp();
+  const { orders, isInitialLoading, isGlobalLoading, setActiveTab, user, t, storeSettings, language } = useApp();
   const router = useRouter();
 
   if (isInitialLoading) {
@@ -109,7 +110,7 @@ export default function OrdersView() {
         </div>
       ) : (
         <div className={cn("grid grid-cols-1 gap-6 md:gap-8 transition-all", isGlobalLoading && "opacity-20 blur-[2px]")}>
-           {orders.map((order) => ( <OrderCard key={order.id} order={order} /> ))}
+           {orders.map((order) => ( <OrderCard key={order.id} order={order} language={language} /> ))}
         </div>
       )}
     </div>
@@ -129,10 +130,14 @@ function DetailRow({ icon: Icon, label, value, color }: { icon: any, label: stri
   );
 }
 
-function OrderCard({ order }: { order: any }) {
+function OrderCard({ order, language }: { order: any, language: string }) {
   const { t } = useApp();
   const item = order.items?.[0];
-  const isAccount = item?.gameId === 'accounts' || order.gameId === 'accounts';
+  
+  // Smart Title Support for Auction Winners
+  const isAuctionWinner = !!order.gameDetails?.isEventWinner;
+  const displayTitle = isAuctionWinner ? "Guuleystaha" : (item?.title || "Game Item");
+  const isAccount = item?.gameId === 'accounts' || order.gameId === 'accounts' || isAuctionWinner;
 
   const statusColors = {
     pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
@@ -142,6 +147,14 @@ function OrderCard({ order }: { order: any }) {
   };
 
   const StatusIcon = order.status === 'successful' ? CheckCircle2 : order.status === 'pending' ? Clock : order.status === 'processing' ? RefreshCw : XCircle;
+
+  // Somali Status Mapping
+  const getStatusLabel = (s: string) => {
+    if (language !== 'so') return s;
+    if (s === 'cancelled') return "La kansalay";
+    if (s === 'successful') return "Lagu guuleeystay";
+    return t(s);
+  };
 
   return (
     <Card className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group hover:shadow-2xl transition-all duration-500">
@@ -161,7 +174,7 @@ function OrderCard({ order }: { order: any }) {
                    )}
                 </div>
                 <div className="min-w-0 flex-1">
-                   <h3 className="font-bold text-slate-900 dark:text-white text-base sm:text-xl lg:text-2xl leading-tight mb-1 md:mb-2">{item?.title || "Game Item"}</h3>
+                   <h3 className="font-bold text-slate-900 dark:text-white text-base sm:text-xl lg:text-2xl leading-tight mb-1 md:mb-2">{displayTitle}</h3>
                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
                       <p className="text-[8px] sm:text-[10px] lg:text-[12px] font-black text-muted-foreground uppercase tracking-widest">{order.paymentMethod}</p>
                       <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800 hidden xs:block" />
@@ -173,12 +186,18 @@ function OrderCard({ order }: { order: any }) {
                 </div>
              </div>
              <Badge className={cn( "rounded-full px-3 py-1 md:px-5 md:py-2 font-black text-[7px] sm:text-[10px] lg:text-[12px] border-none shadow-sm shrink-0 uppercase tracking-widest self-end xs:self-start", statusColors[order.status as keyof typeof statusColors] )}>
-                <StatusIcon className={cn("w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 inline-block", order.status === 'processing' && "animate-spin")} /> {order.status}
+                <StatusIcon className={cn("w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 inline-block", order.status === 'processing' && "animate-spin")} /> {getStatusLabel(order.status)}
              </Badge>
           </div>
 
           <div className="bg-slate-50/80 dark:bg-slate-800/40 rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 border border-slate-100 dark:border-white/5 flex-1 shadow-inner">
-             {isAccount ? (
+             {isAuctionWinner ? (
+                <>
+                  <DetailRow icon={Zap} label="Auction Event" value={order.gameDetails?.eventTitle || "Account Event"} />
+                  <DetailRow icon={Gamepad2} label="Game" value={order.gameDetails?.gameName || "N/A"} />
+                  <DetailRow icon={MessageCircle} label={t('whatsapp')} value={order.gameDetails?.whatsappNumber} color="text-primary" />
+                </>
+             ) : isAccount ? (
                <>
                  <DetailRow icon={User} label={t('seller')} value={order.gameDetails?.sellerName || "Market Seller"} />
                  <DetailRow icon={ShieldCheck} label={t('platform')} value={order.gameDetails?.platform || "Google"} />

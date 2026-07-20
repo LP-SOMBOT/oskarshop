@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ export default function EventGetButton({ onTap, cooldown, isSyncing, isTapping, 
             <div className="flex items-center gap-2 sm:gap-3">
                <Loader2 className="w-4 h-4 sm:w-6 sm:h-6 md:w-8 md:h-8 animate-spin" />
                <span className="font-black text-xs sm:text-lg md:text-2xl uppercase tracking-widest">
-                  {isSyncing ? "Syncing..." : "Processing..."}
+                  {isSyncing ? "Loading..." : "Processing..."}
                </span>
             </div>
          ) : isCooldown ? (
