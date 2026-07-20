@@ -348,7 +348,9 @@ export default function EventDetailPage() {
                   <Trophy size={20} className="sm:size-8" />
                </div>
                <div className="text-left min-w-0">
-                  <h4 className="font-headline font-bold text-sm sm:text-xl uppercase tracking-tight text-slate-900 dark:text-white">{t('kaalmaha') || 'Leaderboard'}</h4>
+                  <h4 className="font-headline font-bold text-sm sm:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                    {language === 'so' ? 'kaalmaha' : (t('kaalmaha') || 'Leaderboard')}
+                  </h4>
                   <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest truncate">{participants.length} Participants active</p>
                </div>
             </div>
@@ -360,7 +362,7 @@ export default function EventDetailPage() {
          <Card className="p-6 sm:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 shadow-sm space-y-8">
             <div className="space-y-4">
               <h4 className="font-headline font-bold uppercase tracking-tight flex items-center gap-2 text-slate-900 dark:text-white text-sm sm:text-lg">
-                 <Info size={16} className="text-primary sm:size-[18px]" /> Event rules for somali
+                 <Info size={16} className="text-primary sm:size-[18px]" /> Event rules
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {language === 'so' ? (

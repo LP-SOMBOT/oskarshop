@@ -603,12 +603,12 @@ const translations: Record<Language, Record<string, string>> = {
   so: {
     home: "HOME",
     games: "top up",
-    accounts: "ciwaano",
+    accounts: "ciwaanada",
     orders: "dalabyada",
     profile: "Profile",
     chat: "Sheeko",
     notifications: "Ogeysiis",
-    ranking: "Leaderboard",
+    ranking: "kaalmaha",
     my_accounts: "My accounts",
     sell_account: "iibi/iibso account",
     leaderboard: "Leaderboard",
@@ -664,7 +664,7 @@ const translations: Record<Language, Record<string, string>> = {
     account_gallery: "Soo Geli dhamaan Sawirada accounti-ga",
     upload_photos_prompt: "Riix halkaan Si aad sawir usoo gelisid",
     game_identity: "Xogta Game ka",
-    marketplace: "ciwaano",
+    marketplace: "ciwaanada",
     game_type: "Dooro nooca Game ka",
     login_method: "Qaabka lagu Soo galo",
     account_age: "Geli da' da account tiga",
@@ -742,7 +742,7 @@ const translations: Record<Language, Record<string, string>> = {
     ended: "Ended",
     claimed: "Claimed",
     event: "EVENT",
-    kaalmaha: "Ranking",
+    kaalmaha: "kaalmaha",
     Qiimaha_Asalka: "Qiimaha Asalka",
     Qiimaha_Hadda: "Qiimaha Hadda"
   }

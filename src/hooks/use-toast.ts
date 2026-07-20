@@ -22,7 +22,7 @@ type ToastAction =
   | { type: 'REMOVE_TOAST'; id: string }
   | { type: 'DISMISS_TOAST'; id: string };
 
-const TOAST_LIMIT = 3;
+const TOAST_LIMIT = 1; // Updated to 1 as requested to prevent overlapping toasts
 const TOAST_DURATION = 3000;
 
 let count = 0;

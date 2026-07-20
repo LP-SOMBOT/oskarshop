@@ -231,6 +231,7 @@ export default function AccountsView() {
                   onDelete={(e) => { e.stopPropagation(); setDeletingPostId(post.id); }}
                   isOwner={post.uid === user?.uid}
                   isAdmin={user?.isAdmin}
+                  language={language}
                 />
               );
             })}
@@ -359,7 +360,7 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
   );
 }
 
-function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin }: { post: any, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isAdmin?: boolean }) {
+function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, language }: { post: any, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isAdmin?: boolean, language: string }) {
   const isGoogle = post.platform === 'Google';
   
   const handleShare = async (e: React.MouseEvent) => {
@@ -474,7 +475,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin }: 
              <p className="text-xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${parseFloat(post.price?.toString() || '0').toFixed(2)}</p>
            </div>
            <button className="rounded-lg md:rounded-[1.5rem] h-9 md:h-14 px-3 md:px-8 font-black text-[10px] md:text-base shadow-xl shadow-primary/20 gap-1 md:gap-2 uppercase tracking-wide shrink-0 bg-primary text-white hover:bg-primary/90 flex items-center justify-center transition-all active:scale-95">
-             Details <ArrowRight className="w-3.5 h-3.5 md:w-5 md:h-5" />
+             {language === 'so' ? 'IIBSO' : 'BUY'} <ArrowRight className="w-3.5 h-3.5 md:w-5 md:h-5" />
            </button>
         </div>
       </div>
