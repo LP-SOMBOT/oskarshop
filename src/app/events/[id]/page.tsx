@@ -120,6 +120,7 @@ export default function EventDetailPage() {
     });
 
     return () => {
+      // FIX: Invoke returned unsubscribe functions directly
       partUnsub();
       feedUnsub();
     };
@@ -238,7 +239,7 @@ export default function EventDetailPage() {
          </div>
       </div>
 
-      <main className="px-4 sm:px-6 space-y-6 sm:space-y-12 max-w-4xl mx-auto relative z-10">
+      <main className="px-4 sm:px-6 space-y-6 sm:space-y-12 max-w-4xl mx-auto relative z-10 pb-20">
          <Card className="p-4 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 shadow-xl space-y-6 sm:space-y-8">
             <div className="text-center space-y-1.5 sm:space-y-2">
                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] sm:tracking-[0.4em]">{isUpcoming ? 'BILAABMAYSA' : isEnded ? 'DHAMMAATAY' : 'ENDS IN'}</p>
@@ -270,9 +271,14 @@ export default function EventDetailPage() {
                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-primary overflow-hidden shrink-0 bg-white dark:bg-slate-900">
                         {participants[0].avatar ? <Image src={participants[0].avatar} alt="" width={32} height={32} unoptimized /> : <User className="m-auto text-slate-300" size={12} />}
                      </div>
-                     <p className="text-[10px] sm:text-xs font-bold truncate max-w-[100px] sm:max-w-[120px] text-slate-700 dark:text-slate-300">{participants[0].name}</p>
+                     <div className="min-w-0">
+                        <p className="text-[10px] sm:text-xs font-bold truncate max-w-[100px] sm:max-w-[120px] text-slate-700 dark:text-slate-300">{participants[0].name}</p>
+                        <p className="text-[8px] sm:text-[9px] font-black text-primary uppercase tracking-widest mt-0.5">
+                           {participants[0].taps} TAPS • ${participants[0].value.toFixed(2)}
+                        </p>
+                     </div>
                   </div>
-                  <Badge className="bg-primary text-white border-none font-black text-[7px] sm:text-[8px] tracking-widest px-2 sm:px-3 uppercase">Leading</Badge>
+                  <Badge className="bg-primary text-white border-none font-black text-[7px] sm:text-[8px] tracking-widest px-2 sm:px-3 uppercase shadow-md shadow-primary/20">ugu sareeya</Badge>
                </div>
             )}
          </Card>
