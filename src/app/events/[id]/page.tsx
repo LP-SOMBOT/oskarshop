@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useApp } from '@/lib/context';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   ArrowLeft, 
   Clock, 
@@ -53,6 +52,9 @@ export default function EventDetailPage() {
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasCheckedAgreement, setHasCheckedAgreement] = useState(false);
+
+  // Use a ref to track if we've already triggered the end logic for this instance
+  const endLogicTriggered = useRef(false);
 
   const [cachedEvent, setCachedEvent] = useState<any>(() => {
     if (typeof window === 'undefined') return null;
@@ -144,8 +146,9 @@ export default function EventDetailPage() {
       const diff = event.endTime - now;
       if (diff <= 0) {
         setTimeLeft({ h: '00', m: '00', s: '00' });
-        // Auto-end logic moved into a safer handler to prevent loop
-        if (event.status === 'active') {
+        // Auto-end logic: declare winner immediately on clock expiration
+        if (!endLogicTriggered.current && event.status === 'active') {
+          endLogicTriggered.current = true;
           updateEventStatus(event.id, 'ended');
         }
         clearInterval(timer);
@@ -207,11 +210,14 @@ export default function EventDetailPage() {
   const isUpcoming = event.status === 'upcoming';
   const currentPrice = event.initialPrice + ((participants[0]?.taps || 0) * event.tapPrice);
 
+  const images = event.imageUrls || [];
+  const hasMultipleImages = images.length > 1;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-40 page-transition relative overflow-x-hidden">
       <div className="relative h-[25vh] sm:h-[35vh] w-full overflow-hidden">
-         {event.imageUrls?.[0] ? (
-            <Image src={event.imageUrls[0]} alt="" fill className="object-cover" unoptimized />
+         {images[0] ? (
+            <Image src={images[0]} alt="" fill className="object-cover" unoptimized />
          ) : <div className="w-full h-full bg-slate-200 dark:bg-slate-800" />}
          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 via-transparent to-transparent" />
          
@@ -234,7 +240,7 @@ export default function EventDetailPage() {
          </div>
       </div>
 
-      <main className="px-4 sm:px-6 space-y-6 sm:space-y-12 max-w-4xl mx-auto relative z-10 pb-20">
+      <main className="px-4 sm:px-6 space-y-6 sm:space-y-12 max-w-4xl mx-auto relative z-10 pb-40">
          <Card className="p-4 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 shadow-xl space-y-6 sm:space-y-8">
             <div className="text-center space-y-1.5 sm:space-y-2">
                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] sm:tracking-[0.4em]">{isUpcoming ? 'BILAABMAYSA' : isEnded ? 'DHAMMAATAY' : 'ENDS IN'}</p>
@@ -278,13 +284,13 @@ export default function EventDetailPage() {
             )}
          </Card>
 
-         {event.imageUrls && event.imageUrls.length > 1 && (
+         {hasMultipleImages && (
            <div className="space-y-3 sm:space-y-4">
               <h3 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] ml-1 sm:ml-2 text-slate-400">
                 sawirda ciwaanka
               </h3>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 sm:pb-4 snap-x">
-                 {event.imageUrls.map((url: string, idx: number) => (
+                 {images.map((url: string, idx: number) => (
                     <div key={url + idx} className="relative aspect-[4/3] w-[240px] sm:w-[400px] rounded-2xl sm:rounded-3xl overflow-hidden shrink-0 snap-center shadow-md border border-slate-100 dark:border-white/5 bg-white dark:bg-slate-800">
                        <Image src={url} alt="" fill className="object-cover" unoptimized />
                     </div>

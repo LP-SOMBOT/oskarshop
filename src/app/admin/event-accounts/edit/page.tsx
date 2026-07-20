@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -17,7 +16,8 @@ import {
   Clock,
   DollarSign,
   ShieldCheck,
-  Zap
+  Zap,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -93,6 +93,24 @@ function EventAccountEditContent() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!form.title || !form.gameName || !form.startTime || !form.endTime) {
+      toast({ title: "Fadlan buuxi meelaha banaan", variant: "destructive" });
+      return;
+    }
+
+    const startTs = new Date(form.startTime).getTime();
+    const endTs = new Date(form.endTime).getTime();
+
+    if (startTs >= endTs) {
+      toast({ 
+        title: "Waqtiga waa khalad", 
+        description: "Waqtiga dhamaadka waa inuu ka dambeeyaa waqtiga bilaawga.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     if (form.imageUrls.length === 0) {
       toast({ title: "Fadlan soo geli ugu yaraan hal sawir", variant: "destructive" });
       return;
@@ -102,10 +120,10 @@ function EventAccountEditContent() {
     try {
       const payload = {
         ...form,
-        initialPrice: parseFloat(form.initialPrice),
-        tapPrice: parseFloat(form.tapPrice),
-        startTime: new Date(form.startTime).getTime(),
-        endTime: new Date(form.endTime).getTime(),
+        initialPrice: parseFloat(form.initialPrice) || 0,
+        tapPrice: parseFloat(form.tapPrice) || 0.50,
+        startTime: startTs,
+        endTime: endTs,
         id: id || undefined
       };
       await saveEventAccount(payload);
@@ -258,6 +276,12 @@ function EventAccountEditContent() {
                     className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6" 
                   />
                 </div>
+                {(form.startTime && form.endTime && new Date(form.startTime) >= new Date(form.endTime)) && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-red-600 text-[9px] font-bold uppercase tracking-wider">
+                     <AlertTriangle size={14} className="shrink-0" />
+                     <span>Waqtiga dhamaadka waa inuu ka dambeeyaa waqtiga bilaawga.</span>
+                  </div>
+                )}
               </div>
             </Card>
           </div>

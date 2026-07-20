@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -2377,7 +2376,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb, enhancedUser]);
 
   const updateEventStatus = useCallback(async (eventId: string, status: string) => {
-    if (!rtdb || !enhancedUser?.isAdmin) return;
+    if (!rtdb) return;
     
     const updates: any = { status };
 
@@ -2405,8 +2404,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     await update(ref(rtdb, `eventAccounts/${eventId}`), updates);
-    toast({ title: `Event is now ${status}` });
-  }, [rtdb, enhancedUser]);
+  }, [rtdb]);
 
   const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored') => {
     if (!rtdb || !authUser) return;

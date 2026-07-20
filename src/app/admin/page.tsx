@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -1626,7 +1625,7 @@ export default function AdminPage() {
                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
                   <Button 
                     onClick={() => setIsPromoDialogOpen(true)}
-                    className="rounded-2xl h-14 md:h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
+                    className="rounded-2xl h-14 md:h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 w-full sm:w-auto"
                   >
                     <PlusCircle size={20} /> New Promo Code
                   </Button>
