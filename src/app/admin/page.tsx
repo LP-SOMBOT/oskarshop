@@ -504,7 +504,7 @@ export default function AdminPage() {
     });
 
     allOrders
-      .filter(o => o.status === 'successful')
+      .filter(order => order.status === 'successful')
       .forEach(order => {
         const orderDate = new Date(order.createdAt);
         const dayMatch = last7Days.find(d => isSameDay(d.date, orderDate));

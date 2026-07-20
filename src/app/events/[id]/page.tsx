@@ -53,8 +53,8 @@ export default function EventDetailPage() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasCheckedAgreement, setHasCheckedAgreement] = useState(false);
 
-  // Use a ref to track if we've already triggered the end logic for this instance
-  const endLogicTriggered = useRef(false);
+  // Use refs to track triggers
+  const transitionTriggered = useRef(false);
 
   const [cachedEvent, setCachedEvent] = useState<any>(() => {
     if (typeof window === 'undefined') return null;
@@ -143,17 +143,29 @@ export default function EventDetailPage() {
         setCooldown(0);
       }
 
-      const diff = event.endTime - now;
+      // DETERMINISTIC COUNTDOWN LOGIC
+      const isUpcoming = event.status === 'upcoming' || (event.startTime && now < event.startTime);
+      const targetTime = isUpcoming ? event.startTime : event.endTime;
+      const diff = targetTime - now;
+
       if (diff <= 0) {
         setTimeLeft({ h: '00', m: '00', s: '00' });
-        // Auto-end logic: declare winner immediately on clock expiration
-        if (!endLogicTriggered.current && event.status === 'active') {
-          endLogicTriggered.current = true;
-          updateEventStatus(event.id, 'ended');
+        
+        // Auto-transition logic
+        if (!transitionTriggered.current) {
+           if (event.status === 'upcoming') {
+             transitionTriggered.current = true;
+             updateEventStatus(event.id, 'active');
+           } else if (event.status === 'active') {
+             transitionTriggered.current = true;
+             updateEventStatus(event.id, 'ended');
+           }
         }
-        clearInterval(timer);
         return;
       }
+
+      // Reset trigger if time extends (e.g. bid extension)
+      transitionTriggered.current = false;
 
       const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
       const m = Math.floor((diff % (3600000) / 60000)).toString().padStart(2, '0');
@@ -170,7 +182,7 @@ export default function EventDetailPage() {
       return;
     }
     const isEndedByTime = event.endTime && Date.now() > event.endTime;
-    if (cooldown > 0 || isSyncing || isEndedByTime || isTapping) return;
+    if (cooldown > 0 || isSyncing || isEndedByTime || isTapping || event.status !== 'active') return;
     
     setIsTapping(true);
     try {
@@ -206,8 +218,10 @@ export default function EventDetailPage() {
     );
   }
 
-  const isEnded = event.status === 'ended' || event.status === 'claimed' || (event.endTime && Date.now() > event.endTime);
-  const isUpcoming = event.status === 'upcoming';
+  const now = Date.now();
+  const isUpcoming = event.status === 'upcoming' || (event.startTime && now < event.startTime);
+  const isEnded = event.status === 'ended' || event.status === 'claimed' || (event.endTime && now > event.endTime);
+  
   const currentPrice = event.initialPrice + ((participants[0]?.taps || 0) * event.tapPrice);
 
   const images = event.imageUrls || [];

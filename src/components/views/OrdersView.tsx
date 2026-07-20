@@ -253,7 +253,7 @@ function OrderCard({ order, language }: { order: any, language: string }) {
                   {order.cancellationReason && (
                     <div className="p-3 md:p-4 bg-white/50 dark:bg-black/20 rounded-xl md:rounded-2xl border border-red-200/50 dark:border-red-800/30">
                        <p className="text-[8px] uppercase font-black tracking-widest mb-1 opacity-60">{t('admin_message')}:</p>
-                       <p className="text-[11px] sm:text-sm lg:text-base font-bold italic">"{order.cancellationReason}"</p>
+                       <p className="text-11px] sm:text-sm lg:text-base font-bold italic">"{order.cancellationReason}"</p>
                     </div>
                   )}
                </div>
