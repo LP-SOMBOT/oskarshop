@@ -208,7 +208,7 @@ export default function EventDetailPage() {
   const currentPrice = event.initialPrice + ((participants[0]?.taps || 0) * event.tapPrice);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:white pb-32 page-transition relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-32 page-transition relative overflow-x-hidden">
       <div className="relative h-[25vh] sm:h-[35vh] w-full overflow-hidden">
          {event.imageUrls?.[0] ? (
             <Image src={event.imageUrls[0]} alt="" fill className="object-cover" unoptimized />

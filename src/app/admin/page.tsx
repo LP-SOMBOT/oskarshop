@@ -3474,55 +3474,48 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
           </div>
 
           <div className="flex flex-wrap items-center gap-3 md:gap-4 pt-2">
-             <Button 
-               variant="outline" 
-               size="lg" 
+             <button 
                onClick={onEdit}
-               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex-1 sm:flex-none"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
              >
                 <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                 <span>Edit</span>
-             </Button>
+             </button>
              
-             <Button 
-               variant="outline" 
-               size="lg"
+             <button 
                onClick={onViewParticipants}
-               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex-1 sm:flex-none"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center"
              >
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-500" />
                 <span>Leaderboard</span>
-             </Button>
+             </button>
 
-             <Button 
-               size="lg"
+             <button 
                onClick={onAssignWinner}
-               className="rounded-2xl h-12 md:h-16 px-6 md:px-10 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] md:text-xs gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all w-full sm:w-auto"
+               className="rounded-2xl h-12 md:h-16 px-6 md:px-10 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] md:text-xs gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center justify-center flex-1 sm:flex-none"
              >
                 <Trophy className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Dooro guuleystaha</span>
-             </Button>
+             </button>
 
              <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
                 {status === 'active' && (
-                  <Button 
-                    variant="ghost" 
+                  <button 
                     onClick={onEndEarly}
-                    className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2"
+                    className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2 flex items-center"
                   >
                      <Clock className="w-4 h-4" />
                      <span>Jooji event ga</span>
-                  </Button>
+                  </button>
                 )}
 
-                <Button 
-                  variant="ghost" 
+                <button 
                   onClick={onDelete}
                   title="Delete Event"
-                  className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-slate-300 hover:text-red-600 active:scale-95 transition-all shrink-0"
+                  className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-slate-300 hover:text-red-600 active:scale-95 transition-all shrink-0 flex items-center justify-center"
                 >
                    <Trash2 size={16} />
-                </Button>
+                </button>
              </div>
           </div>
        </div>
@@ -3615,17 +3608,15 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                         <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
                         <TableCell className="text-right px-6 lg:px-10">
-                            <Button 
-                              size="sm" 
-                              variant={p.uid === eventAccount?.winnerId ? "default" : "outline"} 
-                              className={cn(
-                                "rounded-xl h-10 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg",
-                                p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 border-none" : "bg-primary text-white border-none"
-                              )} 
+                            <button 
                               onClick={() => onAssignWinner(eventId, p.uid)}
+                              className={cn(
+                                "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
+                                p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
+                              )} 
                             >
                               {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
-                            </Button>
+                            </button>
                         </TableCell>
                       </TableRow>
                     ))

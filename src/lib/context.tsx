@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -2233,7 +2232,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     try {
       const { id, ...data } = event;
-      const status = Date.now() < (data.startTime || 0) ? 'upcoming' : 'active';
+      const startTime = Number(data.startTime) || Date.now();
+      const status = Date.now() < startTime ? 'upcoming' : 'active';
       const eventToSave = { ...data, status, createdAt: Date.now(), participantsCount: 0 };
       
       if (id) {

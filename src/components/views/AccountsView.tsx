@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -92,6 +91,7 @@ export default function AccountsView() {
     const userId = user?.uid;
     const now = Date.now();
 
+    // Regular Market Posts
     const posts = (accountPosts || [])
       .filter(p => {
         const isOwner = userId && p.uid === userId;
@@ -104,24 +104,29 @@ export default function AccountsView() {
         return true;
       });
 
+    // Auction Event Posts
     const events = (eventAccounts || [])
       .filter(e => {
-        // HIDE if status is ended/claimed
-        if (e.status === 'ended' || e.status === 'claimed') return false;
-        // HIDE if timer is expired
-        if (e.endTime && now > e.endTime) return false;
-        // ONLY SHOW active or upcoming
+        const isEndedByStatus = e.status === 'ended' || e.status === 'claimed';
+        const isEndedByTime = e.endTime && now > e.endTime;
+        
+        // ONLY display if it's "upcoming" or "active" AND hasn't reached its strict time limit
+        if (isEndedByStatus || isEndedByTime) return false;
+        
         return e.status === 'active' || e.status === 'upcoming';
       })
       .map(e => ({ ...e, isEvent: true }));
 
     return [...posts, ...events]
-      .filter(p => 
-        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.authorName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.gameType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.gameName?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      .filter(p => {
+        const query = searchQuery.toLowerCase();
+        return (
+          (p.title || "").toLowerCase().includes(query) || 
+          (p.authorName || "").toLowerCase().includes(query) || 
+          (p.gameType || "").toLowerCase().includes(query) ||
+          (p.gameName || "").toLowerCase().includes(query)
+        );
+      })
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }, [accountPosts, eventAccounts, searchQuery, user, orders]);
 
@@ -423,7 +428,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin }: 
            {(isOwner || isAdmin) && (
              <>
                 <Button size="icon" variant="ghost" className="h-7 h-7 md:h-10 md:w-10 text-blue-500 rounded-lg md:rounded-2xl" onClick={onEdit}><Edit className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
-                <Button size="icon" variant="ghost" className="h-7 h-7 md:h-10 md:w-10 text-red-500 rounded-lg md:rounded-2xl" onClick={onDelete}><Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
+                <Button size="icon" variant="ghost" className="h-7 h-7 md:h-10 md:w-10 text-red-500 rounded-lg md:rounded-2xl" onClick={onDelete}><Trash2 size={3.5} className="w-3.5 h-3.5 md:w-4 md:h-4"/></Button>
              </>
            )}
         </div>
@@ -470,7 +475,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin }: 
            <div className="min-w-0">
              <p className="text-xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${parseFloat(post.price?.toString() || '0').toFixed(2)}</p>
            </div>
-           <button className="rounded-lg md:rounded-[1.5rem] h-9 md:h-14 px-3 md:px-8 font-black text-[10px] md:text-base shadow-xl shadow-primary/20 gap-1 md:gap-2 uppercase tracking-wide shrink-0 bg-primary text-white hover:bg-primary/90">
+           <button className="rounded-lg md:rounded-[1.5rem] h-9 md:h-14 px-3 md:px-8 font-black text-[10px] md:text-base shadow-xl shadow-primary/20 gap-1 md:gap-2 uppercase tracking-wide shrink-0 bg-primary text-white hover:bg-primary/90 flex items-center justify-center transition-all active:scale-95">
              Details <ArrowRight className="w-3.5 h-3.5 md:w-5 md:h-5" />
            </button>
         </div>
