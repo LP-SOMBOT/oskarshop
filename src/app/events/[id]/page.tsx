@@ -39,7 +39,7 @@ const EVENT_AGREEMENT_PREFIX = 'oskar_event_agreed_';
 export default function EventDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { eventAccounts, tapEventAccount, user, setGlobalLoading, t, language } = useApp();
+  const { eventAccounts, tapEventAccount, user, setGlobalLoading, t, language, updateEventStatus } = useApp();
   const rtdb = useDatabase();
 
   const [timeLeft, setTimeLeft] = useState({ h: '00', m: '00', s: '00' });
@@ -122,7 +122,7 @@ export default function EventDetailPage() {
   }, [rtdb, id]);
 
   useEffect(() => {
-    if (!event) return;
+    if (!event || event.status === 'ended' || event.status === 'claimed') return;
 
     const timer = setInterval(() => {
       const now = Date.now();
@@ -143,6 +143,10 @@ export default function EventDetailPage() {
       const diff = event.endTime - now;
       if (diff <= 0) {
         setTimeLeft({ h: '00', m: '00', s: '00' });
+        // Auto-end the event on client side if time is up
+        if (event.status === 'active') {
+          updateEventStatus(event.id, 'ended');
+        }
         clearInterval(timer);
         return;
       }
@@ -154,7 +158,7 @@ export default function EventDetailPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [event, myStats, id, user?.uid]);
+  }, [event, myStats, id, user?.uid, updateEventStatus]);
 
   const handleTap = async () => {
     if (!user) {

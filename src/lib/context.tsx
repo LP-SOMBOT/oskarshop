@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -742,7 +741,7 @@ const translations: Record<Language, Record<string, string>> = {
     ended: "Ended",
     claimed: "Claimed",
     event: "EVENT",
-    kaalmaha: "Kaalmaha",
+    kaalmaha: "Ranking",
     Qiimaha_Asalka: "Qiimaha Asalka",
     Qiimaha_Hadda: "Qiimaha Hadda"
   }

@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
  * Triggers full-screen confetti and a mandatory claim modal.
  */
 export default function WinnerClaimGuard() {
-  const { user, eventAccounts, orders, respondToEventClaim, setGlobalLoading } = useApp();
+  const { user, eventAccounts, respondToEventClaim, setGlobalLoading } = useApp();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
 
@@ -29,18 +29,8 @@ export default function WinnerClaimGuard() {
       e.winnerClaim?.status === 'pending'
     );
 
-    if (!claim) return null;
-
-    // RULE: If the user has already placed an order for this specific event account, don't show the modal.
-    const alreadyOrdered = (orders || []).some(o => 
-      o.gameDetails?.eventId === claim.id && 
-      o.userId === user.uid
-    );
-
-    if (alreadyOrdered) return null;
-
-    return claim;
-  }, [user, eventAccounts, orders]);
+    return claim || null;
+  }, [user, eventAccounts]);
 
   useEffect(() => {
     if (activeClaim) {
