@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -164,7 +165,7 @@ export default function EventDetailPage() {
         return;
       }
 
-      // Reset trigger if time extends (e.g. bid extension)
+      // Reset trigger if time extends or state is valid for a new countdown
       transitionTriggered.current = false;
 
       const h = Math.floor(diff / 3600000).toString().padStart(2, '0');

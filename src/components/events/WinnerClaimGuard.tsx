@@ -25,16 +25,17 @@ export default function WinnerClaimGuard() {
   // Find any active claim where current user is the winner
   const activeClaim = useMemo(() => {
     if (!user || !eventAccounts) return null;
-    const claim = eventAccounts.find(e => 
+    return eventAccounts.find(e => 
       e.winnerId === user.uid && 
       e.winnerClaim?.status === 'pending'
     );
-
-    return claim || null;
   }, [user, eventAccounts]);
 
+  const activeClaimId = activeClaim?.id;
+
   useEffect(() => {
-    if (activeClaim) {
+    let interval: any;
+    if (activeClaimId) {
       setShowModal(true);
       // Fire celebratory confetti
       const duration = 5 * 1000;
@@ -43,7 +44,7 @@ export default function WinnerClaimGuard() {
 
       const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-      const interval: any = setInterval(() => {
+      interval = setInterval(() => {
         const timeLeft = animationEnd - Date.now();
         if (timeLeft <= 0) return clearInterval(interval);
 
@@ -54,7 +55,10 @@ export default function WinnerClaimGuard() {
     } else {
       setShowModal(false);
     }
-  }, [activeClaim]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeClaimId]);
 
   if (!activeClaim) return null;
 

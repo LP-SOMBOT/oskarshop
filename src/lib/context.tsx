@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -659,7 +660,7 @@ const translations: Record<Language, Record<string, string>> = {
     forgot_password: "Ma ilaawday password-ka?",
     reset_password: "Bedel Password-ka",
     reset_email_sent: "Ka hubi email-kaaga linkiga bedelaada.",
-    enter_reset_email: "Geli email-kaaga si lagugu soo diro linkiga bedelaada.",
+    enter_reset_email: "Enter email-kaaga si lagugu soo diro linkiga bedelaada.",
     account_gallery: "Soo Geli dhamaan Sawirada accounti-ga",
     upload_photos_prompt: "Riix halkaan Si aad sawir usoo gelisid",
     game_identity: "Xogta Game ka",
@@ -2349,6 +2350,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await update(ref(rtdb), updates);
   }, [rtdb, authUser, enhancedUser]);
 
+  const updateEventStatus = useCallback(async (eventId: string, status: string) => {
+    if (!rtdb) return;
+    
+    // Fetch latest data to avoid overwriting or redundant triggers
+    const eventRef = ref(rtdb, `eventAccounts/${eventId}`);
+    const currentSnap = await get(eventRef);
+    const eventData = currentSnap.val();
+    
+    if (!eventData || eventData.status === status) return;
+
+    const updates: any = { status };
+
+    // Real-time Top 1 Winner determination
+    if (status === 'ended') {
+      const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+      const participants = participantsSnap.val();
+      
+      if (participants) {
+        const sorted = Object.values(participants).sort((a: any, b: any) => {
+          // RULE: Most bids win. TIE-BREAKER: Earliest reaching that count wins.
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        });
+
+        const top1 = sorted[0] as any;
+        if (top1) {
+          updates.winnerId = top1.uid;
+          updates.winnerClaim = {
+            status: 'pending',
+            finalPrice: top1.value
+          };
+          
+          // Notify the winner immediately
+          broadcastNotification(
+            "Hampalyo! 🏆", 
+            `Waad ku guulaysatay auction-ka: ${eventData.title}! Fadlan iibso hadda.`, 
+            top1.uid
+          );
+        }
+      }
+    }
+
+    await update(eventRef, updates);
+  }, [rtdb, broadcastNotification]);
+
   const assignEventWinner = useCallback(async (eventId: string, winnerId: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
@@ -2375,43 +2421,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb, enhancedUser]);
 
-  const updateEventStatus = useCallback(async (eventId: string, status: string) => {
-    if (!rtdb) return;
-    
-    const updates: any = { status };
+  // GLOBAL AUCTION WATCHER
+  // This automatically transitions events even if no one is on the detail page.
+  useEffect(() => {
+    if (!rtdb || !enhancedUser || eventAccounts.length === 0) return;
 
-    // Real-time Top 1 Winner determination
-    if (status === 'ended') {
-      const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
-      const participants = participantsSnap.val();
-      
-      if (participants) {
-        const sorted = Object.values(participants).sort((a: any, b: any) => {
-          // RULE: Most bids win. TIE-BREAKER: Earliest reaching that count wins.
-          if (b.taps !== a.taps) return b.taps - a.taps;
-          return a.lastTapTime - b.lastTapTime;
-        });
-
-        const top1 = sorted[0] as any;
-        if (top1) {
-          updates.winnerId = top1.uid;
-          updates.winnerClaim = {
-            status: 'pending',
-            finalPrice: top1.value
-          };
+    const timer = setInterval(() => {
+      const now = Date.now();
+      eventAccounts.forEach(e => {
+        if (e.status === 'active' && e.endTime && now >= e.endTime) {
+          updateEventStatus(e.id, 'ended');
+        } else if (e.status === 'upcoming' && e.startTime && now >= e.startTime) {
+          updateEventStatus(e.id, 'active');
         }
-      }
-    }
+      });
+    }, 5000);
 
-    await update(ref(rtdb, `eventAccounts/${eventId}`), updates);
-  }, [rtdb]);
+    return () => clearInterval(timer);
+  }, [rtdb, enhancedUser, eventAccounts, updateEventStatus]);
 
   const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored') => {
     if (!rtdb || !authUser) return;
     setIsGlobalLoading(true);
     try {
       if (outcome === 'accepted') {
-        // Handle in component side
+        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
+          status: 'accepted'
+        });
       } else {
         // MARK AS IGNORED AND FIND NEXT WINNER (Top 1 in current list)
         const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
