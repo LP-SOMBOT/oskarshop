@@ -71,7 +71,7 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
                <div className="bg-orange-100 dark:bg-orange-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                   <Zap size={10} className="text-orange-500 fill-orange-500" />
                   <p className="text-[9px] sm:text-[10px] text-orange-600 dark:text-orange-400 font-black uppercase tracking-tight">
-                    {currentTap.taps || 0} taps
+                    {currentTap.taps || 0} bid
                   </p>
                </div>
                <p className="text-[9px] sm:text-[10px] text-primary font-black uppercase tracking-widest">

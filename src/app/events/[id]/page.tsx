@@ -120,7 +120,6 @@ export default function EventDetailPage() {
     });
 
     return () => {
-      // FIX: Invoke returned unsubscribe functions directly
       partUnsub();
       feedUnsub();
     };
@@ -184,7 +183,7 @@ export default function EventDetailPage() {
 
   const handleBack = () => {
     setGlobalLoading(true);
-    router.push('/#accounts');
+    router.push('/#ciwaano');
   };
 
   const handleDisclaimerJoin = () => {
@@ -274,7 +273,7 @@ export default function EventDetailPage() {
                      <div className="min-w-0">
                         <p className="text-[10px] sm:text-xs font-bold truncate max-w-[100px] sm:max-w-[120px] text-slate-700 dark:text-slate-300">{participants[0].name}</p>
                         <p className="text-[8px] sm:text-[9px] font-black text-primary uppercase tracking-widest mt-0.5">
-                           {participants[0].taps} TAPS • ${participants[0].value.toFixed(2)}
+                           {participants[0].taps} BID • ${participants[0].value.toFixed(2)}
                         </p>
                      </div>
                   </div>
@@ -424,7 +423,7 @@ export default function EventDetailPage() {
                ) : isUpcoming ? (
                   <div className="w-full py-2 sm:py-4 text-center space-y-0.5 sm:space-y-1">
                      <p className="text-lg sm:text-3xl font-headline font-bold uppercase text-blue-500">Starts Soon</p>
-                     <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Get ready to tap!</p>
+                     <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">Get ready to bid!</p>
                   </div>
                ) : (
                   <div className="w-full space-y-3 sm:space-y-4">
@@ -438,9 +437,9 @@ export default function EventDetailPage() {
                      
                      <div className="flex justify-between items-center px-1 sm:px-2">
                         <div className="space-y-0 text-left min-w-0 flex-1">
-                           <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] sm:tracking-widest">Your Taps</p>
+                           <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] sm:tracking-widest">Your Bid</p>
                            <p className="text-xs sm:text-lg font-headline font-bold text-slate-900 dark:text-white truncate">
-                              {myStats?.taps || 0} taps = <span className="text-primary">${((myStats?.taps || 0) * event.tapPrice).toFixed(2)}</span>
+                              {myStats?.taps || 0} bid = <span className="text-primary">${((myStats?.taps || 0) * event.tapPrice).toFixed(2)}</span>
                            </p>
                         </div>
                         <div className="text-right space-y-0 shrink-0 ml-4">

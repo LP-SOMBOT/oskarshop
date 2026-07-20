@@ -141,7 +141,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
           </p>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} className="fill-primary" />
-             <span className="text-[10px] md:text-sm font-black">{user.taps} TAPS</span>
+             <span className="text-[10px] md:text-sm font-black">{user.taps} BID</span>
           </div>
        </div>
 
@@ -184,7 +184,7 @@ function RankItem({ user, rank, isMe }: { user: any, rank: number, isMe?: boolea
           <p className={cn("font-headline font-bold text-lg md:text-3xl", isMe ? "text-white" : "text-primary")}>${user.value.toFixed(2)}</p>
           <div className="flex items-center justify-end gap-1 opacity-60">
              <Star size={10} className={cn("fill-current", isMe ? "text-white" : "text-primary")} />
-             <span className={cn("text-[10px] md:text-sm font-black", isMe ? "text-white" : "text-slate-400")}>{user.taps} TAPS</span>
+             <span className={cn("text-[10px] md:text-sm font-black", isMe ? "text-white" : "text-slate-400")}>{user.taps} BID</span>
           </div>
        </div>
     </Card>

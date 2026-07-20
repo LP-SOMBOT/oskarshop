@@ -2454,7 +2454,7 @@ export default function AdminPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Initial Price ($)" type="number" value={eventAccountForm.initialPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, initialPrice: v })} placeholder="10.00" />
-                 <SettingInput label="Price Per Tap ($)" type="number" value={eventAccountForm.tapPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, tapPrice: v })} placeholder="0.50" />
+                 <SettingInput label="Price Per BID ($)" type="number" value={eventAccountForm.tapPrice} onChange={v => setEventAccountForm({ ...eventAccountForm, tapPrice: v })} placeholder="0.50" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -3562,7 +3562,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
 
        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
-          <StatCard label="Total Taps" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" />
+          <StatCard label="Total Bid" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" />
           <StatCard label="Kaaalinta 1aad" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" />
           <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
        </div>
@@ -3574,9 +3574,9 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                   <TableRow className="border-none h-16">
                     <TableHead className="px-6 lg:px-10 font-black text-[10px] uppercase">Rank</TableHead>
                     <TableHead className="font-black text-[10px] uppercase">User</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase">Taps</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Bid</TableHead>
                     <TableHead className="font-black text-[10px] uppercase">Value</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase">Last Tap</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Last Bid</TableHead>
                     <TableHead className="text-right px-6 lg:px-10 font-black text-[10px] uppercase">Actions</TableHead>
                   </TableRow>
               </TableHeader>
