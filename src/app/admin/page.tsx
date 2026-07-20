@@ -300,7 +300,7 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
             <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight truncate">{p.title}</p>
             {p.isOneTime && <Badge className="bg-red-500 text-white text-[7px] uppercase font-black px-1.5 h-4">One Time</Badge>}
           </div>
-          <p className="text-[10px] md:text-sm font-black text-primary mt-0.5">${p.price}</p>
+          <p className="text-[10px] md:sm font-black text-primary mt-0.5">${p.price}</p>
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -1452,7 +1452,7 @@ export default function AdminPage() {
                          >
                             <div className="flex items-center gap-4 sm:gap-8 min-w-0">
                                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-3xl bg-slate-50 dark:bg-slate-800 relative overflow-hidden shrink-0 border border-gray-100 dark:border-white/5 shadow-inner">
-                                  {g.icon ? <Image src={g.icon} alt="" fill className="object-cover" /> : <Gamepad2 className="m-auto mt-8 text-slate-300" />}
+                                  {g.icon ? <Image src={g.icon} alt={g.title} fill className="object-cover" /> : <Gamepad2 className="m-auto mt-8 text-slate-300" />}
                                </div>
                                <div className="min-w-0">
                                   <h4 className="font-headline font-bold text-base sm:text-2xl uppercase tracking-tight text-slate-900 dark:text-white truncate">{g.title}</h4>
@@ -1543,7 +1543,7 @@ export default function AdminPage() {
                     <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                        <form onSubmit={handleSaveEvent} className="p-8 md:p-12 space-y-8">
                           <div className="relative w-full aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner group">
-                             {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-xs font-black uppercase text-slate-400">Add Event Poster</span></>}
+                             {eventForm.thumbnailUrl ? <Image src={eventForm.thumbnailUrl} alt={eventForm.title} fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-12 h-12 mb-2" /><span className="text-xs font-black uppercase text-slate-400">Add Event Poster</span></>}
                              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'event')} />
                           </div>
 
@@ -1791,7 +1791,7 @@ export default function AdminPage() {
                         <Card key={u.uid} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                            <div className="flex items-center gap-4">
                               <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                 {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                 {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
                               </div>
                               <div className="min-w-0">
                                  <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
@@ -1852,7 +1852,7 @@ export default function AdminPage() {
                                   <TableCell className="px-6 lg:px-10">
                                       <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                            {u.photoURL ? <Image src={u.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                            {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                             <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
@@ -2013,7 +2013,7 @@ export default function AdminPage() {
                                     <div key={m.id} className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between border dark:border-white/5">
                                        <div className="flex items-center gap-4">
                                           <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center text-primary shadow-sm overflow-hidden relative">
-                                             {m.icon ? <Image src={m.icon} alt="" fill className="object-cover" /> : <Smartphone size={24} />}
+                                             {m.icon ? <Image src={m.icon} alt={m.name} fill className="object-cover" /> : <Smartphone size={24} />}
                                           </div>
                                           <div>
                                              <p className="font-bold text-sm">{m.name}</p>
@@ -2216,7 +2216,7 @@ export default function AdminPage() {
               <div className="absolute -bottom-12 left-8">
                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
                     {selectedUser?.photoURL ? (
-                      <Image src={selectedUser.photoURL} alt="" fill className="object-cover" unoptimized />
+                      <Image src={selectedUser.photoURL} alt={selectedUser.name} fill className="object-cover" unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
                     )}
@@ -2336,7 +2336,7 @@ export default function AdminPage() {
            <form onSubmit={handleSaveGame} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
-                    {gameForm.icon ? <Image src={gameForm.icon} alt="" fill className="object-cover" /> : <ImageIcon className="text-slate-300" />}
+                    {gameForm.icon ? <Image src={gameForm.icon} alt={gameForm.title} fill className="object-cover" /> : <ImageIcon className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'game')} />
                  </div>
               </div>
@@ -2370,7 +2370,7 @@ export default function AdminPage() {
            </DialogHeader>
            <form onSubmit={handleSaveProduct} className="p-6 md:p-10 space-y-6 md:space-y-8">
               <div className="relative w-full aspect-video rounded-2xl md:rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group overflow-hidden shadow-inner">
-                 {productForm.thumbnail ? <Image src={productForm.thumbnail} alt="" fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-10 h-10 md:w-12 md:h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Media</span></>}
+                 {productForm.thumbnail ? <Image src={productForm.thumbnail} alt={productForm.title} fill className="object-cover" unoptimized /> : <><ImageIcon className="text-slate-300 w-10 h-10 md:w-12 md:h-12 mb-2" /><span className="text-[10px] font-black uppercase text-slate-400">Add Media</span></>}
                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'product')} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -2611,11 +2611,11 @@ export default function AdminPage() {
 
       <Dialog open={isPaymentMethodDialogOpen} onOpenChange={setIsPaymentMethodDialogOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">{editingGame ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle></DialogHeader>
+           <DialogHeader><DialogTitle className="text-xl md:text-2xl font-headline font-bold">New Payment Method</DialogTitle></DialogHeader>
            <form onSubmit={handleSavePaymentMethod} className="space-y-6 mt-6">
               <div className="flex justify-center mb-4">
                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
-                    {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
+                    {paymentMethodForm.icon ? <Image src={paymentMethodForm.icon} alt="Payment Method" fill className="object-cover" /> : <Smartphone className="text-slate-300" />}
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
               </div>
@@ -2845,7 +2845,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                   <div className="relative shrink-0">
                     <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
                       {order.processedBy?.photoURL ? (
-                        <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
+                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
                       )}
@@ -3020,7 +3020,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
             <div className="p-6 md:p-8 bg-black/10 backdrop-blur-md rounded-[2.5rem] flex items-center gap-6 border border-white/10 w-fit min-w-[280px]">
                <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden relative border-2 border-white/30 shrink-0">
                   {finalBuyer?.photoURL ? (
-                    <Image src={finalBuyer.photoURL} alt="" fill className="object-cover" />
+                    <Image src={finalBuyer.photoURL} alt={finalBuyer.name} fill className="object-cover" />
                   ) : (
                     <div className="w-full h-full bg-white/10 flex items-center justify-center"><User size={24}/></div>
                   )}
@@ -3109,7 +3109,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           <div className="relative aspect-video w-full p-4 sm:p-8">
              <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden shadow-inner bg-slate-100 dark:bg-slate-800">
                 {post.thumbnailUrl ? (
-                   <Image src={post.thumbnailUrl} alt="" fill className="object-cover" unoptimized />
+                   <Image src={post.thumbnailUrl} alt={post.authorName} fill className="object-cover" unoptimized />
                 ) : (
                    <div className="w-full h-full flex items-center justify-center opacity-10"><Gamepad2 size={64} /></div>
                 )}
@@ -3171,7 +3171,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           <div className="p-6 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
              <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-full overflow-hidden relative shadow-lg ring-4 ring-white dark:ring-slate-800 shrink-0 bg-slate-200">
-                   {post.authorAvatar ? <Image src={post.authorAvatar} alt="" fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
+                   {post.authorAvatar ? <Image src={post.authorAvatar} alt={post.authorName} fill className="object-cover" /> : <User className="m-auto mt-2 text-slate-400" />}
                 </div>
                 <div className="min-w-0">
                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Original Seller</p>
@@ -3216,7 +3216,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                            "w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 border-4 shadow-lg relative overflow-hidden shrink-0 flex items-center justify-center",
                            claimStatus === 'accepted' ? "border-green-500" : claimStatus === 'rejected' ? "border-red-500" : "border-white dark:border-slate-700"
                          )}>
-                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
+                            {c.photo ? <Image src={c.photo} alt={c.name} fill className="object-cover" /> : <User className="text-slate-200" size={32} />}
                          </div>
                          <div className="min-w-0 space-y-1">
                             <div className="flex items-center gap-2">
@@ -3405,7 +3405,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
     )}>
        <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
           {event.imageUrls?.[0] ? (
-            <Image src={event.imageUrls[0]} alt="" fill className="object-cover transition-transform duration-1000 group-hover:scale-105" unoptimized />
+            <Image src={event.imageUrls[0]} alt={event.title} fill className="object-cover transition-transform duration-1000 group-hover:scale-105" unoptimized />
           ) : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">IMAGE</div>}
           
           <div className="absolute top-6 left-6">

@@ -6,7 +6,7 @@ import { useApp } from "@/lib/context";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 
 export default function BottomNav() {
-  const { activeTab, setActiveTab, storeSettings, t } = useApp();
+  const { activeTab, setActiveTab, storeSettings, t, language } = useApp();
 
   const navItems = [
     { id: "home", label: t('home'), icon: House },
