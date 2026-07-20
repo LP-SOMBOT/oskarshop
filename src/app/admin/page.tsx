@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -2417,7 +2418,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isEventAccountDialogOpen} onOpenChange={setIsEventAccountDialogOpen}>
-        <DialogContent className="max-w-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="max-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
            <div className="h-2 bg-primary w-full" />
            <DialogHeader className="p-6 md:p-10 pb-0">
               <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -183,7 +184,7 @@ export default function EventDetailPage() {
 
   const handleBack = () => {
     setGlobalLoading(true);
-    router.push('/#ciwaano');
+    router.push('/#accounts');
   };
 
   const handleDisclaimerJoin = () => {
@@ -220,13 +221,9 @@ export default function EventDetailPage() {
                <ArrowLeft size={20} className="sm:size-6" />
             </button>
             <div className="flex items-center gap-2">
-               {event.status === 'active' && !isEnded ? (
+               {event.status === 'active' && !isEnded && (
                  <Badge className="bg-red-500 text-white border-none rounded-full px-2 py-0.5 sm:px-3 sm:py-1 font-black flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs">
                     <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
-                 </Badge>
-               ) : (
-                 <Badge className="bg-blue-500 text-white border-none rounded-full px-2 py-0.5 sm:px-3 sm:py-1 font-black uppercase text-[8px] sm:text-[10px]">
-                    {isEnded ? 'ENDED' : event.status}
                  </Badge>
                )}
             </div>
@@ -282,7 +279,6 @@ export default function EventDetailPage() {
             )}
          </Card>
 
-         {/* Smart Gallery Logic */}
          {event.imageUrls && event.imageUrls.length > 1 && (
            <div className="space-y-3 sm:space-y-4">
               <h3 className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] ml-1 sm:ml-2 text-slate-400">
@@ -304,21 +300,15 @@ export default function EventDetailPage() {
               className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
             >
                <h3 className="font-headline font-bold uppercase tracking-tight flex items-center gap-2 sm:gap-3 text-slate-900 dark:text-white text-sm sm:text-base">
-                  <ShieldCheck size={18} className="text-primary sm:size-5" /> Item Details
+                  <ShieldCheck size={18} className="text-primary sm:size-5" /> Account Details
                </h3>
                {isDetailsExpanded ? <ChevronUp size={18} className="text-slate-400 sm:size-5" /> : <ChevronDown size={18} className="text-slate-400 sm:size-5" />}
             </button>
             {isDetailsExpanded && (
                <div className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-4 sm:space-y-6 animate-in slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                     <div className="space-y-0.5">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest">Game</p>
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{event.gameName}</p>
-                     </div>
-                     <div className="space-y-0.5">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</p>
-                        <p className="text-xs sm:text-sm font-bold text-green-600">Live Auction</p>
-                     </div>
+                  <div className="space-y-0.5">
+                     <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest">Game</p>
+                     <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{event.gameName}</p>
                   </div>
                   <div className="prose prose-slate dark:prose-invert max-w-none">
                      <p className="text-[11px] sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">

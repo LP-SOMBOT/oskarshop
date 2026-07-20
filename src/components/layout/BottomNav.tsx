@@ -65,7 +65,7 @@ export default function BottomNav() {
                 "text-[10px] sm:text-[11px] font-bold mt-1 transition-all uppercase tracking-tight",
                 isActive ? "text-primary" : "text-slate-400 dark:text-slate-500"
               )}>
-                {item.label}
+                {item.id === 'games' && language === 'so' ? 'top up' : item.id === 'accounts' && language === 'so' ? 'ciwaano' : item.id === 'orders' && language === 'so' ? 'dalabyada' : item.label}
               </span>
               
               {isActive && (

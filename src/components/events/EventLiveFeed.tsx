@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -23,21 +24,14 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
       const latestTap = taps[taps.length - 1];
       const now = Date.now();
       
-      // RULE 1: Only show if we haven't processed this specific timestamp yet
-      // RULE 2: Only show if the tap happened within the last 3 seconds (Freshness check)
       if (latestTap.timestamp > lastProcessedTime.current && (now - latestTap.timestamp) < 3000) {
         lastProcessedTime.current = latestTap.timestamp;
-        
-        // Instant visual reset to trigger entry animation for the new item
         setIsVisible(false);
-        
-        // Short delay to allow the DOM to reset before sliding in the new one
         setTimeout(() => {
           setCurrentTap(latestTap);
           setIsVisible(true);
         }, 50);
 
-        // Auto-expire after 3.5 seconds
         const timer = setTimeout(() => {
           setIsVisible(false);
         }, 3500);
