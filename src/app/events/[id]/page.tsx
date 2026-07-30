@@ -42,6 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter
 } from "@/components/ui/dialog";
 
 const EVENT_CACHE_PREFIX = 'oskar_event_cache_';
@@ -99,7 +100,7 @@ export default function EventDetailPage() {
     if (user && id) {
       const agreed = localStorage.getItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`);
       if (!agreed) {
-        setShowDisclaimer(true);
+        // Disclaimer is shown first
       } else {
         const storedPhone = localStorage.getItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`);
         if (storedPhone) setProvidedPhone(storedPhone);
@@ -202,7 +203,7 @@ export default function EventDetailPage() {
       return;
     }
 
-    // Check for Event-Specific Phone Number
+    // Check for Event-Specific Phone Number (Separate Modal)
     const phoneToUse = providedPhone || localStorage.getItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`);
     if (!phoneToUse || phoneToUse.length < 9) {
        setShowPhonePrompt(true);
@@ -233,7 +234,12 @@ export default function EventDetailPage() {
     if (!hasCheckedAgreement || !user || !id) return;
     localStorage.setItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`, 'true');
     setShowDisclaimer(false);
-    setShowPhonePrompt(true);
+    
+    // Check if phone number is needed after disclaimer
+    const storedPhone = localStorage.getItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`);
+    if (!storedPhone) {
+      setShowPhonePrompt(true);
+    }
   };
 
   const handlePhoneSubmit = () => {
@@ -330,7 +336,7 @@ export default function EventDetailPage() {
                      </div>
                      <div className="min-w-0">
                         <p className="text-[10px] sm:text-xs font-bold truncate max-w-[100px] sm:max-w-[120px] text-slate-700 dark:text-slate-300">{participants[0].name}</p>
-                        <p className="text-[8px] sm:text-[9px] font-black text-primary uppercase tracking-widest mt-0.5">
+                        <p className="text-[8px] font-black text-primary uppercase tracking-widest mt-0.5">
                            {participants[0].taps} BID • ${participants[0].value.toFixed(2)}
                         </p>
                      </div>
@@ -512,7 +518,7 @@ export default function EventDetailPage() {
       <Dialog open={showDisclaimer} onOpenChange={() => {}}>
         <DialogContent className="w-[94%] max-w-lg rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in zoom-in duration-300">
            <DialogHeader className="bg-primary p-6 sm:p-10 text-white text-center">
-              <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" />
+              <ShieldCheck className="w-12 h-12 sm:size-16 mx-auto mb-4" />
               <DialogTitle className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight leading-tight">ACCOUNT BID – AGREEMENT</DialogTitle>
               <DialogDescription className="text-white/60 text-[10px] uppercase tracking-widest mt-1">Please read carefully</DialogDescription>
            </DialogHeader>

@@ -174,7 +174,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@radix-ui/sortable';
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -779,7 +779,7 @@ export default function AdminPage() {
         <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />
-        <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
+        <SideNavItem icon={Gamepad2} label="ciwaanada" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
         <SideNavItem icon={Sparkles} label="Account Events" active={activeView === 'account-events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-events'); setSelectedEventId(null); setIsMobileMenuOpen(false); }} badge={eventAccounts.filter(e => e.status === 'active').length} />
         <SideNavItem icon={Trophy} label="Leaderboard" active={activeView === 'leaderboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('leaderboard'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
@@ -2815,7 +2815,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 )}
 
                 <Button 
-                   onClick={onUpdate} 
+                   onClick={handleStatusUpdate} 
                    disabled={isSaving} 
                    className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
@@ -3148,7 +3148,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 )}
 
                 <Button 
-                   onClick={onUpdate} 
+                   onClick={handleAccountStatusUpdate} 
                    disabled={isSaving} 
                    className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
