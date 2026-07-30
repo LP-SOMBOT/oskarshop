@@ -320,7 +320,7 @@ type UserProfile = {
   uid: string;
   email: string;
   name: string;
-  role: 'user' | 'staff' | 'admin' | 'super_admin';
+  role: 'user' | 'admin';
   points: number;
   createdAt: number;
   lastActive?: number;
@@ -1433,7 +1433,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { 
       ...authUser, 
       ...userProfile, 
-      isAdmin: role === 'admin' || role === 'super_admin' || role === 'staff',
+      isAdmin: role === 'admin',
       leaderboardRank: userRankData.rank,
       leaderboardDiscount: userRankData.discount
     };

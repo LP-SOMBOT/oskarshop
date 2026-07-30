@@ -8,7 +8,7 @@
         "uid": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "name": { "type": "string" },
-        "role": { "type": "string", "enum": ["user", "staff", "admin", "super_admin"] },
+        "role": { "type": "string", "enum": ["user", "admin"] },
         "phoneNumber": { "type": "string" },
         "points": { "type": "number" },
         "createdAt": { "type": "number" },

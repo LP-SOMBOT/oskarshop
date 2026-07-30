@@ -531,8 +531,8 @@ export default function AdminPage() {
     );
 
     return filtered.sort((a, b) => {
-      const aIsAdmin = a.role === 'admin' || a.role === 'super_admin' || a.role === 'staff';
-      const bIsAdmin = b.role === 'admin' || b.role === 'super_admin' || b.role === 'staff';
+      const aIsAdmin = a.role === 'admin';
+      const bIsAdmin = b.role === 'admin';
       if (aIsAdmin && !bIsAdmin) return -1;
       if (!aIsAdmin && bIsAdmin) return 1;
       return 0;
@@ -1836,7 +1836,7 @@ export default function AdminPage() {
                                         <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
                                         <Badge className={cn(
                                           "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
-                                          u.role === 'admin' || u.role === 'super_admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
+                                          u.role === 'admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
                                         )}>
                                           {u.role || "USER"}
                                         </Badge>
@@ -2250,9 +2250,7 @@ export default function AdminPage() {
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
                          <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
-                         <SelectItem value="staff" className="rounded-xl p-4 font-bold text-xs uppercase">staff member</SelectItem>
                          <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
-                         <SelectItem value="super_admin" className="rounded-xl p-4 font-bold text-xs uppercase">super admin</SelectItem>
                       </SelectContent>
                    </Select>
                 </div>

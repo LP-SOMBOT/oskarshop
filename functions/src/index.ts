@@ -66,7 +66,7 @@ export const onAdminNotificationCreated = functions.database.ref('/adminNotifica
         
         const tokens: string[] = [];
         Object.values(users).forEach((u: any) => {
-            if ((u.role === 'admin' || u.role === 'super_admin' || u.role === 'staff') && u.fcmToken) {
+            if (u.role === 'admin' && u.fcmToken) {
                 tokens.push(u.fcmToken);
             }
         });
