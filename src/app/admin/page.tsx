@@ -174,7 +174,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
+} from '@radix-ui/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -2193,14 +2193,14 @@ export default function AdminPage() {
 
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                  <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
+                    <p className="text-[8px] md:text-9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
                     <div className="flex items-center gap-2">
                        <Star className="w-4 h-4 md:size-5 text-amber-500 fill-amber-500" />
                        <p className="text-2xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
                     </div>
                  </div>
                  <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
+                    <p className="text-[8px] md:text-9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
                     <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
                       {selectedUser?.role || 'user'}
                     </Badge>

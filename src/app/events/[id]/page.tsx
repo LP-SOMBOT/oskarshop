@@ -36,6 +36,13 @@ import { format } from 'date-fns';
 import EventGetButton from '@/components/events/EventGetButton';
 import EventLiveFeed from '@/components/events/EventLiveFeed';
 import { toast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const EVENT_CACHE_PREFIX = 'oskar_event_cache_';
 const EVENT_AGREEMENT_PREFIX = 'oskar_event_agreed_';
@@ -56,10 +63,10 @@ export default function EventDetailPage() {
   const [cooldown, setCooldown] = useState(0);
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [hasCheckedAgreement, setHasCheckedAgreement] = useState(false);
   const [providedPhone, setProvidedPhone] = useState("");
 
-  // Use refs to track triggers
   const transitionTriggered = useRef(false);
 
   const [cachedEvent, setCachedEvent] = useState<any>(() => {
@@ -152,7 +159,6 @@ export default function EventDetailPage() {
         setCooldown(0);
       }
 
-      // DETERMINISTIC COUNTDOWN LOGIC
       const isUpcoming = event.status === 'upcoming' || (event.startTime && now < event.startTime);
       const targetTime = isUpcoming ? event.startTime : event.endTime;
       const diff = targetTime - now;
@@ -160,7 +166,6 @@ export default function EventDetailPage() {
       if (diff <= 0) {
         setTimeLeft({ h: '00', m: '00', s: '00' });
         
-        // Auto-transition logic
         if (!transitionTriggered.current) {
            if (event.status === 'upcoming') {
              transitionTriggered.current = true;
@@ -173,7 +178,6 @@ export default function EventDetailPage() {
         return;
       }
 
-      // Reset trigger if time extends or state is valid for a new countdown
       transitionTriggered.current = false;
 
       const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
@@ -190,16 +194,24 @@ export default function EventDetailPage() {
       router.push('/login');
       return;
     }
-    const isEndedByTime = event.endTime && Date.now() > event.endTime;
-    if (cooldown > 0 || isSyncing || isEndedByTime || isTapping || event.status !== 'active') return;
     
-    // Safety check for provided phone
+    // Check for Disclaimer Acceptance first
+    const agreed = localStorage.getItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`);
+    if (!agreed) {
+      setShowDisclaimer(true);
+      return;
+    }
+
+    // Check for Event-Specific Phone Number
     const phoneToUse = providedPhone || localStorage.getItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`);
     if (!phoneToUse || phoneToUse.length < 9) {
-       setShowDisclaimer(true);
+       setShowPhonePrompt(true);
        return;
     }
 
+    const isEndedByTime = event.endTime && Date.now() > event.endTime;
+    if (cooldown > 0 || isSyncing || isEndedByTime || isTapping || event.status !== 'active') return;
+    
     setIsTapping(true);
     try {
       await tapEventAccount(id as string, phoneToUse);
@@ -218,19 +230,23 @@ export default function EventDetailPage() {
   };
 
   const handleDisclaimerJoin = () => {
-    const cleanPhone = providedPhone.replace(/\D/g, "");
     if (!hasCheckedAgreement || !user || !id) return;
-    
+    localStorage.setItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`, 'true');
+    setShowDisclaimer(false);
+    setShowPhonePrompt(true);
+  };
+
+  const handlePhoneSubmit = () => {
+    const cleanPhone = providedPhone.replace(/\D/g, "");
     if (cleanPhone.length < 9) {
        toast({ title: "WhatsApp Number Required", description: "Fadlan geli number-kaaga WhatsApp ka si aad u qeybgasho.", variant: "destructive" });
        return;
     }
 
     const fullPhone = cleanPhone.startsWith('252') ? `+${cleanPhone}` : `+252${cleanPhone}`;
-    localStorage.setItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`, 'true');
     localStorage.setItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`, fullPhone);
     setProvidedPhone(fullPhone);
-    setShowDisclaimer(false);
+    setShowPhonePrompt(false);
     toast({ title: "Joined Event!", description: "You can now start bidding." });
   };
 
@@ -492,95 +508,98 @@ export default function EventDetailPage() {
          </div>
       </div>
 
-      {showDisclaimer && (
-        <div className="fixed inset-0 z-[100002] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
-           <Card className="w-full max-w-[94%] sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[95vh]">
-              <div className="bg-primary p-6 sm:p-10 text-white text-center shrink-0">
-                 <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 animate-bounce" />
-                 <h2 className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">ACCOUNT BID – DISCLAIMER & PARTICIPATION AGREEMENT</h2>
+      {/* MODAL 1: Disclaimer (Accepted Once per Event) */}
+      <Dialog open={showDisclaimer} onOpenChange={() => {}}>
+        <DialogContent className="w-[94%] max-w-lg rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in zoom-in duration-300">
+           <DialogHeader className="bg-primary p-6 sm:p-10 text-white text-center">
+              <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" />
+              <DialogTitle className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight leading-tight">ACCOUNT BID – AGREEMENT</DialogTitle>
+              <DialogDescription className="text-white/60 text-[10px] uppercase tracking-widest mt-1">Please read carefully</DialogDescription>
+           </DialogHeader>
+           
+           <div className="p-6 sm:p-10 space-y-6 max-h-[50vh] overflow-y-auto scrollbar-hide">
+              <ul className="space-y-4 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
+                 {[
+                   "I have read and agree to the Account Bid – Event Rules.",
+                   "I understand that every bid is final and non-refundable.",
+                   "I understand that placing a bid does not guarantee that I will win.",
+                   "I agree not to use bots, scripts, or any unfair methods.",
+                   "If I win, I agree to complete payment within the required time.",
+                   "The organizer's decisions regarding the auction are final."
+                 ].map((item, i) => (
+                   <li key={i} className="flex gap-2 items-start">
+                      <span className="font-black text-primary shrink-0">{i+1}:</span>
+                      <span>{item}</span>
+                   </li>
+                 ))}
+              </ul>
+
+              <div className="flex items-center space-x-3 px-2 pt-2">
+                 <Checkbox 
+                   id="agree-event" 
+                   checked={hasCheckedAgreement} 
+                   onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
+                 />
+                 <label htmlFor="agree-event" className="text-[11px] sm:text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
+                    I have read & accept the rules
+                 </label>
               </div>
-              
-              <div className="p-6 sm:p-10 overflow-y-auto space-y-6 scrollbar-hide text-left">
-                 <div className="space-y-4">
-                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
-                       Please read this carefully before joining an Account Bid event.
-                    </p>
-                    
-                    {/* NEW WHATSAPP REQUIREMENT INPUT */}
-                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 space-y-3">
-                       <Label className="text-[10px] font-black uppercase text-primary ml-1 flex items-center gap-2">
-                          <Smartphone size={12} /> WhatsApp Number for this Event
-                       </Label>
-                       <div className="relative">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10 pointer-events-none">
-                             <span className="text-[10px] font-bold text-slate-400 pr-1.5 border-r border-slate-200">+252</span>
-                          </div>
-                          <Input 
-                            type="tel"
-                            placeholder="613982172"
-                            value={providedPhone.replace("+252", "")}
-                            onChange={e => setProvidedPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
-                            className="h-11 rounded-xl bg-white border-none shadow-inner pl-14 font-bold text-sm"
-                          />
-                       </div>
-                       <p className="text-[9px] font-bold text-slate-400 italic">Admin-ka ayaa number-kan kaala soo xiriiri doona haddii aad guuleysato.</p>
+           </div>
+
+           <DialogFooter className="p-6 sm:p-10 pt-0 flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={handleDisclaimerJoin}
+                disabled={!hasCheckedAgreement}
+                className="w-full sm:flex-[2] h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl active:scale-95"
+              >
+                 Accept & Continue
+              </Button>
+              <Button variant="ghost" onClick={handleBack} className="w-full sm:flex-1 h-14 rounded-2xl text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                 Cancel
+              </Button>
+           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL 2: Phone Prompt (Triggered after acceptance or if number is missing) */}
+      <Dialog open={showPhonePrompt} onOpenChange={() => {}}>
+        <DialogContent className="w-[94%] max-w-sm rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in slide-in-from-bottom-8 duration-300">
+           <DialogHeader className="bg-amber-500 p-6 sm:p-8 text-white text-center">
+              <Smartphone className="w-10 h-10 mx-auto mb-3" />
+              <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Xogta WhatsApp</DialogTitle>
+              <DialogDescription className="text-white/70 text-[10px] uppercase font-black tracking-widest">Numbarka kugu habboon</DialogDescription>
+           </DialogHeader>
+
+           <div className="p-6 sm:p-8 space-y-6">
+              <div className="space-y-3">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">WhatsApp Number for this Event</Label>
+                 <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                       <span className="font-bold text-xs text-gray-400 border-r border-slate-200 pr-3">+252</span>
                     </div>
-
-                    <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">By selecting "I Agree & Join", you confirm that:</p>
-                    <ul className="space-y-3 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
-                       {[
-                         "I have read and agree to the Account Bid – Event Rules & Terms of Service.",
-                         "I understand that every bid is final and cannot be canceled or refunded.",
-                         "I understand that placing a bid does not guarantee that I will win the auction.",
-                         "I agree not to use bots, scripts, fake accounts, or any unfair methods.",
-                         "I understand that cheating or attempting to manipulate the auction may result in disqualification, account suspension, or permanent account termination.",
-                         "If I win, I agree to complete payment within the required time.",
-                         "I understand that the organizer may pause, extend, restart, or cancel the auction if necessary to ensure fairness.",
-                         "I accept that the organizer's decisions regarding the auction are final, except where otherwise required by applicable law.",
-                         "I participate voluntarily and at my own responsibility."
-                       ].map((item, i) => (
-                         <li key={i} className="flex gap-2 items-start">
-                            <span className="font-black text-primary shrink-0">{i+1}:</span>
-                            <span>{item}</span>
-                         </li>
-                       ))}
-                    </ul>
+                    <Input 
+                      type="tel"
+                      placeholder="613982172"
+                      value={providedPhone.replace("+252", "")}
+                      onChange={e => setProvidedPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                      className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none pl-16 font-bold text-lg shadow-inner focus-visible:ring-amber-500"
+                    />
                  </div>
-
-                 <div className="pt-4 border-t dark:border-white/10">
-                    <div className="flex items-center space-x-3 px-2">
-                       <Checkbox 
-                         id="agree-event" 
-                         checked={hasCheckedAgreement} 
-                         onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
-                         className="h-5 w-5 rounded-sm border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
-                       />
-                       <label htmlFor="agree-event" className="text-[11px] sm:text-sm font-medium text-slate-600 dark:text-slate-400 cursor-pointer select-none leading-tight">
-                          I have read & accept
-                       </label>
-                    </div>
-                 </div>
+                 <p className="text-[10px] font-bold text-slate-400 italic leading-relaxed text-center">
+                    Admin-ka ayaa number-kan kaala soo xiriiri doona haddii aad guuleysato.
+                 </p>
               </div>
 
-              <div className="p-6 sm:p-10 pt-0 flex flex-col sm:flex-row gap-3 shrink-0">
-                 <Button 
-                   onClick={handleDisclaimerJoin}
-                   disabled={!hasCheckedAgreement || providedPhone.replace(/\D/g, '').length < 9}
-                   className="w-full sm:flex-[2] h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-xs gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all"
-                 >
-                    <CheckCircle2 size={18} /> I Agree & Join
-                 </Button>
-                 <Button 
-                   variant="ghost" 
-                   onClick={handleBack}
-                   className="w-full sm:flex-1 h-14 rounded-2xl text-slate-400 font-bold uppercase tracking-widest text-[10px] gap-2"
-                 >
-                    <X size={18} /> Cancel
-                 </Button>
-              </div>
-           </Card>
-        </div>
-      )}
+              <Button 
+                onClick={handlePhoneSubmit}
+                disabled={providedPhone.replace(/\D/g, '').length < 9}
+                className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-amber-500/20 active:scale-95 transition-all"
+              >
+                 Start Bidding Now
+              </Button>
+           </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
