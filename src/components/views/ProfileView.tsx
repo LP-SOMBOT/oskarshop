@@ -114,7 +114,7 @@ export default function ProfileView() {
           <Skeleton className="h-6 w-32 md:h-8 md:w-40" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-           {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 sm:h-64 w-full rounded-[2rem] md:rounded-[3rem] />)}
+           {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 sm:h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
         </div>
       </div>
     );

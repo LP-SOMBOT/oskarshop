@@ -2342,7 +2342,7 @@ export default function AdminPage() {
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Category</Label>
-                 <Select value={gameForm.category} onValueChange={v => setLanguage({ ...gameForm, category: v as any })}>
+                 <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Top-Up Items</SelectItem>
@@ -3076,7 +3076,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
                          ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
                       </span>
-                   </div>
+                </div>
                 </div>
                 <div className="text-right">
                    <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
