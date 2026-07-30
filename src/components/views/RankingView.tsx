@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 export default function RankingView() {
   const { allUsers, setActiveTab, storeSettings, t } = useApp();
@@ -178,9 +179,12 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
        </div>
        
        <div className="text-center min-w-0 px-1">
-          <p className="font-bold text-[10px] md:text-base text-slate-900 dark:text-white truncate max-w-full">
-            {user.name?.split(' ')[0] || "Gamer"}
-          </p>
+          <div className="flex items-center justify-center gap-1">
+            <p className="font-bold text-[10px] md:text-base text-slate-900 dark:text-white truncate max-w-full">
+              {user.name?.split(' ')[0] || "Gamer"}
+            </p>
+            {user.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+          </div>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} fill="currentColor" />
              <span className="text-[10px] md:text-sm font-black">{user.points || 0}</span>
@@ -215,7 +219,10 @@ function RankListItem({ user, rank }: { user: any, rank: number }) {
              </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-             <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name?.split(' ')[0] || "Gamer"}</p>
+             <div className="flex items-center gap-1.5">
+               <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name?.split(' ')[0] || "Gamer"}</p>
+               {user.isVerified && <VerifiedBadge className="w-4 h-4" />}
+             </div>
           </div>
        </div>
        <div className="flex flex-col items-end gap-1">

@@ -94,6 +94,7 @@ type AccountPost = {
   authorName: string;
   authorPhone?: string;
   authorAvatar?: string;
+  authorIsVerified?: boolean;
   gameType: 'freefire' | 'bloodstrike';
   platform: string;
   level: number;
@@ -141,6 +142,7 @@ type AccountPost = {
     photo?: string;
     timestamp: number;
     status?: 'pending' | 'accepted' | 'rejected';
+    isVerified?: boolean;
   }>;
   processedBy?: {
     uid: string;
@@ -173,6 +175,7 @@ type EventAccount = {
   topParticipants?: {
     uid: string;
     avatar: string;
+    isVerified?: boolean;
   }[];
 };
 
@@ -185,6 +188,7 @@ type EventParticipant = {
   value: number;
   lastTapTime: number;
   status: 'active' | 'banned';
+  isVerified?: boolean;
 };
 
 type AppNotification = {
@@ -331,6 +335,7 @@ type UserProfile = {
   leaderboardRank?: number | null;
   leaderboardDiscount?: number;
   fcmToken?: string;
+  isVerified?: boolean;
 };
 
 type BannedInfo = {
@@ -1001,7 +1006,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         createdAt: Date.now(),
         termsAccepted: localAccepted,
         leaderboardRank: null,
-        leaderboardDiscount: 0
+        leaderboardDiscount: 0,
+        isVerified: false
       };
       await set(ref(rtdb, `users/${cred.user.uid}`), profile);
       setUserProfile(profile);
@@ -1032,7 +1038,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           photoURL: firebaseUser.photoURL || "",
           phoneNumber: firebaseUser.email ? firebaseUser.email.split('@')[0] : "",
           leaderboardRank: null,
-          leaderboardDiscount: 0
+          leaderboardDiscount: 0,
+          isVerified: false
         };
         await set(userRef, profile);
         setUserProfile(profile);
@@ -1545,7 +1552,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb || !authUser) return;
     setIsGlobalLoading(true);
     const postRef = push(ref(rtdb, 'accountPosts'));
-    await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
+    await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, authorIsVerified: enhancedUser?.isVerified || false, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
     toast({ title: "Successfully posted!", description: "Waiting for admin approval." });
     
     // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
@@ -1883,7 +1890,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toast({ title: "Deal Cancelled", description: "Listing reset successfully." });
     } else {
       const reportTime = Date.now();
-      const claimantInfo = { uid: authUser.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending' };
+      const claimantInfo = { uid: authUser.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending', isVerified: enhancedUser.isVerified || false };
       await update(ref(rtdb, `accountPosts/${postId}/claimants/${authUser.uid}`), claimantInfo);
       await update(postRef, { buyerReported: true, buyerReportedAt: reportTime });
       if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
@@ -2367,7 +2374,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       taps: newTaps,
       value: newValue,
       lastTapTime: now,
-      status: 'active'
+      status: 'active',
+      isVerified: enhancedUser.isVerified || false
     };
     
     // Maintain top 3 recent participants on the event object for Marketplace card display
@@ -2375,7 +2383,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     topParticipants = topParticipants.filter((p: any) => p.uid !== authUser.uid);
     topParticipants.unshift({
       uid: authUser.uid,
-      avatar: enhancedUser.photoURL || ""
+      avatar: enhancedUser.photoURL || "",
+      isVerified: enhancedUser.isVerified || false
     });
     updates[`eventAccounts/${eventId}/topParticipants`] = topParticipants.slice(0, 3);
     
@@ -2386,7 +2395,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       avatar: enhancedUser.photoURL || "",
       timestamp: now,
       taps: newTaps,
-      value: newValue
+      value: newValue,
+      isVerified: enhancedUser.isVerified || false
     };
 
     // Update top stats on event directly for easy listing display

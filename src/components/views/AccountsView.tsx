@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -57,6 +56,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { uploadToImgbb } from '@/lib/imgbb';
 import { useRouter } from 'next/navigation';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 export default function AccountsView() {
   const { 
@@ -405,7 +405,10 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 md:gap-2">
-              <p className="font-bold text-xs md:text-sm text-slate-900 dark:text-white truncate max-w-[60px] md:max-w-[80px]">{post.authorName}</p>
+              <div className="flex items-center gap-1">
+                <p className="font-bold text-xs md:text-sm text-slate-900 dark:text-white truncate max-w-[60px] md:max-w-[80px]">{post.authorName}</p>
+                {post.authorIsVerified && <VerifiedBadge className="w-3 h-3" />}
+              </div>
               <Badge className={cn(
                 "rounded-full text-[6px] md:text-[8px] font-black px-1.5 md:px-2 py-0 border-none uppercase tracking-widest shrink-0",
                 isGoogle ? "bg-blue-500 text-white" : "bg-[#1877F2] text-white"

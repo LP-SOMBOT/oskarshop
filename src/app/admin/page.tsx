@@ -156,6 +156,7 @@ import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
 import { ref, onValue, off, get } from "firebase/database";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 // DND Kit Imports
 import {
@@ -1225,7 +1226,10 @@ export default function AdminPage() {
                                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white">
                                          {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                       </div>
-                                      <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                        {p.authorIsVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+                                      </div>
                                    </div>
                                    <StatusBadge status={p.status} />
                                  </div>
@@ -1316,7 +1320,10 @@ export default function AdminPage() {
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                           </div>
-                                          <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                          <div className="flex items-center gap-1">
+                                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                            {p.authorIsVerified && <VerifiedBadge className="w-4 h-4" />}
+                                          </div>
                                        </div>
                                     </TableCell>
                                     <TableCell>
@@ -1752,7 +1759,10 @@ export default function AdminPage() {
                                  {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={24} /></div>}
                               </div>
                               <div className="min-w-0">
-                                 <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
+                                 <div className="flex items-center gap-1.5">
+                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
+                                   {u.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                                 </div>
                                  <p className="text-[10px] text-muted-foreground truncate">{u.phoneNumber}</p>
                               </div>
                            </div>
@@ -1813,7 +1823,10 @@ export default function AdminPage() {
                                             {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={20} /></div>}
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
+                                              {u.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                                            </div>
                                             <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
                                         </div>
                                       </div>
@@ -2185,7 +2198,10 @@ export default function AdminPage() {
            <div className="p-6 md:p-8 pt-12 md:pt-16 space-y-6 md:space-y-8">
               <div className="flex justify-between items-start">
                  <div className="min-w-0 pr-2">
-                    <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
+                      {selectedUser?.isVerified && <VerifiedBadge className="w-5 h-5" />}
+                    </div>
                     <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
                        <Smartphone size={12} />
                        <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
@@ -2215,29 +2231,54 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              <div className="space-y-2 md:space-y-3">
-                 <div className="flex items-center gap-2 text-primary ml-1">
-                    <LayoutGrid size={14} />
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
-                 </div>
-                 <Select 
-                    value={selectedUser?.role || 'user'} 
-                    onValueChange={(val: any) => {
-                      manageUser(selectedUser.uid, { role: val });
-                      setSelectedUser({...selectedUser, role: val});
-                      toast({title: "Role Updated"});
-                    }}
-                 >
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-base shadow-inner">
-                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
-                       <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
-                       <SelectItem value="staff" className="rounded-xl p-4 font-bold text-xs uppercase">staff member</SelectItem>
-                       <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
-                       <SelectItem value="super_admin" className="rounded-xl p-4 font-bold text-xs uppercase">super admin</SelectItem>
-                    </SelectContent>
-                 </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 md:space-y-3">
+                   <div className="flex items-center gap-2 text-primary ml-1">
+                      <LayoutGrid size={14} />
+                      <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
+                   </div>
+                   <Select 
+                      value={selectedUser?.role || 'user'} 
+                      onValueChange={(val: any) => {
+                        manageUser(selectedUser.uid, { role: val });
+                        setSelectedUser({...selectedUser, role: val});
+                        toast({title: "Role Updated"});
+                      }}
+                   >
+                      <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-base shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
+                         <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
+                         <SelectItem value="staff" className="rounded-xl p-4 font-bold text-xs uppercase">staff member</SelectItem>
+                         <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
+                         <SelectItem value="super_admin" className="rounded-xl p-4 font-bold text-xs uppercase">super admin</SelectItem>
+                      </SelectContent>
+                   </Select>
+                </div>
+
+                <div className="space-y-2 md:space-y-3">
+                   <div className="flex items-center gap-2 text-blue-500 ml-1">
+                      <ShieldCheck size={14} />
+                      <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Verification Status</Label>
+                   </div>
+                   <div className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-4 md:px-6 border dark:border-white/5 shadow-inner">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("text-xs font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
+                          {selectedUser?.isVerified ? 'Verified Account' : 'Standard Account'}
+                        </span>
+                        {selectedUser?.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                      </div>
+                      <Switch 
+                        checked={selectedUser?.isVerified || false} 
+                        onCheckedChange={async (v) => {
+                          await manageUser(selectedUser.uid, { isVerified: v });
+                          setSelectedUser({...selectedUser, isVerified: v});
+                          toast({ title: v ? "User Verified" : "Verification Removed" });
+                        }} 
+                      />
+                   </div>
+                </div>
               </div>
 
               <div className="space-y-3 md:space-y-4">
@@ -2301,7 +2342,7 @@ export default function AdminPage() {
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Category</Label>
-                 <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
+                 <Select value={gameForm.category} onValueChange={v => setLanguage({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Top-Up Items</SelectItem>
@@ -2350,7 +2391,7 @@ export default function AdminPage() {
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
                  <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Standard Delivery</SelectItem>
                        <SelectItem value="booyah-pass" className="p-3 font-bold text-xs">Booyah Pass (Direct WhatsApp)</SelectItem>
@@ -2489,8 +2530,11 @@ export default function AdminPage() {
                                  <User size={20}/>
                                </AvatarFallback>
                             </Avatar>
-                            <div>
-                               <p className="text-sm font-bold">{usage.name || profile?.name || 'Gamer'}</p>
+                            <div className="min-w-0">
+                               <div className="flex items-center gap-1">
+                                 <p className="text-sm font-bold truncate">{usage.name || profile?.name || 'Gamer'}</p>
+                                 {profile?.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+                               </div>
                                <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp || profile?.phoneNumber || 'N/A'}</p>
                             </div>
                          </div>
@@ -2927,7 +2971,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                </div>
                <div>
                   <p className="text-[10px] md:text-11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
-                  <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
+                    {finalBuyer?.isVerified && <VerifiedBadge className="w-5 h-5" />}
+                  </div>
                   <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
                </div>
             </div>
@@ -3296,7 +3343,10 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                       <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
                    </Avatar>
                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-base md:text-xl truncate">{winnerProfile.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-bold text-base md:text-xl truncate">{winnerProfile.name}</p>
+                        {winnerProfile.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                      </div>
                       <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
                          <Smartphone size={14} />
                          <p className="text-[11px] md:text-sm font-medium">{winnerProfile.phoneNumber}</p>
@@ -3451,8 +3501,11 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                                   <AvatarImage src={p.avatar} />
                                   <AvatarFallback>{p.name?.[0]}</AvatarFallback>
                               </Avatar>
-                              <div>
-                                  <p className="font-bold text-sm">{p.name}</p>
+                              <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="font-bold text-sm truncate">{p.name}</p>
+                                    {p.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+                                  </div>
                                   <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
                               </div>
                             </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -38,6 +37,7 @@ import Image from "next/image";
 import { uploadToImgbb } from "@/lib/imgbb";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 export default function ProfileView() {
   const { 
@@ -114,7 +114,7 @@ export default function ProfileView() {
           <Skeleton className="h-6 w-32 md:h-8 md:w-40" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-           {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 sm:h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
+           {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 sm:h-64 w-full rounded-[2rem] md:rounded-[3rem] />)}
         </div>
       </div>
     );
@@ -138,7 +138,8 @@ export default function ProfileView() {
         <div className="space-y-3 md:space-y-4">
           <div className="flex items-center justify-center gap-2 md:gap-3">
             <h2 className="text-2xl sm:text-4xl lg:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tight truncate max-w-[280px] sm:max-w-none">{user.name}</h2>
-            {user.isAdmin && <ShieldCheck className="text-primary w-6 h-6 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />}
+            {user.isVerified && <VerifiedBadge className="w-6 h-6 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />}
+            {user.isAdmin && !user.isVerified && <ShieldCheck className="text-primary w-6 h-6 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />}
           </div>
           <div className="flex items-center justify-center gap-2 md:gap-4">
             <Badge className="bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-none px-4 py-1.5 md:px-6 md:py-2.5 rounded-full flex gap-1.5 items-center font-black text-[10px] sm:text-sm lg:text-xl shadow-sm">

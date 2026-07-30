@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "UserProfile": {
@@ -18,7 +17,8 @@
         "gameName": { "type": "string" },
         "gameUid": { "type": "string" },
         "banned": { "type": "boolean" },
-        "termsAccepted": { "type": "boolean" }
+        "termsAccepted": { "type": "boolean" },
+        "isVerified": { "type": "boolean", "description": "Whether the user has a verified blue tick badge." }
       },
       "required": ["uid", "email"]
     },

@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { ref, onValue, off } from 'firebase/database';
 import { useDatabase } from '@/firebase';
 import Image from 'next/image';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 export default function EventLeaderboardPage() {
   const { id } = useParams();
@@ -127,7 +128,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
              ) : <div className="w-full h-full flex items-center justify-center bg-slate-800"><User size={24} className="text-white/20" /></div>}
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:text-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:text-sm",
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:text-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:sm",
             isGold ? "bg-amber-400 text-black" : isSilver ? "bg-slate-400 text-black" : "bg-orange-800 text-white"
           )}>
             {rank}
@@ -136,9 +137,12 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
        </div>
        
        <div className="text-center min-w-0 w-full">
-          <p className="font-bold text-[10px] md:text-base text-white truncate px-1">
-            {user.name?.split(' ')[0] || "Gamer"}
-          </p>
+          <div className="flex items-center justify-center gap-1 px-1">
+            <p className="font-bold text-[10px] md:text-base text-white truncate">
+              {user.name?.split(' ')[0] || "Gamer"}
+            </p>
+            {user.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+          </div>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} className="fill-primary" />
              <span className="text-[10px] md:text-sm font-black">{user.taps} BID</span>
@@ -176,7 +180,10 @@ function RankItem({ user, rank, isMe }: { user: any, rank: number, isMe?: boolea
              {isMe && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-primary" />}
           </div>
           <div>
-             <p className={cn("font-bold text-sm md:text-xl", isMe ? "text-white" : "text-white")}>{user.name}</p>
+             <div className="flex items-center gap-1.5">
+               <p className={cn("font-bold text-sm md:text-xl", isMe ? "text-white" : "text-white")}>{user.name}</p>
+               {user.isVerified && <VerifiedBadge className="w-4 h-4" />}
+             </div>
              <p className={cn("text-[8px] md:text-[10px] font-black uppercase tracking-widest", isMe ? "text-white/60" : "text-slate-500")}>Active Competitor</p>
           </div>
        </div>

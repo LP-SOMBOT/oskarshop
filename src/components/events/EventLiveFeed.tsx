@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, X, Zap, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface TapNotification {
   name: string;
@@ -11,6 +12,7 @@ interface TapNotification {
   timestamp: number;
   taps?: number;
   value?: number;
+  isVerified?: boolean;
 }
 
 export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
@@ -61,9 +63,13 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
          </Avatar>
          
          <div className="flex-1 min-w-0 pr-2 relative z-10">
-            <p className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight truncate">
-               {currentTap.name} <span className="font-bold text-slate-500 dark:text-slate-400">ayaa bid gareeyay!</span>
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight truncate">
+                 {currentTap.name}
+              </p>
+              {currentTap.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+              <span className="font-bold text-slate-500 dark:text-slate-400 text-[12px] sm:text-[13px]">bid!</span>
+            </div>
             <div className="flex items-center gap-1.5 mt-1">
                <div className="bg-orange-100 dark:bg-orange-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                   <Zap size={10} className="text-orange-600 dark:text-orange-400 fill-orange-600/20" />
