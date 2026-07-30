@@ -155,25 +155,25 @@ export default function HomeView() {
           </section>
         )}
 
-        {/* Global Ranking Quick Link */}
+        {/* Global Ranking Quick Link - Horizontal Redesign */}
         <section className="pt-2 md:pt-6">
           <div 
             onClick={() => setActiveTab('ranking')} 
-            className="w-full p-5 sm:p-10 md:p-14 rounded-[1.5rem] md:rounded-[3.5rem] bg-primary text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer shadow-xl active:scale-[0.98] transition-all relative overflow-hidden text-center md:text-left"
+            className="w-full p-4 sm:p-8 md:p-12 rounded-[1.5rem] md:rounded-[3rem] bg-primary text-white flex items-center justify-between group cursor-pointer shadow-xl active:scale-[0.98] transition-all relative overflow-hidden text-left"
           >
-            <div className="flex items-center gap-5 sm:gap-8 flex-col md:text-left relative z-10">
-               <div className="w-14 h-14 sm:w-20 md:w-28 bg-white/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-white shrink-0 shadow-inner">
-                  <Trophy className="w-7 h-7 sm:w-10 md:w-14" />
+            <div className="flex items-center gap-4 sm:gap-8 md:gap-12 relative z-10 flex-1 min-w-0">
+               <div className="w-12 h-12 sm:w-20 md:w-28 bg-white/10 rounded-xl sm:rounded-[2rem] flex items-center justify-center text-white shrink-0 shadow-inner">
+                  <Trophy className="w-6 h-6 sm:w-10 md:w-14" />
                </div>
-               <div className="space-y-1">
-                  <h3 className="text-xl sm:text-3xl md:text-4xl font-headline font-bold tracking-tight uppercase leading-none">{t('ranking')}</h3>
-                  <p className="text-white/80 text-[11px] sm:text-base font-medium leading-relaxed max-w-2xl">
+               <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-2xl md:text-4xl font-headline font-bold tracking-tight uppercase leading-none mb-1 md:mb-2">{t('ranking')}</h3>
+                  <p className="text-white/80 text-[10px] sm:text-base md:text-xl font-medium leading-tight sm:leading-relaxed line-clamp-2 sm:line-clamp-none max-w-2xl">
                     {t('ranking_desc')}
                   </p>
                </div>
             </div>
-            <div className="mt-8 md:mt-0 self-center w-12 h-12 sm:w-16 md:w-20 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-all shadow-lg shrink-0">
-               <ChevronRight className="w-6 h-6 sm:w-8 md:w-10 group-hover:translate-x-1 transition-transform" />
+            <div className="ml-4 w-10 h-10 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-all shadow-lg shrink-0">
+               <ChevronRight className="w-5 h-5 sm:w-8 sm:h-8 md:w-10 md:h-10 group-hover:translate-x-1 transition-transform" />
             </div>
             
             <div className="absolute -bottom-10 -right-10 w-40 h-40 md:w-80 bg-white/5 rounded-full blur-3xl pointer-events-none" />
