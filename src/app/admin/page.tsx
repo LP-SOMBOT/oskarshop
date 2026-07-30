@@ -3454,15 +3454,26 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                         <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
                         <TableCell className="text-right px-6 lg:px-10">
-                            <button 
-                              onClick={() => onAssignWinner(eventId, p.uid)}
-                              className={cn(
-                                "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
-                                p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
-                              )} 
-                            >
-                              {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
-                            </button>
+                            <div className="flex justify-end items-center gap-3">
+                               <button 
+                                 onClick={() => {
+                                   const formatted = formatWhatsAppNumber(p.phone);
+                                   window.open(`https://wa.me/${formatted}`, '_blank');
+                                 }}
+                                 className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                               >
+                                  <MessageCircle size={18} />
+                               </button>
+                               <button 
+                                 onClick={() => onAssignWinner(eventId, p.uid)}
+                                 className={cn(
+                                   "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
+                                   p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
+                                 )} 
+                               >
+                                 {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
+                               </button>
+                            </div>
                         </TableCell>
                       </TableRow>
                     ))

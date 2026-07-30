@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -19,23 +18,28 @@ import {
   ChevronRight,
   Loader2,
   CheckCircle2,
-  X
+  X,
+  Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn, formatWhatsAppNumber } from '@/lib/utils';
 import Image from 'next/image';
 import { ref, onValue, off, limitToLast, query } from 'firebase/database';
 import { useDatabase } from '@/firebase';
 import { format } from 'date-fns';
 import EventGetButton from '@/components/events/EventGetButton';
 import EventLiveFeed from '@/components/events/EventLiveFeed';
+import { toast } from '@/hooks/use-toast';
 
 const EVENT_CACHE_PREFIX = 'oskar_event_cache_';
 const EVENT_AGREEMENT_PREFIX = 'oskar_event_agreed_';
+const EVENT_PHONE_PREFIX = 'oskar_event_phone_';
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -53,6 +57,7 @@ export default function EventDetailPage() {
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [hasCheckedAgreement, setHasCheckedAgreement] = useState(false);
+  const [providedPhone, setProvidedPhone] = useState("");
 
   // Use refs to track triggers
   const transitionTriggered = useRef(false);
@@ -88,6 +93,9 @@ export default function EventDetailPage() {
       const agreed = localStorage.getItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`);
       if (!agreed) {
         setShowDisclaimer(true);
+      } else {
+        const storedPhone = localStorage.getItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`);
+        if (storedPhone) setProvidedPhone(storedPhone);
       }
     }
   }, [user, id]);
@@ -185,9 +193,16 @@ export default function EventDetailPage() {
     const isEndedByTime = event.endTime && Date.now() > event.endTime;
     if (cooldown > 0 || isSyncing || isEndedByTime || isTapping || event.status !== 'active') return;
     
+    // Safety check for provided phone
+    const phoneToUse = providedPhone || localStorage.getItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`);
+    if (!phoneToUse || phoneToUse.length < 9) {
+       setShowDisclaimer(true);
+       return;
+    }
+
     setIsTapping(true);
     try {
-      await tapEventAccount(id as string);
+      await tapEventAccount(id as string, phoneToUse);
       if (typeof window !== 'undefined') {
         const localCooldownKey = `oskar_cooldown_${id}_${user.uid}`;
         localStorage.setItem(localCooldownKey, Date.now().toString());
@@ -203,10 +218,20 @@ export default function EventDetailPage() {
   };
 
   const handleDisclaimerJoin = () => {
-    if (hasCheckedAgreement && user && id) {
-      localStorage.setItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`, 'true');
-      setShowDisclaimer(false);
+    const cleanPhone = providedPhone.replace(/\D/g, "");
+    if (!hasCheckedAgreement || !user || !id) return;
+    
+    if (cleanPhone.length < 9) {
+       toast({ title: "WhatsApp Number Required", description: "Fadlan geli number-kaaga WhatsApp ka si aad u qeybgasho.", variant: "destructive" });
+       return;
     }
+
+    const fullPhone = cleanPhone.startsWith('252') ? `+${cleanPhone}` : `+252${cleanPhone}`;
+    localStorage.setItem(`${EVENT_AGREEMENT_PREFIX}${id}_${user.uid}`, 'true');
+    localStorage.setItem(`${EVENT_PHONE_PREFIX}${id}_${user.uid}`, fullPhone);
+    setProvidedPhone(fullPhone);
+    setShowDisclaimer(false);
+    toast({ title: "Joined Event!", description: "You can now start bidding." });
   };
 
   if (!event) {
@@ -469,7 +494,7 @@ export default function EventDetailPage() {
 
       {showDisclaimer && (
         <div className="fixed inset-0 z-[100002] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-500 overflow-y-auto">
-           <Card className="w-full max-w-[94%] sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[90vh]">
+           <Card className="w-full max-w-[94%] sm:max-w-md md:max-w-lg rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col max-h-[95vh]">
               <div className="bg-primary p-6 sm:p-10 text-white text-center shrink-0">
                  <ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 animate-bounce" />
                  <h2 className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">ACCOUNT BID – DISCLAIMER & PARTICIPATION AGREEMENT</h2>
@@ -480,6 +505,27 @@ export default function EventDetailPage() {
                     <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
                        Please read this carefully before joining an Account Bid event.
                     </p>
+                    
+                    {/* NEW WHATSAPP REQUIREMENT INPUT */}
+                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20 space-y-3">
+                       <Label className="text-[10px] font-black uppercase text-primary ml-1 flex items-center gap-2">
+                          <Smartphone size={12} /> WhatsApp Number for this Event
+                       </Label>
+                       <div className="relative">
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10 pointer-events-none">
+                             <span className="text-[10px] font-bold text-slate-400 pr-1.5 border-r border-slate-200">+252</span>
+                          </div>
+                          <Input 
+                            type="tel"
+                            placeholder="613982172"
+                            value={providedPhone.replace("+252", "")}
+                            onChange={e => setProvidedPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                            className="h-11 rounded-xl bg-white border-none shadow-inner pl-14 font-bold text-sm"
+                          />
+                       </div>
+                       <p className="text-[9px] font-bold text-slate-400 italic">Admin-ka ayaa number-kan kaala soo xiriiri doona haddii aad guuleysato.</p>
+                    </div>
+
                     <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">By selecting "I Agree & Join", you confirm that:</p>
                     <ul className="space-y-3 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
                        {[
@@ -519,7 +565,7 @@ export default function EventDetailPage() {
               <div className="p-6 sm:p-10 pt-0 flex flex-col sm:flex-row gap-3 shrink-0">
                  <Button 
                    onClick={handleDisclaimerJoin}
-                   disabled={!hasCheckedAgreement}
+                   disabled={!hasCheckedAgreement || providedPhone.replace(/\D/g, '').length < 9}
                    className="w-full sm:flex-[2] h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-xs gap-2 shadow-xl shadow-primary/30 active:scale-95 transition-all"
                  >
                     <CheckCircle2 size={18} /> I Agree & Join

@@ -433,7 +433,7 @@ type AppContextType = {
   // Event Account Functions
   saveEventAccount: (event: Partial<EventAccount>) => Promise<void>;
   deleteEventAccount: (id: string) => Promise<void>;
-  tapEventAccount: (eventId: string) => Promise<void>;
+  tapEventAccount: (eventId: string, phone: string) => Promise<void>;
   assignEventWinner: (eventId: string, winnerId: string) => Promise<void>;
   updateEventStatus: (eventId: string, status: string) => Promise<void>;
   respondToEventClaim: (eventId: string, outcome: 'accepted' | 'ignored', targetUid?: string) => Promise<void>;
@@ -2146,7 +2146,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const val = parseInt(duration);
       if (durationUnit === 'days') expiresAt = now + (val * 24 * 60 * 60 * 1000);
       else if (durationUnit === 'hours') expiresAt = now + (val * 60 * 60 * 1000);
-      else if (durationUnit === 'minutes') expiresAt = now + (val * 60 * 1000);
+      else if (durationUnit === 'minutes') expiresAt = now + (val * 1000 * 60);
     }
     const eventToSave = { ...data, expiresAt, createdAt: Date.now() };
     if (id) await update(ref(rtdb, `events/${id}`), eventToSave); 
@@ -2324,19 +2324,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb]);
 
-  const tapEventAccount = useCallback(async (eventId: string) => {
+  const tapEventAccount = useCallback(async (eventId: string, phone: string) => {
     if (!rtdb || !authUser || !enhancedUser) return;
     
-    // REQUIRE WHATSAPP NUMBER BEFORE BIDDING
-    if (!enhancedUser.phoneNumber || enhancedUser.phoneNumber.length < 9) {
-       toast({ 
-         title: language === 'so' ? "Whatsapp lama helin" : "WhatsApp Required", 
-         description: language === 'so' ? "Fadlan profile-kaaga ku dar number-kaaga WhatsApp ka." : "Please add your WhatsApp number in your profile before participating.", 
-         variant: "destructive" 
-       });
-       return;
-    }
-
     const participantRef = ref(rtdb, `eventParticipants/${eventId}/${authUser.uid}`);
     const snap = await get(participantRef);
     const participantData = snap.val() as EventParticipant | null;
@@ -2372,7 +2362,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updates[`eventParticipants/${eventId}/${authUser.uid}`] = {
       uid: authUser.uid,
       name: enhancedUser.name || "Gamer",
-      phone: enhancedUser.phoneNumber || "N/A",
+      phone: phone, // USE PROVIDED PHONE NUMBER
       avatar: enhancedUser.photoURL || "",
       taps: newTaps,
       value: newValue,
