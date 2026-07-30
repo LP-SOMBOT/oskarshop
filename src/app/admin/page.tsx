@@ -529,7 +529,6 @@ export default function AdminPage() {
       u.uid?.toLowerCase().includes(userSearch.toLowerCase())
     );
 
-    // Sorting: Admins, Staff, and Super Admins top of all users list
     return filtered.sort((a, b) => {
       const aIsAdmin = a.role === 'admin' || a.role === 'super_admin' || a.role === 'staff';
       const bIsAdmin = b.role === 'admin' || b.role === 'super_admin' || b.role === 'staff';
@@ -2824,7 +2823,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                 )}
 
                 <Button 
-                   onClick={handleStatusUpdate} 
+                   onClick={onUpdate} 
                    disabled={isSaving} 
                    className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
@@ -3157,7 +3156,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 )}
 
                 <Button 
-                   onClick={handleAccountStatusUpdate} 
+                   onClick={onUpdate} 
                    disabled={isSaving} 
                    className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
@@ -3389,7 +3388,6 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     const unsub = onValue(participantsRef, (snap) => {
       const data = snap.val();
       if (data) {
-        // Sorting Logic: Bids DESC, then earliest lastBidTime ASC (Tie-breaker)
         const sorted = Object.values(data).sort((a: any, b: any) => {
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
