@@ -893,8 +893,8 @@ export default function AdminPage() {
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                  <StatCard label="Total Revenue" value={`$${allOrders.filter(o => o.status === 'successful').reduce((acc, o) => acc + o.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
-                  <StatCard label="Pending Items" value={(allOrders.filter(o => o.status === 'pending').length + accountPosts.filter(p => p.status === 'pending').length).toString()} icon={Clock} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" pulse />
+                  <StatCard label="Total Revenue" value={`$${allOrders.filter(order => order.status === 'successful').reduce((acc, order) => acc + order.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
+                  <StatCard label="Pending Items" value={(allOrders.filter(order => order.status === 'pending').length + accountPosts.filter(p => p.status === 'pending').length).toString()} icon={Clock} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" pulse />
                   <StatCard label="Active Users" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
                   <StatCard label="Market Supply" value={accountPosts.filter(p => p.status === 'approved' && !p.sold).length.toString()} icon={ShieldCheck} color="text-emerald-500" bgColor="bg-emerald-50 dark:bg-emerald-500/10" />
                </div>
@@ -918,7 +918,7 @@ export default function AdminPage() {
                   <div className="relative p-4 sm:p-8 md:p-12 space-y-12 md:space-y-12">
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5">
+                     <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5">
                         <div className="flex items-center gap-4 sm:gap-6">
                            <div className="w-12 h-12 sm:w-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl sm:rounded-3xl flex items-center justify-center text-primary shadow-inner shrink-0">
                               <Trophy size={28} className="sm:size-10 md:size-12" />
@@ -929,7 +929,7 @@ export default function AdminPage() {
                            </div>
                         </div>
                         
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex items-center gap-4">
                            <Button 
                              variant="outline" 
                              onClick={resetLeaderboard}
@@ -1065,39 +1065,39 @@ export default function AdminPage() {
                        {topUpOrders.length === 0 ? (
                          <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No orders found.</div>
                        ) : (
-                         topUpOrders.map(o => {
-                           const item = o.items?.[0];
-                           const isEventWinnerOrder = !!o.gameDetails?.isEventWinner;
+                         topUpOrders.map(order => {
+                           const item = order.items?.[0];
+                           const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
                            return (
-                             <Card key={o.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
+                             <Card key={order.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                                 <div className="flex items-center justify-between">
-                                   <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{o.id.toUpperCase()}</p>
-                                   <StatusBadge status={o.status} />
+                                   <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{order.id.toUpperCase()}</p>
+                                   <StatusBadge status={order.status} />
                                 </div>
                                 <div className="space-y-1">
-                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</p>
+                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{order.gameDetails?.playerName || order.gameDetails?.name || "Guest"}</p>
                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
                                      {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                    </p>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
                                    <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
-                                      {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
+                                      {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
                                    </div>
                                    <div className="min-w-0">
                                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
-                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Wali lama furin"}</p>
+                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{order.processedBy?.name || "Wali lama furin"}</p>
                                    </div>
                                 </div>
                                 <div className="flex gap-2 pt-2 border-t dark:border-white/5">
                                    <button 
-                                     onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                     onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
                                      className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
                                    >
                                      <Eye size={16} /> View
                                    </button>
                                    <button 
-                                     onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                     onClick={() => { setDeleteTarget({id:order.id, type:'order'}); setIsDeleteDialogOpen(true); }}
                                      className="w-12 h-12 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
                                    >
                                      <Trash2 size={16} />
@@ -1125,15 +1125,15 @@ export default function AdminPage() {
                              {topUpOrders.length === 0 ? (
                                <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
                              ) : (
-                               topUpOrders.map(o => {
-                                 const item = o.items?.[0];
-                                 const isEventWinnerOrder = !!o.gameDetails?.isEventWinner;
+                               topUpOrders.map(order => {
+                                 const item = order.items?.[0];
+                                 const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
                                  return (
-                                 <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
-                                    <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
+                                 <TableRow key={order.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
+                                    <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{order.id.toUpperCase()}</TableCell>
                                     <TableCell>
                                        <div className="flex flex-col">
-                                          <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</span>
+                                          <span className="font-bold text-base text-slate-900 dark:text-white">{order.gameDetails?.playerName || order.gameDetails?.name || "Guest"}</span>
                                           <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
                                             {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                           </span>
@@ -1142,24 +1142,24 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
+                                             {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
                                           </div>
-                                          <span className={cn("text-xs font-bold", o.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
-                                            {o.processedBy?.name || "Wali lama furin"}
+                                          <span className={cn("text-xs font-bold", order.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
+                                            {order.processedBy?.name || "Wali lama furin"}
                                           </span>
                                        </div>
                                     </TableCell>
-                                    <TableCell><StatusBadge status={o.status} /></TableCell>
+                                    <TableCell><StatusBadge status={order.status} /></TableCell>
                                     <TableCell className="text-right px-6 lg:px-10">
                                        <div className="flex justify-end items-center gap-3">
                                           <button 
-                                            onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                            onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
                                             className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
                                           >
                                             <Eye size={18} />
                                           </button>
                                           <button 
-                                            onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                            onClick={() => { setDeleteTarget({id:order.id, type:'order'}); setIsDeleteDialogOpen(true); }}
                                             className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                             <Trash2 size={18} />
@@ -1222,13 +1222,13 @@ export default function AdminPage() {
                                )}
                              >
                                 <div className="flex items-center justify-between">
-                                   <div className="flex items-center gap-3">
+                                   <div className="flex items-center gap-1 min-w-0">
                                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white">
                                          {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                       </div>
-                                      <div className="flex items-center gap-1">
-                                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
-                                        {p.authorIsVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+                                      <div className="flex items-center gap-1 min-w-0">
+                                        <span className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[120px]">{p.authorName || "Market User"}</span>
+                                        {p.authorIsVerified && <VerifiedBadge />}
                                       </div>
                                    </div>
                                    <StatusBadge status={p.status} />
@@ -1316,13 +1316,13 @@ export default function AdminPage() {
                                     )}
                                  >
                                     <TableCell className="px-6 lg:px-10">
-                                       <div className="flex items-center gap-3">
+                                       <div className="flex items-center gap-1 min-w-0">
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                           </div>
-                                          <div className="flex items-center gap-1">
-                                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
-                                            {p.authorIsVerified && <VerifiedBadge className="w-4 h-4" />}
+                                          <div className="flex items-center gap-1 min-w-0">
+                                            <span className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[150px]">{p.authorName || "Market User"}</span>
+                                            {p.authorIsVerified && <VerifiedBadge />}
                                           </div>
                                        </div>
                                     </TableCell>
@@ -1431,7 +1431,7 @@ export default function AdminPage() {
                                <button 
                                  onClick={(e) => { e.stopPropagation(); handleOpenGameDialog(g); }}
                                  className="text-blue-500 hover:scale-110 transition-transform"
-                               >
+                                >
                                  <PencilLine size={24} />
                                </button>
                                <button 
@@ -1759,9 +1759,9 @@ export default function AdminPage() {
                                  {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={24} /></div>}
                               </div>
                               <div className="min-w-0">
-                                 <div className="flex items-center gap-1.5">
-                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
-                                   {u.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                                 <div className="flex items-center gap-1 min-w-0">
+                                   <p className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[150px]">{u.name || "Legendary Gamer"}</p>
+                                   {u.isVerified && <VerifiedBadge />}
                                  </div>
                                  <p className="text-[10px] text-muted-foreground truncate">{u.phoneNumber}</p>
                               </div>
@@ -1823,9 +1823,9 @@ export default function AdminPage() {
                                             {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={20} /></div>}
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <div className="flex items-center gap-1.5">
-                                              <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
-                                              {u.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                                            <div className="flex items-center gap-1 min-w-0">
+                                              <span className="truncate font-semibold text-sm md:text-lg text-slate-900 dark:text-white max-w-[200px]">{u.name || "Legendary Gamer"}</span>
+                                              {u.isVerified && <VerifiedBadge />}
                                             </div>
                                             <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
                                         </div>
@@ -2198,9 +2198,9 @@ export default function AdminPage() {
            <div className="p-6 md:p-8 pt-12 md:pt-16 space-y-6 md:space-y-8">
               <div className="flex justify-between items-start">
                  <div className="min-w-0 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
-                      {selectedUser?.isVerified && <VerifiedBadge className="w-5 h-5" />}
+                    <div className="flex items-center gap-1 min-w-0">
+                      <h3 className="truncate font-semibold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white max-w-[200px]">{selectedUser?.name || "Gamer"}</h3>
+                      {selectedUser?.isVerified && <VerifiedBadge />}
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
                        <Smartphone size={12} />
@@ -2263,11 +2263,11 @@ export default function AdminPage() {
                       <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Verification Status</Label>
                    </div>
                    <div className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-4 md:px-6 border dark:border-white/5 shadow-inner">
-                      <div className="flex items-center gap-2">
-                        <span className={cn("text-xs font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className={cn("truncate text-xs font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
                           {selectedUser?.isVerified ? 'Verified Account' : 'Standard Account'}
                         </span>
-                        {selectedUser?.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                        {selectedUser?.isVerified && <VerifiedBadge />}
                       </div>
                       <Switch 
                         checked={selectedUser?.isVerified || false} 
@@ -2523,22 +2523,22 @@ export default function AdminPage() {
                     const profile = allUsers.find(u => u.uid === usage.uid);
                     return (
                       <div key={usage.uid} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm">
+                         <div className="flex items-center gap-3 min-w-0">
+                            <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm shrink-0">
                                <AvatarImage src={profile?.photoURL} />
                                <AvatarFallback className="bg-primary/10 text-primary">
                                  <User size={20}/>
                                </AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0">
-                               <div className="flex items-center gap-1">
-                                 <p className="text-sm font-bold truncate">{usage.name || profile?.name || 'Gamer'}</p>
-                                 {profile?.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+                            <div className="min-w-0 flex-1">
+                               <div className="flex items-center gap-1 min-w-0">
+                                 <p className="truncate font-semibold text-sm max-w-[120px]">{usage.name || profile?.name || 'Gamer'}</p>
+                                 {profile?.isVerified && <VerifiedBadge />}
                                </div>
                                <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp || profile?.phoneNumber || 'N/A'}</p>
                             </div>
                          </div>
-                         <div className="text-right">
+                         <div className="text-right shrink-0">
                             <p className="text-[10px] font-black text-primary uppercase">{formatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
                             <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{format(usage.timestamp, 'MMM d, HH:mm')}</p>
                          </div>
@@ -2744,23 +2744,23 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={ (order.ffUid || order.gameDetails?.playerID) && ( <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> ) } />
+             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> : null} />
              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                    <User size={14} className="opacity-40" />
                    <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
                 </div>
-                <div className="flex items-center gap-2">
-                   <p className="text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
+                <div className="flex items-center gap-1 min-w-0">
+                   <p className="text-sm md:text-xl font-semibold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
                    {order.ffVerified ? (
-                     <Badge className="bg-green-100 text-green-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Verified</Badge>
+                     <VerifiedBadge />
                    ) : order.ffUid ? (
                      <Badge className="bg-amber-100 text-amber-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
                    ) : null}
                 </div>
              </div>
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
-             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={ order.gameDetails?.whatsappNumber && ( <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> ) } />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> : null} />
              <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
@@ -2971,9 +2971,9 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                </div>
                <div>
                   <p className="text-[10px] md:text-11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
-                    {finalBuyer?.isVerified && <VerifiedBadge className="w-5 h-5" />}
+                  <div className="flex items-center gap-1 min-w-0">
+                    <p className="truncate font-semibold text-xl md:text-2xl max-w-[200px]">{finalBuyer?.name || "Market User"}</p>
+                    {finalBuyer?.isVerified && <VerifiedBadge />}
                   </div>
                   <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
                </div>
@@ -3343,9 +3343,9 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                       <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
                    </Avatar>
                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className="font-bold text-base md:text-xl truncate">{winnerProfile.name}</p>
-                        {winnerProfile.isVerified && <VerifiedBadge className="w-4 h-4" />}
+                      <div className="flex items-center gap-1 min-w-0">
+                        <p className="truncate font-semibold text-base md:text-xl max-w-[200px]">{winnerProfile.name}</p>
+                        {winnerProfile.isVerified && <VerifiedBadge />}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
                          <Smartphone size={14} />
@@ -3496,15 +3496,15 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                       )}>
                         <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
                         <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm shrink-0">
                                   <AvatarImage src={p.avatar} />
                                   <AvatarFallback>{p.name?.[0]}</AvatarFallback>
                               </Avatar>
-                              <div className="min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <p className="font-bold text-sm truncate">{p.name}</p>
-                                    {p.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+                              <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <p className="truncate font-semibold text-sm max-w-[150px]">{p.name}</p>
+                                    {p.isVerified && <VerifiedBadge />}
                                   </div>
                                   <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
                               </div>

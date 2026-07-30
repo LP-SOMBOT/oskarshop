@@ -137,11 +137,11 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
        </div>
        
        <div className="text-center min-w-0 w-full">
-          <div className="flex items-center justify-center gap-1 px-1">
-            <p className="font-bold text-[10px] md:text-base text-white truncate">
+          <div className="flex items-center justify-center gap-1 px-1 min-w-0">
+            <p className="truncate font-bold text-[10px] md:text-base text-white max-w-full">
               {user.name?.split(' ')[0] || "Gamer"}
             </p>
-            {user.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+            {user.isVerified && <VerifiedBadge />}
           </div>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} className="fill-primary" />
@@ -170,24 +170,24 @@ function RankItem({ user, rank, isMe }: { user: any, rank: number, isMe?: boolea
       "p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-sm transition-all flex items-center justify-between group",
       isMe ? "bg-primary shadow-[0_10px_30px_rgba(14,165,233,0.3)] ring-2 ring-white/20" : "bg-white/5 hover:bg-white/10"
     )}>
-       <div className="flex items-center gap-4 md:gap-8">
-          <span className={cn("w-6 md:w-10 font-headline font-bold text-sm md:text-2xl text-center", isMe ? "text-white" : "text-slate-600")}>{rank}</span>
-          <div className="relative">
+       <div className="flex items-center gap-4 md:gap-8 min-w-0 flex-1">
+          <span className={cn("w-6 md:w-10 font-headline font-bold text-sm md:text-2xl text-center shrink-0", isMe ? "text-white" : "text-slate-600")}>{rank}</span>
+          <div className="relative shrink-0">
              <Avatar className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl border-2 border-white/10">
                 <AvatarImage src={user.avatar} />
                 <AvatarFallback className="bg-slate-800"><User size={20} className="text-white/20"/></AvatarFallback>
              </Avatar>
              {isMe && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-primary" />}
           </div>
-          <div>
-             <div className="flex items-center gap-1.5">
-               <p className={cn("font-bold text-sm md:text-xl", isMe ? "text-white" : "text-white")}>{user.name}</p>
-               {user.isVerified && <VerifiedBadge className="w-4 h-4" />}
+          <div className="min-w-0 flex-1">
+             <div className="flex items-center gap-1 min-w-0">
+               <p className={cn("truncate font-bold text-sm md:text-xl max-w-[180px]", isMe ? "text-white" : "text-white")}>{user.name}</p>
+               {user.isVerified && <VerifiedBadge />}
              </div>
              <p className={cn("text-[8px] md:text-[10px] font-black uppercase tracking-widest", isMe ? "text-white/60" : "text-slate-500")}>Active Competitor</p>
           </div>
        </div>
-       <div className="text-right">
+       <div className="text-right shrink-0 ml-4">
           <p className={cn("font-headline font-bold text-lg md:text-3xl", isMe ? "text-white" : "text-primary")}>${user.value.toFixed(2)}</p>
           <div className="flex items-center justify-end gap-1 opacity-60">
              <Star size={10} className={cn("fill-current", isMe ? "text-white" : "text-primary")} />

@@ -46,7 +46,7 @@ export default function RankingView() {
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      const s = Math.floor((diff % (1000 * 60)) / (1000 * 60));
       
       setTimeLeft({ d, h, m, s });
     };
@@ -178,12 +178,12 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
           </Badge>
        </div>
        
-       <div className="text-center min-w-0 px-1">
-          <div className="flex items-center justify-center gap-1">
-            <p className="font-bold text-[10px] md:text-base text-slate-900 dark:text-white truncate max-w-full">
+       <div className="text-center min-w-0 px-1 w-full">
+          <div className="flex items-center justify-center gap-1 min-w-0">
+            <p className="truncate font-semibold text-[10px] md:text-base text-white max-w-full">
               {user.name?.split(' ')[0] || "Gamer"}
             </p>
-            {user.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
+            {user.isVerified && <VerifiedBadge />}
           </div>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} fill="currentColor" />
@@ -210,22 +210,22 @@ function RankListItem({ user, rank }: { user: any, rank: number }) {
   const { t } = useApp();
   return (
     <Card className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-none bg-white dark:bg-slate-900 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
-       <div className="flex items-center gap-3 md:gap-6">
-          <span className="w-6 md:w-10 font-headline font-bold text-sm md:text-xl text-slate-400 group-hover:text-primary transition-colors text-center">{rank}</span>
-          <Avatar className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl shadow-sm border-2 border-white dark:border-white/5">
+       <div className="flex items-center gap-1 min-w-0 flex-1">
+          <span className="w-6 md:w-10 font-headline font-bold text-sm md:text-xl text-slate-400 group-hover:text-primary transition-colors text-center shrink-0">{rank}</span>
+          <Avatar className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl shadow-sm border-2 border-white dark:border-white/5 shrink-0">
              <AvatarImage src={user.photoURL} />
              <AvatarFallback className="bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <User className="w-1/2 h-1/2 text-slate-300 dark:text-slate-700" />
              </AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
-             <div className="flex items-center gap-1.5">
-               <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name?.split(' ')[0] || "Gamer"}</p>
-               {user.isVerified && <VerifiedBadge className="w-4 h-4" />}
+          <div className="min-w-0 flex-1">
+             <div className="flex items-center gap-1 min-w-0">
+               <p className="truncate font-semibold text-sm md:text-xl text-slate-900 dark:text-white max-w-[200px]">{user.name?.split(' ')[0] || "Gamer"}</p>
+               {user.isVerified && <VerifiedBadge />}
              </div>
           </div>
        </div>
-       <div className="flex flex-col items-end gap-1">
+       <div className="flex flex-col items-end gap-1 shrink-0 ml-4">
           <div className="flex items-center gap-1.5 md:gap-3 text-primary font-headline font-bold text-sm md:text-2xl">
              <Star size={14} className="fill-primary/20 md:size-6" />
              <span>{user.points || 0}</span>

@@ -63,12 +63,12 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
          </Avatar>
          
          <div className="flex-1 min-w-0 pr-2 relative z-10">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight truncate">
+            <div className="flex items-center gap-1 min-w-0">
+              <p className="truncate text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight max-w-[120px]">
                  {currentTap.name}
               </p>
-              {currentTap.isVerified && <VerifiedBadge className="w-3.5 h-3.5" />}
-              <span className="font-bold text-slate-500 dark:text-slate-400 text-[12px] sm:text-[13px]">bid!</span>
+              {currentTap.isVerified && <VerifiedBadge />}
+              <span className="font-bold text-slate-500 dark:text-slate-400 text-[12px] sm:text-[13px] ml-1">bid!</span>
             </div>
             <div className="flex items-center gap-1.5 mt-1">
                <div className="bg-orange-100 dark:bg-orange-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">

@@ -42,8 +42,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -380,7 +380,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
   useEffect(() => {
     if (!post.createdAt) return;
     const updateTime = () => {
-      setWaitTime(formatDistanceToNow(new Date(post.createdAt)));
+      setWaitText(formatDistanceToNow(new Date(post.createdAt)));
     };
     updateTime();
     const interval = setInterval(updateTime, 60000);
@@ -395,7 +395,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
       )}
     >
       <div className="p-3.5 md:p-6 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40 border-b dark:border-white/5">
-        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+        <div className="flex items-center gap-1 min-w-0 flex-1">
           <div className="w-8 h-8 md:w-11 md:h-11 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-white/10 shadow-sm shrink-0">
             {post.authorAvatar ? (
               <Image src={post.authorAvatar} alt="" fill className="object-cover" />
@@ -403,11 +403,11 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
               <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-700"><User size={16} /></div>
             )}
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1 md:gap-2">
-              <div className="flex items-center gap-1">
-                <p className="font-bold text-xs md:text-sm text-slate-900 dark:text-white truncate max-w-[60px] md:max-w-[80px]">{post.authorName}</p>
-                {post.authorIsVerified && <VerifiedBadge className="w-3 h-3" />}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1 min-w-0">
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="truncate font-semibold text-xs md:text-sm text-slate-900 dark:text-white max-w-[80px] md:max-w-[100px]">{post.authorName}</p>
+                {post.authorIsVerified && <VerifiedBadge />}
               </div>
               <Badge className={cn(
                 "rounded-full text-[6px] md:text-[8px] font-black px-1.5 md:px-2 py-0 border-none uppercase tracking-widest shrink-0",
@@ -420,7 +420,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
           </div>
         </div>
         
-        <div className="flex gap-1 shrink-0">
+        <div className="flex gap-1 shrink-0 ml-2">
            <button 
              onClick={handleShare}
              className="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-2xl flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-colors active:scale-90"
