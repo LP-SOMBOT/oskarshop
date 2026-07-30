@@ -113,9 +113,18 @@ function CheckoutEventContent() {
         isEventWinner: true
       }, purchaseItem);
 
+      // AUTOMATED WHATSAPP REDIRECTION FOR WINNER
+      const adminWa = formatWhatsAppNumber("252614929987");
+      const msg = `Asc Oskar Shop.\n\nWaxaan ahay guuleystaha Auction-ka: *${event.title}*\nQiimaha Final-ka: *$${finalPrice.toFixed(2)}*\n\n*Xogta Xaqiijinta:*\nWhatsApp: ${formData.whatsappNumber}\nLacag Diraha: ${formData.senderNumber}\n\nFadlan account-ka ii soo wareeji, Mahadsanid!`;
+      const encodedMsg = encodeURIComponent(msg);
+      
       setIsProcessing(false);
       setGlobalLoading(false);
       setStep(4);
+      
+      // Open WhatsApp
+      window.open(`https://wa.me/${adminWa}?text=${encodedMsg}`, '_blank');
+
     } catch (e: any) {
        toast({ title: "Khalad", description: e.message, variant: "destructive" });
        setIsProcessing(false);
