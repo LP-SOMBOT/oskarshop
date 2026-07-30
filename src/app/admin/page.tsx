@@ -523,11 +523,20 @@ export default function AdminPage() {
   const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
 
   const filteredUsers = useMemo(() => {
-    return allUsers.filter(u => 
+    const filtered = allUsers.filter(u => 
       u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.uid?.toLowerCase().includes(userSearch.toLowerCase())
     );
+
+    // Sorting: Admins, Staff, and Super Admins top of all users list
+    return filtered.sort((a, b) => {
+      const aIsAdmin = a.role === 'admin' || a.role === 'super_admin' || a.role === 'staff';
+      const bIsAdmin = b.role === 'admin' || b.role === 'super_admin' || b.role === 'staff';
+      if (aIsAdmin && !bIsAdmin) return -1;
+      if (!aIsAdmin && bIsAdmin) return 1;
+      return 0;
+    });
   }, [allUsers, userSearch]);
 
   const onlineUsersCount = useMemo(() => {
@@ -1741,7 +1750,7 @@ export default function AdminPage() {
                         <Card key={u.uid} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                            <div className="flex items-center gap-4">
                               <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                 {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                 {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={24} /></div>}
                               </div>
                               <div className="min-w-0">
                                  <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
@@ -1802,7 +1811,7 @@ export default function AdminPage() {
                                   <TableCell className="px-6 lg:px-10">
                                       <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                            {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                            {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={20} /></div>}
                                         </div>
                                         <div className="flex flex-col min-w-0">
                                             <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
@@ -2168,7 +2177,7 @@ export default function AdminPage() {
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt={selectedUser.name} fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={40} /></div>
                     )}
                  </div>
               </div>
@@ -2200,7 +2209,7 @@ export default function AdminPage() {
                     </div>
                  </div>
                  <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] md:text-9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
+                    <p className="text-[8px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
                     <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
                       {selectedUser?.role || 'user'}
                     </Badge>
@@ -2840,7 +2849,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
   );
 }
 
-function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
   const [now, setNow] = useState(Date.now());
   
   useEffect(() => {
