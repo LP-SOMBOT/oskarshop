@@ -590,13 +590,13 @@ export default function EventDetailPage() {
         <DialogContent className="w-[94%] max-w-sm rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in slide-in-from-bottom-8 duration-300">
            <DialogHeader className="bg-amber-500 p-6 sm:p-8 text-white text-center">
               <Smartphone className="w-10 h-10 mx-auto mb-3" />
-              <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Xogta WhatsApp</DialogTitle>
-              <DialogDescription className="text-white/70 text-[10px] uppercase font-black tracking-widest">Numbarka kugu habboon</DialogDescription>
+              <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Whatsapp</DialogTitle>
+              <DialogDescription className="text-white/70 text-[10px] uppercase font-black tracking-widest">Whatsapp number</DialogDescription>
            </DialogHeader>
 
            <div className="p-6 sm:p-8 space-y-6">
               <div className="space-y-3">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">WhatsApp Number for this Event</Label>
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Geli Whatsapp kaaga</Label>
                  <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
                        <span className="font-bold text-xs text-gray-400 border-r border-slate-200 pr-3">+252</span>
@@ -610,7 +610,7 @@ export default function EventDetailPage() {
                     />
                  </div>
                  <p className="text-[10px] font-bold text-slate-400 italic leading-relaxed text-center">
-                    Admin-ka ayaa number-kan kaala soo xiriiri doona haddii aad guuleysato.
+                    Whatsapp kaan ayaa lagala soo xariiri doonaa.
                  </p>
               </div>
 
