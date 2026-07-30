@@ -275,6 +275,18 @@ export default function EventDetailPage() {
   const images = event.imageUrls || [];
   const hasMultipleImages = images.length > 1;
 
+  const disclaimerItems = [
+    "I have read and agree to the Account Bid – Event Rules & Terms of Service.",
+    "I understand that every bid is final and cannot be canceled or refunded.",
+    "I understand that placing a bid does not guarantee that I will win the auction.",
+    "I agree not to use bots, scripts, fake accounts, or any unfair methods.",
+    "I understand that cheating or attempting to manipulate the auction may result in disqualification, account suspension, or permanent account termination.",
+    "If I win, I agree to complete payment within the required time.",
+    "I understand that the organizer may pause, extend, restart, or cancel the auction if necessary to ensure fairness.",
+    "I accept that the organizer's decisions regarding the auction are final, except where otherwise required by applicable law.",
+    "I participate voluntarily and at my own responsibility."
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-40 page-transition relative overflow-x-hidden">
       <div className="relative h-[25vh] sm:h-[35vh] w-full overflow-hidden">
@@ -396,7 +408,7 @@ export default function EventDetailPage() {
                </div>
                <div className="text-left min-w-0">
                   <h4 className="font-headline font-bold text-sm sm:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
-                    {language === 'so' ? 'kaalmaha' : (t('kaalmaha') || 'Leaderboard')}
+                    {language === 'so' ? 'kaalmaha' : (t('kaalmaha') || 'Ranking')}
                   </h4>
                   <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-widest truncate">{participants.length} Participants active</p>
                </div>
@@ -517,53 +529,59 @@ export default function EventDetailPage() {
       {/* MODAL 1: Disclaimer (Accepted Once per Event) */}
       <Dialog open={showDisclaimer} onOpenChange={() => {}}>
         <DialogContent className="w-[94%] max-w-lg rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in zoom-in duration-300">
-           <DialogHeader className="bg-primary p-6 sm:p-10 text-white text-center">
-              <ShieldCheck className="w-12 h-12 sm:size-16 mx-auto mb-4" />
-              <DialogTitle className="text-lg sm:text-xl md:text-2xl font-headline font-bold uppercase tracking-tight leading-tight">ACCOUNT BID – AGREEMENT</DialogTitle>
-              <DialogDescription className="text-white/60 text-[10px] uppercase tracking-widest mt-1">Please read carefully</DialogDescription>
-           </DialogHeader>
+           <DialogHeader className="sr-only"><DialogTitle>Account Bid Agreement</DialogTitle></DialogHeader>
            
-           <div className="p-6 sm:p-10 space-y-6 max-h-[50vh] overflow-y-auto scrollbar-hide">
-              <ul className="space-y-4 text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-medium">
-                 {[
-                   "I have read and agree to the Account Bid – Event Rules.",
-                   "I understand that every bid is final and non-refundable.",
-                   "I understand that placing a bid does not guarantee that I will win.",
-                   "I agree not to use bots, scripts, or any unfair methods.",
-                   "If I win, I agree to complete payment within the required time.",
-                   "The organizer's decisions regarding the auction are final."
-                 ].map((item, i) => (
-                   <li key={i} className="flex gap-2 items-start">
-                      <span className="font-black text-primary shrink-0">{i+1}:</span>
-                      <span>{item}</span>
-                   </li>
-                 ))}
-              </ul>
+           <div className="bg-primary h-1.5 w-full" />
+           
+           <div className="p-6 sm:p-10 space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
+                  Please read this carefully before joining an Account Bid event.
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  By selecting "I Agree & Join", you confirm that:
+                </p>
+              </div>
 
-              <div className="flex items-center space-x-3 px-2 pt-2">
+              <div className="space-y-4 max-h-[45vh] overflow-y-auto scrollbar-hide pr-2">
+                 {disclaimerItems.map((item, i) => (
+                   <div key={i} className="flex gap-4 items-start">
+                      <span className="font-black text-primary text-sm sm:text-base shrink-0 pt-0.5">{i+1}:</span>
+                      <p className="text-[11px] sm:text-[13px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                        {item}
+                      </p>
+                   </div>
+                 ))}
+              </div>
+
+              <div className="flex items-center space-x-3 px-1 pt-2 border-t dark:border-white/5 pt-6">
                  <Checkbox 
                    id="agree-event" 
                    checked={hasCheckedAgreement} 
                    onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
+                   className="w-5 h-5 rounded-md"
                  />
-                 <label htmlFor="agree-event" className="text-[11px] sm:text-sm font-bold text-slate-600 dark:text-slate-400 cursor-pointer">
-                    I have read & accept the rules
+                 <label htmlFor="agree-event" className="text-sm sm:text-base font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+                    I have read & accept
                  </label>
               </div>
-           </div>
 
-           <DialogFooter className="p-6 sm:p-10 pt-0 flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={handleDisclaimerJoin}
-                disabled={!hasCheckedAgreement}
-                className="w-full sm:flex-[2] h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs shadow-xl active:scale-95"
-              >
-                 Accept & Continue
-              </Button>
-              <Button variant="ghost" onClick={handleBack} className="w-full sm:flex-1 h-14 rounded-2xl text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                 Cancel
-              </Button>
-           </DialogFooter>
+              <div className="flex flex-col gap-4">
+                 <Button 
+                   onClick={handleDisclaimerJoin}
+                   disabled={!hasCheckedAgreement}
+                   className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-sm shadow-xl active:scale-95 gap-2"
+                 >
+                    <CheckCircle2 size={20} /> I AGREE & JOIN
+                 </Button>
+                 <button 
+                   onClick={handleBack} 
+                   className="flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 font-bold uppercase tracking-widest text-xs transition-colors py-2"
+                 >
+                    <X size={16} /> CANCEL
+                 </button>
+              </div>
+           </div>
         </DialogContent>
       </Dialog>
 
