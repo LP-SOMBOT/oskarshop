@@ -918,27 +918,27 @@ export default function AdminPage() {
                   <div className="relative p-4 sm:p-8 md:p-12 space-y-12 md:space-y-12">
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-                     <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5">
+                     <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-5 sm:p-8 md:p-10 rounded-[2rem] sm:rounded-[2.5rem] border dark:border-white/5 gap-8">
                         <div className="flex items-center gap-4 sm:gap-6">
                            <div className="w-12 h-12 sm:w-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl sm:rounded-3xl flex items-center justify-center text-primary shadow-inner shrink-0">
                               <Trophy size={28} className="sm:size-10 md:size-12" />
                            </div>
-                           <div>
-                              <h3 className="font-headline font-bold text-lg sm:text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white">Leaderboard Rewards</h3>
-                              <p className="text-[9px] sm:text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-0.5 sm:mt-1">Control active discount incentives</p>
+                           <div className="min-w-0">
+                              <h3 className="font-headline font-bold text-lg sm:text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white truncate">Leaderboard Rewards</h3>
+                              <p className="text-[9px] sm:text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-0.5 sm:mt-1 truncate">Control active discount incentives</p>
                            </div>
                         </div>
                         
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
                            <Button 
                              variant="outline" 
                              onClick={resetLeaderboard}
-                             className="h-12 sm:h-16 rounded-xl sm:rounded-2xl border-2 font-black uppercase text-[10px] sm:text-xs tracking-widest gap-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50"
+                             className="w-full sm:w-auto h-12 sm:h-16 rounded-xl sm:rounded-2xl border-2 font-black uppercase text-[10px] sm:text-xs tracking-widest gap-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50"
                            >
                              <RefreshCw size={16} /> Reset All Points
                            </Button>
                            
-                           <div className="flex flex-col items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[160px] sm:min-w-[200px]">
+                           <div className="flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-4 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 w-full sm:min-w-[160px] md:sm:min-w-[200px]">
                               <Label className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
                               <div className="flex items-center gap-3 sm:gap-4">
                                  <span className={cn("text-xs font-bold uppercase", leaderboardForm.rewardsActive ? "text-green-500" : "text-slate-400")}>
