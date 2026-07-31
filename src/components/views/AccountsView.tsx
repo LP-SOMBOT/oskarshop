@@ -51,6 +51,7 @@ export default function AccountsView() {
     accountPosts, 
     eventAccounts,
     user, 
+    allUsers,
     orders, 
     setActiveTab, 
     isInitialLoading, 
@@ -182,10 +183,15 @@ export default function AccountsView() {
               );
             }
 
+            // Real-time verification status check
+            const authorProfile = allUsers.find(u => u.uid === post.uid);
+            const authorIsVerified = authorProfile?.isVerified ?? post.authorIsVerified;
+
             return (
               <AccountPostCard 
                 key={post.id} 
                 post={post} 
+                isVerified={authorIsVerified}
                 onClick={() => { setGlobalLoading(true); router.push(`/accounts/${post.id}`); }}
                 onEdit={(e) => { e.stopPropagation(); setEditingPost(post); }}
                 onDelete={(e) => { e.stopPropagation(); setDeletingPostId(post.id); }}
@@ -514,7 +520,7 @@ function AssetInput({ icon: Icon, label, value, onChange, placeholder }: { icon:
   );
 }
 
-function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, language }: { post: any, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isAdmin?: boolean, language: string }) {
+function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner, isAdmin, language }: { post: any, isVerified: boolean, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isAdmin?: boolean, language: string }) {
   const firstName = (post.authorName || "Gamer").split(' ')[0];
   const [waitText, setWaitText] = useState("");
 
@@ -539,7 +545,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="truncate font-bold text-sm md:text-base text-slate-900 dark:text-white leading-tight">{firstName}</span>
-              {post.authorIsVerified && <VerifiedBadge />}
+              {isVerified && <VerifiedBadge />}
             </div>
             <p className="text-[7px] md:text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
                {post.createdAt ? format(new Date(post.createdAt), 'MMM d, h:mm a').toUpperCase() : '...'}
@@ -567,7 +573,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
         <div className="flex justify-between items-center">
            <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-[8px] font-black tracking-widest rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-1.5 uppercase border-none">{post.gameType}</Badge>
-              <Badge className="bg-blue-500 text-white border-none font-bold text-[6px] md:text-[8px] uppercase tracking-tighter h-4 px-1.5">{post.platform?.toUpperCase().replace('ACCOUNT', '')}</Badge>
+              <Badge className="bg-blue-500 text-white border-none font-bold text-[6px] md:text-[8px] uppercase tracking-tighter h-3.5 md:h-4 px-1.5">{post.platform?.toUpperCase().replace('ACCOUNT', '')}</Badge>
            </div>
            {isAdmin && (
              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-primary/20 bg-primary/5 text-primary">
