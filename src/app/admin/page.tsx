@@ -985,7 +985,7 @@ export default function AdminPage() {
                         <RewardControl 
                           rank={2} 
                           value={leaderboardForm.rewards.rank2} 
-                          onChange={(v) => setLeaderboardForm({
+                          onChange={(v) => setLanguageState({
                             ...leaderboardForm, 
                             rewards: { ...leaderboardForm.rewards, rank2: v }
                           })}
@@ -2767,42 +2767,40 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       <Card className="rounded-[3.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-14 space-y-8 md:space-y-12">
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-6 md:space-y-10">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-primary">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
-                  <ShieldCheck size={24} />
+              <div className="flex items-center gap-3 md:gap-4 text-primary">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={20} className="md:size-6" />
                 </div>
-                <div>
-                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
-                </div>
+                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
               </div>
             </div>
 
             <div className="relative">
               <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              <div className="p-6 md:p-12 flex flex-row items-center justify-between gap-8">
-                <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
+              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
+                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
-                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
                       {order.processedBy?.photoURL ? (
                         <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="min-w-0 space-y-1.5">
-                    <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
-                    <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
+                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
                       {order.processedBy?.name || "Wali lama furin"}
                     </h5>
                     {order.processedAt && (
-                      <div className="flex items-center gap-2 text-muted-foreground justify-start">
-                         <Clock size={14} className="opacity-40" />
-                         <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
+                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
+                         <Clock size={12} className="opacity-40" />
+                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
                             {formatDistanceToNow(new Date(order.processedAt))} ago
                          </p>
                       </div>
@@ -2810,15 +2808,15 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                   </div>
                 </div>
 
-                <div className="w-px h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
+                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
 
-                <div className="text-right space-y-2 shrink-0">
-                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
-                  <div className="space-y-1">
-                     <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
+                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-0.5">
+                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
                         {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
                      </p>
-                     <p className="text-sm md:text-lg font-bold text-primary">
+                     <p className="text-xs md:text-lg font-bold text-primary">
                         {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
@@ -3094,58 +3092,56 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </Card>
 
-       <Card className="rounded-[3.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-14 space-y-8 md:space-y-12">
+       <Card className="rounded-[2.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-6 md:space-y-10">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-primary">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
-                  <ShieldCheck size={24} />
+              <div className="flex items-center gap-3 md:gap-4 text-primary">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={20} className="md:size-6" />
                 </div>
-                <div>
-                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
-                </div>
+                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
               </div>
             </div>
 
             <div className="relative">
               <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              <div className="p-6 md:p-12 flex flex-row items-center justify-between gap-8">
-                <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
+              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
+                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
-                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
                       {post.processedBy?.photoURL ? (
                         <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="min-w-0 space-y-1.5">
-                    <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
-                    <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
+                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
                       {post.processedBy?.name || "Wali lama furin"}
                     </h5>
                     {post.processedAt && (
-                      <div className="flex items-center gap-2 text-muted-foreground justify-start">
-                         <Clock size={14} className="opacity-40" />
-                         <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
+                         <Clock size={12} className="opacity-40" />
+                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
+                            {formatDistanceToNow(new Date(post.processedAt))} ago
                          </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="w-px h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
+                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
 
-                <div className="text-right space-y-2 shrink-0">
-                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
-                  <div className="space-y-1">
-                     <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
+                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-0.5">
+                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
                         {post.completedAt ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
                      </p>
-                     <p className="text-sm md:text-lg font-bold text-primary">
+                     <p className="text-xs md:text-lg font-bold text-primary">
                         {post.completedAt ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
