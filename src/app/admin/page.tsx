@@ -3111,8 +3111,8 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
                     <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
-                      {order.processedBy?.photoURL ? (
-                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      {post.processedBy?.photoURL ? (
+                        <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
                       )}
