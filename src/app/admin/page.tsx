@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -685,7 +686,7 @@ export default function AdminPage() {
       if (deleteTarget.type === 'account') await deleteAccountPost(deleteTarget.id);
       if (deleteTarget.type === 'eventAccount') await deleteEventAccount(deleteTarget.id);
       if (deleteTarget.type === 'game') await deleteGame(deleteTarget.id);
-      if (deleteTarget.type === 'product') await deleteProduct(deleteTarget.id);
+      if (deleteTarget.type === 'product') await deleteTarget.id;
       if (deleteTarget.type === 'user') await deleteUserFn(deleteTarget.id);
       if (deleteTarget.type === 'event') await deleteEvent(deleteTarget.id);
       if (deleteTarget.type === 'banner') await deleteBanner(deleteTarget.id);
@@ -1180,7 +1181,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {accountPosts.length > 0 && activeView === 'account-posts' && (
+          {activeView === 'account-posts' && (
             <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                {selectedAccountId ? (
                  <AccountDetailView 
@@ -1219,7 +1220,7 @@ export default function AdminPage() {
                                key={p.id} 
                                className={cn(
                                  "p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-5 transition-all",
-                                 isOverdue && "ring-2 ring-red-500/50 bg-red-50/50"
+                                 claimantsList.length > 0 && "ring-2 ring-red-500 bg-red-50/10"
                                )}
                              >
                                 <div className="flex items-center justify-between">
@@ -1313,7 +1314,7 @@ export default function AdminPage() {
                                     key={p.id} 
                                     className={cn(
                                       "border-slate-50 dark:border-white/5 h-24 transition-colors",
-                                      isOverdue ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-slate-50/50"
+                                      claimantsList.length > 0 ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-slate-50/50"
                                     )}
                                  >
                                     <TableCell className="px-6 lg:px-10">
@@ -2445,7 +2446,7 @@ export default function AdminPage() {
                    placeholder="e.g. DEVL26%OFF" 
                    value={promoCodeForm.code} 
                    onChange={e => setPromoCodeInput({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
-                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase w-full" 
+                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus-ring-primary transition-all uppercase w-full" 
                  />
               </div>
 
@@ -2899,6 +2900,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   }, []);
 
   if (!post) return null;
+  const seller = allUsers.find((u: any) => u.uid === post.uid);
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
@@ -3094,59 +3096,65 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </Card>
 
-       <Card className="rounded-[2.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-10 space-y-6 md:space-y-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 md:gap-4 text-primary">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
-                  <ShieldCheck size={20} className="md:size-6" />
-                </div>
-                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
+       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Users size={24} />
               </div>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholders</h4>
             </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
-                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
-                  <div className="relative shrink-0">
-                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
-                      {post.processedBy?.photoURL ? (
-                        <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
-                      )}
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+              {/* SELLER COLUMN */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Originating Seller</p>
+                <div className="p-5 md:p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border dark:border-white/5 flex items-center gap-5">
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md">
+                    {seller?.photoURL ? <Image src={seller.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={32}/></div>}
                   </div>
-                  
-                  <div className="min-w-0 space-y-1">
-                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
-                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
-                      {post.processedBy?.name || "Wali lama furin"}
-                    </h5>
-                    {post.processedAt && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
-                         <Clock size={12} className="opacity-40" />
-                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(post.processedAt))} ago
-                         </p>
-                      </div>
-                    )}
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate font-bold text-lg md:text-xl text-slate-900 dark:text-white">{seller?.name || "Deleted User"}</p>
+                        {seller?.isVerified && <VerifiedBadge />}
+                     </div>
+                     <div className="flex items-center gap-2 mt-1">
+                        <Smartphone size={12} className="text-primary" />
+                        <span className="text-xs font-black text-slate-500">{seller?.phoneNumber || "N/A"}</span>
+                     </div>
+                     <Badge className="mt-2 bg-amber-500 text-white border-none font-bold text-[8px] uppercase">{seller?.points || 0} Points</Badge>
                   </div>
                 </div>
+              </div>
 
-                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
-
-                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
-                  <div className="space-y-0.5">
-                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
-                        {post.completedAt ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
-                     </p>
-                     <p className="text-xs md:text-lg font-bold text-primary">
-                        {post.completedAt ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
-                     </p>
-                  </div>
+              {/* CLAIMANTS COLUMN */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-2">Active Claimants ({claimants.length})</p>
+                <div className="space-y-3">
+                  {claimants.length === 0 ? (
+                    <div className="p-10 text-center border-2 border-dashed rounded-3xl opacity-20 italic font-bold uppercase text-[10px]">No active buyer claims</div>
+                  ) : (
+                    claimants.map((c: any) => (
+                      <div key={c.uid} className={cn(
+                        "p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border dark:border-white/5 flex items-center justify-between group transition-all",
+                        c.status === 'accepted' ? "ring-2 ring-green-500/50 bg-green-50 dark:bg-green-500/5" : ""
+                      )}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden relative shadow-sm border border-white">
+                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={16}/></div>}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{c.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{c.whatsapp}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                           <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(c.whatsapp)}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg active:scale-90 transition-transform shadow-md"><MessageCircle size={14} /></button>
+                           {c.status === 'accepted' && <Badge className="bg-green-500 text-white border-none text-[8px] font-black">ACCEPTED</Badge>}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -3575,6 +3583,1793 @@ function StatItem({ label, value, icon: Icon, color }: { label: string, value: a
          <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
          <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
        </div>
+    </div>
+  );
+}
+
+function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
+  if (!order) return null;
+  const item = order.items?.[0];
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(order.id.toUpperCase());
+    toast({ title: "Reference Copied" });
+  };
+
+  const handleWhatsApp = () => {
+    const num = formatWhatsAppNumber(order.gameDetails?.whatsappNumber || "252613982172");
+    window.open(`https://wa.me/${num}`, '_blank');
+  };
+
+  const handleCopyPlayerId = () => {
+    const pid = order.ffUid || order.gameDetails?.playerID;
+    if (pid) {
+      navigator.clipboard.writeText(pid);
+      toast({ title: "Player ID Copied" });
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
+       <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-6">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <ArrowLeft size={18} />
+             </button>
+             <div>
+                <h3 className="font-headline font-bold text-xl uppercase tracking-tighter text-slate-900 dark:text-white">Order Insight</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">REF: #{order.id.toUpperCase()}</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-4">
+             <StatusBadge status={order.status} />
+             <button onClick={onDelete} className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl hover:bg-red-100 transition-colors">
+                <Trash2 size={18} />
+             </button>
+          </div>
+       </div>
+
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
+             <div>
+                <div className="flex items-center gap-2 mb-2">
+                   <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
+                      {item?.title?.replace("Auction Winner", "Guuleystaha") || "ACCOUNT: UNKNOWN"}
+                   </h2>
+                   {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase ml-2">ONE TIME</Badge>}
+                </div>
+                <div className="flex items-center gap-4">
+                   <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
+                      {order.paymentMethod || "WHATSAPP DIRECT"}
+                   </Badge>
+                   <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
+                      ABOUT {formatDistanceToNow(new Date(order.createdAt))} AGO
+                   </span>
+                </div>
+             </div>
+             <div className="text-right">
+                <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                   ${order.total.toFixed(2)}
+                </p>
+             </div>
+          </div>
+
+          <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
+             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> : null} />
+             <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                   <User size={14} className="opacity-40" />
+                   <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
+                </div>
+                <div className="flex items-center gap-1 min-w-0">
+                   <p className="text-sm md:text-xl font-semibold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
+                   {order.ffVerified ? (
+                     <VerifiedBadge />
+                   ) : order.ffUid ? (
+                     <Badge className="bg-amber-100 text-amber-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
+                   ) : null}
+                </div>
+             </div>
+             <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> : null} />
+             <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
+             <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
+             {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
+             {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
+             {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-6 md:space-y-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4 text-primary">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={20} className="md:size-6" />
+                </div>
+                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
+              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
+                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                      {order.processedBy?.photoURL ? (
+                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
+                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
+                      {order.processedBy?.name || "Wali lama furin"}
+                    </h5>
+                    {order.processedAt && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
+                         <Clock size={12} className="opacity-40" />
+                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
+                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                         </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
+
+                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-0.5">
+                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
+                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                     </p>
+                     <p className="text-xs md:text-lg font-bold text-primary">
+                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                     </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-12 space-y-8">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+                </div>
+                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
+             </div>
+
+             <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
+                   <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="h-16 md:h-20 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                         {['pending', 'processing', 'successful', 'cancelled'].map(s => (
+                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                         ))}
+                      </SelectContent>
+                   </Select>
+                </div>
+
+                {status === 'cancelled' && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                     <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Cancellation Reason</label>
+                     <Textarea 
+                       value={reason} 
+                       onChange={(e) => setReason(e.target.value)} 
+                       placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
+                       className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
+                     />
+                  </div>
+                )}
+
+                <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
+                </Button>
+
+                <div className="pt-6 space-y-6">
+                   <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
+                   <div className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" onClick={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                         <Copy size={16} /> Copy ID
+                      </Button>
+                      <Button variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                         <MessageCircle size={16} /> WhatsApp
+                      </Button>
+                   </div>
+                </div>
+             </div>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
+  const [now, setNow] = useState(Date.now());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!post) return null;
+  const seller = allUsers.find((u: any) => u.uid === post.uid);
+  const claimants = Object.values(post.claimants || {});
+  const { updateAccountPostStatus } = useApp();
+
+  const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
+  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+    const t = Number(c.timestamp);
+    return isNaN(t) ? Infinity : t;
+  })) : null;
+  const isStalling = earliestClaim && earliestClaim !== Infinity && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+
+  const isWaiting = earliestClaim && earliestClaim !== Infinity && !post.sellerReported && !post.sold;
+  const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
+
+  const handleForceSold = (uid: string) => {
+    updateAccountPostStatus(post.id, 'sold', uid);
+    toast({ title: "Account assigned to buyer!" });
+  };
+
+  const handleWhatsApp = (num: string) => {
+    const formatted = formatWhatsAppNumber(num);
+    window.open(`https://wa.me/${formatted}`, '_blank');
+  };
+
+  const finalBuyer = useMemo(() => {
+    if (post.status !== 'sold' || !post.boughtBy) return null;
+    return allUsers.find((u: any) => u.uid === post.boughtBy);
+  }, [post.status, post.boughtBy, allUsers]);
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
+       <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-6">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <ArrowLeft size={18} />
+             </button>
+             <div>
+                <h3 className="font-headline font-bold text-xl uppercase tracking-tighter text-slate-900 dark:text-white">Listing Hub</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">REF: #{post.id.toUpperCase()}</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-4">
+             <StatusBadge status={post.status} />
+             <button onClick={onDelete} className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl hover:bg-red-100 transition-colors">
+                <Trash2 size={18} />
+             </button>
+          </div>
+       </div>
+
+       {post.status === 'sold' && (
+         <Card className="rounded-[3rem] border-none bg-green-500 text-white p-8 md:p-12 space-y-8 md:space-y-12 animate-in zoom-in duration-500 shadow-2xl shadow-green-500/20">
+            <div className="flex items-center gap-6">
+               <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0">
+                  <PartyPopper size={40} className="md:size-12" />
+               </div>
+               <div>
+                  <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight leading-none">Confirmed Sale!</h2>
+                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Verified and closed successfully.</p>
+               </div>
+            </div>
+            
+            <div className="p-6 md:p-8 bg-black/10 backdrop-blur-md rounded-[2.5rem] flex items-center gap-6 border border-white/10 w-fit min-w-[280px]">
+               <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden relative border-2 border-white/30 shrink-0">
+                  {finalBuyer?.photoURL ? (
+                    <Image src={finalBuyer.photoURL} alt={finalBuyer.name} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-white/10 flex items-center justify-center"><User size={24}/></div>
+                  )}
+               </div>
+               <div>
+                  <p className="text-[10px] md:text-11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <p className="truncate font-semibold text-xl md:text-2xl max-w-[200px]">{finalBuyer?.name || "Market User"}</p>
+                    {finalBuyer?.isVerified && <VerifiedBadge />}
+                  </div>
+                  <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
+               </div>
+            </div>
+         </Card>
+       )}
+
+       {isStalling && (
+         <Card className="rounded-[3rem] border-none bg-red-600 text-white p-6 md:p-10 space-y-8 animate-in slide-in-from-top-4 duration-700 shadow-2xl shadow-red-500/20">
+            <div className="flex items-center gap-6">
+               <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 animate-pulse">
+                  <ShieldAlert size={32} className="md:size-10 text-white" />
+               </div>
+               <div>
+                  <h2 className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight font-black leading-none">Seller Stalling</h2>
+                  <p className="text-white/80 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">PENALTY ACTION REQUIRED</p>
+               </div>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+               <Button 
+                onClick={() => enforceAccountAction(post.id, 'approved', 'Listing reset by admin due to lack of seller response.')} 
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-black uppercase text-[10px] h-12 rounded-xl"
+               >
+                  Reset & Approve
+               </Button>
+               
+               <Button 
+                onClick={() => enforceAccountAction(post.id, 'delete', 'Listing deleted due to stalling and security protocol violations.')} 
+                className="bg-red-800 hover:bg-red-900 text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Delete Listing
+               </Button>
+
+               <Button 
+                onClick={() => suspendSeller(post.uid, 3)} 
+                className="bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Suspend Seller (3D)
+               </Button>
+
+               <Button 
+                variant="ghost" 
+                onClick={() => dismissAccountWarning(post.id)} 
+                className="text-white/60 hover:text-white border border-white/10 font-bold uppercase text-[10px] h-12 rounded-xl"
+               >
+                  Dismiss Overlay
+               </Button>
+
+               <Button 
+                onClick={() => handleForceSold("")} 
+                variant="outline"
+                className="bg-white text-red-600 hover:bg-slate-50 font-black uppercase text-[10px] h-12 rounded-xl border-none"
+               >
+                  Force Sold (None)
+               </Button>
+            </div>
+
+            {claimants.length > 0 && (
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Penalty: Force Sold to Claimant</p>
+                 <div className="flex flex-wrap gap-2">
+                    {claimants.map((c: any) => (
+                      <Button 
+                        key={c.uid} 
+                        size="sm" 
+                        onClick={() => handleForceSold(c.uid)}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold text-[9px] h-10 px-4 rounded-xl shadow-md border-none"
+                      >
+                         Assign to {c.name.split(' ')[0]}
+                      </Button>
+                    ))}
+                 </div>
+              </div>
+            )}
+         </Card>
+       )}
+
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="relative aspect-video w-full p-4 sm:p-8">
+             <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden shadow-inner bg-slate-100 dark:bg-slate-800">
+                {post.thumbnailUrl ? (
+                   <Image src={post.thumbnailUrl} alt={post.authorName} fill className="object-cover" unoptimized />
+                ) : (
+                   <div className="w-full h-full flex items-center justify-center opacity-10"><Gamepad2 size={64} /></div>
+                )}
+             </div>
+          </div>
+
+          <div className="px-8 pb-10 md:px-14 md:pb-16 space-y-10">
+             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div>
+                   <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white mb-2">
+                      {post.gameType} Account
+                   </h2>
+                   <div className="flex items-center gap-4">
+                      <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
+                         {post.platform}
+                      </Badge>
+                      <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
+                         ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
+                      </span>
+                </div>
+                </div>
+                <div className="text-right">
+                   <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                      ${post.price.toFixed(2)}
+                   </p>
+                </div>
+             </div>
+
+             <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
+
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
+                <StatItem label="Level" value={post.level || "0"} icon={Star} color="text-amber-500" />
+                <StatItem label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} color="text-primary" />
+                <StatItem label="Wait" value={waitValue} icon={Clock} color="text-blue-500" />
+                <StatItem label="Category" value={post.gameType} icon={LayoutGrid} color="text-indigo-500" />
+             </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Users size={24} />
+              </div>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholders</h4>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+              {/* SELLER COLUMN */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Originating Seller</p>
+                <div className="p-5 md:p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border dark:border-white/5 flex items-center gap-5">
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md">
+                    {seller?.photoURL ? <Image src={seller.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={32}/></div>}
+                  </div>
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate font-bold text-lg md:text-xl text-slate-900 dark:text-white">{seller?.name || "Deleted User"}</p>
+                        {seller?.isVerified && <VerifiedBadge />}
+                     </div>
+                     <div className="flex items-center gap-2 mt-1">
+                        <Smartphone size={12} className="text-primary" />
+                        <span className="text-xs font-black text-slate-500">{seller?.phoneNumber || "N/A"}</span>
+                     </div>
+                     <Badge className="mt-2 bg-amber-500 text-white border-none font-bold text-[8px] uppercase">{seller?.points || 0} Points</Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* CLAIMANTS COLUMN */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-2">Active Claimants ({claimants.length})</p>
+                <div className="space-y-3">
+                  {claimants.length === 0 ? (
+                    <div className="p-10 text-center border-2 border-dashed rounded-3xl opacity-20 italic font-bold uppercase text-[10px]">No active buyer claims</div>
+                  ) : (
+                    claimants.map((c: any) => (
+                      <div key={c.uid} className={cn(
+                        "p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border dark:border-white/5 flex items-center justify-between group transition-all",
+                        c.status === 'accepted' ? "ring-2 ring-green-500/50 bg-green-50 dark:bg-green-500/5" : ""
+                      )}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden relative shadow-sm border border-white">
+                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={16}/></div>}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{c.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{c.whatsapp}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                           <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(c.whatsapp)}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg active:scale-90 transition-transform shadow-md"><MessageCircle size={14} /></button>
+                           {c.status === 'accepted' && <Badge className="bg-green-500 text-white border-none text-[8px] font-black">ACCEPTED</Badge>}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-12 space-y-8">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+                </div>
+                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
+             </div>
+
+             <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
+                   <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                         {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
+                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                         ))}
+                      </SelectContent>
+                   </Select>
+                </div>
+
+                {status === 'sold' && (
+                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
+                      <Select value={buyerId} onValueChange={setBuyerId}>
+                         <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                            <SelectValue placeholder="Select User..." />
+                         </SelectTrigger>
+                         <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                            <div className="max-h-[300px] overflow-y-auto">
+                               {allUsers.map((u: any) => (
+                                 <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
+                                    {u.name || "Unknown User"} ({u.phoneNumber})
+                                 </SelectItem>
+                               ))}
+                            </div>
+                         </SelectContent>
+                      </Select>
+                      <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
+                   </div>
+                )}
+
+                <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
+                </Button>
+             </div>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
+function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number }) {
+  return (
+    <button onClick={onClick} className={cn("w-full h-12 flex items-center transition-all duration-300 rounded-xl relative group", active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800", expanded ? "px-4 gap-4" : "justify-center", className)}>
+      <Icon size={20} className={cn("shrink-0 transition-transform group-hover:scale-110", active ? "stroke-[2.5px]" : "")} />
+      {expanded && <span className="font-bold text-[13px] uppercase tracking-wider whitespace-nowrap overflow-hidden flex-1 text-left">{label}</span>}
+      {badge !== undefined && badge > 0 && <span className={cn("bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center transition-all", expanded ? "px-2.5 py-0.5" : "absolute top-1 right-1 w-4 h-4")}>{badge}</span>}
+    </button>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, color, bgColor, pulse }: { label: string, value: string, icon: any, color: string, bgColor: string, pulse?: boolean }) {
+  return (
+    <Card className="rounded-[2rem] p-6 sm:p-8 border-none shadow-lg bg-white dark:bg-slate-900 group hover:-translate-y-1 transition-all">
+      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform group-hover:scale-110 relative", bgColor, color)}>
+         <Icon size={28} />
+         {pulse && <div className="absolute inset-0 bg-inherit rounded-2xl animate-ping opacity-20" />}
+      </div>
+      <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white mb-1 truncate">{value}</h3>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+    </Card>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-700",
+    processing: "bg-blue-100 text-blue-700",
+    successful: "bg-green-100 text-green-700",
+    approved: "bg-green-100 text-green-700",
+    holding: "bg-indigo-100 text-indigo-700",
+    cancelled: "bg-red-100 text-red-700",
+    rejected: "bg-red-100 text-red-700",
+    sold: "bg-slate-900 text-white"
+  };
+  return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
+}
+
+function InsightStat({ label, value, icon: Icon, isPrimary, action }: any) {
+  return (
+    <div className="space-y-2 group/stat">
+       <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon size={14} className="opacity-40" />
+          <p className="text-[9px] font-black uppercase tracking-[0.2em]">{label}</p>
+       </div>
+       <div className="flex items-center gap-2">
+         <p className={cn(
+           "text-sm md:text-xl font-bold truncate min-w-0 flex-1",
+           isPrimary ? "text-primary" : "text-slate-900 dark:text-white"
+         )} title={value}>{value}</p>
+         {action && <div className="shrink-0">{action}</div>}
+       </div>
+    </div>
+  );
+}
+
+function SettingInput({ label, value, onChange, placeholder, type = "text" }: { label: string, value: string, onChange: (v: string) => void, placeholder: string, type?: string }) {
+  return (
+    <div className="space-y-2">
+       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">{label}</Label>
+       <Input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all" />
+    </div>
+  );
+}
+
+function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, onEndEarly, onAssignWinner }: { event: any, onEdit: ()=>void, onDelete: ()=>void, onViewParticipants: ()=>void, onEndEarly: ()=>void, onAssignWinner: ()=>void }) {
+  const { allUsers } = useApp();
+  
+  const statusColors: Record<string, { border: string, badge: string, dot?: boolean }> = {
+    upcoming: { border: "border-blue-500", badge: "bg-blue-500 text-white" },
+    active: { border: "border-green-500", badge: "bg-green-600 text-white", dot: true },
+    ended: { border: "border-amber-700", badge: "bg-slate-600 text-white" },
+    claimed: { border: "border-purple-600", badge: "bg-purple-600 text-white" }
+  };
+
+  const status = event.status || 'pending';
+  const config = statusColors[status] || statusColors.upcoming;
+
+  const winnerProfile = useMemo(() => {
+    if (!event.winnerId) return null;
+    return allUsers.find(u => u.uid === event.winnerId);
+  }, [event.winnerId, allUsers]);
+
+  return (
+    <Card className={cn(
+      "rounded-[3rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden group border-l-[12px] transition-all hover:shadow-primary/5",
+      config.border
+    )}>
+       <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
+          {event.imageUrls?.[0] ? (
+            <Image src={event.imageUrls[0]} alt={event.title} fill className="object-cover transition-transform duration-1000 group-hover:scale-105" unoptimized />
+          ) : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">IMAGE</div>}
+          
+          <div className="absolute top-6 left-6">
+             <Badge className={cn("border-none font-black uppercase text-[10px] px-4 py-2 shadow-xl tracking-widest flex items-center gap-2 rounded-xl backdrop-blur-md bg-opacity-90", config.badge)}>
+                {config.dot && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                {status}
+             </Badge>
+          </div>
+       </div>
+
+       <div className="p-6 md:p-10 space-y-8">
+          <div className="space-y-1">
+             <h4 className="font-black text-2xl md:text-4xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
+             <p className="text-sm font-bold text-[#D97706] uppercase tracking-[0.2em]">{event.gameName}</p>
+          </div>
+
+          {(status === 'ended' || status === 'claimed') && winnerProfile && (
+             <div className="p-5 md:p-8 bg-primary/5 dark:bg-primary/10 rounded-[1.5rem] md:rounded-[2.5rem] border border-primary/20 space-y-4 animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-primary">
+                      <Trophy size={18} />
+                      <span className="font-black text-[10px] uppercase tracking-widest">Guuleystaha</span>
+                   </div>
+                   <Badge className={cn(
+                     "text-[9px] font-black uppercase px-3 py-1 rounded-full border-none shadow-sm",
+                     event.winnerClaim?.status === 'accepted' ? "bg-green-50 text-white" : 
+                     event.winnerClaim?.status === 'ignored' ? "bg-red-50 text-white" : "bg-amber-500 text-white"
+                   )}>
+                      {event.winnerClaim?.status || 'PENDING'}
+                   </Badge>
+                </div>
+                <div className="flex items-center gap-4">
+                   <Avatar className="w-12 h-12 md:w-16 md:h-16 border-4 border-white dark:border-slate-800 shadow-lg">
+                      <AvatarImage src={winnerProfile.photoURL} />
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
+                   </Avatar>
+                   <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <p className="truncate font-semibold text-base md:text-xl max-w-[200px]">{winnerProfile.name}</p>
+                        {winnerProfile.isVerified && <VerifiedBadge />}
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
+                         <Smartphone size={14} />
+                         <p className="text-[11px] md:text-sm font-medium">{winnerProfile.phoneNumber}</p>
+                      </div>
+                   </div>
+                   <div className="text-right shrink-0">
+                      <p className="text-[10px] font-black text-primary uppercase leading-none mb-1">Offer</p>
+                      <p className="text-2xl font-headline font-bold text-primary tracking-tighter">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
+                   </div>
+                </div>
+             </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-6 md:gap-10 py-6 border-y dark:border-white/5">
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Qiimaha asalka</p>
+                <div className="flex items-center gap-2">
+                   <span className="text-primary font-black text-2xl md:text-4xl">$</span>
+                   <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.initialPrice}</span>
+                </div>
+             </div>
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Ka qeeybalayaal</p>
+                <div className="flex items-center gap-3">
+                   <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
+                   <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.participantsCount || 0}</span>
+                </div>
+             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 pt-2">
+             <button 
+               onClick={onEdit}
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
+             >
+                <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                <span>Edit</span>
+             </button>
+             
+             <button 
+               onClick={onViewParticipants}
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center"
+             >
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-500" />
+                <span>Leaderboard</span>
+             </button>
+
+             <button 
+               onClick={onAssignWinner}
+               className="rounded-2xl h-12 md:h-16 px-6 md:px-10 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] md:text-xs gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center justify-center flex-1 sm:flex-none"
+             >
+                <Trophy className="w-4 h-4 md:w-5 md:h-5" />
+                <span>Dooro guuleystaha</span>
+             </button>
+
+             <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
+                {status === 'active' && (
+                  <button 
+                    onClick={onEndEarly}
+                    className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2 flex items-center"
+                  >
+                     <Clock className="w-4 h-4" />
+                     <span>Jooji event ga</span>
+                  </button>
+                )}
+
+                <button 
+                  onClick={onDelete}
+                  title="Delete Event"
+                  className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-slate-300 hover:text-red-600 active:scale-95 transition-all shrink-0 flex items-center justify-center"
+                >
+                   <Trash2 size={16} />
+                </button>
+             </div>
+          </div>
+       </div>
+    </Card>
+  );
+}
+
+function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignWinner }: { eventId: string, eventAccount: any, onBack: ()=>void, onAssignWinner: (eid: string, uid: string)=>void }) {
+  const { rtdb } = useApp();
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!rtdb || !eventId) return;
+    const participantsRef = ref(rtdb, `eventParticipants/${eventId}`);
+    const unsub = onValue(participantsRef, (snap) => {
+      const data = snap.val();
+      if (data) {
+        const sorted = Object.values(data).sort((a: any, b: any) => {
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        });
+        setParticipants(sorted);
+      } else {
+        setParticipants([]);
+      }
+      setLoading(false);
+    });
+    return () => off(participantsRef);
+  }, [rtdb, eventId]);
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4">
+       <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={24}/></button>
+             <div>
+                <h3 className="font-headline font-bold text-2xl uppercase tracking-tight">{eventAccount?.title}</h3>
+                <p className="text-[10px] font-black text-muted-foreground uppercase">Real-time Participants List</p>
+             </div>
+          </div>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
+          <StatCard label="Total Bid" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" />
+          <StatCard label="Kaaalinta 1aad" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" />
+          <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
+       </div>
+
+       <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                  <TableRow className="border-none h-16">
+                    <TableHead className="px-6 lg:px-10 font-black text-[10px] uppercase">Rank</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">User</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Bid</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Value</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Last Bid</TableHead>
+                    <TableHead className="text-right px-6 lg:px-10 font-black text-[10px] uppercase">Actions</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {loading ? (
+                    <TableRow><TableCell colSpan={6} className="h-64 text-center">Loading Participants...</TableCell></TableRow>
+                  ) : participants.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="h-64 text-center opacity-30 italic font-bold">No participants yet</TableCell></TableRow>
+                  ) : (
+                    participants.map((p, idx) => (
+                      <TableRow key={p.uid} className={cn(
+                        "h-24 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-slate-50 dark:border-white/5",
+                        p.uid === eventAccount?.winnerId && "bg-primary/5"
+                      )}>
+                        <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-1 min-w-0">
+                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm shrink-0">
+                                  <AvatarImage src={p.avatar} />
+                                  <AvatarFallback>{p.name?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <p className="truncate font-semibold text-sm max-w-[150px]">{p.name}</p>
+                                    {p.isVerified && <VerifiedBadge />}
+                                  </div>
+                                  <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
+                              </div>
+                            </div>
+                        </TableCell>
+                        <TableCell className="font-bold text-lg">{p.taps}</TableCell>
+                        <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
+                        <TableCell className="text-right px-6 lg:px-10">
+                            <div className="flex justify-end items-center gap-3">
+                               <button 
+                                 onClick={() => {
+                                   const formatted = formatWhatsAppNumber(p.phone);
+                                   window.open(`https://wa.me/${formatted}`, '_blank');
+                                 }}
+                                 className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                               >
+                                  <MessageCircle size={18} />
+                               </button>
+                               <button 
+                                 onClick={() => onAssignWinner(eventId, p.uid)}
+                                 className={cn(
+                                   "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
+                                   p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
+                                 )} 
+                               >
+                                 {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
+                               </button>
+                            </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+              </TableBody>
+            </Table>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
+function StatBox({ icon: Icon, label, value, color, bgColor }: { icon: any, label: string, value: string, color: string, bgColor: string }) {
+  return (
+    <div className={cn("p-4 rounded-2xl flex items-center gap-4", bgColor)}>
+       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", color, "bg-white dark:bg-slate-900 shadow-sm")}>
+          <Icon size={20} />
+       </div>
+       <div>
+          <p className="text-xl font-headline font-bold leading-none">{value}</p>
+          <p className="text-[10px] font-black uppercase text-slate-400 mt-1">{label}</p>
+       </div>
+    </div>
+  );
+}
+
+function StatusInfo({ icon: Icon, label, value, color }: { icon: any, label: string, value: any, color?: string }) {
+  return (
+    <div className="space-y-1 min-w-0">
+      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
+        <Icon size={10} /> {label}
+      </p>
+      <p className={cn("text-xs sm:text-base font-bold truncate", color || "text-slate-900 dark:text-white")}>{value}</p>
+    </div>
+  );
+}
+
+function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
+  return (
+    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
+       <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
+       <div className="min-w-0 w-full">
+         <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
+         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
+       </div>
+    </div>
+  );
+}
+
+function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
+  if (!order) return null;
+  const item = order.items?.[0];
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(order.id.toUpperCase());
+    toast({ title: "Reference Copied" });
+  };
+
+  const handleWhatsApp = () => {
+    const num = formatWhatsAppNumber(order.gameDetails?.whatsappNumber || "252613982172");
+    window.open(`https://wa.me/${num}`, '_blank');
+  };
+
+  const handleCopyPlayerId = () => {
+    const pid = order.ffUid || order.gameDetails?.playerID;
+    if (pid) {
+      navigator.clipboard.writeText(pid);
+      toast({ title: "Player ID Copied" });
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
+       <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-6">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <ArrowLeft size={18} />
+             </button>
+             <div>
+                <h3 className="font-headline font-bold text-xl uppercase tracking-tighter text-slate-900 dark:text-white">Order Insight</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">REF: #{order.id.toUpperCase()}</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-4">
+             <StatusBadge status={order.status} />
+             <button onClick={onDelete} className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl hover:bg-red-100 transition-colors">
+                <Trash2 size={18} />
+             </button>
+          </div>
+       </div>
+
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
+             <div>
+                <div className="flex items-center gap-2 mb-2">
+                   <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
+                      {item?.title?.replace("Auction Winner", "Guuleystaha") || "ACCOUNT: UNKNOWN"}
+                   </h2>
+                   {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase ml-2">ONE TIME</Badge>}
+                </div>
+                <div className="flex items-center gap-4">
+                   <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
+                      {order.paymentMethod || "WHATSAPP DIRECT"}
+                   </Badge>
+                   <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
+                      ABOUT {formatDistanceToNow(new Date(order.createdAt))} AGO
+                   </span>
+                </div>
+             </div>
+             <div className="text-right">
+                <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                   ${order.total.toFixed(2)}
+                </p>
+             </div>
+          </div>
+
+          <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
+             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> : null} />
+             <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                   <User size={14} className="opacity-40" />
+                   <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
+                </div>
+                <div className="flex items-center gap-1 min-w-0">
+                   <p className="text-sm md:text-xl font-semibold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
+                   {order.ffVerified ? (
+                     <VerifiedBadge />
+                   ) : order.ffUid ? (
+                     <Badge className="bg-amber-100 text-amber-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
+                   ) : null}
+                </div>
+             </div>
+             <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> : null} />
+             <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
+             <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
+             {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
+             {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
+             {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-6 md:space-y-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4 text-primary">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={20} className="md:size-6" />
+                </div>
+                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
+              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
+                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                      {order.processedBy?.photoURL ? (
+                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
+                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
+                      {order.processedBy?.name || "Wali lama furin"}
+                    </h5>
+                    {order.processedAt && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
+                         <Clock size={12} className="opacity-40" />
+                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
+                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                         </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
+
+                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-0.5">
+                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
+                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                     </p>
+                     <p className="text-xs md:text-lg font-bold text-primary">
+                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                     </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-12 space-y-8">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+                </div>
+                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
+             </div>
+
+             <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
+                   <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="h-16 md:h-20 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                         {['pending', 'processing', 'successful', 'cancelled'].map(s => (
+                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                         ))}
+                      </SelectContent>
+                   </Select>
+                </div>
+
+                {status === 'cancelled' && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                     <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Cancellation Reason</label>
+                     <Textarea 
+                       value={reason} 
+                       onChange={(e) => setReason(e.target.value)} 
+                       placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
+                       className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
+                     />
+                  </div>
+                )}
+
+                <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
+                </Button>
+
+                <div className="pt-6 space-y-6">
+                   <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
+                   <div className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" onClick={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                         <Copy size={16} /> Copy ID
+                      </Button>
+                      <Button variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                         <MessageCircle size={16} /> WhatsApp
+                      </Button>
+                   </div>
+                </div>
+             </div>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
+  const [now, setNow] = useState(Date.now());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!post) return null;
+  const seller = allUsers.find((u: any) => u.uid === post.uid);
+  const claimants = Object.values(post.claimants || {});
+  const { updateAccountPostStatus } = useApp();
+
+  const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
+  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+    const t = Number(c.timestamp);
+    return isNaN(t) ? Infinity : t;
+  })) : null;
+  const isStalling = earliestClaim && earliestClaim !== Infinity && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+
+  const isWaiting = earliestClaim && earliestClaim !== Infinity && !post.sellerReported && !post.sold;
+  const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
+
+  const handleForceSold = (uid: string) => {
+    updateAccountPostStatus(post.id, 'sold', uid);
+    toast({ title: "Account assigned to buyer!" });
+  };
+
+  const handleWhatsApp = (num: string) => {
+    const formatted = formatWhatsAppNumber(num);
+    window.open(`https://wa.me/${formatted}`, '_blank');
+  };
+
+  const finalBuyer = useMemo(() => {
+    if (post.status !== 'sold' || !post.boughtBy) return null;
+    return allUsers.find((u: any) => u.uid === post.boughtBy);
+  }, [post.status, post.boughtBy, allUsers]);
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
+       <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-6">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <ArrowLeft size={18} />
+             </button>
+             <div>
+                <h3 className="font-headline font-bold text-xl uppercase tracking-tighter text-slate-900 dark:text-white">Listing Hub</h3>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">REF: #{post.id.toUpperCase()}</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-4">
+             <StatusBadge status={post.status} />
+             <button onClick={onDelete} className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl hover:bg-red-100 transition-colors">
+                <Trash2 size={18} />
+             </button>
+          </div>
+       </div>
+
+       {post.status === 'sold' && (
+         <Card className="rounded-[3rem] border-none bg-green-500 text-white p-8 md:p-12 space-y-8 md:space-y-12 animate-in zoom-in duration-500 shadow-2xl shadow-green-500/20">
+            <div className="flex items-center gap-6">
+               <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-md shrink-0">
+                  <PartyPopper size={40} className="md:size-12" />
+               </div>
+               <div>
+                  <h2 className="text-2xl md:text-4xl font-headline font-bold uppercase tracking-tight leading-none">Confirmed Sale!</h2>
+                  <p className="text-white/80 text-xs md:text-lg font-medium mt-1">Verified and closed successfully.</p>
+               </div>
+            </div>
+            
+            <div className="p-6 md:p-8 bg-black/10 backdrop-blur-md rounded-[2.5rem] flex items-center gap-6 border border-white/10 w-fit min-w-[280px]">
+               <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden relative border-2 border-white/30 shrink-0">
+                  {finalBuyer?.photoURL ? (
+                    <Image src={finalBuyer.photoURL} alt={finalBuyer.name} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-white/10 flex items-center justify-center"><User size={24}/></div>
+                  )}
+               </div>
+               <div>
+                  <p className="text-[10px] md:text-11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <p className="truncate font-semibold text-xl md:text-2xl max-w-[200px]">{finalBuyer?.name || "Market User"}</p>
+                    {finalBuyer?.isVerified && <VerifiedBadge />}
+                  </div>
+                  <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
+               </div>
+            </div>
+         </Card>
+       )}
+
+       {isStalling && (
+         <Card className="rounded-[3rem] border-none bg-red-600 text-white p-6 md:p-10 space-y-8 animate-in slide-in-from-top-4 duration-700 shadow-2xl shadow-red-500/20">
+            <div className="flex items-center gap-6">
+               <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md shrink-0 animate-pulse">
+                  <ShieldAlert size={32} className="md:size-10 text-white" />
+               </div>
+               <div>
+                  <h2 className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight font-black leading-none">Seller Stalling</h2>
+                  <p className="text-white/80 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">PENALTY ACTION REQUIRED</p>
+               </div>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+               <Button 
+                onClick={() => enforceAccountAction(post.id, 'approved', 'Listing reset by admin due to lack of seller response.')} 
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-black uppercase text-[10px] h-12 rounded-xl"
+               >
+                  Reset & Approve
+               </Button>
+               
+               <Button 
+                onClick={() => enforceAccountAction(post.id, 'delete', 'Listing deleted due to stalling and security protocol violations.')} 
+                className="bg-red-800 hover:bg-red-900 text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Delete Listing
+               </Button>
+
+               <Button 
+                onClick={() => suspendSeller(post.uid, 3)} 
+                className="bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
+               >
+                  Suspend Seller (3D)
+               </Button>
+
+               <Button 
+                variant="ghost" 
+                onClick={() => dismissAccountWarning(post.id)} 
+                className="text-white/60 hover:text-white border border-white/10 font-bold uppercase text-[10px] h-12 rounded-xl"
+               >
+                  Dismiss Overlay
+               </Button>
+
+               <Button 
+                onClick={() => handleForceSold("")} 
+                variant="outline"
+                className="bg-white text-red-600 hover:bg-slate-50 font-black uppercase text-[10px] h-12 rounded-xl border-none"
+               >
+                  Force Sold (None)
+               </Button>
+            </div>
+
+            {claimants.length > 0 && (
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Penalty: Force Sold to Claimant</p>
+                 <div className="flex flex-wrap gap-2">
+                    {claimants.map((c: any) => (
+                      <Button 
+                        key={c.uid} 
+                        size="sm" 
+                        onClick={() => handleForceSold(c.uid)}
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold text-[9px] h-10 px-4 rounded-xl shadow-md border-none"
+                      >
+                         Assign to {c.name.split(' ')[0]}
+                      </Button>
+                    ))}
+                 </div>
+              </div>
+            )}
+         </Card>
+       )}
+
+       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="relative aspect-video w-full p-4 sm:p-8">
+             <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden shadow-inner bg-slate-100 dark:bg-slate-800">
+                {post.thumbnailUrl ? (
+                   <Image src={post.thumbnailUrl} alt={post.authorName} fill className="object-cover" unoptimized />
+                ) : (
+                   <div className="w-full h-full flex items-center justify-center opacity-10"><Gamepad2 size={64} /></div>
+                )}
+             </div>
+          </div>
+
+          <div className="px-8 pb-10 md:px-14 md:pb-16 space-y-10">
+             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div>
+                   <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white mb-2">
+                      {post.gameType} Account
+                   </h2>
+                   <div className="flex items-center gap-4">
+                      <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
+                         {post.platform}
+                      </Badge>
+                      <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
+                         ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
+                      </span>
+                </div>
+                </div>
+                <div className="text-right">
+                   <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+                      ${post.price.toFixed(2)}
+                   </p>
+                </div>
+             </div>
+
+             <div className="h-px bg-slate-50 dark:bg-white/5 w-full" />
+
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-8">
+                <StatItem label="Level" value={post.level || "0"} icon={Star} color="text-amber-500" />
+                <StatItem label="ID" value={`#${post.id.toUpperCase()}`} icon={Hash} color="text-primary" />
+                <StatItem label="Wait" value={waitValue} icon={Clock} color="text-blue-500" />
+                <StatItem label="Category" value={post.gameType} icon={LayoutGrid} color="text-indigo-500" />
+             </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Users size={24} />
+              </div>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholders</h4>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+              {/* SELLER COLUMN */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Originating Seller</p>
+                <div className="p-5 md:p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border dark:border-white/5 flex items-center gap-5">
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md">
+                    {seller?.photoURL ? <Image src={seller.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={32}/></div>}
+                  </div>
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate font-bold text-lg md:text-xl text-slate-900 dark:text-white">{seller?.name || "Deleted User"}</p>
+                        {seller?.isVerified && <VerifiedBadge />}
+                     </div>
+                     <div className="flex items-center gap-2 mt-1">
+                        <Smartphone size={12} className="text-primary" />
+                        <span className="text-xs font-black text-slate-500">{seller?.phoneNumber || "N/A"}</span>
+                     </div>
+                     <Badge className="mt-2 bg-amber-500 text-white border-none font-bold text-[8px] uppercase">{seller?.points || 0} Points</Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* CLAIMANTS COLUMN */}
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-2">Active Claimants ({claimants.length})</p>
+                <div className="space-y-3">
+                  {claimants.length === 0 ? (
+                    <div className="p-10 text-center border-2 border-dashed rounded-3xl opacity-20 italic font-bold uppercase text-[10px]">No active buyer claims</div>
+                  ) : (
+                    claimants.map((c: any) => (
+                      <div key={c.uid} className={cn(
+                        "p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border dark:border-white/5 flex items-center justify-between group transition-all",
+                        c.status === 'accepted' ? "ring-2 ring-green-500/50 bg-green-50 dark:bg-green-500/5" : ""
+                      )}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden relative shadow-sm border border-white">
+                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={16}/></div>}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{c.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{c.whatsapp}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                           <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(c.whatsapp)}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg active:scale-90 transition-transform shadow-md"><MessageCircle size={14} /></button>
+                           {c.status === 'accepted' && <Badge className="bg-green-500 text-white border-none text-[8px] font-black">ACCEPTED</Badge>}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-12 space-y-8">
+             <div className="flex items-center gap-4 text-primary">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
+                </div>
+                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
+             </div>
+
+             <div className="grid grid-cols-1 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
+                   <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                         {['pending', 'approved', 'holding', 'sold', 'rejected'].map(s => (
+                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
+                         ))}
+                      </SelectContent>
+                   </Select>
+                </div>
+
+                {status === 'sold' && (
+                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
+                      <Select value={buyerId} onValueChange={setBuyerId}>
+                         <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
+                            <SelectValue placeholder="Select User..." />
+                         </SelectTrigger>
+                         <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                            <div className="max-h-[300px] overflow-y-auto">
+                               {allUsers.map((u: any) => (
+                                 <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
+                                    {u.name || "Unknown User"} ({u.phoneNumber})
+                                 </SelectItem>
+                               ))}
+                            </div>
+                         </SelectContent>
+                      </Select>
+                      <p className="text-[9px] font-bold text-slate-400 italic ml-1">Admin can manually assign any registered user as the buyer.</p>
+                   </div>
+                )}
+
+                <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                >
+                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
+                </Button>
+             </div>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
+function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number }) {
+  return (
+    <button onClick={onClick} className={cn("w-full h-12 flex items-center transition-all duration-300 rounded-xl relative group", active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800", expanded ? "px-4 gap-4" : "justify-center", className)}>
+      <Icon size={20} className={cn("shrink-0 transition-transform group-hover:scale-110", active ? "stroke-[2.5px]" : "")} />
+      {expanded && <span className="font-bold text-[13px] uppercase tracking-wider whitespace-nowrap overflow-hidden flex-1 text-left">{label}</span>}
+      {badge !== undefined && badge > 0 && <span className={cn("bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center transition-all", expanded ? "px-2.5 py-0.5" : "absolute top-1 right-1 w-4 h-4")}>{badge}</span>}
+    </button>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, color, bgColor, pulse }: { label: string, value: string, icon: any, color: string, bgColor: string, pulse?: boolean }) {
+  return (
+    <Card className="rounded-[2rem] p-6 sm:p-8 border-none shadow-lg bg-white dark:bg-slate-900 group hover:-translate-y-1 transition-all">
+      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform group-hover:scale-110 relative", bgColor, color)}>
+         <Icon size={28} />
+         {pulse && <div className="absolute inset-0 bg-inherit rounded-2xl animate-ping opacity-20" />}
+      </div>
+      <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white mb-1 truncate">{value}</h3>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+    </Card>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-700",
+    processing: "bg-blue-100 text-blue-700",
+    successful: "bg-green-100 text-green-700",
+    approved: "bg-green-100 text-green-700",
+    holding: "bg-indigo-100 text-indigo-700",
+    cancelled: "bg-red-100 text-red-700",
+    rejected: "bg-red-100 text-red-700",
+    sold: "bg-slate-900 text-white"
+  };
+  return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
+}
+
+function InsightStat({ label, value, icon: Icon, isPrimary, action }: any) {
+  return (
+    <div className="space-y-2 group/stat">
+       <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon size={14} className="opacity-40" />
+          <p className="text-[9px] font-black uppercase tracking-[0.2em]">{label}</p>
+       </div>
+       <div className="flex items-center gap-2">
+         <p className={cn(
+           "text-sm md:text-xl font-bold truncate min-w-0 flex-1",
+           isPrimary ? "text-primary" : "text-slate-900 dark:text-white"
+         )} title={value}>{value}</p>
+         {action && <div className="shrink-0">{action}</div>}
+       </div>
+    </div>
+  );
+}
+
+function SettingInput({ label, value, onChange, placeholder, type = "text" }: { label: string, value: string, onChange: (v: string) => void, placeholder: string, type?: string }) {
+  return (
+    <div className="space-y-2">
+       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">{label}</Label>
+       <Input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all" />
+    </div>
+  );
+}
+
+function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, onEndEarly, onAssignWinner }: { event: any, onEdit: ()=>void, onDelete: ()=>void, onViewParticipants: ()=>void, onEndEarly: ()=>void, onAssignWinner: ()=>void }) {
+  const { allUsers } = useApp();
+  
+  const statusColors: Record<string, { border: string, badge: string, dot?: boolean }> = {
+    upcoming: { border: "border-blue-500", badge: "bg-blue-500 text-white" },
+    active: { border: "border-green-500", badge: "bg-green-600 text-white", dot: true },
+    ended: { border: "border-amber-700", badge: "bg-slate-600 text-white" },
+    claimed: { border: "border-purple-600", badge: "bg-purple-600 text-white" }
+  };
+
+  const status = event.status || 'pending';
+  const config = statusColors[status] || statusColors.upcoming;
+
+  const winnerProfile = useMemo(() => {
+    if (!event.winnerId) return null;
+    return allUsers.find(u => u.uid === event.winnerId);
+  }, [event.winnerId, allUsers]);
+
+  return (
+    <Card className={cn(
+      "rounded-[3rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden group border-l-[12px] transition-all hover:shadow-primary/5",
+      config.border
+    )}>
+       <div className="aspect-[16/9] relative overflow-hidden bg-slate-100">
+          {event.imageUrls?.[0] ? (
+            <Image src={event.imageUrls[0]} alt={event.title} fill className="object-cover transition-transform duration-1000 group-hover:scale-105" unoptimized />
+          ) : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">IMAGE</div>}
+          
+          <div className="absolute top-6 left-6">
+             <Badge className={cn("border-none font-black uppercase text-[10px] px-4 py-2 shadow-xl tracking-widest flex items-center gap-2 rounded-xl backdrop-blur-md bg-opacity-90", config.badge)}>
+                {config.dot && <div className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                {status}
+             </Badge>
+          </div>
+       </div>
+
+       <div className="p-6 md:p-10 space-y-8">
+          <div className="space-y-1">
+             <h4 className="font-black text-2xl md:text-4xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
+             <p className="text-sm font-bold text-[#D97706] uppercase tracking-[0.2em]">{event.gameName}</p>
+          </div>
+
+          {(status === 'ended' || status === 'claimed') && winnerProfile && (
+             <div className="p-5 md:p-8 bg-primary/5 dark:bg-primary/10 rounded-[1.5rem] md:rounded-[2.5rem] border border-primary/20 space-y-4 animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2 text-primary">
+                      <Trophy size={18} />
+                      <span className="font-black text-[10px] uppercase tracking-widest">Guuleystaha</span>
+                   </div>
+                   <Badge className={cn(
+                     "text-[9px] font-black uppercase px-3 py-1 rounded-full border-none shadow-sm",
+                     event.winnerClaim?.status === 'accepted' ? "bg-green-50 text-white" : 
+                     event.winnerClaim?.status === 'ignored' ? "bg-red-50 text-white" : "bg-amber-500 text-white"
+                   )}>
+                      {event.winnerClaim?.status || 'PENDING'}
+                   </Badge>
+                </div>
+                <div className="flex items-center gap-4">
+                   <Avatar className="w-12 h-12 md:w-16 md:h-16 border-4 border-white dark:border-slate-800 shadow-lg">
+                      <AvatarImage src={winnerProfile.photoURL} />
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
+                   </Avatar>
+                   <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <p className="truncate font-semibold text-base md:text-xl max-w-[200px]">{winnerProfile.name}</p>
+                        {winnerProfile.isVerified && <VerifiedBadge />}
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
+                         <Smartphone size={14} />
+                         <p className="text-[11px] md:text-sm font-medium">{winnerProfile.phoneNumber}</p>
+                      </div>
+                   </div>
+                   <div className="text-right shrink-0">
+                      <p className="text-[10px] font-black text-primary uppercase leading-none mb-1">Offer</p>
+                      <p className="text-2xl font-headline font-bold text-primary tracking-tighter">${event.winnerClaim?.finalPrice?.toFixed(2)}</p>
+                   </div>
+                </div>
+             </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-6 md:gap-10 py-6 border-y dark:border-white/5">
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Qiimaha asalka</p>
+                <div className="flex items-center gap-2">
+                   <span className="text-primary font-black text-2xl md:text-4xl">$</span>
+                   <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.initialPrice}</span>
+                </div>
+             </div>
+             <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Ka qeeybalayaal</p>
+                <div className="flex items-center gap-3">
+                   <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
+                   <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.participantsCount || 0}</span>
+                </div>
+             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 pt-2">
+             <button 
+               onClick={onEdit}
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
+             >
+                <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                <span>Edit</span>
+             </button>
+             
+             <button 
+               onClick={onViewParticipants}
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center"
+             >
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-500" />
+                <span>Leaderboard</span>
+             </button>
+
+             <button 
+               onClick={onAssignWinner}
+               className="rounded-2xl h-12 md:h-16 px-6 md:px-10 bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] md:text-xs gap-2 shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center justify-center flex-1 sm:flex-none"
+             >
+                <Trophy className="w-4 h-4 md:w-5 md:h-5" />
+                <span>Dooro guuleystaha</span>
+             </button>
+
+             <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
+                {status === 'active' && (
+                  <button 
+                    onClick={onEndEarly}
+                    className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2 flex items-center"
+                  >
+                     <Clock className="w-4 h-4" />
+                     <span>Jooji event ga</span>
+                  </button>
+                )}
+
+                <button 
+                  onClick={onDelete}
+                  title="Delete Event"
+                  className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl text-slate-300 hover:text-red-600 active:scale-95 transition-all shrink-0 flex items-center justify-center"
+                >
+                   <Trash2 size={16} />
+                </button>
+             </div>
+          </div>
+       </div>
+    </Card>
+  );
+}
+
+function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignWinner }: { eventId: string, eventAccount: any, onBack: ()=>void, onAssignWinner: (eid: string, winnerId: string)=>void }) {
+  const { rtdb } = useApp();
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!rtdb || !eventId) return;
+    const participantsRef = ref(rtdb, `eventParticipants/${eventId}`);
+    const unsub = onValue(participantsRef, (snap) => {
+      const data = snap.val();
+      if (data) {
+        const sorted = Object.values(data).sort((a: any, b: any) => {
+          if (b.taps !== a.taps) return b.taps - a.taps;
+          return a.lastTapTime - b.lastTapTime;
+        });
+        setParticipants(sorted);
+      } else {
+        setParticipants([]);
+      }
+      setLoading(false);
+    });
+    return () => off(participantsRef);
+  }, [rtdb, eventId]);
+
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4">
+       <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={24}/></button>
+             <div>
+                <h3 className="font-headline font-bold text-2xl uppercase tracking-tight">{eventAccount?.title}</h3>
+                <p className="text-[10px] font-black text-muted-foreground uppercase">Real-time Participants List</p>
+             </div>
+          </div>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatCard label="Ka qeeybalayaal" value={participants.length.toString()} icon={Users} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
+          <StatCard label="Total Bid" value={participants.reduce((acc, p) => acc + p.taps, 0).toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" />
+          <StatCard label="Kaaalinta 1aad" value={participants[0]?.name || "None"} icon={Trophy} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" />
+          <StatCard label="Status" value={eventAccount?.status || "..."} icon={Radio} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
+       </div>
+
+       <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                  <TableRow className="border-none h-16">
+                    <TableHead className="px-6 lg:px-10 font-black text-[10px] uppercase">Rank</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">User</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Bid</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Value</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Last Bid</TableHead>
+                    <TableHead className="text-right px-6 lg:px-10 font-black text-[10px] uppercase">Actions</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {loading ? (
+                    <TableRow><TableCell colSpan={6} className="h-64 text-center">Loading Participants...</TableCell></TableRow>
+                  ) : participants.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="h-64 text-center opacity-30 italic font-bold">No participants yet</TableCell></TableRow>
+                  ) : (
+                    participants.map((p, idx) => (
+                      <TableRow key={p.uid} className={cn(
+                        "h-24 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-slate-50 dark:border-white/5",
+                        p.uid === eventAccount?.winnerId && "bg-primary/5"
+                      )}>
+                        <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-1 min-w-0">
+                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm shrink-0">
+                                  <AvatarImage src={p.avatar} />
+                                  <AvatarFallback>{p.name?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <p className="truncate font-semibold text-sm max-w-[150px]">{p.name}</p>
+                                    {p.isVerified && <VerifiedBadge />}
+                                  </div>
+                                  <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
+                              </div>
+                            </div>
+                        </TableCell>
+                        <TableCell className="font-bold text-lg">{p.taps}</TableCell>
+                        <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
+                        <TableCell className="text-right px-6 lg:px-10">
+                            <div className="flex justify-end items-center gap-3">
+                               <button 
+                                 onClick={() => {
+                                   const formatted = formatWhatsAppNumber(p.phone);
+                                   window.open(`https://wa.me/${formatted}`, '_blank');
+                                 }}
+                                 className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                               >
+                                  <MessageCircle size={18} />
+                               </button>
+                               <button 
+                                 onClick={() => onAssignWinner(eventId, p.uid)}
+                                 className={cn(
+                                   "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
+                                   p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
+                                 )} 
+                               >
+                                 {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
+                               </button>
+                            </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+              </TableBody>
+            </Table>
+          </div>
+       </Card>
     </div>
   );
 }
