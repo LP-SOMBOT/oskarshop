@@ -251,7 +251,7 @@ export default function AccountsView() {
       <Dialog open={!!deletingPostId} onOpenChange={(v) => !v && setDeletingPostId(null)}>
         <DialogContent className="max-w-sm w-[90vw] rounded-[1.5rem] sm:rounded-[2rem]">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Ma hubtaa?</DialogTitle>
+            <DialogTitle className="text-lg sm:xl">Ma hubtaa?</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">Post-kan waa la tirtiri doonaa, dibna looma heli karo.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
@@ -362,6 +362,7 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
 
 function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, language }: { post: any, onClick: () => void, onEdit: (e:any)=>void, onDelete: (e:any)=>void, isOwner: boolean, isAdmin?: boolean, language: string }) {
   const isGoogle = post.platform === 'Google';
+  const firstName = (post.authorName || "Gamer").split(' ')[0];
   
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -405,16 +406,8 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1 min-w-0">
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="truncate font-semibold text-xs md:text-sm text-slate-900 dark:text-white max-w-[80px] md:max-w-[100px]">{post.authorName}</p>
-                {post.authorIsVerified && <VerifiedBadge />}
-              </div>
-              <Badge className={cn(
-                "rounded-full text-[6px] md:text-[8px] font-black px-1.5 md:px-2 py-0 border-none uppercase tracking-widest shrink-0",
-                isGoogle ? "bg-blue-500 text-white" : "bg-[#1877F2] text-white"
-              )}>
-                {post.platform}
-              </Badge>
+              <p className="truncate font-semibold text-xs md:text-sm text-slate-900 dark:text-white max-w-[120px]">{firstName}</p>
+              {post.authorIsVerified && <VerifiedBadge />}
             </div>
             <p className="text-[7px] md:text-[9px] text-muted-foreground font-black uppercase tracking-tighter">{post.createdAt ? format(new Date(post.createdAt), 'MMM d, h:mm a') : 'Now'}</p>
           </div>
@@ -452,7 +445,15 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
 
       <div className="p-4 md:p-8 space-y-4 md:space-y-6 flex-1 flex flex-col">
         <div className="flex justify-between items-center">
-           <Badge variant="secondary" className="text-[7px] md:text-[10px] uppercase font-black tracking-widest rounded-md md:rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 md:px-4 py-0.5 md:py-1 truncate">{post.gameType}</Badge>
+           <div className="flex items-center gap-1.5 md:gap-2">
+             <Badge variant="secondary" className="text-[7px] md:text-[10px] uppercase font-black tracking-widest rounded-md md:rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 md:px-4 py-0.5 md:py-1 truncate">{post.gameType}</Badge>
+             <Badge className={cn(
+                "rounded-md md:rounded-xl text-[6px] md:text-[8px] font-black px-1.5 md:px-2.5 py-0.5 md:py-1 border-none uppercase tracking-widest shrink-0",
+                isGoogle ? "bg-blue-500 text-white" : "bg-[#1877F2] text-white"
+              )}>
+                {post.platform}
+             </Badge>
+           </div>
            <Badge variant="outline" className="text-[7px] md:text-[10px] font-black border-2 rounded-md md:rounded-xl py-0.5 md:py-1 px-1.5 md:px-3 shrink-0 text-primary border-primary/20 bg-primary/5">
               <Clock className="w-2.5 h-2.5 md:w-3 md:h-3 mr-1 md:mr-1.5" /> {waitText}
            </Badge>

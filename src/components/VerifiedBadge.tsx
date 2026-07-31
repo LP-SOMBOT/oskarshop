@@ -4,10 +4,16 @@ interface VerifiedBadgeProps {
   className?: string;
 }
 
+/**
+ * VerifiedBadge Component
+ * 
+ * Uses relative sizing (em) to ensure the badge scales perfectly with its parent text,
+ * regardless of font size or weight. Features the iconic professional blue tick design.
+ */
 export default function VerifiedBadge({ className = "" }: VerifiedBadgeProps) {
   return (
     <svg 
-      className={`shrink-0 inline-block align-middle w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-4.5 md:h-4.5 ${className}`} 
+      className={`shrink-0 inline-block align-middle w-[1.15em] h-[1.15em] translate-y-[-0.05em] ${className}`} 
       viewBox="0 0 24 24" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"

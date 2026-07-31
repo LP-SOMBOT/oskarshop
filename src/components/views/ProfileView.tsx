@@ -136,8 +136,8 @@ export default function ProfileView() {
         </div>
 
         <div className="space-y-3 md:space-y-4">
-          <div className="flex items-center justify-center gap-1 min-w-0">
-            <h2 className="truncate font-semibold text-2xl sm:text-4xl lg:text-7xl text-slate-900 dark:text-white tracking-tight max-w-[280px] sm:max-w-none">{user.name}</h2>
+          <div className="flex items-center justify-center gap-2 min-w-0 px-4">
+            <h2 className="truncate font-bold text-2xl sm:text-4xl lg:text-7xl text-slate-900 dark:text-white tracking-tight max-w-[280px] sm:max-w-none">{user.name}</h2>
             {user.isVerified && <VerifiedBadge />}
             {user.isAdmin && !user.isVerified && <ShieldCheck className="text-primary w-6 h-6 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />}
           </div>
