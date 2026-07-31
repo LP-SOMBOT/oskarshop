@@ -2264,7 +2264,7 @@ export default function AdminPage() {
                    <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
-                          {selectedUser?.isVerified ? 'Verified' : 'Maya'}
+                          {selectedUser?.isVerified ? 'Verified' : 'unverified'}
                         </span>
                         {selectedUser?.isVerified && <VerifiedBadge className="text-[14px]" />}
                       </div>
