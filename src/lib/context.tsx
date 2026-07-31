@@ -882,7 +882,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       linkTo: '#notifications'
     });
 
-    // Trigger OneSignal push via SERVER-SIDE API route
     fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -902,7 +901,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!skipPush) {
-      // Trigger OneSignal push to all admins via SERVER-SIDE API route
       fetch('/api/notify-new-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1090,7 +1088,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     setIsGlobalLoading(true);
     router.push(`/checkout?id=${item.id}`);
-    // Safety timeout to prevent stuck loader
     setTimeout(() => setIsGlobalLoading(false), 2000);
   }, [authUser, router]);
 
@@ -1101,7 +1098,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let sequenceId = 10;
     try {
       const result = await runTransaction(counterRef, (currentValue) => {
-        if (currentValue === null || typeof currentValue !== 'number' || currentValue < 10) return 10;
+        if (currentValue === null || currentValue < 10) return 10;
         return currentValue + 1;
       });
       if (result.committed) sequenceId = result.snapshot.val();
@@ -1127,7 +1124,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     if (promoCode) newOrder.promoCode = promoCode;
     
-    // Add verification details if present in gameDetails
     if (gameDetails.ffUid) {
       newOrder.ffUid = gameDetails.ffUid;
       newOrder.ffPlayerName = gameDetails.ffPlayerName;
@@ -1145,12 +1141,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       if (promoData) {
         if (promoData.type === 'single_use' || !promoData.type) {
-          await update(promoRef, {
-            claimed: true,
-            usedBy: authUser.uid
-          });
+          await update(promoRef, { claimed: true, usedBy: authUser.uid });
         } else {
-          // Multi-use tracking
           await update(ref(rtdb, `promo_codes/${standardizedCode}/usedByUsers/${authUser.uid}`), {
             uid: authUser.uid,
             name: userProfile?.name || 'Guest',
@@ -1161,7 +1153,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
     fetch('/api/notify-telegram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1178,7 +1169,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }),
     }).catch(() => {});
 
-    // Server-side notify admins
     fetch('/api/notify-new-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1196,50 +1186,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const userRankData = useMemo(() => {
     if (!authUser || !allUsers.length || !syncStatus.settings) return { rank: null, discount: 0 };
-    
-    const settings = storeSettings.leaderboard || {
-      rewardsActive: false,
-      rewards: { rank1: 0, rank2: 0, rank3: 0 }
-    };
-
+    const settings = storeSettings.leaderboard || { rewardsActive: false, rewards: { rank1: 0, rank2: 0, rank3: 0 } };
     if (!settings.rewardsActive) return { rank: null, discount: 0 };
-
-    const sorted = [...allUsers].sort((a, b) => {
-       if (b.points !== a.points) return b.points - a.points;
-       return (a.createdAt || 0) - (b.createdAt || 0); // Tie-breaker: older account wins
-    });
+    const sorted = [...allUsers].sort((a, b) => (b.points || 0) - (a.points || 0) || (a.createdAt || 0) - (b.createdAt || 0));
     const top50 = sorted.slice(0, 50);
     const rankIndex = top50.findIndex(u => u.uid === authUser.uid);
     const rank = rankIndex !== -1 ? rankIndex + 1 : null;
-    
     let discount = 0;
     if (rank === 1) discount = Number(settings.rewards?.rank1) || 0;
     else if (rank === 2) discount = Number(settings.rewards?.rank2) || 0;
     else if (rank === 3) discount = Number(settings.rewards?.rank3) || 0;
-
     return { rank, discount };
   }, [authUser, allUsers, storeSettings.leaderboard, syncStatus.settings]);
 
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        ensureUserProfile(u);
-        refreshFcmToken();
-      } else {
-        setUserProfile(null);
-        localStorage.removeItem(USER_CACHE_KEY);
-      }
+      if (u) { ensureUserProfile(u); refreshFcmToken(); }
+      else { setUserProfile(null); localStorage.removeItem(USER_CACHE_KEY); }
     });
     return () => unsubscribe();
   }, [auth, ensureUserProfile, refreshFcmToken]);
 
   useEffect(() => {
     if (!rtdb || !authUser) return;
-    const userRef = ref(rtdb, `users/${authUser.uid}`);
-    const updatePresence = () => {
-      update(userRef, { lastActive: Date.now() });
-    };
+    const updatePresence = () => { update(ref(rtdb, `users/${authUser.uid}`), { lastActive: Date.now() }); };
     updatePresence();
     const interval = setInterval(updatePresence, 300000); 
     return () => clearInterval(interval);
@@ -1265,29 +1236,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 300);
   }, []);
 
-  const t = useCallback((key: string) => {
-    return translations[language][key] || key;
-  }, [language]);
+  const t = useCallback((key: string) => translations[language][key] || key, [language]);
 
-  const isInitialLoading = useMemo(() => {
-    return !syncStatus.settings || !syncStatus.products || !syncStatus.banners || !syncStatus.events || !syncStatus.games;
-  }, [syncStatus]);
-
-  useEffect(() => {
-    const handleHash = () => {
-      const rawHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
-      const tabName = rawHash.split('-')[0];
-      const validTabs = ['home', 'games', 'accounts', 'ranking', 'profile', 'chat', 'notifications', 'orders', 'my-accounts'];
-      if (validTabs.includes(tabName)) setActiveTabState(tabName);
-    };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  const isInitialLoading = useMemo(() => !syncStatus.settings || !syncStatus.products || !syncStatus.banners || !syncStatus.events || !syncStatus.games, [syncStatus]);
 
   useEffect(() => {
     if (!rtdb) return;
-    
     const settingsRef = ref(rtdb, 'settings');
     const gamesRef = ref(rtdb, 'games');
     const productsRef = ref(rtdb, 'products');
@@ -1370,10 +1324,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb, syncStatus.settings, storeSettings.isLive, storeSettings.appStatus?.offline, showPushNotification]);
 
   useEffect(() => {
-    if (!rtdb || !authUser) {
-      setNotifications(prev => prev.length > 0 ? [] : prev);
-      return;
-    }
+    if (!rtdb || !authUser) { setNotifications([]); return; }
     const profileRef = ref(rtdb, `users/${authUser.uid}`);
     const notifsRef = query(ref(rtdb, `notifications/${authUser.uid}`), limitToLast(20));
 
@@ -1382,19 +1333,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(data);
       if (data) {
         setCache(USER_CACHE_KEY, data);
-        const isComplete = data.phoneNumber && data.name;
-        if (isComplete) {
-          localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
-        }
+        if (data.phoneNumber && data.name) localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
       }
       if (data?.banned) {
-        setBannedInfo({
-          name: data.name || "N/A",
-          uid: data.uid || authUser.uid,
-          phone: data.phoneNumber || "N/A"
-        });
-        setIsBannedModalOpen(true);
-        logout();
+        setBannedInfo({ name: data.name || "N/A", uid: data.uid || authUser.uid, phone: data.phoneNumber || "N/A" });
+        setIsBannedModalOpen(true); logout();
       }
     });
 
@@ -1407,23 +1350,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setNotifications(data);
     });
 
-    return () => {
-      off(profileRef); off(notifsRef);
-    };
+    return () => { off(profileRef); off(notifsRef); };
   }, [rtdb, authUser, showPushNotification, logout]);
 
-  // Foreground messaging listener
   useEffect(() => {
     if (!messaging) return;
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log('Foreground message received:', payload);
       const title = payload.notification?.title || 'Notification';
       const body = payload.notification?.body || '';
       if (title && body) {
         toast({ title, description: body });
-        if (Notification.permission === 'granted') {
-          new Notification(title, { body, icon: storeSettings.logo });
-        }
+        if (Notification.permission === 'granted') new Notification(title, { body, icon: storeSettings.logo });
       }
     });
     return () => unsubscribe();
@@ -1432,68 +1369,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const enhancedUser = useMemo(() => {
     if (!authUser) return null;
     const role = userProfile?.role || 'user';
-    return { 
-      ...authUser, 
-      ...userProfile, 
-      isAdmin: role === 'admin',
-      leaderboardRank: userRankData.rank,
-      leaderboardDiscount: userRankData.discount
-    };
+    return { ...authUser, ...userProfile, isAdmin: role === 'admin', leaderboardRank: userRankData.rank, leaderboardDiscount: userRankData.discount };
   }, [authUser, userProfile, userRankData]);
 
   useEffect(() => {
-    if (!rtdb || !authUser) {
-      setAllOrders([]);
-      setAdminNotifications([]);
-      setAllChatSessions([]);
-      return;
-    }
-
-    let ordersRef;
-    if (enhancedUser?.isAdmin) {
-      ordersRef = ref(rtdb, 'orders');
-    } else {
-      ordersRef = query(ref(rtdb, 'orders'), orderByChild('userId'), equalTo(authUser.uid));
-    }
-
+    if (!rtdb || !authUser) { setAllOrders([]); setAdminNotifications([]); setAllChatSessions([]); return; }
+    let ordersRef = enhancedUser?.isAdmin ? ref(rtdb, 'orders') : query(ref(rtdb, 'orders'), orderByChild('userId'), equalTo(authUser.uid));
     const ordersUnsubscribe = onValue(ordersRef, (snapshot) => {
       const val = snapshot.val();
-      if (val) {
-        setAllOrders(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a, b) => b.createdAt - a.createdAt));
-      } else {
-        setAllOrders([]);
-      }
+      setAllOrders(val ? Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a, b) => b.createdAt - a.createdAt) : []);
     });
-
     let adminNotifUnsubscribe = () => {};
     let chatIndexUnsubscribe = () => {};
-
     if (enhancedUser?.isAdmin) {
-      const chatIndexRef = ref(rtdb, 'chatIndex');
-      const adminNotifsRef = query(ref(rtdb, 'adminNotifications'), limitToLast(30));
-
-      chatIndexUnsubscribe = onValue(chatIndexRef, (snapshot) => {
+      chatIndexUnsubscribe = onValue(ref(rtdb, 'chatIndex'), (snapshot) => {
         const val = snapshot.val();
         setAllChatSessions(val ? Object.entries(val).map(([userId, v]: any) => ({ userId, ...v })).sort((a,b) => b.lastTimestamp - a.lastTimestamp) : []);
       });
-
-      adminNotifUnsubscribe = onValue(adminNotifsRef, (snapshot) => {
+      adminNotifUnsubscribe = onValue(query(ref(rtdb, 'adminNotifications'), limitToLast(30)), (snapshot) => {
         const data = snapshot.val() ? Object.entries(snapshot.val()).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.createdAt - a.createdAt) : [];
         if (data.length > 0) {
           const latest = data[0];
-          if (!latest.readBy?.[enhancedUser.uid] && latest.createdAt > sessionStartTime.current) {
-            if (latest.type !== 'assignment_update') showPushNotification(latest.title, latest.body, "admin-push-" + latest.id);
-          }
+          if (!latest.readBy?.[enhancedUser.uid] && latest.createdAt > sessionStartTime.current && latest.type !== 'assignment_update') showPushNotification(latest.title, latest.body, "admin-push-" + latest.id);
         }
         setAdminNotifications(data);
       });
     }
-
-    return () => {
-      ordersUnsubscribe();
-      chatIndexUnsubscribe();
-      adminNotifUnsubscribe();
-    };
+    return () => { ordersUnsubscribe(); chatIndexUnsubscribe(); adminNotifUnsubscribe(); };
   }, [rtdb, authUser, enhancedUser?.isAdmin, enhancedUser?.uid, showPushNotification]);
 
   const refreshAdminData = useCallback(() => {
@@ -1511,74 +1413,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     const currentMonth = format(new Date(), 'yyyy-MM');
     const updates: any = {};
-    
     allUsers.forEach(u => {
       updates[`users/${u.uid}/points`] = 0;
       updates[`users/${u.uid}/leaderboardRank`] = null;
       updates[`users/${u.uid}/leaderboardDiscount`] = 0;
     });
-    
     updates[`settings/lastResetMonth`] = currentMonth;
-    
     try {
       await update(ref(rtdb), updates);
-      await broadcastAdminNotification(
-        "Leaderboard Reset! 🏆", 
-        `System points have been reset for the new month (${currentMonth}) by ${enhancedUser.name}.`,
-        true
-      );
-      toast({ title: "Reset Complete", description: "All points set to 0 for the new session." });
-    } catch (error) {
-      console.error("Reset failed:", error);
-      toast({ title: "Reset Failed", variant: "destructive" });
-    } finally {
-      setIsGlobalLoading(false);
-    }
+      await broadcastAdminNotification("Leaderboard Reset! 🏆", `System points have been reset for the new month (${currentMonth}) by ${enhancedUser.name}.`, true);
+      toast({ title: "Reset Complete" });
+    } catch (error) { toast({ title: "Reset Failed", variant: "destructive" }); } finally { setIsGlobalLoading(false); }
   }, [rtdb, enhancedUser, allUsers, broadcastAdminNotification]);
-
-  // Automated Monthly Leaderboard Reset logic
-  useEffect(() => {
-    if (!rtdb || !enhancedUser?.isAdmin || !syncStatus.settings || !syncStatus.allUsers || allUsers.length === 0) return;
-
-    const currentMonth = format(new Date(), 'yyyy-MM');
-    const lastReset = storeSettings?.lastResetMonth;
-
-    if (lastReset !== currentMonth) {
-       // A new month has started and no reset has happened yet.
-       console.log(`[Leaderboard] Automated reset triggered for ${currentMonth}`);
-       resetLeaderboard();
-    }
-  }, [rtdb, enhancedUser?.isAdmin, syncStatus.settings, syncStatus.allUsers, storeSettings?.lastResetMonth, allUsers, resetLeaderboard]);
 
   const postAccount = useCallback(async (data: any) => {
     if (!rtdb || !authUser) return;
     setIsGlobalLoading(true);
     const postRef = push(ref(rtdb, 'accountPosts'));
-    await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, authorIsVerified: enhancedUser?.isVerified || false, status: 'pending', createdAt: Date.now(), expiresAt: null, views: 0, sold: false });
-    toast({ title: "Successfully posted!", description: "Waiting for admin approval." });
-    
-    // --- TELEGRAM NOTIFICATION (Instant & Fire-and-forget) ---
-    fetch('/api/notify-telegram', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        orderId: postRef.key,
-        customerName: enhancedUser?.name || 'Seller',
-        customerPhone: enhancedUser?.phoneNumber || 'N/A',
-        itemName: `${data.gameType} Account Listing`,
-        amount: 0,
-        ffUid: null,
-        ffPlayerName: null,
-      }),
-    }).catch(() => {});
-
-    // Server-side notify admins
-    fetch('/api/notify-new-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` })
-    }).catch(err => console.error("Admin notify error", err));
-
+    await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, authorIsVerified: enhancedUser?.isVerified || false, status: 'pending', createdAt: Date.now(), views: 0, sold: false });
+    fetch('/api/notify-telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, customerName: enhancedUser?.name, customerPhone: enhancedUser?.phoneNumber, itemName: `${data.gameType} Account Listing`, amount: 0 }) }).catch(() => {});
+    fetch('/api/notify-new-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` }) }).catch(() => {});
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`, true);
     setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, broadcastAdminNotification]);
@@ -1588,138 +1442,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     const { price, totalCharge, fee, ...editableData } = data;
     await update(ref(rtdb, `accountPosts/${postId}`), editableData);
-    toast({ title: "Post Updated!" });
     setIsGlobalLoading(false);
   }, [rtdb]);
 
   const renewAccountPost = useCallback(async (postId: string, term: 'weekly' | 'monthly') => {
     if (!rtdb) return;
     setIsGlobalLoading(true);
-    await update(ref(rtdb, `accountPosts/${postId}`), { term, expiresAt: null, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, buyerReportedAt: null, sellerReported: false, sellerReportedAt: null, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null, warningDismissedAt: null });
-    toast({ title: "Renewal Initiated!", description: "Waiting for admin review." });
+    await update(ref(rtdb, `accountPosts/${postId}`), { term, status: 'pending', sold: false, holdingBy: null, boughtBy: null, buyerReported: false, sellerReported: false, conflict: false, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, claimants: null, warningDismissedAt: null });
     setIsGlobalLoading(false);
   }, [rtdb]);
 
-  const deleteAccountPost = useCallback(async (pid: string) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `accountPosts/${pid}`)); 
-    toast({ title: "Post Deleted" }); 
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-  
-  const markAccountAsSold = useCallback(async (postId: string) => {
-    if (!rtdb || !authUser) return;
-    setIsGlobalLoading(true);
-    await update(ref(rtdb, `accountPosts/${postId}`), {
-      sold: true,
-      status: 'sold',
-      completedAt: Date.now()
-    });
-    toast({ title: "Account marked as sold!" });
-    setIsGlobalLoading(false);
-  }, [rtdb, authUser]);
-
-  const deleteOrder = useCallback(async (oid: string) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `orders/${oid}`)); 
-    toast({ title: "Order Deleted" }); 
-    setIsGlobalLoading(false);
-  }, [rtdb]);
+  const deleteAccountPost = useCallback(async (pid: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `accountPosts/${pid}`)); setIsGlobalLoading(false); }, [rtdb]);
+  const markAccountAsSold = useCallback(async (postId: string) => { if (!rtdb || !authUser) return; setIsGlobalLoading(true); await update(ref(rtdb, `accountPosts/${postId}`), { sold: true, status: 'sold', completedAt: Date.now() }); setIsGlobalLoading(false); }, [rtdb, authUser]);
+  const deleteOrder = useCallback(async (oid: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `orders/${oid}`)); setIsGlobalLoading(false); }, [rtdb]);
 
   const buyAccountPost = useCallback((post: AccountPost) => {
-    if (!authUser) {
-      toast({ title: "Fadlan soo gal", description: "Waa inaad soo gashaa si aad u iibsato account-kan.", variant: "destructive" });
-      router.push('/login');
-      return;
-    }
-    setIsGlobalLoading(true);
-    router.push(`/checkout-account?id=${post.id}`);
-    // Safety timeout to prevent stuck loader
+    if (!authUser) { router.push('/login'); return; }
+    setIsGlobalLoading(true); router.push(`/checkout-account?id=${post.id}`);
     setTimeout(() => setIsGlobalLoading(false), 2000);
   }, [authUser, router]);
 
   const markNotificationsAsRead = useCallback(async (nid?: string) => {
     if (!rtdb || !authUser) return;
     if (nid) await update(ref(rtdb, `notifications/${authUser.uid}/${nid}`), { read: true });
-    else {
-      const updates: any = {};
-      notifications.forEach(n => updates[`notifications/${authUser.uid}/${n.id}/read`] = true);
-      await update(ref(rtdb), updates);
-    }
+    else { const updates: any = {}; notifications.forEach(n => updates[`notifications/${authUser.uid}/${n.id}/read`] = true); await update(ref(rtdb), updates); }
   }, [rtdb, authUser, notifications]);
 
   const markAdminNotificationsAsRead = useCallback(async (nid?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     if (nid) await update(ref(rtdb, `adminNotifications/${nid}/readBy/${enhancedUser.uid}`), true);
-    else {
-      const updates: any = {};
-      adminNotifications.forEach(n => updates[`adminNotifications/${n.id}/readBy/${enhancedUser.uid}`] = true);
-      await update(ref(rtdb), updates);
-    }
+    else { const updates: any = {}; adminNotifications.forEach(n => updates[`adminNotifications/${n.id}/readBy/${enhancedUser.uid}`] = true); await update(ref(rtdb), updates); }
   }, [rtdb, enhancedUser, adminNotifications]);
 
   const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored', targetUid?: string) => {
     if (!rtdb || (!authUser && !targetUid)) return;
-    const uid = targetUid || authUser?.uid;
-    if (!uid) return;
-
+    const uid = targetUid || authUser?.uid; if (!uid) return;
     setIsGlobalLoading(true);
     try {
       const currentEventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
       const eventData = currentEventSnap.val();
       const currentModalId = eventData?.winnerClaim?.modalId;
-
       if (outcome === 'accepted') {
-        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
-          status: 'accepted'
-        });
-        // Locally persist acceptance to stop flickering immediately
-        if (currentModalId) {
-          localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'accepted');
-        }
+        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), { status: 'accepted' });
+        if (currentModalId) localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'accepted');
       } else {
-        // MARK AS IGNORED AND FIND NEXT WINNER
-        const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
-        const participants = participantsSnap.val() || {};
-        const sorted = Object.values(participants).sort((a: any, b: any) => {
-          if (b.taps !== a.taps) return b.taps - a.taps;
-          return a.lastTapTime - b.lastTapTime;
-        });
-
+        const partSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+        const sorted = Object.values(partSnap.val() || {}).sort((a: any, b: any) => b.taps - a.taps || a.lastTapTime - b.lastTapTime);
         const currentIndex = sorted.findIndex((p: any) => p.uid === uid);
         const nextWinner = sorted[currentIndex + 1] as any;
-
-        if (currentModalId) {
-           localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'ignored');
-        }
-
+        if (currentModalId) localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'ignored');
         if (nextWinner) {
-          await update(ref(rtdb, `eventAccounts/${eventId}`), {
-            winnerId: nextWinner.uid,
-            winnerClaim: {
-              status: 'pending',
-              finalPrice: nextWinner.value,
-              modalId: Date.now().toString()
-            }
-          });
-          toast({ title: "Winner Updated", description: "Listing offered to next top bidder." });
-          broadcastNotification(
-            "Hampalyo! 🏆", 
-            "Waad ku guulaysatay auction-ka! Hadda ayaad u gudubtay kaalinta 1aad.", 
-            nextWinner.uid
-          );
-        } else {
-          await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
-            status: 'ignored'
-          });
-          toast({ title: "Offer Ignored" });
-        }
+          await update(ref(rtdb, `eventAccounts/${eventId}`), { winnerId: nextWinner.uid, winnerClaim: { status: 'pending', finalPrice: nextWinner.value, modalId: Date.now().toString() } });
+          broadcastNotification("Hampalyo! 🏆", "Waad ku guulaysatay auction-ka!", nextWinner.uid);
+        } else { await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), { status: 'ignored' }); }
       }
-    } finally {
-      setIsGlobalLoading(false);
-    }
+    } finally { setIsGlobalLoading(false); }
   }, [rtdb, authUser, broadcastNotification]);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: string, cancellationReason?: string) => {
@@ -1727,135 +1504,69 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
-    
     if (status === 'successful') {
       updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val();
-      
-      if (orderData && orderData.userId) {
-        const isAccount = orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts';
-        if (!isAccount) {
-          await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
-        }
+      if (orderData?.userId && !(orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts')) {
+        await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
       }
     }
-
     if (status === 'cancelled') {
        const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
        const orderData = orderSnap.val();
-       if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) {
-          await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
-       }
+       if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
     }
-
-    await update(ref(rtdb), { [`orders/${orderId}`]: { ...allOrders.find(o => o.id === orderId), ...updates } });
+    await update(ref(rtdb, `orders/${orderId}`), updates);
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
     const orderData = orderSnap.val();
-    if (orderData && orderData.userId) {
-      fetch('/api/notify-order-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, userId: orderData.userId, status })
-      }).catch(err => console.error("OneSignal order notify failed", err));
-
-      const title = status === 'successful' ? "Diamonds Delivered! ✅" : status === 'cancelled' ? "Order Cancelled ❌" : "Order Update 📦";
-      const body = status === 'successful' ? `Your order #${orderId.toUpperCase()} is complete!` : status === 'cancelled' ? `Order #${orderId.toUpperCase()} was cancelled: ${cancellationReason || 'Contact support'}` : `Order #${orderId.toUpperCase()} status is now: ${status}`;
-      broadcastNotification(title, body, orderData.userId);
+    if (orderData?.userId) {
+      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: orderData.userId, status }) }).catch(() => {});
+      broadcastNotification(status === 'successful' ? "Diamonds Delivered! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, orderData.userId);
     }
     setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, allOrders, broadcastNotification, respondToEventClaim]);
+  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim]);
 
   const updateAccountPostStatus = useCallback(async (postId: string, status: string, boughtBy?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
-    const updates: any = { 
-      status, 
-      processedBy: { 
-        uid: enhancedUser.uid, 
-        name: enhancedUser.name || "Admin", 
-        photoURL: enhancedUser.photoURL || "" 
-      }, 
-      processedAt: Date.now() 
-    };
-    
+    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (boughtBy) updates.boughtBy = boughtBy;
-    if (status === 'sold') { 
-      updates.sold = true; 
-      updates.completedAt = Date.now(); 
-    }
-    
+    if (status === 'sold') { updates.sold = true; updates.completedAt = Date.now(); }
     if (status === 'approved') {
       const now = Date.now();
-      updates.expiresAt = now + (30 * 24 * 60 * 60 * 1000); // Default to 30 days
-      updates.createdAt = now;
-      updates.warningDismissedAt = null;
-      updates.holdingBy = null;
-      updates.boughtBy = null;
-      updates.buyerReported = false;
-      updates.buyerReportedAt = null;
-      updates.sellerReported = false;
-      updates.sellerReportedAt = null;
-      updates.conflict = false;
-      updates.claimants = null;
-      updates.adminMessage = null;
-      updates.hiddenFromMarket = false;
-      updates.sellerSeenDeletionAt = null;
-      updates.sold = false;
+      Object.assign(updates, { expiresAt: now + (30 * 24 * 60 * 60 * 1000), createdAt: now, warningDismissedAt: null, holdingBy: null, boughtBy: null, buyerReported: false, sellerReported: false, conflict: false, claimants: null, adminMessage: null, hiddenFromMarket: false, sellerSeenDeletionAt: null, sold: false });
     }
-    
     await update(ref(rtdb, `accountPosts/${postId}`), updates);
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
-    if (postData && postData.uid) {
-       fetch('/api/notify-order-complete', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ orderId: postId, userId: postData.uid, status })
-       }).catch(err => console.error("Seller notify failed", err));
-
-       const title = status === 'approved' ? "Post Approved! ✅" : status === 'rejected' ? "Post Rejected ❌" : "Listing Update 🎮";
-       broadcastNotification(title, `Your account listing #${postId.toUpperCase()} is now ${status}.`, postData.uid);
-    }
+    if (postData?.uid) broadcastNotification(status === 'approved' ? "Post Approved! ✅" : "Listing Update 🎮", `Post #${postId.toUpperCase()} is now ${status}.`, postData.uid);
     setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
+
+  const enforceAccountAction = useCallback(async (postId: string, action: string, message: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
+    if (action === 'delete') { await update(ref(rtdb, `accountPosts/${postId}`), { adminMessage: message, sellerSeenDeletionAt: Date.now(), hiddenFromMarket: true, status: 'rejected' }); }
+    else { await update(ref(rtdb, `accountPosts/${postId}`), { status: action, adminMessage: message }); }
+    toast({ title: "Enforcement Applied" });
+    setIsGlobalLoading(false);
+  }, [rtdb, enhancedUser]);
 
   const issueSellerWarning = useCallback(async (uid: string, postId: string, message: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
-    const warningRef = push(ref(rtdb, `users/${uid}/warnings`));
-    await set(warningRef, {
-      id: warningRef.key,
-      postId,
-      message,
-      timestamp: Date.now()
-    });
-    
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUids: [uid], title: " Formal Warning Issued! ⚠️", message: `Security alert for Listing #${postId.toUpperCase()}: ${message}` })
-    }).catch(e => console.error(e));
-
-    await broadcastNotification("Formal Warning Issued! ⚠️", `Security alert for Listing #${postId.toUpperCase()}: ${message}`, uid);
-    toast({ title: "Warning Issued" });
+    const refW = push(ref(rtdb, `users/${uid}/warnings`));
+    await set(refW, { id: refW.key, postId, message, timestamp: Date.now() });
+    broadcastNotification("Formal Warning Issued! ⚠️", `Security alert: ${message}`, uid);
     setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
   const suspendSeller = useCallback(async (uid: string, days: number) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
-    const suspensionEnd = Date.now() + (days * 24 * 60 * 60 * 1000);
-    await update(ref(rtdb, `users/${uid}`), { suspendedUntil: suspensionEnd });
-    
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUids: [uid], title: "Account Suspended! 🚫", message: `Your selling privileges are blocked for ${days} days.` })
-    }).catch(e => console.error(e));
-
-    await broadcastNotification("Account Suspended! 🚫", `Your selling privileges are blocked for ${days} days due to security violations.`, uid);
-    toast({ title: `Seller suspended for ${days} days` });
+    await update(ref(rtdb, `users/${uid}`), { suspendedUntil: Date.now() + (days * 24 * 60 * 60 * 1000) });
+    broadcastNotification("Account Suspended! 🚫", `Suspended for ${days} days.`, uid);
     setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification]);
 
@@ -1863,14 +1574,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
     await update(ref(rtdb, `accountPosts/${postId}`), { warningDismissedAt: Date.now() });
-    const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
-    const postData = postSnap.val();
-    if (postData?.uid) {
-      await broadcastNotification("Warning Dismissed! ✅", `Responsive guard for Listing #${postId.toUpperCase()} has been cleared.`, postData.uid);
-    }
-    toast({ title: "Warning Dismissed" });
     setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastNotification]);
+  }, [rtdb, enhancedUser]);
+
+  const markDeletionAsSeen = useCallback(async (postId: string) => { if (!rtdb) return; await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() }); }, [rtdb]);
 
   const reportAccountOutcome = useCallback(async (postId: string, outcome: 'bought' | 'not_bought') => {
     if (!rtdb || !authUser || !enhancedUser) return;
@@ -1878,154 +1585,65 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postRef = ref(rtdb, `accountPosts/${postId}`);
     const postSnap = await get(postRef);
     const postData = postSnap.val();
-    if (!postData) return;
+    if (!postData) { setIsGlobalLoading(false); return; }
     const targetOrder = orders.find(o => o.gameDetails?.postId === postId && o.userId === authUser.uid);
-
     if (outcome === 'not_bought') {
       const updates: any = {};
-      if (postData.claimants?.[authUser.uid]) {
-        updates[`accountPosts/${postId}/claimants/${authUser.uid}`] = null;
-      }
-      if (targetOrder) {
-        updates[`orders/${targetOrder.id}`] = null;
-      }
-      const otherClaimants = Object.keys(postData.claimants || {}).filter(uid => uid !== authUser.uid);
-      if (otherClaimants.length === 0) {
-        updates[`accountPosts/${postId}/buyerReported`] = false;
-        updates[`accountPosts/${postId}/buyerReportedAt`] = null;
-      }
-      
+      if (postData.claimants?.[authUser.uid]) updates[`accountPosts/${postId}/claimants/${authUser.uid}`] = null;
+      if (targetOrder) updates[`orders/${targetOrder.id}`] = null;
       if (Object.keys(updates).length > 0) await update(ref(rtdb), updates);
-      toast({ title: "Deal Cancelled", description: "Listing reset successfully." });
     } else {
       const reportTime = Date.now();
-      const claimantInfo = { uid: authUser.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending', isVerified: enhancedUser.isVerified || false };
-      await update(ref(rtdb, `accountPosts/${postId}/claimants/${authUser.uid}`), claimantInfo);
+      const info = { uid: authUser.uid, name: enhancedUser.name || "Buyer", whatsapp: targetOrder?.gameDetails?.whatsappNumber || enhancedUser.phoneNumber || "N/A", photo: enhancedUser.photoURL || "", timestamp: reportTime, status: 'pending', isVerified: enhancedUser.isVerified || false };
+      await update(ref(rtdb, `accountPosts/${postId}/claimants/${authUser.uid}`), info);
       await update(postRef, { buyerReported: true, buyerReportedAt: reportTime });
-      if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
-      toast({ title: "Report Sent!", description: "Seller has been notified." });
-
-      if (postData.uid) {
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUids: [postData.uid], title: "New Contact! 💰", message: `Someone is interested in your ${postData.gameType} account.` })
-        }).catch(e => console.error(e));
-        broadcastNotification("New Contact! 💰", `Someone is interested in your ${postData.gameType} account. Check your listings!`, postData.uid);
-      }
-
-      fetch('/api/notify-new-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: postId, itemTitle: 'Marketplace Claim' })
-      }).catch(e => console.error(e));
-
-      await broadcastAdminNotification("Buyer Report!", `Buyer reported interest for account #${postId.toUpperCase()}.`);
+      if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome });
+      if (postData.uid) broadcastNotification("New Contact! 💰", `Interest in your account.`, postData.uid);
+      await broadcastAdminNotification("Buyer Report!", `Buyer interest for account #${postId.toUpperCase()}.`);
     }
     setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, orders, broadcastNotification, broadcastAdminNotification]);
 
   const respondToSaleReport = useCallback(async (postId: string, confirmed: boolean, buyerId?: string) => {
-    if (!rtdb || !authUser) return;
+    if (!rtdb || !authUser || !buyerId) return;
     setIsGlobalLoading(true);
-    const postRef = ref(rtdb, `accountPosts/${postId}`);
-    const postSnap = await get(postRef);
+    const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
-    if (!postData || !buyerId) return;
     const updates: any = {};
     const reportTime = Date.now();
-    
     updates[`accountPosts/${postId}/sellerReported`] = true;
-    updates[`accountPosts/${postId}/sellerReportedAt`] = reportTime;
-
     if (confirmed) {
-      const otherClaimantsCount = Object.keys(postData.claimants || {}).length - 1;
-      const hasPreviousRejections = Object.values(postData.claimants || {}).some(c => (c as any).status === 'rejected');
-
-      if (hasPreviousRejections || otherClaimantsCount > 0) {
-        updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'accepted';
-        updates[`accountPosts/${postId}/status`] = 'holding';
-        updates[`accountPosts/${postId}/conflict`] = true;
-        updates[`accountPosts/${postId}/boughtBy`] = buyerId;
-        updates[`accountPosts/${postId}/holdingBy`] = buyerId;
-      } else {
-        updates[`accountPosts/${postId}/status`] = 'sold';
-        updates[`accountPosts/${postId}/sold`] = true;
-        updates[`accountPosts/${postId}/boughtBy`] = buyerId;
-        updates[`accountPosts/${postId}/holdingBy`] = buyerId;
-        updates[`accountPosts/${postId}/completedAt`] = reportTime;
-        updates[`accountPosts/${postId}/claimants`] = null; 
-      }
-      toast({ title: "Response Recorded!" });
-      
-      fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUids: [buyerId], title: "Purchase Update! 🤑", message: "Seller has confirmed your interest!" })
-      }).catch(e => console.error(e));
-
-      broadcastNotification("Purchase Update! 🤑", "Seller has confirmed your interest!", buyerId);
+      updates[`accountPosts/${postId}/status`] = 'sold';
+      updates[`accountPosts/${postId}/sold`] = true;
+      updates[`accountPosts/${postId}/boughtBy`] = buyerId;
+      updates[`accountPosts/${postId}/completedAt`] = reportTime;
+      broadcastNotification("Purchase Update! 🤑", "Seller has confirmed!", buyerId);
     } else {
       updates[`accountPosts/${postId}/claimants/${buyerId}/status`] = 'rejected';
       updates[`accountPosts/${postId}/status`] = 'holding';
-      updates[`accountPosts/${postId}/conflict`] = true;
-      toast({ title: "Claim Rejected" });
-      
-      fetch('/api/notify-new-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: postId, itemTitle: 'Seller Disputed Claim' })
-      }).catch(e => console.error(e));
-
-      await broadcastAdminNotification("Conflict Detected! ⚠️", `Seller rejected buyer claim for account #${postId.toUpperCase()}.`);
+      await broadcastAdminNotification("Conflict!", `Seller rejected buyer claim for #${postId.toUpperCase()}.`);
     }
     await update(ref(rtdb), updates);
     setIsGlobalLoading(false);
   }, [rtdb, authUser, broadcastNotification, broadcastAdminNotification]);
 
-  const markDeletionAsSeen = useCallback(async (postId: string) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    await update(ref(rtdb, `accountPosts/${postId}`), { sellerSeenDeletionAt: Date.now() }); 
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
   const updateUserProfile = useCallback(async (updates: any) => { 
     if (!rtdb || !authUser) return; 
     setIsGlobalLoading(true);
     await update(ref(rtdb, `users/${authUser.uid}`), updates); 
-    const isComplete = updates.phoneNumber && updates.name;
-    if (isComplete) localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
-    toast({ title: "Profile updated!" }); 
+    if (updates.phoneNumber && updates.name) localStorage.setItem(`oskar_profile_complete_${authUser.uid}`, 'true');
     setIsGlobalLoading(false);
   }, [rtdb, authUser]);
 
-  const manageUser = useCallback(async (uid: string, updates: Partial<UserProfile>) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    await update(ref(rtdb, `users/${uid}`), updates); 
-    toast({ title: "User updated!" }); 
-    setIsGlobalLoading(false);
-  }, [rtdb]);
+  const manageUser = useCallback(async (uid: string, updates: Partial<UserProfile>) => { if (!rtdb) return; setIsGlobalLoading(true); await update(ref(rtdb, `users/${uid}`), updates); setIsGlobalLoading(false); }, [rtdb]);
   
   const deleteUser = useCallback(async (uid: string) => { 
     if (!rtdb || !enhancedUser?.isAdmin) return; 
     setIsGlobalLoading(true);
     try {
-      const res = await fetch('/api/delete-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message);
-      await remove(ref(rtdb, `users/${uid}`)); 
-      toast({ title: "User permanently deleted." });
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Deletion Failed", description: err.message });
-    } finally {
-      setIsGlobalLoading(false);
-    }
+      const res = await fetch('/api/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid }) });
+      if ((await res.json()).success) await remove(ref(rtdb, `users/${uid}`)); 
+    } catch (err) { toast({ title: "Deletion Failed", variant: "destructive" }); } finally { setIsGlobalLoading(false); }
   }, [rtdb, enhancedUser]);
 
   const sendMessage = useCallback(async (text?: string, imageUrl?: string, targetId?: string) => {
@@ -2035,423 +1653,114 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const msg: any = { senderId: authUser.uid, timestamp: Date.now(), isRead: false };
     if (text) msg.text = text; if (imageUrl) msg.imageUrl = imageUrl;
     await push(ref(rtdb, `chats/${tid}`), msg);
-    await update(ref(rtdb, `chatIndex/${tid}`), {
-      lastMessage: text || "📷 Screenshot",
-      lastTimestamp: Date.now(),
-      unreadCount: increment(1),
-      userName: enhancedUser?.isAdmin ? (allChatSessions.find(s => s.userId === tid)?.userName || "User") : enhancedUser?.name,
-      userPhoto: enhancedUser?.isAdmin ? (allChatSessions.find(s => s.userId === tid)?.userPhoto || "") : enhancedUser?.photoURL
-    });
+    await update(ref(rtdb, `chatIndex/${tid}`), { lastMessage: text || "📷 Screenshot", lastTimestamp: Date.now(), unreadCount: increment(1), userName: enhancedUser?.isAdmin ? (allChatSessions.find(s => s.userId === tid)?.userName || "User") : enhancedUser?.name, userPhoto: enhancedUser?.isAdmin ? (allChatSessions.find(s => s.userId === tid)?.userPhoto || "") : enhancedUser?.photoURL });
   }, [rtdb, authUser, enhancedUser, chatTargetId, allChatSessions]);
 
-  const markMessagesAsRead = useCallback(async (tid?: string) => { if (!rtdb || !authUser) return; const id = tid || authUser.uid; await update(ref(rtdb, `chatIndex/${id}`), { unreadCount: 0 }); }, [rtdb, authUser]);
+  const markMessagesAsRead = useCallback(async (tid?: string) => { if (!rtdb || !authUser) return; await update(ref(rtdb, `chatIndex/${tid || authUser.uid}`), { unreadCount: 0 }); }, [rtdb, authUser]);
 
-  const saveGame = useCallback(async (g: any) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    const { id, ...data } = g;
-    if (id) await update(ref(rtdb, `games/${id}`), data);
-    else await push(ref(rtdb, 'games'), { ...data, createdAt: Date.now() });
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const deleteGame = useCallback(async (id: string) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `games/${id}`));
-    const associatedProducts = products.filter(p => p.gameId === id);
-    const dbUpdates: any = {};
-    associatedProducts.forEach(p => dbUpdates[`products/${p.id}`] = null);
-    await update(ref(rtdb), dbUpdates);
-    setIsGlobalLoading(false);
-  }, [rtdb, products]);
-
-  const saveProduct = useCallback(async (p: any) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    const { id, ...data } = p;
-    const cleanData: any = {};
-    Object.keys(data).forEach(key => {
-      const val = data[key];
-      if (val !== undefined && val !== null && val !== "" && !Number.isNaN(val)) cleanData[key] = val;
-    });
-    if (id) await update(ref(rtdb, `products/${id}`), cleanData);
-    else await push(ref(rtdb, 'products'), cleanData);
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const deleteProduct = useCallback(async (id: string) => {
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `products/${id}`));
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const updateProductsOrder = useCallback(async (updates: {id: string, orderIndex: number}[]) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    const dbUpdates: any = {};
-    updates.forEach(u => {
-      dbUpdates[`products/${u.id}/orderIndex`] = u.orderIndex;
-    });
-    await update(ref(rtdb), dbUpdates);
-    toast({ title: "Order saved" });
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-  
+  const saveGame = useCallback(async (g: any) => { if (!rtdb) return; setIsGlobalLoading(true); const { id, ...data } = g; if (id) await update(ref(rtdb, `games/${id}`), data); else await push(ref(rtdb, 'games'), { ...data, createdAt: Date.now() }); setIsGlobalLoading(false); }, [rtdb]);
+  const deleteGame = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `games/${id}`)); const dbUpdates: any = {}; products.filter(p => p.gameId === id).forEach(p => dbUpdates[`products/${p.id}`] = null); await update(ref(rtdb), dbUpdates); setIsGlobalLoading(false); }, [rtdb, products]);
+  const saveProduct = useCallback(async (p: any) => { if (!rtdb) return; setIsGlobalLoading(true); const { id, ...data } = p; if (id) await update(ref(rtdb, `products/${id}`), data); else await push(ref(rtdb, 'products'), data); setIsGlobalLoading(false); }, [rtdb]);
+  const deleteProduct = useCallback(async (id: string) => { setIsGlobalLoading(true); await remove(ref(rtdb, `products/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
+  const updateProductsOrder = useCallback(async (updates: any[]) => { if (!rtdb) return; setIsGlobalLoading(true); const dbUpdates: any = {}; updates.forEach(u => dbUpdates[`products/${u.id}/orderIndex`] = u.orderIndex); await update(ref(rtdb), dbUpdates); setIsGlobalLoading(false); }, [rtdb]);
   const saveEvent = useCallback(async (e: any) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    const { id, duration, durationUnit, ...data } = e;
-    let expiresAt = data.expiresAt || null;
+    if (!rtdb) return; setIsGlobalLoading(true); const { id, duration, durationUnit, ...data } = e; let expiresAt = data.expiresAt || null;
     if (duration && durationUnit) {
-      const now = Date.now();
-      const val = parseInt(duration);
+      const now = Date.now(); const val = parseInt(duration);
       if (durationUnit === 'days') expiresAt = now + (val * 24 * 60 * 60 * 1000);
       else if (durationUnit === 'hours') expiresAt = now + (val * 60 * 60 * 1000);
       else if (durationUnit === 'minutes') expiresAt = now + (val * 1000 * 60);
     }
     const eventToSave = { ...data, expiresAt, createdAt: Date.now() };
-    if (id) await update(ref(rtdb, `events/${id}`), eventToSave); 
-    else await push(ref(rtdb, 'events'), eventToSave); 
+    if (id) await update(ref(rtdb, `events/${id}`), eventToSave); else await push(ref(rtdb, 'events'), eventToSave);
     setIsGlobalLoading(false);
   }, [rtdb]);
-
-  const deleteEvent = useCallback(async (id: string) => {
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `events/${id}`));
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const saveBanner = useCallback(async (b: any) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    const { id, ...data } = b; 
-    if (id) await update(ref(rtdb, `banners/${id}`), data); 
-    else await push(ref(rtdb, 'banners'), { ...data, createdAt: Date.now(), active: true }); 
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const deleteBanner = useCallback(async (id: string) => {
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `banners/${id}`));
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const savePaymentMethod = useCallback(async (m: any) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    const { id, ...data } = m;
-    if (id) await update(ref(rtdb, `settings/paymentMethods/${id}`), data);
-    else { const newRef = push(ref(rtdb, 'settings/paymentMethods')); await set(newRef, { ...data, active: true }); }
-    toast({ title: "Payment Method Saved" });
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
-  const deletePaymentMethod = useCallback(async (id: string) => { 
-    if (!rtdb) return; 
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `settings/paymentMethods/${id}`)); 
-    toast({ title: "Payment Method Removed" }); 
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-  
+  const deleteEvent = useCallback(async (id: string) => { setIsGlobalLoading(true); await remove(ref(rtdb, `events/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
+  const saveBanner = useCallback(async (b: any) => { if (!rtdb) return; setIsGlobalLoading(true); const { id, ...data } = b; if (id) await update(ref(rtdb, `banners/${id}`), data); else await push(ref(rtdb, 'banners'), { ...data, createdAt: Date.now(), active: true }); setIsGlobalLoading(false); }, [rtdb]);
+  const deleteBanner = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `banners/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
+  const savePaymentMethod = useCallback(async (m: any) => { if (!rtdb) return; setIsGlobalLoading(true); const { id, ...data } = m; if (id) await update(ref(rtdb, `settings/paymentMethods/${id}`), data); else await push(ref(rtdb, 'settings/paymentMethods'), { ...data, active: true }); setIsGlobalLoading(false); }, [rtdb]);
+  const deletePaymentMethod = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `settings/paymentMethods/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
   const savePromoCode = useCallback(async (promo: any) => {
-    if (!rtdb || !promo.code) return;
-    setIsGlobalLoading(true);
-    const { duration, durationUnit, discount, type, ...rest } = promo;
-    let expiresAt = 0;
-    
+    if (!rtdb || !promo.code) return; setIsGlobalLoading(true);
+    const { duration, durationUnit, discount, ...rest } = promo;
+    let exp = Date.now() + (30 * 24 * 60 * 60 * 1000);
     if (duration && durationUnit) {
-      const now = Date.now();
       const val = parseInt(duration);
-      if (!isNaN(val)) {
-        if (durationUnit === 'minutes') expiresAt = now + (val * 60 * 1000);
-        else if (durationUnit === 'hours') expiresAt = now + (val * 60 * 60 * 1000);
-        else if (durationUnit === 'days') expiresAt = now + (val * 24 * 60 * 60 * 1000);
-        else if (durationUnit === 'months') expiresAt = now + (val * 30 * 24 * 60 * 60 * 1000);
-        else if (durationUnit === 'years') expiresAt = now + (val * 365 * 24 * 60 * 60 * 1000);
-      }
+      if (durationUnit === 'minutes') exp = Date.now() + (val * 60 * 1000);
+      else if (durationUnit === 'hours') exp = Date.now() + (val * 60 * 60 * 1000);
+      else if (durationUnit === 'days') exp = Date.now() + (val * 24 * 60 * 60 * 1000);
     }
-    
-    if (!expiresAt) {
-      expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); 
-    }
-
-    const standardizedCode = promo.code.trim().toUpperCase();
-    await set(ref(rtdb, `promo_codes/${standardizedCode}`), {
-      ...rest,
-      code: standardizedCode,
-      type: type || 'single_use',
-      discount: parseFloat(discount) || 0,
-      expiresAt,
-      createdAt: Date.now(),
-      claimed: false,
-      usedBy: null,
-      expired: false
-    });
-    toast({ title: "Promo Code Created!" });
+    await set(ref(rtdb, `promo_codes/${promo.code.trim().toUpperCase()}`), { ...rest, code: promo.code.trim().toUpperCase(), discount: parseFloat(discount) || 0, expiresAt: exp, createdAt: Date.now(), claimed: false, usedBy: null, expired: false });
     setIsGlobalLoading(false);
   }, [rtdb]);
-
-  const deletePromoCode = useCallback(async (id: string) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    await remove(ref(rtdb, `promo_codes/${id}`));
-    toast({ title: "Promo Code Deleted" });
-    setIsGlobalLoading(false);
-  }, [rtdb]);
-
+  const deletePromoCode = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `promo_codes/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
   const checkPromoCode = useCallback(async (code: string): Promise<number> => {
     if (!rtdb || !authUser) throw new Error("Connection error");
     setIsGlobalLoading(true);
     try {
-      const standardizedCode = code.trim().toUpperCase();
-      const promoSnap = await get(ref(rtdb, `promo_codes/${standardizedCode}`));
-      if (!promoSnap.exists()) throw new Error("Invalid code");
-      
-      const data = promoSnap.val() as PromoCode;
-      
-      const expiryTime = Number(data.expiresAt) || 0;
-      if (expiryTime && expiryTime < Date.now()) throw new Error("Code expired");
-
-      if (data.type === 'single_use' || !data.type) {
-        if (data.claimed) throw new Error("Code already claimed");
-      } else {
-        if (data.usedByUsers?.[authUser.uid]) throw new Error("You have already used this code");
-      }
-      
-      return Number(data.discount) || 0;
-    } finally {
-      setIsGlobalLoading(false);
-    }
+      const snap = await get(ref(rtdb, `promo_codes/${code.trim().toUpperCase()}`));
+      if (!snap.exists()) throw new Error("Invalid code");
+      const d = snap.val(); if (d.expiresAt < Date.now()) throw new Error("Code expired");
+      if ((d.type === 'single_use' || !d.type) && d.claimed) throw new Error("Already claimed");
+      if (d.type === 'multi_use' && d.usedByUsers?.[authUser.uid]) throw new Error("Already used");
+      return Number(d.discount) || 0;
+    } finally { setIsGlobalLoading(false); }
   }, [rtdb, authUser]);
 
-  const updateStoreSettings = useCallback(async (s: any) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    await update(ref(rtdb, 'settings'), s);
-    await broadcastAdminNotification("Store Settings Updated ⚙️", `Global configuration was updated.`);
+  const updateStoreSettings = useCallback(async (s: any) => { if (!rtdb) return; setIsGlobalLoading(true); await update(ref(rtdb, 'settings'), s); await broadcastAdminNotification("Store Settings Updated ⚙️", "Global configuration was updated."); setIsGlobalLoading(false); }, [rtdb, broadcastAdminNotification]);
+  const updateAdminSettings = useCallback(async (s: any) => { if (!rtdb) return; setIsGlobalLoading(true); await update(ref(rtdb, 'admin_settings'), s); setIsGlobalLoading(false); }, [rtdb]);
+  const acceptTerms = useCallback(async () => { if (typeof window !== 'undefined') localStorage.setItem('oskar_terms_accepted', 'true'); if (authUser && rtdb) await update(ref(rtdb, `users/${authUser.uid}`), { termsAccepted: true }); }, [authUser, rtdb]);
+
+  const saveEventAccount = useCallback(async (e: Partial<EventAccount>) => {
+    if (!rtdb) return; setIsGlobalLoading(true);
+    const { id, ...data } = e; const startTime = Number(data.startTime) || Date.now();
+    const eventToSave = { ...data, status: Date.now() < startTime ? 'upcoming' : 'active', createdAt: Date.now(), participantsCount: 0 };
+    if (id) await update(ref(rtdb, `eventAccounts/${id}`), data); else await set(push(ref(rtdb, 'eventAccounts')), eventToSave);
     setIsGlobalLoading(false);
-  }, [rtdb, broadcastAdminNotification]);
-  
-  const updateAdminSettings = useCallback(async (s: any) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    await update(ref(rtdb, 'admin_settings'), s);
-    await broadcastAdminNotification("Admin Settings Updated 🔒", `Security parameters were updated.`);
-    setIsGlobalLoading(false);
-  }, [rtdb, broadcastAdminNotification]);
-
-  const acceptTerms = useCallback(async () => {
-    if (typeof window !== 'undefined') localStorage.setItem('oskar_terms_accepted', 'true');
-    if (authUser && rtdb) try { await update(ref(rtdb, `users/${authUser.uid}`), { termsAccepted: true }); } catch (e) {}
-  }, [authUser, rtdb]);
-
-  // --- EVENT ACCOUNT FUNCTIONS ---
-
-  const saveEventAccount = useCallback(async (event: Partial<EventAccount>) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    try {
-      const { id, ...data } = event;
-      const startTime = Number(data.startTime) || Date.now();
-      const status = Date.now() < startTime ? 'upcoming' : 'active';
-      const eventToSave = { ...data, status, createdAt: Date.now(), participantsCount: 0 };
-      
-      if (id) {
-        await update(ref(rtdb, `eventAccounts/${id}`), data);
-      } else {
-        const newRef = push(ref(rtdb, 'eventAccounts'));
-        await set(newRef, eventToSave);
-      }
-      toast({ title: "Event Account Saved" });
-    } catch (error) {
-      toast({ title: "Failed to save event account", variant: "destructive" });
-    } finally {
-      setIsGlobalLoading(false);
-    }
   }, [rtdb]);
-
-  const deleteEventAccount = useCallback(async (id: string) => {
-    if (!rtdb) return;
-    setIsGlobalLoading(true);
-    try {
-      await remove(ref(rtdb, `eventAccounts/${id}`));
-      await remove(ref(rtdb, `eventParticipants/${id}`));
-      await remove(ref(rtdb, `eventTaps/${id}`));
-      toast({ title: "Event Account Deleted" });
-    } finally {
-      setIsGlobalLoading(false);
-    }
-  }, [rtdb]);
-
+  const deleteEventAccount = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `eventAccounts/${id}`)); await remove(ref(rtdb, `eventParticipants/${id}`)); await remove(ref(rtdb, `eventTaps/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
   const tapEventAccount = useCallback(async (eventId: string, phone: string) => {
     if (!rtdb || !authUser || !enhancedUser) return;
-    
-    const participantRef = ref(rtdb, `eventParticipants/${eventId}/${authUser.uid}`);
-    const snap = await get(participantRef);
-    const participantData = snap.val() as EventParticipant | null;
-    
-    if (participantData?.status === 'banned') {
-      toast({ title: "You are banned from this event", variant: "destructive" });
-      return;
-    }
-
-    const now = Date.now();
-    const lastTap = participantData?.lastTapTime || 0;
-    const cooldown = 2 * 60 * 1000; // 2 minutes
-
-    if (now - lastTap < cooldown) {
-      toast({ title: "Please wait for cooldown", variant: "destructive" });
-      return;
-    }
-
-    const eventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
-    const eventData = eventSnap.val() as EventAccount;
-    
-    if (eventData.status !== 'active' || (eventData.endTime && now > eventData.endTime)) {
-      toast({ title: "Event is not active", variant: "destructive" });
-      return;
-    }
-
-    const newTaps = (participantData?.taps || 0) + 1;
-    const newValue = eventData.initialPrice + (newTaps * eventData.tapPrice);
-    
+    const snap = await get(ref(rtdb, `eventParticipants/${eventId}/${authUser.uid}`));
+    const pData = snap.val(); if (pData?.status === 'banned') return;
+    const now = Date.now(); if (now - (pData?.lastTapTime || 0) < 120000) return;
+    const eSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
+    const eData = eSnap.val(); if (eData.status !== 'active' || now > eData.endTime) return;
+    const newTaps = (pData?.taps || 0) + 1; const newVal = eData.initialPrice + (newTaps * eData.tapPrice);
     const updates: any = {};
-    updates[`eventParticipants/${eventId}/${authUser.uid}`] = {
-      uid: authUser.uid,
-      name: enhancedUser.name || "Gamer",
-      phone: phone, 
-      avatar: enhancedUser.photoURL || "",
-      taps: newTaps,
-      value: newValue,
-      lastTapTime: now,
-      status: 'active',
-      isVerified: enhancedUser.isVerified || false
-    };
-    
-    let topParticipants = eventData.topParticipants || [];
-    topParticipants = topParticipants.filter((p: any) => p.uid !== authUser.uid);
-    topParticipants.unshift({
-      uid: authUser.uid,
-      avatar: enhancedUser.photoURL || "",
-      isVerified: enhancedUser.isVerified || false
-    });
-    updates[`eventAccounts/${eventId}/topParticipants`] = topParticipants.slice(0, 3);
-    
-    const tapFeedRef = push(ref(rtdb, `eventTaps/${eventId}`));
-    updates[`eventTaps/${eventId}/${tapFeedRef.key}`] = {
-      name: enhancedUser.name || "Gamer",
-      avatar: enhancedUser.photoURL || "",
-      timestamp: now,
-      taps: newTaps,
-      value: newValue,
-      isVerified: enhancedUser.isVerified || false
-    };
-
-    const currentTopTaps = eventData.topTapsCount || 0;
-    if (newTaps >= currentTopTaps) {
-      updates[`eventAccounts/${eventId}/topTapperId`] = authUser.uid;
-      updates[`eventAccounts/${eventId}/topTapsCount`] = newTaps;
-      updates[`eventAccounts/${eventId}/topBidderName`] = enhancedUser.name;
-    }
-
-    if (!participantData) {
-      updates[`eventAccounts/${eventId}/participantsCount`] = increment(1);
-    }
-
-    if (eventData.endTime && now > (eventData.endTime - 2000)) {
-      updates[`eventAccounts/${eventId}/endTime`] = now + 2000;
-    }
-
+    updates[`eventParticipants/${eventId}/${authUser.uid}`] = { uid: authUser.uid, name: enhancedUser.name || "Gamer", phone, avatar: enhancedUser.photoURL || "", taps: newTaps, value: newVal, lastTapTime: now, status: 'active', isVerified: enhancedUser.isVerified || false };
+    let top = (eData.topParticipants || []).filter((p: any) => p.uid !== authUser.uid);
+    top.unshift({ uid: authUser.uid, avatar: enhancedUser.photoURL || "", isVerified: enhancedUser.isVerified || false });
+    updates[`eventAccounts/${eventId}/topParticipants`] = top.slice(0, 3);
+    const feedRef = push(ref(rtdb, `eventTaps/${eventId}`));
+    updates[`eventTaps/${eventId}/${feedRef.key}`] = { name: enhancedUser.name, avatar: enhancedUser.photoURL, timestamp: now, taps: newTaps, value: newVal, isVerified: enhancedUser.isVerified };
+    if (newTaps >= (eData.topTapsCount || 0)) { updates[`eventAccounts/${eventId}/topTapperId`] = authUser.uid; updates[`eventAccounts/${eventId}/topTapsCount`] = newTaps; updates[`eventAccounts/${eventId}/topBidderName`] = enhancedUser.name; }
+    if (!pData) updates[`eventAccounts/${eventId}/participantsCount`] = increment(1);
+    if (eData.endTime && now > (eData.endTime - 2000)) updates[`eventAccounts/${eventId}/endTime`] = now + 2000;
     await update(ref(rtdb), updates);
-  }, [rtdb, authUser, enhancedUser, language]);
+  }, [rtdb, authUser, enhancedUser]);
 
   const updateEventStatus = useCallback(async (eventId: string, status: string) => {
-    if (!rtdb) return;
-    
-    const eventRef = ref(rtdb, `eventAccounts/${eventId}`);
-    const currentSnap = await get(eventRef);
-    const eventData = currentSnap.val();
-    
-    if (!eventData || eventData.status === status) return;
-
+    if (!rtdb) return; const eRef = ref(rtdb, `eventAccounts/${eventId}`);
+    const eSnap = await get(eRef); const eData = eSnap.val(); if (!eData || eData.status === status) return;
     const updates: any = { status };
-
     if (status === 'ended') {
-      const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
-      const participants = participantsSnap.val();
-      
-      if (participants) {
-        const sorted = Object.values(participants).sort((a: any, b: any) => {
-          if (b.taps !== a.taps) return b.taps - a.taps;
-          return a.lastTapTime - b.lastTapTime;
-        });
-
+      const pSnap = await get(ref(rtdb, `eventParticipants/${eventId}`)); const pVal = pSnap.val();
+      if (pVal) {
+        const sorted = Object.values(pVal).sort((a: any, b: any) => b.taps - a.taps || a.lastTapTime - b.lastTapTime);
         const top1 = sorted[0] as any;
-        if (top1) {
-          updates.winnerId = top1.uid;
-          updates.winnerClaim = {
-            status: 'pending',
-            finalPrice: top1.value,
-            modalId: Date.now().toString()
-          };
-          
-          broadcastNotification(
-            "Hampalyo! 🏆", 
-            `Waad ku guulaysatay auction-ka: ${eventData.title}! Fadlan iibso hadda.`, 
-            top1.uid
-          );
-        }
+        if (top1) { updates.winnerId = top1.uid; updates.winnerClaim = { status: 'pending', finalPrice: top1.value, modalId: Date.now().toString() }; broadcastNotification("Hampalyo! 🏆", `Auction Win: ${eData.title}`, top1.uid); }
       }
     }
-
-    await update(eventRef, updates);
+    await update(eRef, updates);
   }, [rtdb, broadcastNotification]);
 
   const assignEventWinner = useCallback(async (eventId: string, winnerId: string) => {
-    if (!rtdb || !enhancedUser?.isAdmin) return;
-    setIsGlobalLoading(true);
-    try {
-      const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
-      const participants = participantsSnap.val() || {};
-      const winnerData = participants[winnerId];
-      
-      if (!winnerData) throw new Error("Participant not found");
-
-      await update(ref(rtdb, `eventAccounts/${eventId}`), {
-        winnerId,
-        status: 'ended',
-        winnerClaim: {
-          status: 'pending',
-          finalPrice: winnerData.value,
-          modalId: Date.now().toString()
-        }
-      });
-      toast({ title: "Winner Assigned" });
-    } catch (error: any) {
-      toast({ title: "Assignment Failed", description: error.message, variant: "destructive" });
-    } finally {
-      setIsGlobalLoading(false);
-    }
+    if (!rtdb || !enhancedUser?.isAdmin) return; setIsGlobalLoading(true);
+    const wSnap = await get(ref(rtdb, `eventParticipants/${eventId}/${winnerId}`));
+    if (wSnap.exists()) { await update(ref(rtdb, `eventAccounts/${eventId}`), { winnerId, status: 'ended', winnerClaim: { status: 'pending', finalPrice: wSnap.val().value, modalId: Date.now().toString() } }); }
+    setIsGlobalLoading(false);
   }, [rtdb, enhancedUser]);
-
-  useEffect(() => {
-    if (!rtdb || !enhancedUser || eventAccounts.length === 0) return;
-
-    const timer = setInterval(() => {
-      const now = Date.now();
-      eventAccounts.forEach(e => {
-        if (e.status === 'active' && e.endTime && now >= e.endTime) {
-          updateEventStatus(e.id, 'ended');
-        } else if (e.status === 'upcoming' && e.startTime && now >= e.startTime) {
-          updateEventStatus(e.id, 'active');
-        }
-      });
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [rtdb, enhancedUser, eventAccounts, updateEventStatus]);
 
   return (
     <AppContext.Provider value={{ 
