@@ -58,12 +58,13 @@ export default function HomeView() {
   }
 
   const handleGameRedirect = (gameId: string) => {
-    setGlobalLoading(true);
-    // Use a small timeout to allow the loader to appear before hash change
+    // First, switch to the games tab
+    setActiveTab('games');
+    // Then set the hash for the specific game. 
+    // We use a small timeout to ensure the tab transition starts first.
     setTimeout(() => {
       window.location.hash = `games-${gameId}`;
-      setGlobalLoading(false);
-    }, 150);
+    }, 200);
   };
 
   return (
