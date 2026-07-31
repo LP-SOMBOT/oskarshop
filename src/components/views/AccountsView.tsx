@@ -328,7 +328,6 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-2xl mx-auto w-full space-y-6 md:space-y-8 pb-4">
-        {/* Gallery Section */}
         <div className="space-y-3">
           <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">SOO GELI DHAMAAN SAWIRADA ACCOUNTI-GA</h3>
           <div className="relative aspect-[16/10] w-full rounded-[1.5rem] md:rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex flex-col items-center justify-center group overflow-hidden shadow-inner cursor-pointer" onClick={() => !isUploading && document.getElementById('file-upload')?.click()}>
@@ -354,7 +353,6 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
           </div>
         </div>
 
-        {/* XOGTA GAME KA Section */}
         <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-4">
            <div className="space-y-1.5">
               <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">DOORO NOOCA GAME KA</Label>
@@ -370,7 +368,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
 
            <div className="space-y-1.5">
-              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">QAABKA LAGU SOO GALO</Label>
+              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">MAIN</Label>
               <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
                     <SelectValue />
@@ -409,7 +407,6 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
         </Card>
 
-        {/* LEVEL & PRICING Section */}
         <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-4">
            <h4 className="font-headline font-bold text-amber-500 flex items-center gap-2 uppercase text-xs">
              <Star size={16} fill="currentColor" /> LEVEL & PRICING
@@ -440,7 +437,6 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
         </Card>
 
-        {/* WAXYABAHA ACCOUNT TIGA YAALO Section */}
         <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-4">
            <div className="space-y-1">
               <h4 className="font-headline font-bold text-primary flex items-center gap-2 uppercase text-xs">
@@ -470,7 +466,6 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
         </Card>
 
-        {/* WHATSAPP Section */}
         <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-3">
            <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">GELI WHATSAPP KAGA</Label>
            <div className="relative">
@@ -536,7 +531,6 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
       onClick={onClick}
       className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-lg bg-white dark:bg-slate-900 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-2xl active:scale-[0.98] cursor-pointer h-full flex flex-col"
     >
-      {/* HEADER */}
       <div className="p-4 flex items-center justify-between bg-white dark:bg-slate-950 border-b dark:border-white/5">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-white/10 shadow-sm shrink-0">
@@ -559,18 +553,16 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
                 <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-full" onClick={onDelete}><Trash2 size={14}/></Button>
              </>
            ) : (
-             <Button size="icon" variant="ghost" className="h-8 w-8 text-primary bg-primary/10 rounded-full" onClick={(e) => { e.stopPropagation(); /* share logic */ }}><Share2 size={14} /></Button>
+             <Button size="icon" variant="ghost" className="h-8 w-8 text-primary bg-primary/10 rounded-full" onClick={(e) => { e.stopPropagation(); }}><Share2 size={14} /></Button>
            )}
         </div>
       </div>
 
-      {/* IMAGE AREA */}
       <div className="aspect-[16/9] relative bg-slate-900 overflow-hidden flex items-center justify-center">
         {post.thumbnailUrl ? <Image src={post.thumbnailUrl} alt="" fill className="object-contain" unoptimized /> : <div className="w-full h-full flex items-center justify-center opacity-10"><Gamepad2 size={24} /></div>}
         <Badge className="absolute top-4 right-4 bg-primary/90 backdrop-blur-md text-white border-none rounded-full px-4 py-1 text-[9px] font-black uppercase tracking-widest shadow-xl">LV {post.level || 0}</Badge>
       </div>
 
-      {/* CONTENT AREA */}
       <div className="p-5 space-y-5 flex-1 flex flex-col">
         <div className="flex justify-between items-center">
            <div className="flex items-center gap-2">
@@ -583,7 +575,6 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
            </div>
         </div>
 
-        {/* ASSET PILLS GRID */}
         <div className="grid grid-cols-3 gap-2">
            {post.gameType === 'bloodstrike' ? (
              <>
@@ -604,7 +595,6 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
            )}
         </div>
 
-        {/* FOOTER */}
         <div className="flex items-center justify-between mt-auto pt-5 border-t dark:border-white/5">
            <div>
               <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1.5">QIIMAHA</p>
@@ -669,114 +659,6 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
              <button className="h-10 md:h-12 px-6 rounded-xl md:rounded-2xl bg-white text-black font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl shadow-white/5 group-hover:bg-primary group-hover:text-white transition-all">BID NOW</button>
           </div>
        </div>
-    </Card>
-  );
-}
-
-function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel: string, timeLeftLabel: string }) {
-  const router = useRouter();
-  const { setGlobalLoading } = useApp();
-  const [timeLeft, setTimeLeft] = useState<string>("");
-
-  useEffect(() => {
-    if (!event.expiresAt) return;
-    const updateTimer = () => {
-      const now = Date.now();
-      const diff = event.expiresAt! - now;
-      if (diff <= 0) {
-        setTimeLeft("Dhamaaday");
-        return;
-      }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft(days > 0 ? `${days}d ${hours}:${minutes}:${seconds}` : `${hours}:${minutes}:${seconds}`);
-    };
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [event.expiresAt]);
-
-  const handleAction = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setGlobalLoading(true);
-    if (event.redirectRoute) {
-      router.push(event.redirectRoute);
-    } else {
-      router.push(`/events/${event.id}`);
-    }
-  };
-
-  return (
-    <Card 
-      onClick={handleAction}
-      className="group overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-lg bg-white dark:bg-slate-900 transition-all hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
-    >
-      <div className="relative aspect-[16/9] w-full">
-        <Image src={event.thumbnailUrl || 'https://picsum.photos/seed/event/600/400'} alt={event.title} fill className="object-cover" unoptimized />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-        <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-6">
-          <Badge className="bg-primary text-white border-none rounded-full px-2 py-0.5 md:px-3 md:py-1 text-[7px] md:text-[10px] font-bold mb-1.5 md:mb-3 uppercase tracking-widest">
-            EVENT
-          </Badge>
-          <h3 className="text-white font-headline font-bold text-sm md:text-xl leading-tight line-clamp-1">{event.title}</h3>
-        </div>
-      </div>
-      <div className="p-4 md:p-6">
-        <p className="text-[11px] md:text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-4 md:mb-6 font-medium">{event.shortDescription || event.description}</p>
-        
-        {event.expiresAt && (
-          <div className="mb-4 md:mb-6 p-2.5 md:p-4 bg-amber-50 dark:bg-amber-500/5 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-4 text-amber-700 dark:text-amber-400">
-             <Clock className="w-4 h-4 md:w-5 md:h-5 animate-pulse" />
-             <div className="flex flex-col">
-                <span className="text-[7px] font-black uppercase tracking-wider opacity-60">{timeLeftLabel}</span>
-                <span className="text-[11px] md:text-base font-bold font-mono">{timeLeft}</span>
-             </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-slate-50 dark:border-white/5">
-          <div className="flex items-center gap-1.5 text-[10px] md:text-sm font-bold text-primary">
-            <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            Active
-          </div>
-          <Button 
-            variant="ghost" 
-            className="rounded-full h-8 md:h-10 px-3 md:px-6 font-bold text-[10px] md:text-sm hover:bg-primary/10 transition-all uppercase tracking-widest" 
-            onClick={handleAction}
-          >
-            {event.buttonText || viewLabel} <ChevronRight className="w-3 h-3 ml-0.5" />
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function GameCollectionCard({ game, onClick, buyLabel }: { game: any, onClick: () => void, buyLabel: string }) {
-  return (
-    <Card 
-      onClick={onClick}
-      className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 rounded-xl md:rounded-[1.5rem] p-0.5 md:p-1.5 flex items-center h-20 sm:h-24 md:h-28 lg:h-32 cursor-pointer w-full"
-    >
-      <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 rounded-lg md:rounded-2xl overflow-hidden relative shrink-0 m-0.5 bg-slate-50 dark:bg-slate-800 border dark:border-white/5">
-        {game.icon ? (
-          <Image src={game.icon} alt={game.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-primary font-bold text-[10px] md:text-xl">G</div>
-        )}
-      </div>
-      
-      <div className="flex-1 px-3 md:px-5 lg:px-8 min-w-0">
-        <h3 className="font-headline font-bold text-base sm:text-lg md:text-xl lg:text-3xl text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">
-          {game.title}
-        </h3>
-      </div>
-
-      <button className="h-full px-4 sm:px-6 md:px-10 lg:px-16 bg-primary text-white font-black text-xs sm:sm md:text-xl lg:text-3xl flex items-center justify-center transition-all group-hover:bg-primary/90 active:scale-95 uppercase tracking-widest shrink-0 ml-auto">
-        {buyLabel}
-      </button>
     </Card>
   );
 }
