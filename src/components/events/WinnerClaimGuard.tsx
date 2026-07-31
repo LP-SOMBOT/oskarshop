@@ -18,18 +18,27 @@ import { cn } from '@/lib/utils';
  * Triggers full-screen confetti and a mandatory claim modal.
  */
 export default function WinnerClaimGuard() {
-  const { user, eventAccounts, respondToEventClaim, setGlobalLoading } = useApp();
+  const { user, eventAccounts, orders, respondToEventClaim, setGlobalLoading } = useApp();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
 
   // Find any active claim where current user is the winner
+  // Logic: User is winner AND status is pending AND no order exists for this event yet
   const activeClaim = useMemo(() => {
-    if (!user || !eventAccounts) return null;
-    return eventAccounts.find(e => 
-      e.winnerId === user.uid && 
-      e.winnerClaim?.status === 'pending'
-    );
-  }, [user, eventAccounts]);
+    if (!user || !eventAccounts || !orders) return null;
+    return eventAccounts.find(e => {
+      const isWinner = e.winnerId === user.uid;
+      const isPending = e.winnerClaim?.status === 'pending';
+      
+      // Check if user already has an active order for this event
+      const hasOrder = orders.some(o => 
+        o.gameDetails?.eventId === e.id && 
+        o.status !== 'cancelled'
+      );
+      
+      return isWinner && isPending && !hasOrder;
+    });
+  }, [user, eventAccounts, orders]);
 
   const activeClaimId = activeClaim?.id;
 
@@ -63,6 +72,8 @@ export default function WinnerClaimGuard() {
   if (!activeClaim) return null;
 
   const handleClaim = () => {
+    // Mark as accepted immediately so it doesn't show on refresh
+    respondToEventClaim(activeClaim.id, 'accepted');
     setGlobalLoading(true);
     router.push(`/checkout-event?id=${activeClaim.id}`);
     setShowModal(false);
@@ -136,4 +147,3 @@ export default function WinnerClaimGuard() {
     </Dialog>
   );
 }
-
