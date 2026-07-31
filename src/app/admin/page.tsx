@@ -5,6 +5,7 @@ import { useApp } from "@/lib/context";
 import { 
   Settings as SettingsIcon, 
   Plus, 
+  Minus,
   Trash2, 
   Edit, 
   Users, 
@@ -1179,7 +1180,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeView === 'account-posts' && (
+          {accountPosts.length > 0 && activeView === 'account-posts' && (
             <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                {selectedAccountId ? (
                  <AccountDetailView 
@@ -2173,7 +2174,7 @@ export default function AdminPage() {
       </div>
 
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
-        <DialogContent className="max-w-md w-[94%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-md w-[94%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col [&>button]:hidden">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
            <div className="h-24 md:h-28 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
@@ -2258,7 +2259,7 @@ export default function AdminPage() {
                 <div className="space-y-1.5">
                    <div className="flex items-center gap-1.5 text-blue-500 ml-1">
                       <ShieldCheck size={12} />
-                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verified</Label>
+                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verified Status</Label>
                    </div>
                    <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
                       <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
@@ -2291,7 +2292,7 @@ export default function AdminPage() {
                       className="h-10 md:h-12 rounded-lg md:rounded-xl dark:bg-slate-800 border-none shadow-inner font-bold px-3 text-sm focus:ring-1 focus:ring-primary" 
                     />
                     <Button onClick={() => handleAdjustPoints('credit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-green-500 hover:bg-green-600 shadow-md shrink-0 p-0"><Plus size={20} /></Button>
-                    <Button onClick={() => handleAdjustPoints('debit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-red-500 hover:bg-red-600 shadow-md shrink-0 p-0"><Trash2 size={16} /></Button>
+                    <Button onClick={() => handleAdjustPoints('debit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-red-500 hover:bg-red-600 shadow-md shrink-0 p-0"><Minus size={16} /></Button>
                  </div>
               </div>
 
