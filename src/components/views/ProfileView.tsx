@@ -123,7 +123,7 @@ export default function ProfileView() {
   if (!user) return null;
 
   return (
-    <div className={cn("pb-32 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition")}>
+    <div className={cn("pb-48 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition")}>
       <section className="flex flex-col items-center text-center">
         <div className="relative group mb-6 md:mb-10">
           <div className="w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 rounded-full border-[6px] md:border-[10px] border-white dark:border-slate-800 shadow-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 ring-2 md:ring-4 ring-primary/10 relative group-hover:scale-105 transition-transform duration-500">

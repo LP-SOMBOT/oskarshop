@@ -368,7 +368,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
 
            <div className="space-y-1.5">
-              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">MAIN</Label>
+              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Main</Label>
               <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
                     <SelectValue />
