@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -14,27 +13,24 @@ import { cn } from '@/lib/utils';
 
 /**
  * WinnerClaimGuard Component
- * Monitors all eventAccounts for a "pending" claim belonging to the current user.
- * Triggers full-screen confetti and a mandatory claim modal.
- * Includes local storage persistence to prevent annoying repeats during database fetching.
+ * Monitors all eventAccounts for a active claim belonging to the current user.
+ * Displays modal if status is 'pending' or 'accepted' but NO order exists yet.
+ * Dismisses once order is placed.
  */
 export default function WinnerClaimGuard() {
   const { user, eventAccounts, orders, respondToEventClaim, setGlobalLoading } = useApp();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
 
-  // Find any active claim where current user is the winner
-  // Logic: User is winner AND status is pending AND no order exists for this event yet
+  // Find any active win where current user is the winner and hasn't placed an order
   const activeClaim = useMemo(() => {
     if (!user || !eventAccounts || !orders) return null;
     return eventAccounts.find(e => {
       const isWinner = e.winnerId === user.uid;
-      const isPending = e.winnerClaim?.status === 'pending';
+      const claimStatus = e.winnerClaim?.status;
       
-      // Check local storage first for immediate persistence after refresh
-      // This prevents the modal from flashing during database hydration if the user already responded
-      const locallyResponded = typeof window !== 'undefined' && localStorage.getItem(`oskar_claim_responded_${e.id}_${user.uid}`) === 'true';
-      if (locallyResponded) return false;
+      // If they explicitly ignored it, definitely don't show
+      if (claimStatus === 'ignored') return false;
 
       // Check if user already has an active order for this event
       const hasOrder = orders.some(o => 
@@ -42,45 +38,59 @@ export default function WinnerClaimGuard() {
         o.status !== 'cancelled'
       );
       
-      return isWinner && isPending && !hasOrder;
+      // Modal should show if:
+      // 1. They are the assigned winner
+      // 2. No order has been placed for this win yet
+      // 3. Status is 'pending' OR 'accepted' (re-show on refresh if not yet ordered)
+      return isWinner && !hasOrder && (claimStatus === 'pending' || claimStatus === 'accepted');
     });
   }, [user, eventAccounts, orders]);
 
   const activeClaimId = activeClaim?.id;
+  const winnerModalId = activeClaim?.winnerClaim?.modalId;
 
+  // Track locally if we've fired confetti for the specific modal instance to avoid spam
   useEffect(() => {
     let interval: any;
-    if (activeClaimId) {
-      setShowModal(true);
-      // Fire celebratory confetti
-      const duration = 5 * 1000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+    if (activeClaimId && winnerModalId) {
+      const lastFiredId = localStorage.getItem(`oskar_confetti_fired_${activeClaimId}`);
+      
+      if (lastFiredId !== winnerModalId) {
+        setShowModal(true);
+        // Fire celebratory confetti
+        const duration = 5 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
 
-      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-      interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) return clearInterval(interval);
+        interval = setInterval(() => {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) return clearInterval(interval);
 
-        const particleCount = 50 * (timeLeft / duration);
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-      }, 250);
+          const particleCount = 50 * (timeLeft / duration);
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+        }, 250);
+        
+        localStorage.setItem(`oskar_confetti_fired_${activeClaimId}`, winnerModalId);
+      } else {
+        // If already fired for this modalId, just show the modal without the noise
+        setShowModal(true);
+      }
     } else {
       setShowModal(false);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeClaimId]);
+  }, [activeClaimId, winnerModalId]);
 
   if (!activeClaim) return null;
 
   const handleClaim = () => {
     if (activeClaim && user) {
-      // Mark as accepted locally first for instant UI response and refresh persistence
-      localStorage.setItem(`oskar_claim_responded_${activeClaim.id}_${user.uid}`, 'true');
+      // Mark as accepted in DB to track progress, but logic keeps it visible on refresh IF no order
       respondToEventClaim(activeClaim.id, 'accepted');
       setGlobalLoading(true);
       router.push(`/checkout-event?id=${activeClaim.id}`);
@@ -90,8 +100,7 @@ export default function WinnerClaimGuard() {
 
   const handleIgnore = () => {
     if (activeClaim && user) {
-      // Mark as ignored locally first
-      localStorage.setItem(`oskar_claim_responded_${activeClaim.id}_${user.uid}`, 'true');
+      // Mark as ignored in DB. Outcome 'ignored' triggers next top bidder assignment in context.
       respondToEventClaim(activeClaim.id, 'ignored');
       setShowModal(false);
     }
@@ -104,7 +113,7 @@ export default function WinnerClaimGuard() {
         <DialogPrimitive.Content 
           className={cn(
             "fixed left-[50%] top-[50%] z-[100003] grid w-[88%] max-w-sm translate-x-[-50%] translate-y-[-50%] border bg-background shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 rounded-[2rem] md:rounded-[2.5rem] border-none bg-white dark:bg-slate-900 outline-none overflow-hidden",
-            "[&>button]:hidden" // Hide the standard close X button
+            "[&>button]:hidden" 
           )}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}

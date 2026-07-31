@@ -167,6 +167,7 @@ type EventAccount = {
   winnerClaim?: {
     status: 'pending' | 'accepted' | 'ignored';
     finalPrice?: number;
+    modalId?: string;
   };
   participantsCount?: number;
   topBidderName?: string;
@@ -1670,10 +1671,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           status: 'accepted'
         });
       } else {
-        // MARK AS IGNORED AND FIND NEXT WINNER (Top 1 in current list)
+        // MARK AS IGNORED AND FIND NEXT WINNER
         const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
         const participants = participantsSnap.val() || {};
         const sorted = Object.values(participants).sort((a: any, b: any) => {
+          // RULE: Most bids win. TIE-BREAKER: Earliest reaching that count wins.
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
         });
@@ -1682,12 +1684,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const nextWinner = sorted[currentIndex + 1] as any;
 
         if (nextWinner) {
-          // Re-assign to next best person
+          // Assign to next top bidder
           await update(ref(rtdb, `eventAccounts/${eventId}`), {
             winnerId: nextWinner.uid,
             winnerClaim: {
               status: 'pending',
-              finalPrice: nextWinner.value
+              finalPrice: nextWinner.value,
+              modalId: Date.now().toString() // Tracking ID for the modal
             }
           });
           toast({ title: "Winner Updated", description: "Listing offered to next top bidder." });
@@ -1697,7 +1700,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             nextWinner.uid
           );
         } else {
-          // No one left
+          // No more bidders left to offer to
           await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
             status: 'ignored'
           });
@@ -2449,7 +2452,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           updates.winnerId = top1.uid;
           updates.winnerClaim = {
             status: 'pending',
-            finalPrice: top1.value
+            finalPrice: top1.value,
+            modalId: Date.now().toString()
           };
           
           // Notify the winner immediately
@@ -2480,7 +2484,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         status: 'ended',
         winnerClaim: {
           status: 'pending',
-          finalPrice: winnerData.value
+          finalPrice: winnerData.value,
+          modalId: Date.now().toString()
         }
       });
       toast({ title: "Winner Assigned" });
@@ -2492,7 +2497,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [rtdb, enhancedUser]);
 
   // GLOBAL AUCTION WATCHER
-  // This automatically transitions events even if no one is on the detail page.
   useEffect(() => {
     if (!rtdb || !enhancedUser || eventAccounts.length === 0) return;
 
