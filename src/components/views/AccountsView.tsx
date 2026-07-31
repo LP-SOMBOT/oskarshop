@@ -569,10 +569,12 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
               <Badge variant="secondary" className="text-[8px] font-black tracking-widest rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-1.5 uppercase border-none">{post.gameType}</Badge>
               <Badge className="bg-blue-500 text-white border-none font-bold text-[6px] md:text-[8px] uppercase tracking-tighter h-4 px-1.5">{post.platform?.toUpperCase().replace('ACCOUNT', '')}</Badge>
            </div>
-           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-primary/20 bg-primary/5 text-primary">
-              <Clock size={12} strokeWidth={3} />
-              <span className="text-[10px] font-black uppercase tracking-tight">{waitText}</span>
-           </div>
+           {isAdmin && (
+             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-primary/20 bg-primary/5 text-primary">
+                <Clock size={12} strokeWidth={3} />
+                <span className="text-[10px] font-black uppercase tracking-tight">{waitText}</span>
+             </div>
+           )}
         </div>
 
         <div className="grid grid-cols-3 gap-2">
