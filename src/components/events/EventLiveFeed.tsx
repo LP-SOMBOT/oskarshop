@@ -25,18 +25,21 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
       const latestTap = taps[taps.length - 1];
       const now = Date.now();
       
-      // Filter for very recent taps to avoid notification spam on load
-      if (latestTap.timestamp > lastProcessedTime.current && (now - latestTap.timestamp) < 3000) {
+      // Filter for very recent taps to avoid notification spam on initial load
+      // Using a 5-second window to catch recent real-time updates
+      if (latestTap.timestamp > lastProcessedTime.current && (now - latestTap.timestamp) < 5000) {
         lastProcessedTime.current = latestTap.timestamp;
         setIsVisible(false);
+        
+        // Brief delay before showing new notification to allow fade out transition
         setTimeout(() => {
           setCurrentTap(latestTap);
           setIsVisible(true);
-        }, 50);
+        }, 100);
 
         const timer = setTimeout(() => {
           setIsVisible(false);
-        }, 3500);
+        }, 4000);
 
         return () => clearTimeout(timer);
       }
@@ -45,14 +48,16 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
 
   if (!currentTap) return null;
 
+  const firstName = (currentTap.name || "Gamer").split(' ')[0];
+
   return (
     <div className="fixed top-24 right-4 sm:right-8 z-[100] flex flex-col items-end pointer-events-none">
       <div className={cn(
         "bg-white dark:bg-slate-900 rounded-2xl py-3 px-4 flex items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-primary/10 transition-all duration-500 transform border-l-[4px] border-orange-500 pointer-events-auto",
-        "w-full max-w-[280px] sm:max-w-[320px] relative overflow-hidden",
+        "w-full max-w-[280px] sm:max-w-[340px] relative overflow-hidden",
         isVisible ? "translate-x-0 opacity-100 scale-100" : "translate-x-12 opacity-0 scale-95"
       )}>
-         {/* Beautiful Accent Background for Light Mode */}
+         {/* Beautiful Accent Background for depth */}
          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-amber-500/5 dark:from-transparent dark:to-transparent pointer-events-none" />
          
          <Avatar className="w-10 h-10 border-2 border-slate-50 dark:border-slate-800 shrink-0 shadow-sm relative z-10">
@@ -63,12 +68,14 @@ export default function EventLiveFeed({ taps }: { taps: TapNotification[] }) {
          </Avatar>
          
          <div className="flex-1 min-w-0 pr-2 relative z-10">
-            <div className="flex items-center gap-1 min-w-0">
-              <p className="truncate text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight max-w-[120px]">
-                 {currentTap.name}
+            <div className="flex items-center flex-wrap gap-x-1 gap-y-0.5 min-w-0">
+              <p className="truncate text-[12px] sm:text-[13px] font-black text-slate-900 dark:text-white leading-tight max-w-[100px] sm:max-w-[120px]">
+                 {firstName}
               </p>
               {currentTap.isVerified && <VerifiedBadge />}
-              <span className="font-bold text-slate-500 dark:text-slate-400 text-[12px] sm:text-[13px] ml-1">bid!</span>
+              <span className="font-bold text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] whitespace-nowrap">
+                 ayaa bid gareeyay
+              </span>
             </div>
             <div className="flex items-center gap-1.5 mt-1">
                <div className="bg-orange-100 dark:bg-orange-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">
