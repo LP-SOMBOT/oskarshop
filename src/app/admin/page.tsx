@@ -2439,11 +2439,11 @@ export default function AdminPage() {
            <form onSubmit={handleSavePromo} className="space-y-6 mt-6">
               <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Code</Label>
-                 <Input 
+                 <input 
                    placeholder="e.g. DEVL26%OFF" 
                    value={promoCodeForm.code} 
                    onChange={e => setPromoCodeInput({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
-                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase" 
+                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase w-full" 
                  />
               </div>
 
@@ -3130,7 +3130,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <div className="flex items-center gap-2 text-muted-foreground justify-start">
                          <Clock size={14} className="opacity-40" />
                          <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(post.processedAt))} ago
+                            {formatDistanceToNow(new Date(order.processedAt))} ago
                          </p>
                       </div>
                     )}
