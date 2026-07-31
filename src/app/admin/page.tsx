@@ -1075,7 +1075,9 @@ export default function AdminPage() {
                                    <StatusBadge status={order.status} />
                                 </div>
                                 <div className="space-y-1">
-                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{order.gameDetails?.playerName || order.gameDetails?.name || "Guest"}</p>
+                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">
+                                     {order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest")}
+                                   </p>
                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
                                      {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                    </p>
@@ -1133,7 +1135,9 @@ export default function AdminPage() {
                                     <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{order.id.toUpperCase()}</TableCell>
                                     <TableCell>
                                        <div className="flex flex-col">
-                                          <span className="font-bold text-base text-slate-900 dark:text-white">{order.gameDetails?.playerName || order.gameDetails?.name || "Guest"}</span>
+                                          <span className="font-bold text-base text-slate-900 dark:text-white">
+                                            {order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest")}
+                                          </span>
                                           <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
                                             {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                           </span>
