@@ -327,7 +327,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-2xl mx-auto w-full space-y-6 md:space-y-8 pb-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-2xl mx-auto w-full space-y-6 md:space-y-8 pb-4">
         {/* Gallery Section */}
         <div className="space-y-3">
           <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">SOO GELI DHAMAAN SAWIRADA ACCOUNTI-GA</h3>
@@ -355,11 +355,11 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
 
         {/* XOGTA GAME KA Section */}
-        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-5">
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-4">
            <div className="space-y-1.5">
               <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">DOORO NOOCA GAME KA</Label>
               <Select value={form.gameType} onValueChange={v => setForm({...form, gameType: v as any})}>
-                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-5 font-bold shadow-inner">
+                 <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
                     <SelectValue />
                  </SelectTrigger>
                  <SelectContent className="rounded-2xl border-none shadow-2xl">
@@ -372,7 +372,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            <div className="space-y-1.5">
               <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">QAABKA LAGU SOO GALO</Label>
               <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
-                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-5 font-bold shadow-inner">
+                 <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
                     <SelectValue />
                  </SelectTrigger>
                  <SelectContent className="rounded-2xl border-none shadow-2xl">
@@ -386,7 +386,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">PRIME LEVEL</Label>
                 <Select value={form.primeLevel} onValueChange={v => setForm({...form, primeLevel: v})}>
-                    <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-5 font-bold shadow-inner">
+                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
@@ -403,26 +403,26 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
               <Input 
                 value={form.age} 
                 onChange={e => setForm({...form, age: e.target.value})} 
-                className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-5 shadow-inner" 
+                className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner" 
                 placeholder="e.g. 2 years" 
               />
            </div>
         </Card>
 
         {/* LEVEL & PRICING Section */}
-        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-5">
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-4">
            <h4 className="font-headline font-bold text-amber-500 flex items-center gap-2 uppercase text-xs">
              <Star size={16} fill="currentColor" /> LEVEL & PRICING
            </h4>
 
-           <div className="space-y-5">
+           <div className="space-y-4">
               <div className="space-y-1.5">
                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">ACCOUNT LEVEL</Label>
                  <Input 
                    type="number" 
                    value={form.level} 
                    onChange={e => setForm({...form, level: e.target.value})} 
-                   className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-5 shadow-inner" 
+                   className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner" 
                    placeholder="e.g. 65" 
                  />
               </div>
@@ -433,7 +433,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                    type="number" 
                    value={form.price} 
                    onChange={e => setForm({...form, price: e.target.value})} 
-                   className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-5 shadow-inner text-primary" 
+                   className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner text-primary" 
                    placeholder="e.g. 50" 
                  />
               </div>
@@ -441,7 +441,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </Card>
 
         {/* WAXYABAHA ACCOUNT TIGA YAALO Section */}
-        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-6">
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-4">
            <div className="space-y-1">
               <h4 className="font-headline font-bold text-primary flex items-center gap-2 uppercase text-xs">
                 <Target size={16} /> WAXYABAHA ACCOUNT TIGA YAALO
@@ -471,7 +471,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </Card>
 
         {/* WHATSAPP Section */}
-        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-3">
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-4 md:p-6 space-y-3">
            <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">GELI WHATSAPP KAGA</Label>
            <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
@@ -481,7 +481,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                 type="tel" 
                 value={form.phone} 
                 onChange={e => setForm({...form, phone: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
-                className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-5 shadow-inner" 
+                className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-4 shadow-inner" 
                 placeholder="613982172" 
               />
            </div>
@@ -491,7 +491,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
           <Button 
             onClick={handleSubmit} 
             disabled={isSaving || !form.level || !form.price || form.imageUrls.length === 0} 
-            className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all gap-2"
+            className="w-full h-14 rounded-xl bg-primary text-white font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all gap-2"
           >
             {isSaving ? <Loader2 className="animate-spin" /> : <>SOO GELI <ArrowRight size={18} /></>}
           </Button>
@@ -512,7 +512,7 @@ function AssetInput({ icon: Icon, label, value, onChange, placeholder }: { icon:
           type="number" 
           value={value} 
           onChange={e => onChange(e.target.value)} 
-          className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-3 shadow-inner text-xs" 
+          className="h-10 rounded-lg bg-slate-50 dark:bg-slate-800 border-none font-bold px-3 shadow-inner text-xs" 
           placeholder={placeholder}
        />
     </div>
@@ -546,7 +546,6 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
             <div className="flex items-center gap-1.5">
               <span className="truncate font-bold text-sm md:text-base text-slate-900 dark:text-white leading-tight">{firstName}</span>
               {post.authorIsVerified && <VerifiedBadge />}
-              <Badge className="bg-blue-500 text-white border-none font-bold text-[6px] md:text-[8px] uppercase tracking-tighter h-3.5 md:h-4 px-1.5">{post.platform?.toUpperCase().replace('ACCOUNT', '')}</Badge>
             </div>
             <p className="text-[7px] md:text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
                {post.createdAt ? format(new Date(post.createdAt), 'MMM d, h:mm a').toUpperCase() : '...'}
@@ -574,7 +573,10 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
       {/* CONTENT AREA */}
       <div className="p-5 space-y-5 flex-1 flex flex-col">
         <div className="flex justify-between items-center">
-           <Badge variant="secondary" className="text-[8px] font-black tracking-widest rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-1.5 uppercase border-none">{post.gameType}</Badge>
+           <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-[8px] font-black tracking-widest rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-1.5 uppercase border-none">{post.gameType}</Badge>
+              <Badge className="bg-blue-500 text-white border-none font-bold text-[6px] md:text-[8px] uppercase tracking-tighter h-4 px-1.5">{post.platform?.toUpperCase().replace('ACCOUNT', '')}</Badge>
+           </div>
            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-primary/20 bg-primary/5 text-primary">
               <Clock size={12} strokeWidth={3} />
               <span className="text-[10px] font-black uppercase tracking-tight">{waitText}</span>
