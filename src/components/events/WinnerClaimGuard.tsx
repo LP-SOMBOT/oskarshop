@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
  * WinnerClaimGuard Component
  * Monitors all eventAccounts for a "pending" claim belonging to the current user.
  * Triggers full-screen confetti and a mandatory claim modal.
+ * Includes local storage persistence to prevent annoying repeats during database fetching.
  */
 export default function WinnerClaimGuard() {
   const { user, eventAccounts, orders, respondToEventClaim, setGlobalLoading } = useApp();
@@ -30,6 +31,11 @@ export default function WinnerClaimGuard() {
       const isWinner = e.winnerId === user.uid;
       const isPending = e.winnerClaim?.status === 'pending';
       
+      // Check local storage first for immediate persistence after refresh
+      // This prevents the modal from flashing during database hydration if the user already responded
+      const locallyResponded = typeof window !== 'undefined' && localStorage.getItem(`oskar_claim_responded_${e.id}_${user.uid}`) === 'true';
+      if (locallyResponded) return false;
+
       // Check if user already has an active order for this event
       const hasOrder = orders.some(o => 
         o.gameDetails?.eventId === e.id && 
@@ -72,16 +78,23 @@ export default function WinnerClaimGuard() {
   if (!activeClaim) return null;
 
   const handleClaim = () => {
-    // Mark as accepted immediately so it doesn't show on refresh
-    respondToEventClaim(activeClaim.id, 'accepted');
-    setGlobalLoading(true);
-    router.push(`/checkout-event?id=${activeClaim.id}`);
-    setShowModal(false);
+    if (activeClaim && user) {
+      // Mark as accepted locally first for instant UI response and refresh persistence
+      localStorage.setItem(`oskar_claim_responded_${activeClaim.id}_${user.uid}`, 'true');
+      respondToEventClaim(activeClaim.id, 'accepted');
+      setGlobalLoading(true);
+      router.push(`/checkout-event?id=${activeClaim.id}`);
+      setShowModal(false);
+    }
   };
 
   const handleIgnore = () => {
-    respondToEventClaim(activeClaim.id, 'ignored');
-    setShowModal(false);
+    if (activeClaim && user) {
+      // Mark as ignored locally first
+      localStorage.setItem(`oskar_claim_responded_${activeClaim.id}_${user.uid}`, 'true');
+      respondToEventClaim(activeClaim.id, 'ignored');
+      setShowModal(false);
+    }
   };
 
   return (
