@@ -327,7 +327,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-2xl mx-auto w-full space-y-6 md:space-y-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-2xl mx-auto w-full space-y-6 md:space-y-8 pb-10">
         {/* Gallery Section */}
         <div className="space-y-3">
           <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">SOO GELI DHAMAAN SAWIRADA ACCOUNTI-GA</h3>
@@ -582,21 +582,21 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
         </div>
 
         {/* ASSET PILLS GRID */}
-        <div className="flex flex-wrap gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
            {post.gameType === 'bloodstrike' ? (
              <>
-               <AssetPill color="bg-orange-500" label="EVO WEAPONS" value={post.evoWeapons} />
-               <AssetPill color="bg-blue-500" label="INTERNAL WEAPONS" value={post.internalWeapons} />
+               <AssetPill color="bg-orange-500" label="EVO" value={post.evoWeapons} />
+               <AssetPill color="bg-blue-500" label="INTERNAL" value={post.internalWeapons} />
                <AssetPill color="bg-purple-500" label="EMOTES" value={post.emotes} />
                <AssetPill color="bg-indigo-500" label="EXECUTION" value={post.executionEmotes} />
                <AssetPill color="bg-cyan-500" label="ARRIVAL" value={post.arrivalEmotes} />
              </>
            ) : (
              <>
-               <AssetPill color="bg-orange-500" label="EVO WEAPONS" value={post.evoWeapons} />
-               <AssetPill color="bg-blue-500" label="TOTAL WEAPONS" value={post.totalWeapons} />
+               <AssetPill color="bg-orange-500" label="EVO" value={post.evoWeapons} />
+               <AssetPill color="bg-blue-500" label="WEAPONS" value={post.totalWeapons} />
                <AssetPill color="bg-purple-500" label="EMOTES" value={post.emotes} />
-               <AssetPill color="bg-indigo-500" label="ARRIVAL EMOTES" value={post.arrivalEmotes} />
+               <AssetPill color="bg-indigo-500" label="ARRIVAL" value={post.arrivalEmotes} />
                <AssetPill color="bg-pink-500" label="DHARKA" value={post.dharka} />
              </>
            )}
@@ -609,7 +609,7 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
               <p className="text-2xl font-headline font-bold text-primary tracking-tighter leading-none">${parseFloat(post.price?.toString() || '0').toFixed(2)}</p>
            </div>
            <button className="rounded-full h-12 px-8 bg-primary text-white font-black text-[10px] shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center gap-2 uppercase tracking-[0.2em] border-none">
-             DETAILS <ArrowRight size={14} strokeWidth={3} />
+             IIBSO <ArrowRight size={14} strokeWidth={3} />
            </button>
         </div>
       </div>
@@ -619,10 +619,10 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
 
 function AssetPill({ color, label, value }: { color: string, label: string, value: any }) {
   return (
-    <div className="flex items-center gap-2.5 bg-white dark:bg-slate-800/50 border dark:border-white/5 px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-shadow">
-       <div className={cn("w-2 h-2 rounded-full shrink-0 shadow-sm", color)} />
-       <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{label}:</span>
-       <span className="text-[12px] font-black text-slate-900 dark:text-white">{value || 0}</span>
+    <div className="bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 p-1.5 rounded-xl shadow-sm flex flex-col items-center justify-center text-center gap-0.5 min-w-0">
+       <div className={cn("w-1 h-1 rounded-full", color)} />
+       <span className="text-[6px] font-black text-slate-400 uppercase tracking-tighter truncate w-full">{label}</span>
+       <span className="text-[10px] font-bold text-slate-900 dark:text-white leading-none">{value || 0}</span>
     </div>
   );
 }
@@ -728,7 +728,7 @@ function EventCard({ event, viewLabel, timeLeftLabel }: { event: any, viewLabel:
           <div className="mb-4 md:mb-6 p-2.5 md:p-4 bg-amber-50 dark:bg-amber-500/5 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-4 text-amber-700 dark:text-amber-400">
              <Clock className="w-4 h-4 md:w-5 md:h-5 animate-pulse" />
              <div className="flex flex-col">
-                <span className="text-[7px] md:text-[10px] font-black uppercase tracking-wider opacity-60">{timeLeftLabel}</span>
+                <span className="text-[7px] font-black uppercase tracking-wider opacity-60">{timeLeftLabel}</span>
                 <span className="text-[11px] md:text-base font-bold font-mono">{timeLeft}</span>
              </div>
           </div>
