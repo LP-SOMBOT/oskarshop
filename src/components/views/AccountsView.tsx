@@ -26,6 +26,7 @@ import {
   Sword,
   Target,
   Zap,
+  Bomb,
   User,
   ShoppingBag,
 } from 'lucide-react';
@@ -235,15 +236,15 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
     price: "",
     phone: "",
     imageUrls: [] as string[],
-    evoWeapons: "0",
-    totalWeapons: "0",
-    emotes: "0",
-    arrivalEmotes: "0",
-    dharka: "0",
-    internalWeapons: "0",
-    executionEmotes: "0",
+    evoWeapons: "",
+    totalWeapons: "",
+    emotes: "",
+    arrivalEmotes: "",
+    dharka: "",
+    internalWeapons: "",
+    executionEmotes: "",
     age: "",
-    primeLevel: "Level 1"
+    primeLevel: "Prime 1"
   });
 
   useEffect(() => {
@@ -253,13 +254,14 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         ...editingPost,
         level: editingPost.level.toString(),
         price: editingPost.price.toString(),
-        evoWeapons: (editingPost.evoWeapons || 0).toString(),
-        totalWeapons: (editingPost.totalWeapons || 0).toString(),
-        emotes: (editingPost.emotes || 0).toString(),
-        arrivalEmotes: (editingPost.arrivalEmotes || 0).toString(),
-        dharka: (editingPost.dharka || 0).toString(),
-        internalWeapons: (editingPost.internalWeapons || 0).toString(),
-        executionEmotes: (editingPost.executionEmotes || 0).toString(),
+        evoWeapons: (editingPost.evoWeapons || "").toString(),
+        totalWeapons: (editingPost.totalWeapons || "").toString(),
+        emotes: (editingPost.emotes || "").toString(),
+        arrivalEmotes: (editingPost.arrivalEmotes || "").toString(),
+        dharka: (editingPost.dharka || "").toString(),
+        internalWeapons: (editingPost.internalWeapons || "").toString(),
+        executionEmotes: (editingPost.executionEmotes || "").toString(),
+        primeLevel: editingPost.primeLevel || "Prime 1"
       });
     }
   }, [editingPost]);
@@ -308,7 +310,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500 pb-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500">
       <header className="h-16 md:h-20 bg-white dark:bg-slate-900 border-b dark:border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-full">
@@ -388,8 +390,8 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
-                      {['Level 1', 'Level 2', 'Level 3'].map(l => (
-                        <SelectItem key={l} value={l} className="p-3 font-bold text-xs uppercase">{l}</SelectItem>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(l => (
+                        <SelectItem key={l} value={`Prime ${l}`} className="p-3 font-bold text-xs uppercase">Prime {l}</SelectItem>
                       ))}
                     </SelectContent>
                 </Select>
@@ -448,11 +450,23 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
 
            <div className="grid grid-cols-2 gap-4">
-              <AssetInput icon={Sword} label="EVO GUNS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} />
-              <AssetInput icon={Target} label="TOTAL WEAPONS" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} />
-              <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} />
-              <AssetInput icon={Star} label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} />
-              <AssetInput icon={ShoppingBag} label="DHARKA" value={form.dharka} onChange={v => setForm({...form, dharka: v})} />
+              {form.gameType === 'bloodstrike' ? (
+                <>
+                  <AssetInput icon={Sword} label="EVO WEAPONS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="54" />
+                  <AssetInput icon={Target} label="INTERNAL WEAPONS" value={form.internalWeapons} onChange={v => setForm({...form, internalWeapons: v})} placeholder="3" />
+                  <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="63" />
+                  <AssetInput icon={Bomb} label="EXECUTION EMOTES" value={form.executionEmotes} onChange={v => setForm({...form, executionEmotes: v})} placeholder="12" />
+                  <AssetInput icon={Star} label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="8" />
+                </>
+              ) : (
+                <>
+                  <AssetInput icon={Sword} label="EVO GUNS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="12" />
+                  <AssetInput icon={Target} label="TOTAL WEAPONS" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} placeholder="240" />
+                  <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="85" />
+                  <AssetInput icon={Star} label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="5" />
+                  <AssetInput icon={ShoppingBag} label="DHARKA" value={form.dharka} onChange={v => setForm({...form, dharka: v})} placeholder="150" />
+                </>
+              )}
            </div>
         </Card>
 
@@ -487,14 +501,20 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
   );
 }
 
-function AssetInput({ icon: Icon, label, value, onChange }: { icon: any, label: string, value: string, onChange: (v: string) => void }) {
+function AssetInput({ icon: Icon, label, value, onChange, placeholder }: { icon: any, label: string, value: string, onChange: (v: string) => void, placeholder?: string }) {
   return (
     <div className="space-y-1.5">
        <div className="flex items-center gap-1 text-primary ml-1">
           <Icon size={10} />
           <Label className="text-[8px] font-black uppercase text-slate-400 truncate">{label}</Label>
        </div>
-       <Input type="number" value={value} onChange={e => onChange(e.target.value)} className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-3 shadow-inner text-xs" />
+       <Input 
+          type="number" 
+          value={value} 
+          onChange={e => onChange(e.target.value)} 
+          className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-3 shadow-inner text-xs" 
+          placeholder={placeholder}
+       />
     </div>
   );
 }
