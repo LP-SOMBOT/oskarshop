@@ -27,13 +27,13 @@ import {
   Target,
   Zap,
   User,
+  ShoppingBag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from 'next/image';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -308,7 +308,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500 pb-32">
       <header className="h-16 md:h-20 bg-white dark:bg-slate-900 border-b dark:border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-full">
@@ -325,7 +325,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-10 max-w-4xl mx-auto w-full space-y-10">
+      <main className="flex-1 overflow-y-auto p-4 md:p-10 max-w-4xl mx-auto w-full space-y-8">
         {/* Gallery Section */}
         <div className="space-y-4">
           <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">SOO GELI DHAMAAN SAWIRADA ACCOUNTI-GA</h3>
@@ -344,7 +344,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
             ) : (
               <>
                 <ImageIcon className="text-slate-300 w-12 h-12 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-black uppercase text-slate-900 dark:text-white">RIIX HALKAAN SI AAD SAWIR USOO GELISID</span>
+                <span className="text-[10px] font-black uppercase text-slate-400">RIIX HALKAAN SI AAD SAWIR USOO GELISID</span>
               </>
             )}
             <input id="file-upload" type="file" className="hidden" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
@@ -353,75 +353,69 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
 
         {/* XOGTA GAME KA Section */}
-        <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 space-y-8">
-           <h4 className="font-headline font-bold text-primary flex items-center gap-2 uppercase text-sm">
-             <Layers size={18} /> XOGTA GAME KA
-           </h4>
-           
-           <div className="space-y-6">
+        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-6">
+           <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">DOORO NOOCA GAME KA</Label>
+              <Select value={form.gameType} onValueChange={v => setForm({...form, gameType: v as any})}>
+                 <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
+                    <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent className="rounded-2xl border-none shadow-2xl">
+                    <SelectItem value="freefire" className="p-4 font-bold text-xs uppercase">Free Fire</SelectItem>
+                    <SelectItem value="bloodstrike" className="p-4 font-bold text-xs uppercase">Blood Strike</SelectItem>
+                 </SelectContent>
+              </Select>
+           </div>
+
+           <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">QAABKA LAGU SOO GALO</Label>
+              <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
+                 <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
+                    <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent className="rounded-2xl border-none shadow-2xl">
+                    <SelectItem value="Google Account" className="p-4 font-bold text-xs uppercase">Google Account</SelectItem>
+                    <SelectItem value="Facebook Account" className="p-4 font-bold text-xs uppercase">Facebook Account</SelectItem>
+                 </SelectContent>
+              </Select>
+           </div>
+
+           {form.gameType === 'freefire' && (
               <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">DOORO NOOCA GAME KA</Label>
-                 <Select value={form.gameType} onValueChange={v => setForm({...form, gameType: v as any})}>
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">PRIME LEVEL</Label>
+                <Select value={form.primeLevel} onValueChange={v => setForm({...form, primeLevel: v})}>
                     <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
-                       <SelectValue />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
-                       <SelectItem value="freefire" className="p-4 font-bold text-xs uppercase">Free Fire</SelectItem>
-                       <SelectItem value="bloodstrike" className="p-4 font-bold text-xs uppercase">Blood Strike</SelectItem>
+                      {['Level 1', 'Level 2', 'Level 3'].map(l => (
+                        <SelectItem key={l} value={l} className="p-4 font-bold text-xs uppercase">{l}</SelectItem>
+                      ))}
                     </SelectContent>
-                 </Select>
+                </Select>
               </div>
+           )}
 
-              <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">QAABKA LAGU SOO GALO</Label>
-                 <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
-                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl">
-                       <SelectItem value="Google Account" className="p-4 font-bold text-xs uppercase">Google Account</SelectItem>
-                       <SelectItem value="Facebook Account" className="p-4 font-bold text-xs uppercase">Facebook Account</SelectItem>
-                    </SelectContent>
-                 </Select>
-              </div>
-
-              {form.gameType === 'freefire' && (
-                <div className="space-y-2">
-                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">PRIME LEVEL</Label>
-                  <Select value={form.primeLevel} onValueChange={v => setForm({...form, primeLevel: v})}>
-                      <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-none shadow-2xl">
-                        {['Level 1', 'Level 2', 'Level 3'].map(l => (
-                          <SelectItem key={l} value={l} className="p-4 font-bold text-xs uppercase">{l}</SelectItem>
-                        ))}
-                      </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">GELI DA' DA ACCOUNT TIGA</Label>
-                 <Input 
-                   value={form.age} 
-                   onChange={e => setForm({...form, age: e.target.value})} 
-                   className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6 shadow-inner" 
-                   placeholder="e.g. 2 years" 
-                 />
-              </div>
+           <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">GELI DA' DA ACCOUNT TIGA</Label>
+              <Input 
+                value={form.age} 
+                onChange={e => setForm({...form, age: e.target.value})} 
+                className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6 shadow-inner" 
+                placeholder="e.g. 2 years" 
+              />
            </div>
         </Card>
 
         {/* LEVEL & PRICING Section */}
-        <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 space-y-8">
+        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-6">
            <h4 className="font-headline font-bold text-amber-500 flex items-center gap-2 uppercase text-sm">
-             <Star size={18} /> LEVEL & PRICING
+             <Star size={18} fill="currentColor" /> LEVEL & PRICING
            </h4>
 
            <div className="space-y-6">
               <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">ACCOUNT LEVEL</Label>
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">ACCOUNT LEVEL</Label>
                  <Input 
                    type="number" 
                    value={form.level} 
@@ -432,7 +426,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
               </div>
 
               <div className="space-y-2">
-                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">QIIMAHA AAD KU RABTID ( $ )</Label>
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">QIIMAHA AAD KU RABTID ( $ )</Label>
                  <Input 
                    type="number" 
                    value={form.price} 
@@ -444,45 +438,62 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            </div>
         </Card>
 
-        {/* ASSET Section */}
-        <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 space-y-8">
-           <h4 className="font-headline font-bold text-emerald-500 flex items-center gap-2 uppercase text-sm">
-             <ShieldCheck size={18} /> ASSETS & CONTACT
-           </h4>
+        {/* WAXYABAHA ACCOUNT TIGA YAALO Section */}
+        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-8">
+           <div className="space-y-1">
+              <h4 className="font-headline font-bold text-primary flex items-center gap-2 uppercase text-sm">
+                <Target size={18} /> WAXYABAHA ACCOUNT TIGA YAALO
+              </h4>
+              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-7">SI FIICAN U XAQIIJI XOGTA</p>
+           </div>
 
-           <div className="grid grid-cols-2 gap-6">
-              <AssetInput label="EVO WEAPONS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} />
-              <AssetInput label="TOTAL EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} />
-              <AssetInput label="DHARKA SETS" value={form.dharka} onChange={v => setForm({...form, dharka: v})} />
-              <div className="space-y-2 col-span-2">
-                <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">WHATSAPP NO</Label>
-                <Input 
-                   type="tel" 
-                   value={form.phone} 
-                   onChange={e => setForm({...form, phone: e.target.value.replace(/\D/g, '')})} 
-                   className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6 shadow-inner" 
-                   placeholder="613982172" 
-                 />
-              </div>
+           <div className="grid grid-cols-2 gap-4 md:gap-8">
+              <AssetInput icon={Sword} label="EVO GUNS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} />
+              <AssetInput icon={Target} label="TOTAL WEAPONS" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} />
+              <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} />
+              <AssetInput icon={Star} label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} />
+              <AssetInput icon={ShoppingBag} label="DHARKA" value={form.dharka} onChange={v => setForm({...form, dharka: v})} />
            </div>
         </Card>
 
-        <Button 
-          onClick={handleSubmit} 
-          disabled={isSaving || !form.level || !form.price || form.imageUrls.length === 0} 
-          className="w-full h-16 md:h-20 rounded-[2rem] bg-primary text-white font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all mt-4"
-        >
-          {isSaving ? <Loader2 className="animate-spin" /> : editingPost ? 'Update Listing' : 'Publish Listing'}
-        </Button>
+        {/* WHATSAPP Section */}
+        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-4">
+           <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">GELI WHATSAPP KAGA</Label>
+           <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                 <span className="font-bold text-xs text-gray-400 border-r border-slate-200 pr-3">+252</span>
+              </div>
+              <Input 
+                type="tel" 
+                value={form.phone} 
+                onChange={e => setForm({...form, phone: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
+                className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-6 shadow-inner" 
+                placeholder="613982172" 
+              />
+           </div>
+        </Card>
+
+        <div className="pt-6">
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSaving || !form.level || !form.price || form.imageUrls.length === 0} 
+            className="w-full h-16 md:h-20 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all gap-2"
+          >
+            {isSaving ? <Loader2 className="animate-spin" /> : <>SOO GELI <ArrowRight size={20} /></>}
+          </Button>
+        </div>
       </main>
     </div>
   );
 }
 
-function AssetInput({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
+function AssetInput({ icon: Icon, label, value, onChange }: { icon: any, label: string, value: string, onChange: (v: string) => void }) {
   return (
     <div className="space-y-2">
-       <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 truncate block">{label}</Label>
+       <div className="flex items-center gap-1.5 text-primary ml-1">
+          <Icon size={12} />
+          <Label className="text-[9px] font-black uppercase text-slate-400 truncate">{label}</Label>
+       </div>
        <Input type="number" value={value} onChange={e => onChange(e.target.value)} className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner" />
     </div>
   );
@@ -532,11 +543,12 @@ function AccountPostCard({ post, onClick, onEdit, onDelete, isOwner, isAdmin, la
 
       <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
         <div className="flex justify-between items-center">
-           <div className="flex items-center gap-2">
+           <div className="flex flex-wrap items-center gap-2">
              <Badge variant="secondary" className="text-[8px] md:text-[10px] uppercase font-black tracking-widest rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-1 truncate">{post.gameType}</Badge>
              <Badge variant="outline" className="text-[8px] md:text-[10px] font-black border-2 rounded-xl py-1 px-3 text-primary border-primary/20 bg-primary/5">
                 <Clock className="w-3 h-3 mr-1.5" /> {waitText}
              </Badge>
+             <Badge variant="outline" className="text-[7px] md:text-[9px] font-black border-none uppercase text-slate-400 tracking-tighter">{post.platform}</Badge>
            </div>
         </div>
         <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-white/5">
@@ -591,16 +603,5 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
           </div>
        </div>
     </Card>
-  );
-}
-
-function StatusInfo({ icon: Icon, label, value, color }: { icon: any, label: string, value: any, color?: string }) {
-  return (
-    <div className="space-y-1 min-w-0">
-      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
-        <Icon size={10} /> {label}
-      </p>
-      <p className={cn("text-xs sm:text-base font-bold truncate", color || "text-slate-900 dark:text-white")}>{value}</p>
-    </div>
   );
 }
