@@ -27,13 +27,14 @@ export default function BottomNav() {
       <div className="absolute -top-20 right-6 pointer-events-auto">
         <button
           onClick={handleWhatsApp}
-          className="w-14 h-14 bg-[#00D95F] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,217,95,0.4)] active:scale-90 transition-transform"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-[#00D95F] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(0,217,95,0.4)] active:scale-90 transition-transform"
           aria-label="Contact on WhatsApp"
         >
           <svg 
             viewBox="0 0 24 24" 
-            width="30" 
-            height="30" 
+            width="24" 
+            height="24" 
+            className="sm:w-[30px] sm:h-[30px]"
             fill="currentColor" 
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -42,7 +43,7 @@ export default function BottomNav() {
         </button>
       </div>
 
-      <nav className="w-full h-[75px] bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-white/5 flex items-center justify-around px-1 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] pointer-events-auto">
+      <nav className="w-full h-[65px] bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-white/5 flex items-center justify-around px-1 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] pointer-events-auto">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
@@ -56,20 +57,20 @@ export default function BottomNav() {
               <div className={cn(
                 "transition-all duration-300 transform",
                 isActive 
-                  ? "text-primary scale-110" 
+                  ? "text-primary scale-105" 
                   : "text-slate-400 dark:text-slate-500 group-active:scale-90"
               )}>
-                <Icon size={24} className={isActive ? "stroke-[2.5px]" : "stroke-[2px]"} />
+                <Icon size={20} className={isActive ? "stroke-[2.5px]" : "stroke-[2px]"} />
               </div>
               <span className={cn(
-                "text-[10px] sm:text-[11px] font-bold mt-1 transition-all uppercase tracking-tight",
+                "text-[9px] sm:text-[10px] font-bold mt-1 transition-all uppercase tracking-tight",
                 isActive ? "text-primary" : "text-slate-400 dark:text-slate-500"
               )}>
                 {item.id === 'games' && language === 'so' ? 'top up' : item.id === 'accounts' && language === 'so' ? 'ciwaanada' : item.id === 'orders' && language === 'so' ? 'dalabyada' : item.label}
               </span>
               
               {isActive && (
-                <div className="absolute bottom-1 w-1.5 h-1.5 bg-primary rounded-full animate-in fade-in zoom-in duration-300 shadow-[0_0_8px_rgba(37,99,235,0.6)]" />
+                <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300 shadow-[0_0_8px_rgba(37,99,235,0.6)]" />
               )}
             </button>
           );
