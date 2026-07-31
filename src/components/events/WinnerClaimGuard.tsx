@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -14,8 +15,10 @@ import { cn } from '@/lib/utils';
 /**
  * WinnerClaimGuard Component
  * Monitors all eventAccounts for a active claim belonging to the current user.
- * Displays modal if status is 'pending' or 'accepted' but NO order exists yet.
- * Dismisses once order is placed.
+ * 
+ * IMPROVED PERSISTENCE:
+ * Uses LocalStorage cache to ensure the modal stays dismissed immediately after 
+ * action, even while database state is still loading.
  */
 export default function WinnerClaimGuard() {
   const { user, eventAccounts, orders, respondToEventClaim, setGlobalLoading } = useApp();
@@ -28,28 +31,34 @@ export default function WinnerClaimGuard() {
     return eventAccounts.find(e => {
       const isWinner = e.winnerId === user.uid;
       const claimStatus = e.winnerClaim?.status;
+      const modalId = e.winnerClaim?.modalId;
       
-      // If they explicitly ignored it, definitely don't show
       if (claimStatus === 'ignored') return false;
 
-      // Check if user already has an active order for this event
+      // CHECK LOCALSTORAGE CACHE FOR PERSISTENCE (Instant avoidance on refresh)
+      if (modalId) {
+        const localResponded = localStorage.getItem(`oskar_claim_responded_${e.id}_${modalId}`);
+        if (localResponded === 'ignored') return false;
+        
+        // Note: 'accepted' status doesn't hide it unless an order is also present,
+        // which matches the requirement: "if he clicks iibso hada during checkout... modal will still appear".
+      }
+
+      // Permanent hide if order placed
       const hasOrder = orders.some(o => 
         o.gameDetails?.eventId === e.id && 
         o.status !== 'cancelled'
       );
       
-      // Modal should show if:
-      // 1. They are the assigned winner
-      // 2. No order has been placed for this win yet
-      // 3. Status is 'pending' OR 'accepted' (re-show on refresh if not yet ordered)
-      return isWinner && !hasOrder && (claimStatus === 'pending' || claimStatus === 'accepted');
+      if (hasOrder) return false;
+      
+      return isWinner && (claimStatus === 'pending' || claimStatus === 'accepted');
     });
   }, [user, eventAccounts, orders]);
 
   const activeClaimId = activeClaim?.id;
   const winnerModalId = activeClaim?.winnerClaim?.modalId;
 
-  // Track locally if we've fired confetti for the specific modal instance to avoid spam
   useEffect(() => {
     let interval: any;
     if (activeClaimId && winnerModalId) {
@@ -57,17 +66,14 @@ export default function WinnerClaimGuard() {
       
       if (lastFiredId !== winnerModalId) {
         setShowModal(true);
-        // Fire celebratory confetti
         const duration = 5 * 1000;
         const animationEnd = Date.now() + duration;
         const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
-
         const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
         interval = setInterval(() => {
           const timeLeft = animationEnd - Date.now();
           if (timeLeft <= 0) return clearInterval(interval);
-
           const particleCount = 50 * (timeLeft / duration);
           confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
           confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
@@ -75,7 +81,6 @@ export default function WinnerClaimGuard() {
         
         localStorage.setItem(`oskar_confetti_fired_${activeClaimId}`, winnerModalId);
       } else {
-        // If already fired for this modalId, just show the modal without the noise
         setShowModal(true);
       }
     } else {
@@ -90,7 +95,6 @@ export default function WinnerClaimGuard() {
 
   const handleClaim = () => {
     if (activeClaim && user) {
-      // Mark as accepted in DB to track progress, but logic keeps it visible on refresh IF no order
       respondToEventClaim(activeClaim.id, 'accepted');
       setGlobalLoading(true);
       router.push(`/checkout-event?id=${activeClaim.id}`);
@@ -100,7 +104,6 @@ export default function WinnerClaimGuard() {
 
   const handleIgnore = () => {
     if (activeClaim && user) {
-      // Mark as ignored in DB. Outcome 'ignored' triggers next top bidder assignment in context.
       respondToEventClaim(activeClaim.id, 'ignored');
       setShowModal(false);
     }

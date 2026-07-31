@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -299,7 +300,7 @@ type StoreSettings = {
       feeType: 'percentage' | 'fixed';
       feeValue: number;
       listingFee?: number;
-      listingFeeFreeFire?: number;
+      listingFeeFreefire?: number;
       listingFeeBloodStrike?: number;
       listingFeeWeekly?: number;
       listingFeeMonthly?: number;
@@ -1666,16 +1667,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setIsGlobalLoading(true);
     try {
+      const currentEventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
+      const eventData = currentEventSnap.val();
+      const currentModalId = eventData?.winnerClaim?.modalId;
+
       if (outcome === 'accepted') {
         await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
           status: 'accepted'
         });
+        // Locally persist acceptance to stop flickering immediately
+        if (currentModalId) {
+          localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'accepted');
+        }
       } else {
         // MARK AS IGNORED AND FIND NEXT WINNER
         const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
         const participants = participantsSnap.val() || {};
         const sorted = Object.values(participants).sort((a: any, b: any) => {
-          // RULE: Most bids win. TIE-BREAKER: Earliest reaching that count wins.
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
         });
@@ -1683,14 +1691,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const currentIndex = sorted.findIndex((p: any) => p.uid === uid);
         const nextWinner = sorted[currentIndex + 1] as any;
 
+        if (currentModalId) {
+           localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'ignored');
+        }
+
         if (nextWinner) {
-          // Assign to next top bidder
           await update(ref(rtdb, `eventAccounts/${eventId}`), {
             winnerId: nextWinner.uid,
             winnerClaim: {
               status: 'pending',
               finalPrice: nextWinner.value,
-              modalId: Date.now().toString() // Tracking ID for the modal
+              modalId: Date.now().toString()
             }
           });
           toast({ title: "Winner Updated", description: "Listing offered to next top bidder." });
@@ -1700,7 +1711,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             nextWinner.uid
           );
         } else {
-          // No more bidders left to offer to
           await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), {
             status: 'ignored'
           });
@@ -1731,7 +1741,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // IF CANCELLED & AUCTION WINNER: TRIGGER NEXT WINNER LOGIC
     if (status === 'cancelled') {
        const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
        const orderData = orderSnap.val();
@@ -1744,7 +1753,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
     const orderData = orderSnap.val();
     if (orderData && orderData.userId) {
-      // SERVER-SIDE notify user via API route
       fetch('/api/notify-order-complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1800,7 +1808,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postSnap = await get(ref(rtdb, `accountPosts/${postId}`));
     const postData = postSnap.val();
     if (postData && postData.uid) {
-       // SERVER-SIDE notify seller
        fetch('/api/notify-order-complete', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
@@ -1824,7 +1831,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       timestamp: Date.now()
     });
     
-    // Notify via server-side
     fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1899,7 +1905,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (targetOrder) await update(ref(rtdb, `orders/${targetOrder.id}`), { buyerOutcome: outcome, gameDetails: { ...targetOrder.gameDetails, buyerReportedAt: reportTime } });
       toast({ title: "Report Sent!", description: "Seller has been notified." });
 
-      // Notify seller via server-side
       if (postData.uid) {
         fetch('/api/notify', {
           method: 'POST',
@@ -1977,59 +1982,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await update(ref(rtdb), updates);
     setIsGlobalLoading(false);
   }, [rtdb, authUser, broadcastNotification, broadcastAdminNotification]);
-
-  const enforceAccountAction = useCallback(async (postId: string, action: 'delete' | 'holding' | 'approved' | 'pending', message: string) => {
-    if (!rtdb || !enhancedUser?.isAdmin) return;
-    setIsGlobalLoading(true);
-    const postRef = ref(rtdb, `accountPosts/${postId}`);
-    const postSnap = await get(postRef);
-    const postData = postSnap.val();
-    if (!postData) return;
-    
-    const updates: any = { 
-      adminMessage: message, 
-      sellerReported: true, 
-      conflict: false, 
-      buyerReported: false, 
-      buyerReportedAt: null, 
-      claimants: null,
-      warningDismissedAt: Date.now()
-    };
-
-    if (action === 'delete') { 
-      updates.status = 'rejected'; 
-      updates.hiddenFromMarket = true; 
-      updates.sold = false; 
-    } else { 
-      updates.status = action; 
-      updates.hiddenFromMarket = false; 
-    }
-
-    if (action === 'approved') {
-       const now = Date.now();
-       updates.expiresAt = now + (30 * 24 * 60 * 60 * 1000);
-       updates.createdAt = now;
-       updates.sellerReported = false; 
-       updates.sold = false;
-       updates.holdingBy = null;
-       updates.boughtBy = null;
-       updates.claimants = null;
-       updates.adminMessage = null;
-       updates.sellerSeenDeletionAt = null;
-    }
-
-    await update(postRef, updates);
-
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUids: [postData.uid], title: "Security Penalty Enforcement 👮", message })
-    }).catch(e => console.error(e));
-
-    broadcastNotification("Security Penalty Enforcement 👮", message, postData.uid);
-    toast({ title: `Action "${action}" Applied` });
-    setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastNotification]);
 
   const markDeletionAsSeen = useCallback(async (postId: string) => { 
     if (!rtdb) return; 
@@ -2265,7 +2217,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (data.type === 'single_use' || !data.type) {
         if (data.claimed) throw new Error("Code already claimed");
       } else {
-        // Multi-use: Check if this user already used it
         if (data.usedByUsers?.[authUser.uid]) throw new Error("You have already used this code");
       }
       
@@ -2358,13 +2309,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const eventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
     const eventData = eventSnap.val() as EventAccount;
     
-    // STRICT END TIME CHECK
     if (eventData.status !== 'active' || (eventData.endTime && now > eventData.endTime)) {
       toast({ title: "Event is not active", variant: "destructive" });
       return;
     }
 
-    // Perform the tap transaction
     const newTaps = (participantData?.taps || 0) + 1;
     const newValue = eventData.initialPrice + (newTaps * eventData.tapPrice);
     
@@ -2372,7 +2321,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updates[`eventParticipants/${eventId}/${authUser.uid}`] = {
       uid: authUser.uid,
       name: enhancedUser.name || "Gamer",
-      phone: phone, // USE PROVIDED PHONE NUMBER
+      phone: phone, 
       avatar: enhancedUser.photoURL || "",
       taps: newTaps,
       value: newValue,
@@ -2381,7 +2330,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isVerified: enhancedUser.isVerified || false
     };
     
-    // Maintain top 3 recent participants on the event object for Marketplace card display
     let topParticipants = eventData.topParticipants || [];
     topParticipants = topParticipants.filter((p: any) => p.uid !== authUser.uid);
     topParticipants.unshift({
@@ -2391,7 +2339,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     updates[`eventAccounts/${eventId}/topParticipants`] = topParticipants.slice(0, 3);
     
-    // Log to tap feed with stats included
     const tapFeedRef = push(ref(rtdb, `eventTaps/${eventId}`));
     updates[`eventTaps/${eventId}/${tapFeedRef.key}`] = {
       name: enhancedUser.name || "Gamer",
@@ -2402,7 +2349,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isVerified: enhancedUser.isVerified || false
     };
 
-    // Update top stats on event directly for easy listing display
     const currentTopTaps = eventData.topTapsCount || 0;
     if (newTaps >= currentTopTaps) {
       updates[`eventAccounts/${eventId}/topTapperId`] = authUser.uid;
@@ -2410,12 +2356,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updates[`eventAccounts/${eventId}/topBidderName`] = enhancedUser.name;
     }
 
-    // If it's the first time tapping, increment participant count
     if (!participantData) {
       updates[`eventAccounts/${eventId}/participantsCount`] = increment(1);
     }
 
-    // Bid Extension Rule: If a bid is placed in the last 2 seconds, reset timer to 2 seconds
     if (eventData.endTime && now > (eventData.endTime - 2000)) {
       updates[`eventAccounts/${eventId}/endTime`] = now + 2000;
     }
@@ -2426,7 +2370,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateEventStatus = useCallback(async (eventId: string, status: string) => {
     if (!rtdb) return;
     
-    // Fetch latest data to avoid overwriting or redundant triggers
     const eventRef = ref(rtdb, `eventAccounts/${eventId}`);
     const currentSnap = await get(eventRef);
     const eventData = currentSnap.val();
@@ -2435,14 +2378,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const updates: any = { status };
 
-    // Real-time Top 1 Winner determination
     if (status === 'ended') {
       const participantsSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
       const participants = participantsSnap.val();
       
       if (participants) {
         const sorted = Object.values(participants).sort((a: any, b: any) => {
-          // RULE: Most bids win. TIE-BREAKER: Earliest reaching that count wins.
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
         });
@@ -2456,7 +2397,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             modalId: Date.now().toString()
           };
           
-          // Notify the winner immediately
           broadcastNotification(
             "Hampalyo! 🏆", 
             `Waad ku guulaysatay auction-ka: ${eventData.title}! Fadlan iibso hadda.`, 
@@ -2496,7 +2436,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [rtdb, enhancedUser]);
 
-  // GLOBAL AUCTION WATCHER
   useEffect(() => {
     if (!rtdb || !enhancedUser || eventAccounts.length === 0) return;
 
