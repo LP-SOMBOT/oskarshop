@@ -246,16 +246,32 @@ function OrderCard({ order, language }: { order: any, language: string }) {
                </div>
              )}
              {order.status === 'cancelled' && (
-               <div className="p-4 sm:p-6 lg:p-8 bg-red-50 dark:bg-red-950/10 rounded-[1.5rem] sm:rounded-[2.5rem] flex flex-col gap-3 md:gap-4 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/20 shadow-sm">
-                  <div className="flex gap-3 md:gap-4 items-center text-xs sm:text-sm lg:text-lg font-black uppercase tracking-wider">
-                    <ShieldAlert size={20} className="shrink-0" /> <p>{t('order_cancelled')}</p>
-                  </div>
-                  {order.cancellationReason && (
-                    <div className="p-3 md:p-4 bg-white/50 dark:bg-black/20 rounded-xl md:rounded-2xl border border-red-200/50 dark:border-red-800/30">
-                       <p className="text-[8px] uppercase font-black tracking-widest mb-1 opacity-60">{t('admin_message')}:</p>
-                       <p className="text-[11px] sm:text-sm lg:text-base font-bold italic">"{order.cancellationReason}"</p>
+               <div className="p-4 sm:p-6 bg-red-50 dark:bg-red-950/20 rounded-[1.5rem] md:rounded-[2rem] border border-red-100 dark:border-red-900/20 flex flex-col gap-4 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex gap-3 items-center">
+                       <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
+                          <XCircle size={18} className="text-red-600" />
+                       </div>
+                       <p className="text-[11px] sm:text-sm font-bold text-red-700 dark:text-red-400 leading-tight">
+                          {order.cancellationReason 
+                            ? `Dalabkaaga waa la kansalay sababtoo ah: ${order.cancellationReason}`
+                            : "Dalabkaaga waa la kansalay"}
+                       </p>
                     </div>
-                  )}
+                    
+                    {order.processedBy && (
+                       <div className="flex items-center gap-2 bg-white/50 dark:bg-black/20 p-1.5 pr-3 rounded-full border border-red-200/50 dark:border-red-800/30 self-start sm:self-auto">
+                          <div className="w-6 h-6 rounded-full overflow-hidden relative shrink-0 border border-red-200">
+                             {order.processedBy.photoURL ? (
+                               <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" unoptimized />
+                             ) : (
+                               <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[10px] font-bold">O</div>
+                             )}
+                          </div>
+                          <span className="text-[9px] font-black uppercase text-red-600 dark:text-red-400 tracking-tight">{order.processedBy.name}</span>
+                       </div>
+                    )}
+                  </div>
                </div>
              )}
           </div>
