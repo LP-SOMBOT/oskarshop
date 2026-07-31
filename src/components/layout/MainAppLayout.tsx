@@ -24,7 +24,7 @@ export default function MainAppLayout({ children }: { children: React.ReactNode 
   const isAdminPage = pathname.startsWith("/admin");
   const isRanking = activeTab === 'ranking';
   
-  const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || activeTab === 'chat' || isPostingAccount || isRanking;
+  const isSpecialFlow = pathname === "/checkout" || pathname === "/checkout-account" || pathname === "/checkout-event" || pathname.startsWith("/accounts/") || pathname.startsWith("/events/") || activeTab === 'chat' || isPostingAccount || isRanking;
 
   const isOffline = storeSettings?.appStatus?.offline;
   const isAdminUser = user?.role === 'admin';
