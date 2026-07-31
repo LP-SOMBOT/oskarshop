@@ -2259,12 +2259,15 @@ export default function AdminPage() {
                 <div className="space-y-1.5">
                    <div className="flex items-center gap-1.5 text-blue-500 ml-1">
                       <ShieldCheck size={12} />
-                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verified Status</Label>
+                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verification status</Label>
                    </div>
                    <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
-                      <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
-                        {selectedUser?.isVerified ? 'Haa' : 'Maya'}
-                      </span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
+                          {selectedUser?.isVerified ? 'Verified' : 'Maya'}
+                        </span>
+                        {selectedUser?.isVerified && <VerifiedBadge className="text-[14px]" />}
+                      </div>
                       <Switch 
                         checked={selectedUser?.isVerified || false} 
                         onCheckedChange={async (v) => {
