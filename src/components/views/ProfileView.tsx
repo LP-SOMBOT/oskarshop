@@ -111,7 +111,7 @@ export default function ProfileView() {
         <div className="flex flex-col items-center">
           <Skeleton className="w-32 h-32 md:w-56 md:h-56 rounded-full mb-8" />
           <Skeleton className="h-10 w-48 md:h-12 md:w-64 mb-4" />
-          <Skeleton className="h-6 w-32 md:h-8 md:w-40" />
+          <Skeleton className="h-6 w-32 h-8 md:w-40" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
            {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 sm:h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
@@ -175,7 +175,6 @@ export default function ProfileView() {
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-14">
             <ProfileGroup title={t('store_marketplace')}>
-                <ProfileOption icon={ShoppingBag} label={t('orders')} onClick={() => setActiveTab('orders')} />
                 <ProfileOption icon={AccountIcon} label={t('my_accounts')} onClick={() => setActiveTab('my-accounts')} />
                 <ProfileOption icon={Gamepad2} label={t('sell_account')} onClick={() => setActiveTab('accounts')} />
                 <ProfileOption icon={Trophy} label={t('leaderboard')} onClick={() => setActiveTab('ranking')} />
