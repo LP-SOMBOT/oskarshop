@@ -308,7 +308,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500 pb-32">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500 pb-12">
       <header className="h-16 md:h-20 bg-white dark:bg-slate-900 border-b dark:border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-full">
@@ -325,11 +325,11 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-10 max-w-4xl mx-auto w-full space-y-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 max-w-2xl mx-auto w-full space-y-6 md:space-y-8">
         {/* Gallery Section */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">SOO GELI DHAMAAN SAWIRADA ACCOUNTI-GA</h3>
-          <div className="relative aspect-[16/10] w-full rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex flex-col items-center justify-center group overflow-hidden shadow-inner cursor-pointer" onClick={() => !isUploading && document.getElementById('file-upload')?.click()}>
+          <div className="relative aspect-[16/10] w-full rounded-[1.5rem] md:rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex flex-col items-center justify-center group overflow-hidden shadow-inner cursor-pointer" onClick={() => !isUploading && document.getElementById('file-upload')?.click()}>
             {form.imageUrls.length > 0 ? (
                <div className="grid grid-cols-2 w-full h-full p-2 gap-2">
                   <div className="relative col-span-2 row-span-1 rounded-2xl overflow-hidden">
@@ -343,8 +343,8 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                </div>
             ) : (
               <>
-                <ImageIcon className="text-slate-300 w-12 h-12 mb-4 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase text-slate-400">RIIX HALKAAN SI AAD SAWIR USOO GELISID</span>
+                <ImageIcon className="text-slate-300 w-10 h-10 mb-2 group-hover:scale-110 transition-transform" />
+                <span className="text-[9px] font-black uppercase text-slate-400">RIIX HALKAAN SI AAD SAWIR USOO GELISID</span>
               </>
             )}
             <input id="file-upload" type="file" className="hidden" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
@@ -353,85 +353,85 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </div>
 
         {/* XOGTA GAME KA Section */}
-        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-6">
-           <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">DOORO NOOCA GAME KA</Label>
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-5">
+           <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">DOORO NOOCA GAME KA</Label>
               <Select value={form.gameType} onValueChange={v => setForm({...form, gameType: v as any})}>
-                 <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
+                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-5 font-bold shadow-inner">
                     <SelectValue />
                  </SelectTrigger>
                  <SelectContent className="rounded-2xl border-none shadow-2xl">
-                    <SelectItem value="freefire" className="p-4 font-bold text-xs uppercase">Free Fire</SelectItem>
-                    <SelectItem value="bloodstrike" className="p-4 font-bold text-xs uppercase">Blood Strike</SelectItem>
+                    <SelectItem value="freefire" className="p-3 font-bold text-xs uppercase">Free Fire</SelectItem>
+                    <SelectItem value="bloodstrike" className="p-3 font-bold text-xs uppercase">Blood Strike</SelectItem>
                  </SelectContent>
               </Select>
            </div>
 
-           <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">QAABKA LAGU SOO GALO</Label>
+           <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">QAABKA LAGU SOO GALO</Label>
               <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
-                 <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
+                 <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-5 font-bold shadow-inner">
                     <SelectValue />
                  </SelectTrigger>
                  <SelectContent className="rounded-2xl border-none shadow-2xl">
-                    <SelectItem value="Google Account" className="p-4 font-bold text-xs uppercase">Google Account</SelectItem>
-                    <SelectItem value="Facebook Account" className="p-4 font-bold text-xs uppercase">Facebook Account</SelectItem>
+                    <SelectItem value="Google Account" className="p-3 font-bold text-xs uppercase">Google Account</SelectItem>
+                    <SelectItem value="Facebook Account" className="p-3 font-bold text-xs uppercase">Facebook Account</SelectItem>
                  </SelectContent>
               </Select>
            </div>
 
            {form.gameType === 'freefire' && (
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">PRIME LEVEL</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">PRIME LEVEL</Label>
                 <Select value={form.primeLevel} onValueChange={v => setForm({...form, primeLevel: v})}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner">
+                    <SelectTrigger className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-5 font-bold shadow-inner">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
                       {['Level 1', 'Level 2', 'Level 3'].map(l => (
-                        <SelectItem key={l} value={l} className="p-4 font-bold text-xs uppercase">{l}</SelectItem>
+                        <SelectItem key={l} value={l} className="p-3 font-bold text-xs uppercase">{l}</SelectItem>
                       ))}
                     </SelectContent>
                 </Select>
               </div>
            )}
 
-           <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">GELI DA' DA ACCOUNT TIGA</Label>
+           <div className="space-y-1.5">
+              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">GELI DA' DA ACCOUNT TIGA</Label>
               <Input 
                 value={form.age} 
                 onChange={e => setForm({...form, age: e.target.value})} 
-                className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6 shadow-inner" 
+                className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-5 shadow-inner" 
                 placeholder="e.g. 2 years" 
               />
            </div>
         </Card>
 
         {/* LEVEL & PRICING Section */}
-        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-6">
-           <h4 className="font-headline font-bold text-amber-500 flex items-center gap-2 uppercase text-sm">
-             <Star size={18} fill="currentColor" /> LEVEL & PRICING
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-5">
+           <h4 className="font-headline font-bold text-amber-500 flex items-center gap-2 uppercase text-xs">
+             <Star size={16} fill="currentColor" /> LEVEL & PRICING
            </h4>
 
-           <div className="space-y-6">
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">ACCOUNT LEVEL</Label>
+           <div className="space-y-5">
+              <div className="space-y-1.5">
+                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">ACCOUNT LEVEL</Label>
                  <Input 
                    type="number" 
                    value={form.level} 
                    onChange={e => setForm({...form, level: e.target.value})} 
-                   className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6 shadow-inner" 
+                   className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-5 shadow-inner" 
                    placeholder="e.g. 65" 
                  />
               </div>
 
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">QIIMAHA AAD KU RABTID ( $ )</Label>
+              <div className="space-y-1.5">
+                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">QIIMAHA AAD KU RABTID ( $ )</Label>
                  <Input 
                    type="number" 
                    value={form.price} 
                    onChange={e => setForm({...form, price: e.target.value})} 
-                   className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6 shadow-inner text-primary" 
+                   className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-5 shadow-inner text-primary" 
                    placeholder="e.g. 50" 
                  />
               </div>
@@ -439,15 +439,15 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </Card>
 
         {/* WAXYABAHA ACCOUNT TIGA YAALO Section */}
-        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-8">
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-6">
            <div className="space-y-1">
-              <h4 className="font-headline font-bold text-primary flex items-center gap-2 uppercase text-sm">
-                <Target size={18} /> WAXYABAHA ACCOUNT TIGA YAALO
+              <h4 className="font-headline font-bold text-primary flex items-center gap-2 uppercase text-xs">
+                <Target size={16} /> WAXYABAHA ACCOUNT TIGA YAALO
               </h4>
-              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-7">SI FIICAN U XAQIIJI XOGTA</p>
+              <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest ml-6">SI FIICAN U XAQIIJI XOGTA</p>
            </div>
 
-           <div className="grid grid-cols-2 gap-4 md:gap-8">
+           <div className="grid grid-cols-2 gap-4">
               <AssetInput icon={Sword} label="EVO GUNS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} />
               <AssetInput icon={Target} label="TOTAL WEAPONS" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} />
               <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} />
@@ -457,8 +457,8 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         </Card>
 
         {/* WHATSAPP Section */}
-        <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-slate-900 p-6 md:p-10 space-y-4">
-           <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">GELI WHATSAPP KAGA</Label>
+        <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-sm bg-white dark:bg-slate-900 p-5 md:p-8 space-y-3">
+           <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">GELI WHATSAPP KAGA</Label>
            <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
                  <span className="font-bold text-xs text-gray-400 border-r border-slate-200 pr-3">+252</span>
@@ -467,19 +467,19 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                 type="tel" 
                 value={form.phone} 
                 onChange={e => setForm({...form, phone: e.target.value.replace(/\D/g, '').substring(0, 9)})} 
-                className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-6 shadow-inner" 
+                className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold pl-16 pr-5 shadow-inner" 
                 placeholder="613982172" 
               />
            </div>
         </Card>
 
-        <div className="pt-6">
+        <div className="pt-2">
           <Button 
             onClick={handleSubmit} 
             disabled={isSaving || !form.level || !form.price || form.imageUrls.length === 0} 
-            className="w-full h-16 md:h-20 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all gap-2"
+            className="w-full h-14 md:h-16 rounded-xl md:rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all gap-2"
           >
-            {isSaving ? <Loader2 className="animate-spin" /> : <>SOO GELI <ArrowRight size={20} /></>}
+            {isSaving ? <Loader2 className="animate-spin" /> : <>SOO GELI <ArrowRight size={18} /></>}
           </Button>
         </div>
       </main>
@@ -489,12 +489,12 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
 
 function AssetInput({ icon: Icon, label, value, onChange }: { icon: any, label: string, value: string, onChange: (v: string) => void }) {
   return (
-    <div className="space-y-2">
-       <div className="flex items-center gap-1.5 text-primary ml-1">
-          <Icon size={12} />
-          <Label className="text-[9px] font-black uppercase text-slate-400 truncate">{label}</Label>
+    <div className="space-y-1.5">
+       <div className="flex items-center gap-1 text-primary ml-1">
+          <Icon size={10} />
+          <Label className="text-[8px] font-black uppercase text-slate-400 truncate">{label}</Label>
        </div>
-       <Input type="number" value={value} onChange={e => onChange(e.target.value)} className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-4 shadow-inner" />
+       <Input type="number" value={value} onChange={e => onChange(e.target.value)} className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-3 shadow-inner text-xs" />
     </div>
   );
 }
