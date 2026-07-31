@@ -214,7 +214,7 @@ export default function AccountsView() {
       )}
 
       <Dialog open={!!deletingPostId} onOpenChange={(v) => !v && setDeletingPostId(null)}>
-        <DialogContent className="max-w-sm w-[90vw] rounded-[1.5rem]">
+        <DialogContent className="max-sm w-[90vw] rounded-[1.5rem]">
           <DialogHeader>
             <DialogTitle>Ma hubtaa?</DialogTitle>
             <DialogDescription>Post-kan waa la tirtiri doonaa.</DialogDescription>
@@ -578,7 +578,7 @@ function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner,
            {isAdmin && (
              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-primary/20 bg-primary/5 text-primary">
                 <Clock size={12} strokeWidth={3} />
-                <span className="text-[10px] font-black uppercase tracking-tight">{waitText}</span>
+                <span className="text-sm font-black uppercase tracking-tight">{waitText}</span>
              </div>
            )}
         </div>
@@ -628,44 +628,93 @@ function AssetPill({ color, label, value }: { color: string, label: string, valu
 }
 
 function EventAccountCard({ event, onClick }: { event: any, onClick: () => void }) {
-  const [timeLeft, setTimeLeft] = useState("");
+  const [timeLeft, setTimeLeft] = useState({ h: "00", m: "00", s: "00" });
+  
   useEffect(() => {
     const update = () => {
       const now = Date.now();
       const diff = event.endTime - now;
-      if (diff <= 0) { setTimeLeft("Ended"); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`${h}h ${m}m ${s}s`);
+      if (diff <= 0) { setTimeLeft({ h: "00", m: "00", s: "00" }); return; }
+      const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+      const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+      const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+      setTimeLeft({ h, m, s });
     };
     update();
     const itv = setInterval(update, 1000);
     return () => clearInterval(itv);
   }, [event.endTime]);
 
+  const highestBid = (event.initialPrice + ((event.topTapsCount || 0) * event.tapPrice)).toFixed(2);
+  const topParticipants = event.topParticipants || [];
+
   return (
-    <Card onClick={onClick} className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-slate-900 text-white overflow-hidden group hover:scale-[1.02] transition-all cursor-pointer relative h-full flex flex-col">
-       <div className="aspect-[4/3] relative">
-          {event.imageUrls?.[0] ? <Image src={event.imageUrls[0]} alt="" fill className="object-cover" unoptimized /> : <div className="w-full h-full bg-slate-800" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
-          <div className="absolute top-4 left-4 flex gap-2">
-             <Badge className="bg-red-500 text-white border-none font-black text-[9px] px-3 py-1 animate-pulse">LIVE BID</Badge>
-             <Badge className="bg-white/10 backdrop-blur-md text-white border-none font-black text-[9px] px-3 py-1 flex items-center gap-1.5"><Clock size={10} /> {timeLeft}</Badge>
+    <Card 
+      onClick={onClick} 
+      className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer relative h-full flex flex-col group"
+    >
+       <div className="aspect-[4/3] relative overflow-hidden bg-slate-950">
+          {event.imageUrls?.[0] ? (
+            <Image src={event.imageUrls[0]} alt="" fill className="object-cover transition-transform duration-[5000ms] group-hover:scale-110" unoptimized />
+          ) : <div className="w-full h-full bg-slate-800" />}
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          
+          {/* Top Badges */}
+          <div className="absolute top-4 left-4 flex flex-col gap-2">
+             <div className="bg-orange-500 text-white rounded-full px-4 py-1.5 font-black text-[9px] sm:text-[10px] uppercase tracking-widest shadow-lg w-fit">
+                EVENT
+             </div>
+             <div className="bg-green-500 text-white rounded-full px-4 py-1.5 font-black text-[9px] sm:text-[10px] uppercase tracking-widest shadow-lg w-fit flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
+             </div>
+          </div>
+
+          {/* Text Overlays */}
+          <div className="absolute bottom-4 left-5 right-5 text-white">
+             <div className="flex items-center gap-2 mb-1.5">
+                <Clock size={14} className="text-orange-400" />
+                <p className="font-bold text-[9px] sm:text-[11px] uppercase tracking-widest opacity-90">
+                   WAXAY DHAMAANAYSAA: <span className="font-mono text-orange-400">{timeLeft.h}:{timeLeft.m}:{timeLeft.s}</span>
+                </p>
+             </div>
+             <h3 className="font-headline font-bold text-xl sm:text-3xl uppercase tracking-tight line-clamp-1 drop-shadow-lg">
+               {event.title}
+             </h3>
           </div>
        </div>
-       <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
-          <div className="space-y-1">
-             <h3 className="font-headline font-bold text-lg md:text-xl uppercase tracking-tight line-clamp-1">{event.title}</h3>
-             <p className="text-primary font-black text-[9px] uppercase tracking-widest">{event.gameName}</p>
-          </div>
-          <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-             <div className="space-y-0.5">
-                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Highest Bid</p>
-                <p className="text-xl md:text-2xl font-headline font-bold text-primary">${(event.initialPrice + ((event.topTapsCount || 0) * event.tapPrice)).toFixed(2)}</p>
+
+       <div className="p-6 sm:p-8 space-y-6 flex-1 flex flex-col justify-between">
+          <div className="flex justify-between items-end">
+             <div className="space-y-2.5">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PARTICIPANTS</p>
+                <div className="flex items-center gap-2">
+                   <div className="flex -space-x-3">
+                      {topParticipants.length === 0 ? (
+                        <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 flex items-center justify-center text-slate-400"><User size={14} /></div>
+                      ) : (
+                        topParticipants.map((p: any, i: number) => (
+                          <div key={p.uid + i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 overflow-hidden relative shadow-sm">
+                             {p.avatar ? <Image src={p.avatar} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200" />}
+                          </div>
+                        ))
+                      )}
+                   </div>
+                   {event.participantsCount > topParticipants.length && (
+                     <span className="text-sm font-bold text-slate-900 dark:text-white ml-1">+{event.participantsCount - topParticipants.length}</span>
+                   )}
+                </div>
              </div>
-             <button className="h-10 md:h-12 px-6 rounded-xl md:rounded-2xl bg-white text-black font-black uppercase tracking-widest text-[10px] md:text-xs shadow-xl shadow-white/5 group-hover:bg-primary group-hover:text-white transition-all">BID NOW</button>
+
+             <div className="text-right space-y-1">
+                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">HIGHEST BID</p>
+                <p className="text-3xl sm:text-4xl font-headline font-bold text-orange-500 tracking-tighter leading-none">${highestBid}</p>
+             </div>
           </div>
+
+          <button className="w-full h-14 sm:h-16 rounded-[1.25rem] sm:rounded-[1.5rem] bg-[#00D1FF] hover:bg-[#00B8E6] text-white font-black uppercase tracking-widest text-xs sm:text-lg shadow-xl shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 border-none">
+             KA QEEB GAL <ChevronRight size={20} strokeWidth={3} />
+          </button>
        </div>
     </Card>
   );
