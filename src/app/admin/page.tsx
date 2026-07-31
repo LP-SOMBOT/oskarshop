@@ -985,7 +985,7 @@ export default function AdminPage() {
                         <RewardControl 
                           rank={2} 
                           value={leaderboardForm.rewards.rank2} 
-                          onChange={(v) => setLanguageState({
+                          onChange={(v) => setLeaderboardForm({
                             ...leaderboardForm, 
                             rewards: { ...leaderboardForm.rewards, rank2: v }
                           })}
@@ -2173,69 +2173,69 @@ export default function AdminPage() {
       </div>
 
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
-        <DialogContent className="max-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
+        <DialogContent className="max-w-md w-[94%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
-           <div className="h-28 md:h-32 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
+           <div className="h-24 md:h-28 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
               <button 
                 onClick={() => setIsUserManageOpen(false)}
-                className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 text-white flex items-center justify-center hover:bg-black/40 transition-colors z-20"
               >
-                 <X size={20} />
+                 <X size={16} strokeWidth={3} />
               </button>
               
-              <div className="absolute -bottom-12 left-8">
-                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
+              <div className="absolute -bottom-10 left-6">
+                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-[4px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-xl relative">
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt={selectedUser.name} fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={40} /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-800"><User size={32} /></div>
                     )}
                  </div>
               </div>
            </div>
 
-           <div className="p-6 md:p-8 pt-12 md:pt-16 space-y-6 md:space-y-8">
+           <div className="flex-1 overflow-y-auto p-5 md:p-8 pt-12 md:pt-14 space-y-5 md:space-y-6 scrollbar-hide">
               <div className="flex justify-between items-start">
                  <div className="min-w-0 pr-2">
-                    <div className="flex items-center gap-1 min-w-0">
-                      <h3 className="truncate font-semibold text-xl md:text-2xl tracking-tight text-slate-900 dark:text-white max-w-[200px]">{selectedUser?.name || "Gamer"}</h3>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h3 className="truncate font-bold text-lg md:text-xl tracking-tight text-slate-900 dark:text-white max-w-[180px]">{selectedUser?.name || "Gamer"}</h3>
                       {selectedUser?.isVerified && <VerifiedBadge />}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
-                       <Smartphone size={12} />
-                       <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                    <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
+                       <Smartphone size={10} />
+                       <span className="text-[9px] md:text-[10px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
                     </div>
                  </div>
                  <Badge className={cn(
-                   "rounded-full uppercase text-[7px] md:text-[8px] font-black tracking-widest px-2 md:px-3 py-1 border-none shadow-sm shrink-0",
-                   selectedUser?.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
+                   "rounded-full uppercase text-[7px] font-black tracking-widest px-2 py-0.5 border-none shadow-sm shrink-0",
+                   selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
                  )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
                  </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                 <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] md:text-9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
-                    <div className="flex items-center gap-2">
-                       <Star className="w-4 h-4 md:size-5 text-amber-500 fill-amber-500" />
-                       <p className="text-2xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
+              <div className="grid grid-cols-2 gap-3">
+                 <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl md:rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[7px] md:text-[8px] font-black uppercase text-slate-400 mb-1 tracking-widest">Balance</p>
+                    <div className="flex items-center gap-1.5">
+                       <Star className="w-3 h-3 md:size-4 text-amber-500 fill-amber-500" />
+                       <p className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
                     </div>
                  </div>
-                 <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
-                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
+                 <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl md:rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[7px] md:text-[8px] font-black uppercase text-slate-400 mb-1 tracking-widest">Role</p>
+                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 py-0.5 rounded-lg">
                       {selectedUser?.role || 'user'}
                     </Badge>
                  </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:space-y-3">
-                   <div className="flex items-center gap-2 text-primary ml-1">
-                      <LayoutGrid size={14} />
-                      <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                   <div className="flex items-center gap-1.5 text-primary ml-1">
+                      <LayoutGrid size={12} />
+                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Role</Label>
                    </div>
                    <Select 
                       value={selectedUser?.role || 'user'} 
@@ -2245,28 +2245,25 @@ export default function AdminPage() {
                         toast({title: "Role Updated"});
                       }}
                    >
-                      <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-base shadow-inner">
+                      <SelectTrigger className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-3 font-bold text-xs shadow-inner">
                          <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
-                         <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
-                         <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
+                      <SelectContent className="rounded-xl border-none shadow-2xl bg-white dark:bg-slate-900">
+                         <SelectItem value="user" className="rounded-lg p-2 font-bold text-xs uppercase">User</SelectItem>
+                         <SelectItem value="admin" className="rounded-lg p-2 font-bold text-xs uppercase">Admin</SelectItem>
                       </SelectContent>
                    </Select>
                 </div>
 
-                <div className="space-y-2 md:space-y-3">
-                   <div className="flex items-center gap-2 text-blue-500 ml-1">
-                      <ShieldCheck size={14} />
-                      <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Verification Status</Label>
+                <div className="space-y-1.5">
+                   <div className="flex items-center gap-1.5 text-blue-500 ml-1">
+                      <ShieldCheck size={12} />
+                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verified</Label>
                    </div>
-                   <div className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-4 md:px-6 border dark:border-white/5 shadow-inner">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <span className={cn("truncate text-xs font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
-                          {selectedUser?.isVerified ? 'Verified Account' : 'Standard Account'}
-                        </span>
-                        {selectedUser?.isVerified && <VerifiedBadge />}
-                      </div>
+                   <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
+                      <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
+                        {selectedUser?.isVerified ? 'Haa' : 'Maya'}
+                      </span>
                       <Switch 
                         checked={selectedUser?.isVerified || false} 
                         onCheckedChange={async (v) => {
@@ -2274,26 +2271,27 @@ export default function AdminPage() {
                           setSelectedUser({...selectedUser, isVerified: v});
                           toast({ title: v ? "User Verified" : "Verification Removed" });
                         }} 
+                        className="scale-90"
                       />
                    </div>
                 </div>
               </div>
 
-              <div className="space-y-3 md:space-y-4">
-                 <div className="flex items-center gap-2 text-amber-500 ml-1">
-                    <DollarSign size={14} />
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
+              <div className="space-y-2">
+                 <div className="flex items-center gap-1.5 text-amber-500 ml-1">
+                    <DollarSign size={12} />
+                    <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Adjust Balance</Label>
                  </div>
-                 <div className="flex gap-2 md:gap-3">
+                 <div className="flex gap-2">
                     <Input 
                       type="number" 
                       placeholder="Amt" 
                       value={pointAdjustment} 
                       onChange={e => setPointAdjustment(e.target.value)} 
-                      className="h-12 md:h-16 rounded-xl md:rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-4 md:px-6 text-base md:text-lg focus:ring-2 focus:ring-primary" 
+                      className="h-10 md:h-12 rounded-lg md:rounded-xl dark:bg-slate-800 border-none shadow-inner font-bold px-3 text-sm focus:ring-1 focus:ring-primary" 
                     />
-                    <Button onClick={() => handleAdjustPoints('credit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20 shrink-0"><ArrowUpCircle size={24} className="md:size-7" /></Button>
-                    <Button onClick={() => handleAdjustPoints('debit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-red-50 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={24} className="md:size-7" /></Button>
+                    <Button onClick={() => handleAdjustPoints('credit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-green-500 hover:bg-green-600 shadow-md shrink-0 p-0"><Plus size={20} /></Button>
+                    <Button onClick={() => handleAdjustPoints('debit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-red-500 hover:bg-red-600 shadow-md shrink-0 p-0"><Trash2 size={16} /></Button>
                  </div>
               </div>
 
@@ -2307,19 +2305,19 @@ export default function AdminPage() {
                       toast({title: newBanned ? "User Banned" : "User Restored"}); 
                     }} 
                     className={cn(
-                      "w-full h-14 md:h-18 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3",
+                      "w-full h-11 md:h-13 rounded-xl md:rounded-2xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-xs",
                       selectedUser?.banned 
                         ? "bg-green-600 hover:bg-green-700 text-white border-none" 
-                        : "bg-red-50 dark:bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-100 dark:border-red-500/20"
+                        : "bg-red-600 hover:bg-red-700 text-white border-none"
                     )}
                  >
                     {selectedUser?.banned ? (
-                      <><RefreshCw size={18} /> RESTORE ACCESS</>
+                      <><RefreshCw size={14} /> Restore User</>
                     ) : (
-                      <><Ban size={18} /> BAN</>
+                      <><Ban size={14} /> Ban User</>
                     )}
                  </Button>
-                 <p className="text-[7px] md:text-[8px] text-center text-slate-300 uppercase font-black tracking-widest mt-4 md:mt-6 opacity-40">
+                 <p className="text-[6px] md:text-[7px] text-center text-slate-300 dark:text-slate-600 uppercase font-black tracking-widest mt-4 opacity-60">
                     JOINED: {selectedUser?.createdAt ? format(new Date(selectedUser.createdAt), 'MMM d, yyyy').toUpperCase() : 'N/A'}
                  </p>
               </div>
@@ -3109,8 +3107,8 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
                     <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
-                      {post.processedBy?.photoURL ? (
-                        <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
+                      {order.processedBy?.photoURL ? (
+                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
                       )}
