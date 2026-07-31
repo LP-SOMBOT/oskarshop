@@ -70,7 +70,9 @@ export default function AccountsView() {
     deleteAccountPost,
     language,
     t,
-    setGlobalLoading
+    setGlobalLoading,
+    postAccount,
+    updateAccountPost
   } = useApp();
   
   const router = useRouter();
@@ -92,7 +94,6 @@ export default function AccountsView() {
     const userId = user?.uid;
     const now = Date.now();
 
-    // Regular Market Posts
     const posts = (accountPosts || [])
       .filter(p => {
         const isOwner = userId && p.uid === userId;
@@ -105,7 +106,6 @@ export default function AccountsView() {
         return true;
       });
 
-    // Auction Event Posts - HIDE IF ENDED OR TIME EXPIRED
     const events = (eventAccounts || [])
       .filter(e => {
         const isEndedByStatus = e.status === 'ended' || e.status === 'claimed';
@@ -157,6 +157,18 @@ export default function AccountsView() {
            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-[400px] md:h-[450px] rounded-[2rem] md:rounded-[3rem] w-full" />)}
         </div>
       </div>
+    );
+  }
+
+  if (isPosting || editingPost) {
+    return (
+      <AccountPostingFlow 
+        editingPost={editingPost} 
+        onCancel={() => { setIsPosting(false); setEditingPost(null); }}
+        onComplete={() => { setIsPosting(false); setEditingPost(null); }}
+        postAccount={postAccount}
+        updateAccountPost={updateAccountPost}
+      />
     );
   }
 
@@ -266,97 +278,230 @@ export default function AccountsView() {
   );
 }
 
-function EventAccountCard({ event, onClick }: { event: any, onClick: () => void }) {
-  const { t } = useApp();
-  const [timeLeft, setTimeLeft] = useState("");
+function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, updateAccountPost }: { editingPost: any, onCancel: () => void, onComplete: () => void, postAccount: any, updateAccountPost: any }) {
+  const [step, setStep] = useState(1);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [form, setForm] = useState({
+    gameType: 'freefire' as 'freefire' | 'bloodstrike',
+    platform: 'Google',
+    level: "",
+    price: "",
+    phone: "",
+    imageUrls: [] as string[],
+    evoWeapons: "0",
+    totalWeapons: "0",
+    emotes: "0",
+    arrivalEmotes: "0",
+    dharka: "0",
+    internalWeapons: "0",
+    executionEmotes: "0",
+    age: "",
+    primeLevel: "1"
+  });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const diff = event.endTime - now;
-      if (diff <= 0) {
-        setTimeLeft(t('dhammaatay'));
-        clearInterval(timer);
-        return;
-      }
-      const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-      const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-      const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-      setTimeLeft(`${h}:${m}:${s}`);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [event.endTime, t]);
+    if (editingPost) {
+      setForm({
+        ...form,
+        ...editingPost,
+        level: editingPost.level.toString(),
+        price: editingPost.price.toString(),
+        evoWeapons: (editingPost.evoWeapons || 0).toString(),
+        totalWeapons: (editingPost.totalWeapons || 0).toString(),
+        emotes: (editingPost.emotes || 0).toString(),
+        arrivalEmotes: (editingPost.arrivalEmotes || 0).toString(),
+        dharka: (editingPost.dharka || 0).toString(),
+        internalWeapons: (editingPost.internalWeapons || 0).toString(),
+        executionEmotes: (editingPost.executionEmotes || 0).toString(),
+      });
+    }
+  }, [editingPost]);
 
-  const currentPrice = event.initialPrice + ((event.topTapsCount || 0) * event.tapPrice);
-  const topParticipants = event.topParticipants || [];
+  const handleImageUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const url = await uploadToImgbb(file);
+      setForm(prev => ({ ...prev, imageUrls: [...prev.imageUrls, url] }));
+      toast({ title: "Sawirka waa la soo geliyey!" });
+    } catch (error) {
+      toast({ title: "Upload Failed", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setIsSaving(true);
+    try {
+      const payload = {
+        ...form,
+        level: parseInt(form.level) || 0,
+        price: parseFloat(form.price) || 0,
+        evoWeapons: parseInt(form.evoWeapons) || 0,
+        totalWeapons: parseInt(form.totalWeapons) || 0,
+        emotes: parseInt(form.emotes) || 0,
+        arrivalEmotes: parseInt(form.arrivalEmotes) || 0,
+        dharka: parseInt(form.dharka) || 0,
+        internalWeapons: parseInt(form.internalWeapons) || 0,
+        executionEmotes: parseInt(form.executionEmotes) || 0,
+        thumbnailUrl: form.imageUrls[0] || "",
+      };
+
+      if (editingPost) {
+        await updateAccountPost(editingPost.id, payload);
+      } else {
+        await postAccount(payload);
+      }
+      onComplete();
+    } catch (err) {
+      toast({ title: "Failed to save post", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <Card 
-      onClick={onClick}
-      className="rounded-[2.5rem] md:rounded-[3.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group hover:-translate-y-2 transition-all cursor-pointer relative ring-4 ring-amber-400/20"
-    >
-       <div className="aspect-[4/3] relative bg-slate-900 overflow-hidden">
-          {event.imageUrls?.[0] ? (
-            <Image src={event.imageUrls[0]} alt="" fill className="object-cover group-hover:scale-110 transition-transform duration-1000" unoptimized />
-          ) : <div className="w-full h-full bg-slate-800" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-          
-          <div className="absolute top-4 left-4 flex flex-col gap-2">
-             <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-none font-black text-[10px] px-4 py-1 shadow-lg tracking-widest uppercase">
-                {t('event')}
-             </Badge>
-             {event.status === 'active' && (
-               <div className="flex items-center gap-2 bg-green-500 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shadow-lg w-fit">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
-               </div>
-             )}
-          </div>
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-500">
+      <header className="h-16 md:h-20 bg-white dark:bg-slate-900 border-b dark:border-white/5 flex items-center justify-between px-4 md:px-10 shrink-0 sticky top-0 z-50">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-full">
+            <ArrowLeft size={24} />
+          </Button>
+          <h2 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight">
+            {editingPost ? 'Edit Listing' : 'Post Account'}
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
+           <div className={cn("w-2 h-2 rounded-full", step >= 1 ? "bg-primary" : "bg-slate-200")} />
+           <div className={cn("w-2 h-2 rounded-full", step >= 2 ? "bg-primary" : "bg-slate-200")} />
+        </div>
+      </header>
 
-          <div className="absolute bottom-6 left-6 right-6">
-             <div className="flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-widest mb-2">
-                <Clock size={12} className="text-amber-400" />
-                <span>Waxay dhamaanaysaa: {timeLeft}</span>
-             </div>
-             <h4 className="text-white font-headline font-bold text-xl md:text-3xl uppercase leading-none truncate">{event.title}</h4>
-          </div>
-       </div>
+      <main className="flex-1 overflow-y-auto p-4 md:p-10 max-w-4xl mx-auto w-full space-y-10 pb-32">
+        {step === 1 ? (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Account Gallery</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {form.imageUrls.map((url, idx) => (
+                  <div key={url + idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden group border dark:border-white/5 bg-slate-50 dark:bg-slate-900">
+                    <Image src={url} alt="" fill className="object-cover" unoptimized />
+                    <button 
+                      onClick={() => setForm(f => ({ ...f, imageUrls: f.imageUrls.filter((_, i) => i !== idx) }))}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={14} />
+                    </button>
+                    {idx === 0 && <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-white text-[8px] font-black uppercase text-center py-1">Thumbnail</div>}
+                  </div>
+                ))}
+                {form.imageUrls.length < 8 && (
+                  <div className="relative aspect-[4/3] rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group hover:bg-slate-100 transition-colors">
+                    {isUploading ? <Loader2 className="animate-spin text-primary" /> : <ImageIcon className="text-slate-300 w-10 h-10" />}
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+                  </div>
+                )}
+              </div>
+            </div>
 
-       <div className="p-6 md:p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Participants</p>
-                <div className="flex items-center gap-2">
-                   <div className="flex -space-x-2">
-                      {topParticipants.length > 0 ? (
-                        topParticipants.map((p: any, i: number) => (
-                          <div key={p.uid + i} className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 relative overflow-hidden shrink-0">
-                             {p.avatar ? (
-                               <Image src={p.avatar} alt="" fill className="object-cover" unoptimized />
-                             ) : (
-                               <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                 <User size={8} className="text-slate-400" />
-                               </div>
-                             )}
-                          </div>
-                        ))
-                      ) : (
-                        [1,2,3].map(i => <div key={i} className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200" />)
-                      )}
-                   </div>
-                   <span className="text-xs font-bold text-slate-900 dark:text-white">+{event.participantsCount || 0}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Game</Label>
+                 <RadioGroup value={form.gameType} onValueChange={v => setForm({...form, gameType: v as any})} className="grid grid-cols-2 gap-3">
+                    <div onClick={() => setForm({...form, gameType: 'freefire'})} className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-3", form.gameType === 'freefire' ? "border-primary bg-primary/5" : "border-slate-100 dark:border-white/5")}>
+                       <Gamepad2 size={20} className={form.gameType === 'freefire' ? "text-primary" : "text-slate-400"} />
+                       <span className="font-bold text-sm">Free Fire</span>
+                    </div>
+                    <div onClick={() => setForm({...form, gameType: 'bloodstrike'})} className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all flex items-center gap-3", form.gameType === 'bloodstrike' ? "border-primary bg-primary/5" : "border-slate-100 dark:border-white/5")}>
+                       <Zap size={20} className={form.gameType === 'bloodstrike' ? "text-primary" : "text-slate-400"} />
+                       <span className="font-bold text-sm">Blood Strike</span>
+                    </div>
+                 </RadioGroup>
+              </div>
+              <div className="space-y-3">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Login Method</Label>
+                 <Select value={form.platform} onValueChange={v => setForm({...form, platform: v})}>
+                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl">
+                       <SelectItem value="Google" className="p-4 font-bold text-xs uppercase">Google</SelectItem>
+                       <SelectItem value="Facebook" className="p-4 font-bold text-xs uppercase">Facebook</SelectItem>
+                    </SelectContent>
+                 </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Level</Label>
+                 <Input type="number" value={form.level} onChange={e => setForm({...form, level: e.target.value})} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none font-bold shadow-inner" placeholder="75" />
+              </div>
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Price ($)</Label>
+                 <Input type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none font-bold shadow-inner text-primary" placeholder="10.00" />
+              </div>
+              <div className="space-y-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">WhatsApp No</Label>
+                 <Input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value.replace(/\D/g, '')})} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-900 border-none font-bold shadow-inner" placeholder="613982172" />
+              </div>
+            </div>
+
+            <Button onClick={() => setStep(2)} disabled={!form.level || !form.price || !form.phone || form.imageUrls.length === 0} className="w-full h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+               Next: Asset Details <ArrowRight size={20} className="ml-2" />
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-8 animate-in fade-in duration-500">
+             <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] border dark:border-white/5 space-y-8">
+                <h3 className="font-headline font-bold text-lg uppercase tracking-tight flex items-center gap-2">
+                  <ShieldCheck size={20} className="text-primary" /> {form.gameType === 'freefire' ? 'Free Fire Assets' : 'Blood Strike Assets'}
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                   {form.gameType === 'freefire' ? (
+                     <>
+                        <AssetInput label="Evo Weapons" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} />
+                        <AssetInput label="Total Weapons" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} />
+                        <AssetInput label="Emotes" value={form.emotes} onChange={v => setForm({...form, emotes: v})} />
+                        <AssetInput label="Arrival Emotes" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} />
+                        <AssetInput label="Dharka Sets" value={form.dharka} onChange={v => setForm({...form, dharka: v})} />
+                        <div className="space-y-2">
+                           <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Account Age</Label>
+                           <Input value={form.age} onChange={e => setForm({...form, age: e.target.value})} className="h-12 rounded-xl bg-white dark:bg-slate-800 border-none font-bold shadow-inner" placeholder="2 Years" />
+                        </div>
+                     </>
+                   ) : (
+                     <>
+                        <AssetInput label="Evo Skins" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} />
+                        <AssetInput label="Internal Weapons" value={form.internalWeapons} onChange={v => setForm({...form, internalWeapons: v})} />
+                        <AssetInput label="Total Emotes" value={form.emotes} onChange={v => setForm({...form, emotes: v})} />
+                        <AssetInput label="Execution Emotes" value={form.executionEmotes} onChange={v => setForm({...form, executionEmotes: v})} />
+                        <AssetInput label="Arrival Effects" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} />
+                     </>
+                   )}
                 </div>
              </div>
-             <div className="text-right space-y-1">
-                <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Highest Bid</p>
-                <p className="text-2xl font-headline font-bold text-amber-500 tracking-tighter">${currentPrice.toFixed(2)}</p>
+
+             <div className="flex gap-4">
+                <Button variant="ghost" onClick={() => setStep(1)} className="flex-1 h-16 rounded-2xl font-bold uppercase tracking-widest border-2">Back</Button>
+                <Button onClick={handleSubmit} disabled={isSaving} className="flex-[2] h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                  {isSaving ? <Loader2 className="animate-spin" /> : editingPost ? 'Update Listing' : 'Post Listing'}
+                </Button>
              </div>
           </div>
+        )}
+      </main>
+    </div>
+  );
+}
 
-          <Button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">
-             {t('ka_qeeb_gal')} <ChevronRight size={18} className="ml-2" />
-          </Button>
-       </div>
-    </Card>
+function AssetInput({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-2">
+       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 truncate block">{label}</Label>
+       <Input type="number" value={value} onChange={e => onChange(e.target.value)} className="h-12 rounded-xl bg-white dark:bg-slate-800 border-none font-bold shadow-inner" />
+    </div>
   );
 }
 
