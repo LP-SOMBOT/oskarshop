@@ -258,19 +258,6 @@ function OrderCard({ order, language }: { order: any, language: string }) {
                             : "Dalabkaaga waa la kansalay"}
                        </p>
                     </div>
-                    
-                    {order.processedBy && (
-                       <div className="flex items-center gap-2 bg-white/50 dark:bg-black/20 p-1.5 pr-3 rounded-full border border-red-200/50 dark:border-red-800/30 self-start sm:self-auto">
-                          <div className="w-6 h-6 rounded-full overflow-hidden relative shrink-0 border border-red-200">
-                             {order.processedBy.photoURL ? (
-                               <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" unoptimized />
-                             ) : (
-                               <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[10px] font-bold">O</div>
-                             )}
-                          </div>
-                          <span className="text-[9px] font-black uppercase text-red-600 dark:text-red-400 tracking-tight">{order.processedBy.name}</span>
-                       </div>
-                    )}
                   </div>
                </div>
              )}
