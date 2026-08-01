@@ -579,7 +579,7 @@ export default function AdminPage() {
       return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
     };
 
-    if (openTotalMins < closeTotalMins) {
+    if (openMins < closeMins) {
       if (currentMins < openMins) return `Furmaysa ${format12h(scheduleForm.openTime)}`;
       if (currentMins < closeMins) return `Xidhmaysa ${format12h(scheduleForm.closeTime)}`;
       return `Furmaysa ${format12h(scheduleForm.openTime)} (Berri)`;
@@ -1790,7 +1790,7 @@ export default function AdminPage() {
                                  </div>
                                  <div className="space-y-1 text-right">
                                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Usage</p>
-                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                                    <p className="text-10px font-bold text-slate-600 dark:text-slate-400">
                                       {usageCount} Used
                                     </p>
                                  </div>
@@ -2957,7 +2957,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
        </Card>
 
        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-10 space-y-6 md:space-y-10">
+          <div className="p-6 md:p-10 space-y-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 md:gap-4 text-primary">
                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
