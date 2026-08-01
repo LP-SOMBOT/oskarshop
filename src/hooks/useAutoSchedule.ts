@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useRef } from 'react';
 import { ref, onValue, update, get } from 'firebase/database';
@@ -32,12 +33,13 @@ export function useAutoSchedule() {
 
       // Get Mogadishu Time
       const now = new Date();
-      const mogadishuTime = new Intl.DateTimeFormat('en-GB', {
+      const formatter = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Africa/Mogadishu',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
-      }).format(now);
+      });
+      const mogadishuTime = formatter.format(now);
 
       const [currH, currM] = mogadishuTime.split(':').map(Number);
       const currentTotalMins = currH * 60 + currM;
@@ -66,19 +68,19 @@ export function useAutoSchedule() {
 
         // If it should be online (not offline) but it's currently offline
         if (shouldBeOnline && currentOffline === true) {
-          update(appStatusRef, { offline: false });
+          await update(appStatusRef, { offline: false });
         } 
         // If it should be offline but it's currently online
         else if (!shouldBeOnline && currentOffline === false) {
-          update(appStatusRef, { offline: true });
+          await update(appStatusRef, { offline: true });
         }
       } catch (err) {
         console.error("AutoSchedule: Failed to sync status", err);
       }
     };
 
-    // Run check every 30 seconds
-    const interval = setInterval(checkSchedule, 30000);
+    // Run check every 10 seconds for higher responsiveness
+    const interval = setInterval(checkSchedule, 10000);
 
     return () => {
       unsub();

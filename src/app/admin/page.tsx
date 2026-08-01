@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -472,12 +473,12 @@ export default function AdminPage() {
   // Live Mogadishu Clock
   useEffect(() => {
     const timer = setInterval(() => {
-      setMogadishuTime(new Intl.DateTimeFormat('en-GB', {
+      setMogadishuTime(new Intl.DateTimeFormat('en-US', {
         timeZone: 'Africa/Mogadishu',
-        hour: '2-digit',
+        hour: 'numeric',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false
+        hour12: true
       }).format(new Date()));
     }, 1000);
     return () => clearInterval(timer);
@@ -549,7 +550,16 @@ export default function AdminPage() {
 
   const scheduleAlert = useMemo(() => {
     if (!scheduleForm.enabled || !mogadishuTime) return null;
-    const [h, m] = mogadishuTime.split(':').map(Number);
+    
+    // Get numeric parts from Mogadishu time for calculation
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Mogadishu',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const [h, m] = formatter.format(now).split(':').map(Number);
     const [oh, om] = scheduleForm.openTime.split(':').map(Number);
     const [ch, cm] = scheduleForm.closeTime.split(':').map(Number);
     
@@ -564,7 +574,16 @@ export default function AdminPage() {
 
   const nextScheduleEvent = useMemo(() => {
     if (!scheduleForm.enabled || !mogadishuTime) return null;
-    const [h, m] = mogadishuTime.split(':').map(Number);
+
+    // Get numeric parts from Mogadishu time for calculation
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Mogadishu',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const [h, m] = formatter.format(now).split(':').map(Number);
     const [oh, om] = scheduleForm.openTime.split(':').map(Number);
     const [ch, cm] = scheduleForm.closeTime.split(':').map(Number);
     
@@ -992,7 +1011,7 @@ export default function AdminPage() {
         {scheduleAlert && !isScheduleBannerDismissed && (
           <div className={cn(
             "p-3 px-6 flex items-center justify-between animate-in slide-in-from-top-full duration-500",
-            scheduleAlert.type === 'close' ? "bg-amber-500 text-white" : "bg-green-600 text-white"
+            scheduleAlert.type === 'close' ? "bg-amber-50 text-white" : "bg-green-600 text-white"
           )}>
             <div className="flex items-center gap-3">
               <AlertTriangle className={cn("shrink-0", scheduleAlert.type === 'close' && "animate-pulse")} />
@@ -2302,7 +2321,7 @@ export default function AdminPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
                                       <Clock size={20} className="text-indigo-500" />
                                       <p className="text-[11px] font-black uppercase text-slate-400">Mogadishu Time</p>
-                                      <p className="text-2xl font-headline font-bold text-slate-900 dark:text-white tabular-nums">{mogadishuTime || "00:00:00"}</p>
+                                      <p className="text-2xl font-headline font-bold text-slate-900 dark:text-white tabular-nums">{mogadishuTime || "0:00:00 AM"}</p>
                                     </div>
 
                                     <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
