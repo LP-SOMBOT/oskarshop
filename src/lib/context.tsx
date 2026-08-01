@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -644,7 +643,7 @@ const translations: Record<Language, Record<string, string>> = {
     seller: "Iibiyaha",
     platform: "Platform",
     final_amount: "Wadarta Guud",
-    verifying_payment: "Dalabkaka waa la diray, Mahadsanid!.",
+    verifying_payment: "Dalabkaaga waa la diray, mahadsanid!.",
     delivering_diamonds: "Xogta ayaa la xaqiijinooyaa fadlan dulqaadka badi.",
     delivered_success: "Dalabkaaga waa Laguu Soo diray, Mahadsanid!.",
     order_cancelled: "Dalabka waa la kansalay sababta:",
@@ -1513,9 +1512,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     }
     if (status === 'cancelled') {
-       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
-       const orderData = orderSnap.val();
-       if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
+      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+      const orderData = orderSnap.val();
+      if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
     }
     await update(ref(rtdb, `orders/${orderId}`), updates);
     const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
