@@ -11,6 +11,8 @@ import { useDatabase } from '@/firebase';
  * 
  * Logic: Checks if current time is WITHIN the opening window.
  * If not, it sets the shop to offline.
+ * 
+ * Evaluates every 3 seconds for high precision.
  */
 export function useAutoSchedule() {
   const rtdb = useDatabase();
@@ -52,11 +54,14 @@ export function useAutoSchedule() {
 
       let shouldBeOnline = false;
 
-      if (openTotalMins < closeTotalMins) {
-        // Standard window (e.g., 09:00 to 21:00)
+      // If Open and Close are the same, treat as always closed to be safe
+      if (openTotalMins === closeTotalMins) {
+        shouldBeOnline = false;
+      } else if (openTotalMins < closeTotalMins) {
+        // Standard window (e.g., 07:00 to 22:00)
         shouldBeOnline = currentTotalMins >= openTotalMins && currentTotalMins < closeTotalMins;
       } else {
-        // Over-midnight window (e.g., 21:00 to 03:00)
+        // Over-midnight window (e.g., 22:00 to 07:00)
         shouldBeOnline = currentTotalMins >= openTotalMins || currentTotalMins < closeTotalMins;
       }
 
@@ -66,12 +71,13 @@ export function useAutoSchedule() {
         const statusSnap = await get(appStatusRef);
         const currentOffline = statusSnap.val()?.offline;
 
-        // If it should be online (not offline) but it's currently offline
+        // Force switch based on window logic
         if (shouldBeOnline && currentOffline === true) {
+          // Within open hours but app is offline -> Force Online
           await update(appStatusRef, { offline: false });
         } 
-        // If it should be offline but it's currently online
         else if (!shouldBeOnline && currentOffline === false) {
+          // Outside open hours but app is online -> Force Offline
           await update(appStatusRef, { offline: true });
         }
       } catch (err) {
@@ -79,8 +85,8 @@ export function useAutoSchedule() {
       }
     };
 
-    // Run check every 10 seconds for higher responsiveness
-    const interval = setInterval(checkSchedule, 10000);
+    // Run check every 3 seconds for extremely high responsiveness
+    const interval = setInterval(checkSchedule, 3000);
 
     return () => {
       unsub();

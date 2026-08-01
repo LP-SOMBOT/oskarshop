@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -134,7 +133,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/accordion";
 import {
   Tabs,
   TabsContent,
@@ -470,7 +469,7 @@ export default function AdminPage() {
     if (!loading && !user?.isAdmin) router.replace('/');
   }, [user, loading, router]);
 
-  // Live Mogadishu Clock
+  // Live Mogadishu Clock (12h format)
   useEffect(() => {
     const timer = setInterval(() => {
       setMogadishuTime(new Intl.DateTimeFormat('en-US', {
@@ -1718,10 +1717,10 @@ export default function AdminPage() {
                                  <Badge className="bg-green-500 text-white border-none font-bold text-[8px] uppercase px-2 py-0.5">LIVE</Badge>
                               </div>
                               <div className="absolute top-4 right-4 flex gap-2">
-                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Edit size={14} />
                                  </button>
-                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Trash2 size={14} />
                                  </button>
                               </div>
@@ -2186,7 +2185,7 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-6 sm:space-y-10">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="flex flex-col md:flex-row gap-6 md:gap-10">
                                  <div className="space-y-6">
                                     <SettingInput label="WhatsApp Support No" value={helpLinksForm.whatsappNumber} onChange={v => setHelpLinksForm(f => ({ ...f, whatsappNumber: v }))} placeholder="252613982172" />
                                     <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tiktokUrl: v }))} placeholder="https://tiktok.com/@..." />
