@@ -118,8 +118,28 @@ export default function AccountsView() {
           (p.gameName || "").toLowerCase().includes(query)
         );
       })
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [accountPosts, eventAccounts, searchQuery, user, now]);
+      .sort((a, b) => {
+        // 1. Prioritize Events/Auctions
+        const aIsEvent = !!a.isEvent;
+        const bIsEvent = !!b.isEvent;
+        if (aIsEvent && !bIsEvent) return -1;
+        if (!aIsEvent && bIsEvent) return 1;
+
+        // 2. Prioritize Verified Sellers (real-time check)
+        if (!aIsEvent && !bIsEvent) {
+          const aProfile = allUsers.find(u => u.uid === a.uid);
+          const bProfile = allUsers.find(u => u.uid === b.uid);
+          const aVerified = aProfile?.isVerified ?? a.authorIsVerified;
+          const bVerified = bProfile?.isVerified ?? b.authorIsVerified;
+
+          if (aVerified && !bVerified) return -1;
+          if (!aVerified && bVerified) return 1;
+        }
+
+        // 3. Fallback to newest first
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      });
+  }, [accountPosts, eventAccounts, searchQuery, user, now, allUsers]);
 
   const handleDeleteFinal = async () => {
     if (!deletingPostId) return;
@@ -352,7 +372,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                   </div>
                   {form.imageUrls.slice(1, 3).map((url, idx) => (
                     <div key={idx} className="relative aspect-video rounded-xl overflow-hidden">
-                       <Image src={url} alt="" fill className="object-cover" unoptimized />
+                       <Image src={form.imageUrls} alt="" fill className="object-cover" unoptimized />
                     </div>
                   ))}
                </div>
