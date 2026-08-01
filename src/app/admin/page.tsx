@@ -572,9 +572,21 @@ export default function AdminPage() {
     const openMins = oh * 60 + om;
     const closeMins = ch * 60 + cm;
 
-    if (currentMins < openMins) return `Furmaysa ${scheduleForm.openTime}`;
-    if (currentMins < closeMins) return `Xidhmaysa ${scheduleForm.closeTime}`;
-    return `Furmaysa ${scheduleForm.openTime}`;
+    const format12h = (time24: string) => {
+      const [h, m] = time24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+    };
+
+    if (openTotalMins < closeTotalMins) {
+      if (currentMins < openMins) return `Furmaysa ${format12h(scheduleForm.openTime)}`;
+      if (currentMins < closeMins) return `Xidhmaysa ${format12h(scheduleForm.closeTime)}`;
+      return `Furmaysa ${format12h(scheduleForm.openTime)} (Berri)`;
+    } else {
+      if (currentMins >= openMins || currentMins < closeMins) return `Xidhmaysa ${format12h(scheduleForm.closeTime)}`;
+      return `Furmaysa ${format12h(scheduleForm.openTime)}`;
+    }
   }, [scheduleForm, mogadishuTime]);
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
@@ -1451,7 +1463,7 @@ export default function AdminPage() {
                                         <button 
                                           onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
                                           className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
-                                        >
+                                          >
                                           <Trash2 size={18} />
                                         </button>
                                       </div>

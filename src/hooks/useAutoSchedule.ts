@@ -1,30 +1,36 @@
 'use client';
-import { useEffect } from 'react';
-import { ref, onValue, update } from 'firebase/database';
+import { useEffect, useRef } from 'react';
+import { ref, onValue, update, get } from 'firebase/database';
 import { useDatabase } from '@/firebase';
 
 /**
  * useAutoSchedule Hook
  * Monitors the current time in Africa/Mogadishu and automatically toggles
  * the shop's offline/online status based on scheduled hours.
+ * 
+ * Logic: Checks if current time is WITHIN the opening window.
+ * If not, it sets the shop to offline.
  */
 export function useAutoSchedule() {
   const rtdb = useDatabase();
+  const scheduleRef = useRef<any>(null);
 
   useEffect(() => {
     if (!rtdb) return;
 
-    const scheduleRef = ref(rtdb, 'settings/schedule');
-    let schedule: any = null;
-
-    const unsub = onValue(scheduleRef, (snapshot) => {
-      schedule = snapshot.val();
+    const dbScheduleRef = ref(rtdb, 'settings/schedule');
+    
+    const unsub = onValue(dbScheduleRef, (snapshot) => {
+      scheduleRef.current = snapshot.val();
+      // Trigger an immediate check when settings change
+      checkSchedule();
     });
 
-    const checkSchedule = () => {
+    const checkSchedule = async () => {
+      const schedule = scheduleRef.current;
       if (!schedule || !schedule.enabled || !schedule.openTime || !schedule.closeTime) return;
 
-      // Always calculate using Africa/Mogadishu timezone
+      // Get Mogadishu Time
       const now = new Date();
       const mogadishuTime = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Africa/Mogadishu',
@@ -33,28 +39,49 @@ export function useAutoSchedule() {
         hour12: false
       }).format(now);
 
-      const [currentHour, currentMin] = mogadishuTime.split(':').map(Number);
-      const [openHour, openMin] = schedule.openTime.split(':').map(Number);
-      const [closeHour, closeMin] = schedule.closeTime.split(':').map(Number);
+      const [currH, currM] = mogadishuTime.split(':').map(Number);
+      const currentTotalMins = currH * 60 + currM;
 
-      const isCloseTime = currentHour === closeHour && currentMin === closeMin;
-      const isOpenTime = currentHour === openHour && currentMin === openMin;
+      const [openH, openM] = schedule.openTime.split(':').map(Number);
+      const openTotalMins = openH * 60 + openM;
 
-      // We only update if a match is found to avoid fighting with manual overrides
-      if (isCloseTime) {
-        update(ref(rtdb, 'settings/appStatus'), { offline: true });
-      } else if (isOpenTime) {
-        update(ref(rtdb, 'settings/appStatus'), { offline: false });
+      const [closeH, closeM] = schedule.closeTime.split(':').map(Number);
+      const closeTotalMins = closeH * 60 + closeM;
+
+      let shouldBeOnline = false;
+
+      if (openTotalMins < closeTotalMins) {
+        // Standard window (e.g., 09:00 to 21:00)
+        shouldBeOnline = currentTotalMins >= openTotalMins && currentTotalMins < closeTotalMins;
+      } else {
+        // Over-midnight window (e.g., 21:00 to 03:00)
+        shouldBeOnline = currentTotalMins >= openTotalMins || currentTotalMins < closeTotalMins;
+      }
+
+      // Read current actual shop status to prevent unnecessary writes
+      try {
+        const appStatusRef = ref(rtdb, 'settings/appStatus');
+        const statusSnap = await get(appStatusRef);
+        const currentOffline = statusSnap.val()?.offline;
+
+        // If it should be online (not offline) but it's currently offline
+        if (shouldBeOnline && currentOffline === true) {
+          update(appStatusRef, { offline: false });
+        } 
+        // If it should be offline but it's currently online
+        else if (!shouldBeOnline && currentOffline === false) {
+          update(appStatusRef, { offline: true });
+        }
+      } catch (err) {
+        console.error("AutoSchedule: Failed to sync status", err);
       }
     };
 
-    // Run check immediately and then every 30 seconds
-    const initialCheck = setTimeout(checkSchedule, 2000);
+    // Run check every 30 seconds
     const interval = setInterval(checkSchedule, 30000);
 
     return () => {
       unsub();
-      clearTimeout(initialCheck);
       clearInterval(interval);
     };
   }, [rtdb]);
