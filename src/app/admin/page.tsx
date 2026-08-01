@@ -905,12 +905,12 @@ export default function AdminPage() {
         <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />
-        <SideNavItem icon={Gamepad2} label="ciwaanada" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
-        <SideNavItem icon={Sparkles} label="Account Events" active={activeView === 'account-events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-events'); setSelectedEventId(null); setIsMobileMenuOpen(false); }} badge={eventAccounts.filter(e => e.status === 'active').length} />
+        <SideNavItem icon={Gamepad2} label="ciwaanada" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} badgeVariant="primary" />
+        <SideNavItem icon={Sparkles} label="Account Events" active={activeView === 'account-events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-events'); setSelectedEventId(null); setIsMobileMenuOpen(false); }} badge={eventAccounts.filter(e => e.status === 'active').length} badgeVariant="primary" />
         <SideNavItem icon={Trophy} label="Leaderboard" active={activeView === 'leaderboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('leaderboard'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} badge={promoCodes.filter(p => !p.claimed).length} />
+        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} badge={promoCodes.filter(p => !p.claimed).length} badgeVariant="primary" />
         <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
@@ -1009,8 +1009,8 @@ export default function AdminPage() {
         {/* Global Warning Banner for Scheduled Transitions */}
         {scheduleAlert && !isScheduleBannerDismissed && (
           <div className={cn(
-            "p-3 px-6 flex items-center justify-between animate-in slide-in-from-top-full duration-500",
-            scheduleAlert.type === 'close' ? "bg-amber-50 text-white" : "bg-green-600 text-white"
+            "p-3 px-6 flex items-center justify-between animate-in slide-in-from-top-full duration-500 z-50",
+            scheduleAlert.type === 'close' ? "bg-amber-600 text-white" : "bg-green-600 text-white"
           )}>
             <div className="flex items-center gap-3">
               <AlertTriangle className={cn("shrink-0", scheduleAlert.type === 'close' && "animate-pulse")} />
@@ -2260,15 +2260,30 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-8 sm:space-y-12">
-                              <div className="p-6 md:p-10 bg-red-50 dark:bg-red-950/20 rounded-3xl flex items-center justify-between border-2 border-red-100 dark:border-red-900/30">
+                              <div className={cn(
+                                "p-6 md:p-10 rounded-3xl flex items-center justify-between border-2 transition-all",
+                                scheduleForm.enabled ? "bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-white/5 opacity-80" : "bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30"
+                              )}>
                                  <div className="flex items-center gap-4 md:gap-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg"><Monitor className="w-7 h-7" /></div>
+                                    <div className={cn(
+                                      "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg",
+                                      scheduleForm.enabled ? "bg-slate-400 text-white" : "bg-red-600 text-white"
+                                    )}>
+                                      <Monitor className="w-7 h-7" />
+                                    </div>
                                     <div>
                                        <p className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Maintenance Mode</p>
-                                       <p className="text-xs text-sm font-medium text-red-700 dark:text-red-400">Lock entire store for maintenance</p>
+                                       <p className="text-xs text-sm font-medium text-slate-500 dark:text-slate-400">
+                                         {scheduleForm.enabled ? "Controlled by Auto Schedule" : "Lock entire store for maintenance"}
+                                       </p>
                                     </div>
                                  </div>
-                                 <Switch checked={appStatusForm.offline} onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} className="scale-125" />
+                                 <Switch 
+                                   checked={appStatusForm.offline} 
+                                   disabled={scheduleForm.enabled}
+                                   onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} 
+                                   className="scale-125" 
+                                 />
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14">
@@ -2289,17 +2304,31 @@ export default function AdminPage() {
                                  </div>
                               </div>
                               <Button onClick={() => updateStoreSettings({ appStatus: appStatusForm }).then(()=>toast({title:"System State Synced"}))} variant="destructive" className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl">Publish System State</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
 
-                              {/* Auto Schedule Settings Card */}
-                              <Card className="mt-8 rounded-[2rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                                <div className="p-6 md:p-10 space-y-8">
+                  <AccordionItem value="auto-schedule" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-indigo-600">
+                              <CalendarIcon className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Auto offline/online</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Scheduled Operating Hours</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-8 sm:space-y-12">
                                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                     <div className="flex items-center gap-4">
                                       <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
                                         <CalendarIcon size={24} className="md:size-8" />
                                       </div>
                                       <div>
-                                        <h4 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Auto close/open Schedule</h4>
+                                        <h4 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Set Schedule</h4>
                                         <p className="text-[10px] md:text-sm font-bold text-muted-foreground uppercase tracking-widest">Manage shop operating hours</p>
                                       </div>
                                     </div>
@@ -2310,7 +2339,36 @@ export default function AdminPage() {
                                       </div>
                                       <Switch 
                                         checked={scheduleForm.enabled} 
-                                        onCheckedChange={(v) => setScheduleForm({...scheduleForm, enabled: v})} 
+                                        onCheckedChange={async (v) => {
+                                          const updatedSchedule = { ...scheduleForm, enabled: v };
+                                          setScheduleForm(updatedSchedule);
+                                          
+                                          // If disabling, force the app online immediately
+                                          if (!v) {
+                                            setIsSavingStatus(true);
+                                            try {
+                                              const updates = {
+                                                schedule: updatedSchedule,
+                                                appStatus: { ...appStatusForm, offline: false }
+                                              };
+                                              await updateStoreSettings(updates);
+                                              setAppStatusForm(f => ({ ...f, offline: false }));
+                                              toast({ title: "Schedule Disabled", description: "Shop is now forced Online." });
+                                            } finally {
+                                              setIsSavingStatus(false);
+                                            }
+                                          } else {
+                                            // If enabling, just update the schedule settings
+                                            // The background hook will take over and enforce the window in 3 seconds
+                                            setIsSavingStatus(true);
+                                            try {
+                                              await updateStoreSettings({ schedule: updatedSchedule });
+                                              toast({ title: "Schedule Enabled", description: "Operating hours are now active." });
+                                            } finally {
+                                              setIsSavingStatus(false);
+                                            }
+                                          }
+                                        }} 
                                         className="scale-110"
                                       />
                                     </div>
@@ -2418,8 +2476,6 @@ export default function AdminPage() {
                                     {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save Schedule"}
                                   </Button>
                                 </div>
-                              </Card>
-                           </div>
                         </AccordionContent>
                      </Card>
                   </AccordionItem>
@@ -3473,12 +3529,20 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   );
 }
 
-function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number }) {
+function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge, badgeVariant = 'destructive' }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number, badgeVariant?: 'primary' | 'destructive' }) {
   return (
     <button onClick={onClick} className={cn("w-full h-12 flex items-center transition-all duration-300 rounded-xl relative group", active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800", expanded ? "px-4 gap-4" : "justify-center", className)}>
       <Icon size={20} className={cn("shrink-0 transition-transform group-hover:scale-110", active ? "stroke-[2.5px]" : "")} />
       {expanded && <span className="font-bold text-[13px] uppercase tracking-wider whitespace-nowrap overflow-hidden flex-1 text-left">{label}</span>}
-      {badge !== undefined && badge > 0 && <span className={cn("bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center transition-all", expanded ? "px-2.5 py-0.5" : "absolute top-1 right-1 w-4 h-4")}>{badge}</span>}
+      {badge !== undefined && badge > 0 && (
+        <span className={cn(
+          "text-white text-[10px] font-black rounded-full flex items-center justify-center transition-all", 
+          expanded ? "px-2.5 py-0.5" : "absolute top-1 right-1 w-4 h-4",
+          badgeVariant === 'primary' ? "bg-primary" : "bg-red-500"
+        )}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 }
