@@ -2323,19 +2323,10 @@ export default function AdminPage() {
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-8 sm:space-y-12">
                                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                    <div className="flex items-center gap-4">
-                                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
-                                        <CalendarIcon size={24} className="md:size-8" />
-                                      </div>
-                                      <div>
-                                        <h4 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Set Schedule</h4>
-                                        <p className="text-[10px] md:text-sm font-bold text-muted-foreground uppercase tracking-widest">Manage shop operating hours</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl border dark:border-white/5">
-                                      <div className="text-right">
-                                        <p className="text-[9px] font-black uppercase text-slate-400">auto close/open</p>
-                                        <p className="text-[8px] font-bold text-muted-foreground uppercase">Automatically switch status</p>
+                                    <div className="flex items-center justify-between w-full gap-4 bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-3xl border dark:border-white/5">
+                                      <div className="text-left">
+                                        <p className="text-[10px] sm:text-xs font-black uppercase text-slate-400">auto close/open</p>
+                                        <p className="text-[9px] sm:text-10px] font-bold text-muted-foreground uppercase">Automatically switch status</p>
                                       </div>
                                       <Switch 
                                         checked={scheduleForm.enabled} 
@@ -3863,18 +3854,6 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
             </Table>
           </div>
        </Card>
-    </div>
-  );
-}
-
-function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
-  return (
-    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
-       <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
-       <div className="min-w-0 w-full">
-         <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
-         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
-       </div>
     </div>
   );
 }
