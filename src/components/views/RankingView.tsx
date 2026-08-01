@@ -146,11 +146,8 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
-  const borderClasses = isGold 
-    ? "border-yellow-400 ring-4 ring-yellow-400/20 shadow-[0_0_25px_rgba(234,179,8,0.5)]" 
-    : isSilver 
-      ? "border-slate-300 ring-4 ring-slate-300/20 shadow-[0_0_15px_rgba(203,213,225,0.3)]" 
-      : "border-amber-700 ring-4 ring-amber-700/20 shadow-[0_0_15px_rgba(180,83,9,0.3)]";
+  const effectClass = rank === 1 ? "flame-card" : rank === 2 ? "ice-card" : "electric-card";
+  const ringClass = rank === 1 ? "flame-frame-ring" : rank === 2 ? "ice-frame-ring" : "electric-frame-ring";
 
   return (
     <div className={cn(
@@ -159,9 +156,12 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
       delay
     )}>
        <div className="relative">
+          {/* Animated Ring */}
+          <div className={ringClass} />
+
           <div className={cn(
-            "w-16 h-16 md:w-28 md:h-28 rounded-full border-[4px] md:border-[6px] relative overflow-hidden bg-white dark:bg-slate-900",
-            borderClasses
+            "w-16 h-16 md:w-28 md:h-28 rounded-full relative overflow-hidden bg-white dark:bg-slate-900 z-10",
+            effectClass
           )}>
              <Avatar className="w-full h-full">
                 <AvatarImage src={user.photoURL} />
@@ -171,7 +171,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
              </Avatar>
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-white dark:border-slate-950 shadow-lg text-[10px] md:text-sm",
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-white dark:border-slate-950 shadow-lg text-[10px] md:text-sm z-20",
             isGold ? "bg-yellow-500 text-white" : isSilver ? "bg-slate-400 text-white" : "bg-amber-700 text-white"
           )}>
             {rank}

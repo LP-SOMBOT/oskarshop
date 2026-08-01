@@ -106,11 +106,8 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
-  const borderClasses = isGold 
-    ? "border-amber-400 ring-4 ring-amber-400/20 shadow-[0_0_30px_rgba(251,191,36,0.3)]" 
-    : isSilver 
-      ? "border-slate-300 ring-4 ring-slate-300/20 shadow-[0_0_15px_rgba(203,213,225,0.2)]" 
-      : "border-orange-700 ring-4 ring-orange-700/20 shadow-[0_0_15px_rgba(194,65,12,0.2)]";
+  const effectClass = rank === 1 ? "flame-card" : rank === 2 ? "ice-card" : "electric-card";
+  const ringClass = rank === 1 ? "flame-frame-ring" : rank === 2 ? "ice-frame-ring" : "electric-frame-ring";
 
   return (
     <div className={cn(
@@ -119,16 +116,19 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
       delay
     )}>
        <div className="relative">
+          {/* Animated Ring */}
+          <div className={ringClass} />
+
           <div className={cn(
-            "w-16 h-16 md:w-28 md:h-28 rounded-full border-[4px] md:border-[6px] relative overflow-hidden bg-slate-900 shadow-2xl",
-            borderClasses
+            "w-16 h-16 md:w-28 md:h-28 rounded-full relative overflow-hidden bg-slate-900 z-10",
+            effectClass
           )}>
              {user.avatar ? (
                 <Image src={user.avatar} alt="" fill className="object-cover" unoptimized />
              ) : <div className="w-full h-full flex items-center justify-center bg-slate-800"><User size={24} className="text-white/20" /></div>}
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:text-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:sm",
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:text-sm z-20",
             isGold ? "bg-amber-400 text-black" : isSilver ? "bg-slate-400 text-black" : "bg-orange-800 text-white"
           )}>
             {rank}
@@ -181,7 +181,7 @@ function RankItem({ user, rank, isMe }: { user: any, rank: number, isMe?: boolea
           </div>
           <div className="min-w-0 flex-1">
              <div className="flex items-center gap-1 min-w-0">
-               <p className={cn("truncate font-bold text-sm md:text-xl max-w-[180px]", isMe ? "text-white" : "text-white")}>{user.name}</p>
+               <p className={cn("truncate font-bold text-sm md:text-xl max-w-[180px]", "text-white")}>{user.name}</p>
                {user.isVerified && <VerifiedBadge />}
              </div>
              <p className={cn("text-[8px] md:text-[10px] font-black uppercase tracking-widest", isMe ? "text-white/60" : "text-slate-500")}>Active Competitor</p>
