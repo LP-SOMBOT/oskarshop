@@ -850,6 +850,21 @@ export default function AdminPage() {
     }
   };
 
+  // Helper functions for 12h time switching
+  const getPeriod = (time24: string) => {
+    const [h] = (time24 || "00:00").split(':').map(Number);
+    return h >= 12 ? 'PM' : 'AM';
+  };
+
+  const setPeriod = (time24: string, newPeriod: 'AM' | 'PM') => {
+    const parts = (time24 || "00:00").split(':');
+    let h = parseInt(parts[0]);
+    const m = parts[1];
+    if (newPeriod === 'AM' && h >= 12) h -= 12;
+    if (newPeriod === 'PM' && h < 12) h += 12;
+    return `${h.toString().padStart(2, '0')}:${m}`;
+  };
+
   if (loading || isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-6">
@@ -914,7 +929,7 @@ export default function AdminPage() {
       </aside>
 
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-900 border-none">
+        <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-900 border-none [&>button]:hidden">
           <SheetHeader className="sr-only">
              <SheetTitle>Admin Menu</SheetTitle>
           </SheetHeader>
@@ -2311,32 +2326,68 @@ export default function AdminPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-top-4 duration-500">
                                       <div className="space-y-3">
                                         <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga Furitaanka / Open Time</Label>
-                                        <div className="relative">
-                                          <Input 
-                                            type="time" 
-                                            value={scheduleForm.openTime} 
-                                            onChange={(e) => setScheduleForm({...scheduleForm, openTime: e.target.value})}
-                                            className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
-                                          />
-                                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
-                                            <span className="text-[10px] font-black uppercase text-slate-300">Maalin (AM)</span>
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <Input 
+                                              type="time" 
+                                              value={scheduleForm.openTime} 
+                                              onChange={(e) => setScheduleForm({...scheduleForm, openTime: e.target.value})}
+                                              className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl h-16 shrink-0 border dark:border-white/5 shadow-inner">
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, openTime: setPeriod(scheduleForm.openTime, 'AM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.openTime) === 'AM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >AM</button>
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, openTime: setPeriod(scheduleForm.openTime, 'PM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.openTime) === 'PM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >PM</button>
                                           </div>
                                         </div>
+                                        <p className="text-[9px] font-black uppercase text-slate-300 ml-1">Maalin (AM)</p>
                                       </div>
 
                                       <div className="space-y-3">
                                         <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga xirmaayo / Close Time</Label>
-                                        <div className="relative">
-                                          <Input 
-                                            type="time" 
-                                            value={scheduleForm.closeTime} 
-                                            onChange={(e) => setScheduleForm({...scheduleForm, closeTime: e.target.value})}
-                                            className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
-                                          />
-                                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
-                                            <span className="text-[10px] font-black uppercase text-slate-300">Habeen (PM)</span>
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <Input 
+                                              type="time" 
+                                              value={scheduleForm.closeTime} 
+                                              onChange={(e) => setScheduleForm({...scheduleForm, closeTime: e.target.value})}
+                                              className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl h-16 shrink-0 border dark:border-white/5 shadow-inner">
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, closeTime: setPeriod(scheduleForm.closeTime, 'AM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.closeTime) === 'AM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >AM</button>
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, closeTime: setPeriod(scheduleForm.closeTime, 'PM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.closeTime) === 'PM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >PM</button>
                                           </div>
                                         </div>
+                                        <p className="text-[9px] font-black uppercase text-slate-300 ml-1">Habeen (PM)</p>
                                       </div>
                                     </div>
                                   )}
@@ -2812,7 +2863,7 @@ export default function AdminPage() {
            <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Ma hubtaa inaad hadda joojiso?</p>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsEndEarlyDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isSavingStatus}>Maya</Button>
-              <Button variant="destructive" onClick={executeEndEarly} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isSavingStatus}>
+              <Button variant="destructive" onClick={executeEndEarly} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-center active:scale-95 transition-all" disabled={isSavingStatus}>
                 {isSavingStatus ? <Loader2 className="animate-spin" /> : "Haa, Jooji"}
               </Button>
            </div>
@@ -3691,7 +3742,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                               </Avatar>
                               <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-1 min-w-0">
-                                    <p className="truncate font-semibold text-sm max-w-[150px]">{p.name}</p>
+                                    <p className="truncate font-semibold text-sm max-w-[120px]">{p.name}</p>
                                     {p.isVerified && <VerifiedBadge />}
                                   </div>
                                   <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
