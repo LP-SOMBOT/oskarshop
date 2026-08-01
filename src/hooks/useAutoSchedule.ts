@@ -21,11 +21,11 @@ export function useAutoSchedule() {
       schedule = snapshot.val();
     });
 
-    const interval = setInterval(() => {
+    const checkSchedule = () => {
       if (!schedule || !schedule.enabled || !schedule.openTime || !schedule.closeTime) return;
 
+      // Always calculate using Africa/Mogadishu timezone
       const now = new Date();
-      // Use 24h format for comparison
       const mogadishuTime = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Africa/Mogadishu',
         hour: '2-digit',
@@ -40,19 +40,21 @@ export function useAutoSchedule() {
       const isCloseTime = currentHour === closeHour && currentMin === closeMin;
       const isOpenTime = currentHour === openHour && currentMin === openMin;
 
+      // We only update if a match is found to avoid fighting with manual overrides
       if (isCloseTime) {
-        // Trigger switch to offline
         update(ref(rtdb, 'settings/appStatus'), { offline: true });
-        update(ref(rtdb, 'settings/schedule'), { currentStatus: 'closed' });
       } else if (isOpenTime) {
-        // Trigger switch to online
         update(ref(rtdb, 'settings/appStatus'), { offline: false });
-        update(ref(rtdb, 'settings/schedule'), { currentStatus: 'open' });
       }
-    }, 30000); // Check every 30 seconds
+    };
+
+    // Run check immediately and then every 30 seconds
+    const initialCheck = setTimeout(checkSchedule, 2000);
+    const interval = setInterval(checkSchedule, 30000);
 
     return () => {
       unsub();
+      clearTimeout(initialCheck);
       clearInterval(interval);
     };
   }, [rtdb]);

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -428,6 +427,16 @@ export default function AdminPage() {
     rewards: { rank1: "", rank2: "", rank3: "" } as any
   });
 
+  // Auto Schedule State
+  const [scheduleForm, setScheduleForm] = useState({
+    enabled: false,
+    openTime: "09:00",
+    closeTime: "21:30",
+    timezone: "Africa/Mogadishu"
+  });
+  const [mogadishuTime, setMogadishuTime] = useState("");
+  const [isScheduleBannerDismissed, setIsScheduleBannerDismissed] = useState(false);
+
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
@@ -460,6 +469,20 @@ export default function AdminPage() {
     if (!loading && !user?.isAdmin) router.replace('/');
   }, [user, loading, router]);
 
+  // Live Mogadishu Clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMogadishuTime(new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Africa/Mogadishu',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(new Date()));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     if (storeSettings && !formsInitialized.current) {
       setBrandForm({
@@ -478,6 +501,13 @@ export default function AdminPage() {
         telegramAdminChatIds: storeSettings.telegramAdminChatIds || ""
       });
       
+      setScheduleForm(storeSettings.schedule || {
+        enabled: false,
+        openTime: "09:00",
+        closeTime: "21:30",
+        timezone: "Africa/Mogadishu"
+      });
+
       const lb = storeSettings.leaderboard || {
         rewardsActive: true,
         rewards: { rank1: 0, rank2: 0, rank3: 0 }
@@ -516,6 +546,36 @@ export default function AdminPage() {
 
     return last7Days.map(d => ({ day: d.label, v: d.v }));
   }, [allOrders]);
+
+  const scheduleAlert = useMemo(() => {
+    if (!scheduleForm.enabled || !mogadishuTime) return null;
+    const [h, m] = mogadishuTime.split(':').map(Number);
+    const [oh, om] = scheduleForm.openTime.split(':').map(Number);
+    const [ch, cm] = scheduleForm.closeTime.split(':').map(Number);
+    
+    const currentMins = h * 60 + m;
+    const openMins = oh * 60 + om;
+    const closeMins = ch * 60 + cm;
+
+    if (closeMins - currentMins === 2) return { type: 'close', text: '⚠️ Website ka wuxuu xidhmi doonaa 2 daqiiqo gudahood' };
+    if (openMins - currentMins === 2) return { type: 'open', text: '✅ Website ka wuxuu furan doonaa 2 daqiiqo gudahood' };
+    return null;
+  }, [scheduleForm, mogadishuTime]);
+
+  const nextScheduleEvent = useMemo(() => {
+    if (!scheduleForm.enabled || !mogadishuTime) return null;
+    const [h, m] = mogadishuTime.split(':').map(Number);
+    const [oh, om] = scheduleForm.openTime.split(':').map(Number);
+    const [ch, cm] = scheduleForm.closeTime.split(':').map(Number);
+    
+    const currentMins = h * 60 + m;
+    const openMins = oh * 60 + om;
+    const closeMins = ch * 60 + cm;
+
+    if (currentMins < openMins) return `Furmaysa ${scheduleForm.openTime}`;
+    if (currentMins < closeMins) return `Xidhmaysa ${scheduleForm.closeTime}`;
+    return `Furmaysa ${scheduleForm.openTime}`;
+  }, [scheduleForm, mogadishuTime]);
 
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
@@ -766,6 +826,18 @@ export default function AdminPage() {
     }
   };
 
+  const handleSaveSchedule = async () => {
+    setIsSavingStatus(true);
+    try {
+      await updateStoreSettings({
+        schedule: scheduleForm
+      });
+      toast({ title: "Schedule Updated", description: "Auto open/close times synced successfully." });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
   if (loading || isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-6">
@@ -888,6 +960,20 @@ export default function AdminPage() {
              </div>
           </div>
         </header>
+
+        {/* Global Warning Banner for Scheduled Transitions */}
+        {scheduleAlert && !isScheduleBannerDismissed && (
+          <div className={cn(
+            "p-3 px-6 flex items-center justify-between animate-in slide-in-from-top-full duration-500",
+            scheduleAlert.type === 'close' ? "bg-amber-500 text-white" : "bg-green-600 text-white"
+          )}>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className={cn("shrink-0", scheduleAlert.type === 'close' && "animate-pulse")} />
+              <p className="text-sm font-bold uppercase tracking-tight">{scheduleAlert.text}</p>
+            </div>
+            <button onClick={() => setIsScheduleBannerDismissed(true)} className="p-1 hover:bg-black/10 rounded-full"><X size={18} /></button>
+          </div>
+        )}
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
@@ -2158,6 +2244,100 @@ export default function AdminPage() {
                                  </div>
                               </div>
                               <Button onClick={() => updateStoreSettings({ appStatus: appStatusForm }).then(()=>toast({title:"System State Synced"}))} variant="destructive" className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl">Publish System State</Button>
+
+                              {/* Auto Schedule Settings Card */}
+                              <Card className="mt-8 rounded-[2rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                                <div className="p-6 md:p-10 space-y-8">
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                                        <CalendarIcon size={24} className="md:size-8" />
+                                      </div>
+                                      <div>
+                                        <h4 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Auto close/open Schedule</h4>
+                                        <p className="text-[10px] md:text-sm font-bold text-muted-foreground uppercase tracking-widest">Manage shop operating hours</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl border dark:border-white/5">
+                                      <div className="text-right">
+                                        <p className="text-[9px] font-black uppercase text-slate-400">auto close/open</p>
+                                        <p className="text-[8px] font-bold text-muted-foreground uppercase">Automatically switch status</p>
+                                      </div>
+                                      <Switch 
+                                        checked={scheduleForm.enabled} 
+                                        onCheckedChange={(v) => setScheduleForm({...scheduleForm, enabled: v})} 
+                                        className="scale-110"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t dark:border-white/5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                                      <Clock size={20} className="text-indigo-500" />
+                                      <p className="text-[11px] font-black uppercase text-slate-400">Mogadishu Time</p>
+                                      <p className="text-2xl font-headline font-bold text-slate-900 dark:text-white tabular-nums">{mogadishuTime || "00:00:00"}</p>
+                                    </div>
+
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                                      <div className={cn("w-3 h-3 rounded-full animate-pulse", storeSettings.appStatus?.offline ? "bg-red-500" : "bg-green-500")} />
+                                      <p className="text-[11px] font-black uppercase text-slate-400">Shop Status</p>
+                                      <p className="text-xl font-bold text-slate-900 dark:text-white uppercase">
+                                        {storeSettings.appStatus?.offline ? "🔴 Xidhan (Closed)" : "🟢 Furan (Open)"}
+                                      </p>
+                                    </div>
+
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                                      <History size={20} className="text-amber-500" />
+                                      <p className="text-[11px] font-black uppercase text-slate-400">Next Auto-Action</p>
+                                      <p className="text-lg font-bold text-slate-900 dark:text-white uppercase truncate">
+                                        ⏭ {nextScheduleEvent || "None scheduled"}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {scheduleForm.enabled && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-top-4 duration-500">
+                                      <div className="space-y-3">
+                                        <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga Furitaanka / Open Time</Label>
+                                        <div className="relative">
+                                          <Input 
+                                            type="time" 
+                                            value={scheduleForm.openTime} 
+                                            onChange={(e) => setScheduleForm({...scheduleForm, openTime: e.target.value})}
+                                            className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
+                                          />
+                                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <span className="text-[10px] font-black uppercase text-slate-300">Maalin (AM)</span>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="space-y-3">
+                                        <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga xirmaayo / Close Time</Label>
+                                        <div className="relative">
+                                          <Input 
+                                            type="time" 
+                                            value={scheduleForm.closeTime} 
+                                            onChange={(e) => setScheduleForm({...scheduleForm, closeTime: e.target.value})}
+                                            className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
+                                          />
+                                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <span className="text-[10px] font-black uppercase text-slate-300">Habeen (PM)</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <Button 
+                                    onClick={handleSaveSchedule}
+                                    disabled={isSavingStatus}
+                                    className="w-full h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-indigo-600 hover:bg-indigo-700"
+                                  >
+                                    {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save Schedule"}
+                                  </Button>
+                                </div>
+                              </Card>
                            </div>
                         </AccordionContent>
                      </Card>
@@ -2200,7 +2380,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
                        <Smartphone size={10} />
-                       <span className="text-[9px] md:text-[10px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                       <span className="text-[9px] md:text-10px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
                     </div>
                  </div>
                  <Badge className={cn(
