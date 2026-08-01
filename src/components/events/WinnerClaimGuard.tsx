@@ -25,66 +25,62 @@ export default function WinnerClaimGuard() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   
-  // Local state for finalized event IDs to prevent flickering during DB sync
-  const [finalizedIds, setFinalizedIds] = useState<Set<string>>(new Set());
+  // Local state for handled modal IDs to prevent flickering during DB sync
+  const [handledModalIds, setHandledModalIds] = useState<Set<string>>(new Set());
 
-  // Load finalized state on mount to prevent flicker
+  // Load handled states on mount to prevent flicker
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const keys = Object.keys(localStorage);
       const ids = new Set<string>();
       keys.forEach(k => {
-        if (k.startsWith('oskar_claim_finalized_')) {
-          ids.add(k.replace('oskar_claim_finalized_', ''));
+        if (k.startsWith('oskar_claim_handled_')) {
+          ids.add(k.replace('oskar_claim_handled_', ''));
         }
       });
-      setFinalizedIds(ids);
+      setHandledModalIds(ids);
     }
   }, []);
 
   // Find any active win where current user is the winner and hasn't placed an order
   const activeClaim = useMemo(() => {
     if (!user || !eventAccounts || !orders) return null;
+
     return eventAccounts.find(e => {
       // 1. Ownership check
       const isWinner = e.winnerId === user.uid;
       if (!isWinner) return false;
 
-      // 2. Database terminal state check
+      // 2. Database state check
+      const modalId = e.winnerClaim?.modalId;
+      if (!modalId) return false;
+
       const claimStatus = e.winnerClaim?.status;
       if (claimStatus === 'ignored') return false;
 
-      // 3. Local terminal state check (Flicker prevention)
-      if (finalizedIds.has(e.id)) return false;
-      
-      const modalId = e.winnerClaim?.modalId;
-      if (modalId) {
-        // Persistent check for "ignored" responses
-        if (localStorage.getItem(`oskar_claim_responded_${e.id}_${modalId}`) === 'ignored') return false;
-      }
+      // 3. Local Cache Check (Flicker prevention)
+      // If we've already handled this specific modalId locally, hide it instantly
+      if (handledModalIds.has(modalId)) return false;
 
-      // 4. Order state check
+      // 4. Order existence check (Real-time DB sync)
       const eventOrder = orders.find(o => 
         o.gameDetails?.eventId === e.id && 
         o.userId === user.uid
       );
       
       if (eventOrder) {
-        // PERMANENT HIDE: If order reached terminal state (Successful or Cancelled)
-        if (eventOrder.status === 'successful' || eventOrder.status === 'cancelled') {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(`oskar_claim_finalized_${e.id}`, 'true');
-          }
-          return false;
+        // If an order exists for this event, we consider the modal "handled"
+        // We cache this so it's instant on the next refresh
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`oskar_claim_handled_${modalId}`, eventOrder.status);
         }
-        // TEMPORARY HIDE: If order is pending/processing, hide the nudge modal
         return false;
       }
       
       // If we are here, they are the winner and haven't placed an order yet
       return (claimStatus === 'pending' || claimStatus === 'accepted');
     });
-  }, [user, eventAccounts, orders, finalizedIds]);
+  }, [user, eventAccounts, orders, handledModalIds]);
 
   const activeClaimId = activeClaim?.id;
   const winnerModalId = activeClaim?.winnerClaim?.modalId;
@@ -124,8 +120,10 @@ export default function WinnerClaimGuard() {
   if (!activeClaim) return null;
 
   const handleClaim = () => {
-    if (activeClaim && user) {
+    if (activeClaim && user && winnerModalId) {
       respondToEventClaim(activeClaim.id, 'accepted');
+      // We don't hide the modal here yet because the user might refresh before placing the order
+      // It will hide automatically once the order is created in checkout-event
       setGlobalLoading(true);
       router.push(`/checkout-event?id=${activeClaim.id}`);
       setShowModal(false);
@@ -133,8 +131,11 @@ export default function WinnerClaimGuard() {
   };
 
   const handleIgnore = () => {
-    if (activeClaim && user) {
+    if (activeClaim && user && winnerModalId) {
       respondToEventClaim(activeClaim.id, 'ignored');
+      // Mark as handled locally immediately
+      localStorage.setItem(`oskar_claim_handled_${winnerModalId}`, 'ignored');
+      setHandledModalIds(prev => new Set(prev).add(winnerModalId));
       setShowModal(false);
     }
   };
@@ -202,3 +203,4 @@ export default function WinnerClaimGuard() {
     </Dialog>
   );
 }
+

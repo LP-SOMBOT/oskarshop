@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -529,104 +530,111 @@ export default function EventDetailPage() {
 
       {/* MODAL 1: Disclaimer (Accepted Once per Event) */}
       <Dialog open={showDisclaimer} onOpenChange={() => {}}>
-        <DialogContent className="w-[92%] max-w-md rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col z-[100003]">
-           <DialogHeader className="sr-only"><DialogTitle>Account Bid Agreement</DialogTitle></DialogHeader>
-           
-           <div className="bg-primary h-1 w-full shrink-0" />
-           
-           <div className="p-5 sm:p-8 space-y-5 overflow-hidden flex flex-col flex-1">
-              <div className="space-y-1 shrink-0">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">
-                  Please read carefully.
-                </h2>
-                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest">
-                   Join Account Bid Event
-                </p>
-              </div>
+        <DialogPortal>
+          <DialogOverlay className="fixed inset-0 z-[100002] bg-black/90 backdrop-blur-md" />
+          <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[92%] max-w-md rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col z-[100003] outline-none">
+            <DialogHeader className="sr-only"><DialogTitle>Account Bid Agreement</DialogTitle></DialogHeader>
+            
+            <div className="bg-primary h-1 w-full shrink-0" />
+            
+            <div className="p-5 sm:p-8 space-y-5 overflow-hidden flex flex-col flex-1">
+                <div className="space-y-1 shrink-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">
+                    Please read carefully.
+                  </h2>
+                  <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest">
+                    Join Account Bid Event
+                  </p>
+                </div>
 
-              <div className="space-y-4 overflow-y-auto scrollbar-hide pr-1 flex-1 py-2">
-                 {disclaimerItems.map((item, i) => (
-                   <div key={i} className="flex gap-3 items-start group">
-                      <span className="font-black text-primary text-[10px] sm:text-xs shrink-0 pt-0.5 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center">{i+1}</span>
-                      <p className="text-[11px] sm:text-[12px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                        {item}
-                      </p>
-                   </div>
-                 ))}
-              </div>
+                <div className="space-y-4 overflow-y-auto scrollbar-hide pr-1 flex-1 py-2">
+                  {disclaimerItems.map((item, i) => (
+                    <div key={i} className="flex gap-3 items-start group">
+                        <span className="font-black text-primary text-[10px] sm:text-xs shrink-0 pt-0.5 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center">{i+1}</span>
+                        <p className="text-[11px] sm:text-[12px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                          {item}
+                        </p>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="pt-4 border-t dark:border-white/5 space-y-5 shrink-0">
-                 <div className="flex items-center space-x-3 px-1">
-                    <Checkbox 
-                      id="agree-event" 
-                      checked={hasCheckedAgreement} 
-                      onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
-                      className="w-5 h-5 rounded-md"
-                    />
-                    <label htmlFor="agree-event" className="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
-                       I have read & accept
-                    </label>
-                 </div>
+                <div className="pt-4 border-t dark:border-white/5 space-y-5 shrink-0">
+                  <div className="flex items-center space-x-3 px-1">
+                      <Checkbox 
+                        id="agree-event" 
+                        checked={hasCheckedAgreement} 
+                        onCheckedChange={(v) => setHasCheckedAgreement(!!v)}
+                        className="w-5 h-5 rounded-md"
+                      />
+                      <label htmlFor="agree-event" className="text-sm font-bold text-slate-700 dark:text-slate-200 cursor-pointer">
+                        I have read & accept
+                      </label>
+                  </div>
 
-                 <div className="flex flex-col gap-3">
-                    <Button 
-                      onClick={handleDisclaimerJoin}
-                      disabled={!hasCheckedAgreement}
-                      className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs shadow-xl active:scale-95 gap-2"
-                    >
-                       <CheckCircle2 size={18} /> I AGREE & JOIN
-                    </Button>
-                    <button 
-                      onClick={handleBack} 
-                      className="flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 font-bold uppercase tracking-widest text-[9px] transition-colors py-1"
-                    >
-                       <X size={14} /> CANCEL
-                    </button>
-                 </div>
-              </div>
-           </div>
-        </DialogContent>
+                  <div className="flex flex-col gap-3">
+                      <Button 
+                        onClick={handleDisclaimerJoin}
+                        disabled={!hasCheckedAgreement}
+                        className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs shadow-xl active:scale-95 gap-2"
+                      >
+                        <CheckCircle2 size={18} /> I AGREE & JOIN
+                      </Button>
+                      <button 
+                        onClick={handleBack} 
+                        className="flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 font-bold uppercase tracking-widest text-[9px] transition-colors py-1"
+                      >
+                        <X size={14} /> CANCEL
+                      </button>
+                  </div>
+                </div>
+            </div>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
 
       {/* MODAL 2: Phone Prompt (Triggered after acceptance or if number is missing) */}
       <Dialog open={showPhonePrompt} onOpenChange={() => {}}>
-        <DialogContent className="w-[92%] max-w-sm rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in slide-in-from-bottom-8 duration-300 z-[100003]">
-           <DialogHeader className="bg-amber-500 p-5 sm:p-6 text-white text-center shrink-0">
-              <Smartphone className="w-8 h-8 mx-auto mb-2" />
-              <DialogTitle className="text-lg font-headline font-bold uppercase tracking-tight">Whatsapp</DialogTitle>
-              <DialogDescription className="text-white/70 text-[9px] uppercase font-black tracking-widest">Whatsapp number</DialogDescription>
-           </DialogHeader>
+        <DialogPortal>
+          <DialogOverlay className="fixed inset-0 z-[100002] bg-black/90 backdrop-blur-md" />
+          <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[92%] max-w-sm rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden p-0 animate-in slide-in-from-bottom-8 duration-300 z-[100003] outline-none">
+            <DialogHeader className="bg-amber-500 p-5 sm:p-6 text-white text-center shrink-0">
+                <Smartphone className="w-8 h-8 mx-auto mb-2" />
+                <DialogTitle className="text-lg font-headline font-bold uppercase tracking-tight">Whatsapp</DialogTitle>
+                <DialogDescription className="text-white/70 text-[9px] uppercase font-black tracking-widest">Whatsapp number</DialogDescription>
+            </DialogHeader>
 
-           <div className="p-6 sm:p-8 space-y-6">
-              <div className="space-y-3">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Geli Whatsapp kaaga</Label>
-                 <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
-                       <span className="font-bold text-xs text-gray-400 border-r border-slate-200 pr-3">+252</span>
-                    </div>
-                    <Input 
-                      type="tel"
-                      placeholder="613982172"
-                      value={providedPhone.replace("+252", "")}
-                      onChange={e => setProvidedPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
-                      className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none pl-16 font-bold text-lg shadow-inner focus-visible:ring-amber-500"
-                    />
-                 </div>
-                 <p className="text-[10px] font-bold text-slate-400 italic leading-relaxed text-center">
-                    Whatsapp kaan ayaa lagala soo xariiri doonaa.
-                 </p>
-              </div>
+            <div className="p-6 sm:p-8 space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Geli Whatsapp kaaga</Label>
+                  <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 pointer-events-none">
+                        <span className="font-bold text-xs text-gray-400 border-r border-slate-200 pr-3">+252</span>
+                      </div>
+                      <Input 
+                        type="tel"
+                        placeholder="613982172"
+                        value={providedPhone.replace("+252", "")}
+                        onChange={e => setProvidedPhone(e.target.value.replace(/\D/g, '').substring(0, 9))}
+                        className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none pl-16 font-bold text-lg shadow-inner focus-visible:ring-amber-500"
+                      />
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 italic leading-relaxed text-center">
+                      Whatsapp kaan ayaa lagala soo xariiri doonaa.
+                  </p>
+                </div>
 
-              <Button 
-                onClick={handlePhoneSubmit}
-                disabled={providedPhone.replace(/\D/g, '').length < 9}
-                className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-amber-500/20 active:scale-95 transition-all"
-              >
-                 Start Bidding Now
-              </Button>
-           </div>
-        </DialogContent>
+                <Button 
+                  onClick={handlePhoneSubmit}
+                  disabled={providedPhone.replace(/\D/g, '').length < 9}
+                  className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-amber-500/20 active:scale-95 transition-all"
+                >
+                  Start Bidding Now
+                </Button>
+            </div>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
     </div>
   );
 }
+
