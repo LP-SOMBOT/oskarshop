@@ -16,45 +16,75 @@ import { cn } from '@/lib/utils';
  * WinnerClaimGuard Component
  * Monitors all eventAccounts for a active claim belonging to the current user.
  * 
- * IMPROVED PERSISTENCE:
- * Uses LocalStorage cache to ensure the modal stays dismissed immediately after 
- * action, even while database state is still loading.
+ * IMPROVED PERSISTENCE & FLICKER PREVENTION:
+ * Uses LocalStorage cache for finalized/responded states to ensure immediate 
+ * accurate rendering even before full DB sync.
  */
 export default function WinnerClaimGuard() {
   const { user, eventAccounts, orders, respondToEventClaim, setGlobalLoading } = useApp();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
+  
+  // Local state for finalized event IDs to prevent flickering during DB sync
+  const [finalizedIds, setFinalizedIds] = useState<Set<string>>(new Set());
+
+  // Load finalized state on mount to prevent flicker
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const keys = Object.keys(localStorage);
+      const ids = new Set<string>();
+      keys.forEach(k => {
+        if (k.startsWith('oskar_claim_finalized_')) {
+          ids.add(k.replace('oskar_claim_finalized_', ''));
+        }
+      });
+      setFinalizedIds(ids);
+    }
+  }, []);
 
   // Find any active win where current user is the winner and hasn't placed an order
   const activeClaim = useMemo(() => {
     if (!user || !eventAccounts || !orders) return null;
     return eventAccounts.find(e => {
+      // 1. Ownership check
       const isWinner = e.winnerId === user.uid;
+      if (!isWinner) return false;
+
+      // 2. Database terminal state check
       const claimStatus = e.winnerClaim?.status;
-      const modalId = e.winnerClaim?.modalId;
-      
       if (claimStatus === 'ignored') return false;
 
-      // CHECK LOCALSTORAGE CACHE FOR PERSISTENCE (Instant avoidance on refresh)
+      // 3. Local terminal state check (Flicker prevention)
+      if (finalizedIds.has(e.id)) return false;
+      
+      const modalId = e.winnerClaim?.modalId;
       if (modalId) {
-        const localResponded = localStorage.getItem(`oskar_claim_responded_${e.id}_${modalId}`);
-        if (localResponded === 'ignored') return false;
-        
-        // Note: 'accepted' status doesn't hide it unless an order is also present,
-        // which matches the requirement: "if he clicks iibso hada during checkout... modal will still appear".
+        // Persistent check for "ignored" responses
+        if (localStorage.getItem(`oskar_claim_responded_${e.id}_${modalId}`) === 'ignored') return false;
       }
 
-      // Permanent hide if order placed
-      const hasOrder = orders.some(o => 
+      // 4. Order state check
+      const eventOrder = orders.find(o => 
         o.gameDetails?.eventId === e.id && 
-        o.status !== 'cancelled'
+        o.userId === user.uid
       );
       
-      if (hasOrder) return false;
+      if (eventOrder) {
+        // PERMANENT HIDE: If order reached terminal state (Successful or Cancelled)
+        if (eventOrder.status === 'successful' || eventOrder.status === 'cancelled') {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(`oskar_claim_finalized_${e.id}`, 'true');
+          }
+          return false;
+        }
+        // TEMPORARY HIDE: If order is pending/processing, hide the nudge modal
+        return false;
+      }
       
-      return isWinner && (claimStatus === 'pending' || claimStatus === 'accepted');
+      // If we are here, they are the winner and haven't placed an order yet
+      return (claimStatus === 'pending' || claimStatus === 'accepted');
     });
-  }, [user, eventAccounts, orders]);
+  }, [user, eventAccounts, orders, finalizedIds]);
 
   const activeClaimId = activeClaim?.id;
   const winnerModalId = activeClaim?.winnerClaim?.modalId;

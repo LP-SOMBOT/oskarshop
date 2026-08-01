@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -70,6 +71,14 @@ export default function AccountsView() {
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // High-precision clock for real-time hiding of ended events
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const active = isPosting || !!editingPost;
@@ -80,7 +89,6 @@ export default function AccountsView() {
   const filteredPosts = useMemo(() => {
     const isAdmin = !!user?.isAdmin;
     const userId = user?.uid;
-    const now = Date.now();
 
     const posts = (accountPosts || [])
       .filter(p => {
@@ -111,7 +119,7 @@ export default function AccountsView() {
         );
       })
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [accountPosts, eventAccounts, searchQuery, user]);
+  }, [accountPosts, eventAccounts, searchQuery, user, now]);
 
   const handleDeleteFinal = async () => {
     if (!deletingPostId) return;
