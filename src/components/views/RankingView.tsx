@@ -160,7 +160,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
     )}>
        <div className="relative">
           <div className={cn(
-            "w-16 h-16 md:w-28 md:h-28 rounded-full border-[4px] md:border-[6px] relative overflow-hidden",
+            "w-16 h-16 md:w-28 md:h-28 rounded-full border-[4px] md:border-[6px] relative overflow-hidden bg-white dark:bg-slate-900",
             borderClasses
           )}>
              <Avatar className="w-full h-full">
@@ -180,7 +180,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
        
        <div className="text-center min-w-0 px-1 w-full">
           <div className="flex items-center justify-center gap-1 min-w-0">
-            <p className="truncate font-semibold text-[10px] md:text-base text-white max-w-full">
+            <p className="truncate font-semibold text-[10px] md:text-base text-slate-900 dark:text-white max-w-full">
               {user.name?.split(' ')[0] || "Gamer"}
             </p>
             {user.isVerified && <VerifiedBadge />}
