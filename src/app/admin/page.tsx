@@ -182,6 +182,16 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
+/**
+ * Utility to safe-format relative dates
+ */
+const safeFormatDistanceToNow = (timestamp: any, options?: any) => {
+  if (!timestamp) return "---";
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return "---";
+  return formatDistanceToNow(date, options);
+};
+
 function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, status: string }) {
   const [age, setAge] = useState("Just now");
 
@@ -189,7 +199,7 @@ function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, stat
     if (!createdAt) return;
     
     const update = () => {
-      setAge(formatDistanceToNow(new Date(createdAt)));
+      setAge(safeFormatDistanceToNow(createdAt));
     };
     update();
     const interval = setInterval(update, 60000);
@@ -1059,7 +1069,7 @@ export default function AdminPage() {
                         <div key={n.id} className={cn("p-4 rounded-xl transition-all", n.readBy?.[user.uid] ? "opacity-40" : "bg-primary/5 border border-primary/10")}>
                            <p className="text-xs font-bold leading-tight">{n.title}</p>
                            <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{n.body}</p>
-                           <p className="text-[8px] font-black uppercase text-slate-300 mt-2">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
+                           <p className="text-[8px] font-black uppercase text-slate-300 mt-2">{safeFormatDistanceToNow(n.createdAt, { addSuffix: true })}</p>
                         </div>
                       ))
                     )}
@@ -2242,8 +2252,8 @@ export default function AdminPage() {
                                        {recentSms.map(sms => (
                                           <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px]">
                                              <div className="min-w-0">
-                                                <p className="font-bold">61{sms.senderPhone.slice(-7)} - ${sms.amount}</p>
-                                                <p className="opacity-40">{formatDistanceToNow(sms.receivedAt)} ago</p>
+                                                <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
+                                                <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
                                              </div>
                                              <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
                                                 {sms.matched ? "Matched" : "Unmatched"}
@@ -3082,8 +3092,8 @@ export default function AdminPage() {
                             </div>
                          </div>
                          <div className="text-right shrink-0">
-                            <p className="text-[10px] font-black text-primary uppercase">{formatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
-                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{format(usage.timestamp, 'MMM d, HH:mm')}</p>
+                            <p className="text-[10px] font-black text-primary uppercase">{safeFormatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
+                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{usage.timestamp && !isNaN(new Date(usage.timestamp).getTime()) ? format(usage.timestamp, 'MMM d, HH:mm') : '---'}</p>
                          </div>
                       </div>
                     );
@@ -3273,7 +3283,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                       {order.paymentMethod || "WHATSAPP DIRECT"}
                    </Badge>
                    <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
-                      ABOUT {formatDistanceToNow(new Date(order.createdAt))} AGO
+                      ABOUT {safeFormatDistanceToNow(order.createdAt)} AGO
                    </span>
                 </div>
              </div>
@@ -3304,7 +3314,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
              </div>
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
              <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> : null} />
-             <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
+             <InsightStat label="Order Date" value={order.createdAt && !isNaN(new Date(order.createdAt).getTime()) ? format(new Date(order.createdAt), "MMM d, h:mm a") : "---"} icon={Clock} />
              <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
@@ -3362,7 +3372,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                       <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
                          <Clock size={12} className="opacity-40" />
                          <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                            {safeFormatDistanceToNow(order.processedAt)} ago
                          </p>
                       </div>
                     )}
@@ -3375,10 +3385,10 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                   <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
                   <div className="space-y-0.5">
                      <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
-                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
                      </p>
                      <p className="text-xs md:text-lg font-bold text-primary">
-                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
                 </div>
@@ -3463,14 +3473,15 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const { updateAccountPostStatus } = useApp();
 
   const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
-  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+  const claimTime = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
     const t = Number(c.timestamp);
     return isNaN(t) ? Infinity : t;
   })) : null;
-  const isStalling = earliestClaim && earliestClaim !== Infinity && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+  const isStalling = claimTime && claimTime !== Infinity && (now - claimTime) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
-  const isWaiting = earliestClaim && earliestClaim !== Infinity && !post.sellerReported && !post.sold;
-  const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
+  const waitValue = (claimTime && claimTime !== Infinity && !post.sellerReported && !post.sold) 
+    ? safeFormatDistanceToNow(claimTime) 
+    : "None";
 
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
@@ -3632,7 +3643,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                          {post.platform}
                       </Badge>
                       <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
-                         ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
+                         ABOUT {safeFormatDistanceToNow(post.createdAt)} AGO
                       </span>
                 </div>
                 </div>
@@ -3969,7 +3980,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
           <div className="flex flex-wrap items-center gap-3 md:gap-4 pt-2">
              <button 
                onClick={onEdit}
-               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
              >
                 <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                 <span>Edit</span>
@@ -3977,7 +3988,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
              
              <button 
                onClick={onViewParticipants}
-               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:sm active:scale-95 transition-all flex items-center justify-center"
              >
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-500" />
                 <span>Leaderboard</span>
@@ -4101,7 +4112,7 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                         </TableCell>
                         <TableCell className="font-bold text-lg">{p.taps}</TableCell>
                         <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-medium">{safeFormatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
                         <TableCell className="text-right px-6 lg:px-10">
                             <div className="flex justify-end items-center gap-3">
                                <button 
