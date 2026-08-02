@@ -691,14 +691,16 @@ export default function AdminPage() {
       try {
         const res = await fetch('/api/fazercards/topups');
         const data = await res.json();
-        if (data.ok) setFazerCategories(data.categories);
+        if (data.ok) setFazerCategories(data.categories || []);
         
         if (p?.fazercardsCategory_id) {
            const offRes = await fetch(`/api/fazercards/topups/offers?category_id=${p.fazercardsCategory_id}`);
            const offData = await offRes.json();
-           if (offData.ok) setFazerOffers(offData.offers);
+           if (offData.ok) setFazerOffers(offData.offers || []);
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("Failed to load categories/offers", err);
+      }
     }
     
     setIsProductDialogOpen(true);
@@ -710,8 +712,10 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/fazercards/topups/offers?category_id=${cid}`);
       const data = await res.json();
-      if (data.ok) setFazerOffers(data.offers);
-    } catch (err) {}
+      if (data.ok) setFazerOffers(data.offers || []);
+    } catch (err) {
+      console.error("Failed to change category", err);
+    }
   };
 
   const handleOpenPaymentMethodDialog = (m?: any) => {
@@ -2916,7 +2920,7 @@ export default function AdminPage() {
                                <SelectValue placeholder="Select category..." />
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                               {fazerCategories.map(cat => <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold">{cat.name}</SelectItem>)}
+                               {(fazerCategories || []).map(cat => <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold">{cat.name}</SelectItem>)}
                             </SelectContent>
                          </Select>
                       </div>
@@ -2927,7 +2931,7 @@ export default function AdminPage() {
                                <SelectValue placeholder="Select offer..." />
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                               {fazerOffers.map(off => <SelectItem key={off.id} value={off.id} className="text-xs font-bold">{off.name} - ${off.price}</SelectItem>)}
+                               {(fazerOffers || []).map(off => <SelectItem key={off.id} value={off.id} className="text-xs font-bold">{off.name} - ${off.price}</SelectItem>)}
                             </SelectContent>
                          </Select>
                       </div>
@@ -3116,7 +3120,7 @@ export default function AdminPage() {
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
               </div>
-              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => setLanguage === 'so' ? (f => ({ ...f, name: v })) : (f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
+              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => (f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
               <SettingInput label="USSD Template" value={paymentMethodForm.ussdTemplate} onChange={v => setPaymentMethodForm(f => ({ ...f, ussdTemplate: v }))} placeholder="*712*613982172*$#" />
               <p className="text-[9px] font-bold text-slate-400 italic leading-relaxed">Use $ as a placeholder for the price (e.g. *711*613982172*$#)</p>
               <div className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
