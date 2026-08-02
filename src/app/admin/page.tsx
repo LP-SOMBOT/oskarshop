@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -179,7 +178,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
+} from '@at-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -869,7 +868,7 @@ export default function AdminPage() {
       if (deleteTarget.type === 'paymentMethod') await deletePaymentMethod(deleteTarget.id);
       if (deleteTarget.type === 'promoCode') await deletePromoCode(deleteTarget.id);
       toast({ title: "Deleted Successfully" });
-      setIs_deleteDialogOpen(false);
+      setIsDeleteDialogOpen(false);
     } catch (error) {
       toast({ title: "Failed to delete from database", variant: "destructive" });
     } finally { 
@@ -1601,7 +1600,7 @@ export default function AdminPage() {
                                           <Eye size={18} />
                                         </button>
                                         <button 
-                                          onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIs_deleteDialogOpen(true); }}
+                                          onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
                                           className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                           <Trash2 size={18} />
@@ -1669,7 +1668,7 @@ export default function AdminPage() {
                                  <PencilLine size={24} />
                                </button>
                                <button 
-                                 onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:g.id, type:'game'}); setIs_deleteDialogOpen(true); }}
+                                 onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}
                                  className="text-red-500 hover:scale-110 transition-transform"
                                >
                                  <Trash2 size={24} />
@@ -1709,7 +1708,7 @@ export default function AdminPage() {
                                              key={p.id} 
                                              p={p} 
                                              onEdit={() => handleOpenProductDialog(p)}
-                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIs_deleteDialogOpen(true); }}
+                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
                                            />
                                          ))}
                                        </div>
@@ -1827,7 +1826,7 @@ export default function AdminPage() {
                                  <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Edit size={14} />
                                  </button>
-                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIs_deleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Trash2 size={14} />
                                  </button>
                               </div>
@@ -1851,7 +1850,7 @@ export default function AdminPage() {
                             <div key={b.id} className="relative w-40 md:w-64 aspect-[3/1] rounded-2xl md:rounded-[1.5rem] overflow-hidden group shadow-lg">
                                <Image src={b.imageUrl} alt="" fill className="object-cover" unoptimized />
                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                  <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIs_deleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
+                                  <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
                                      <Trash2 size={16} />
                                   </button>
                                </div>
@@ -1946,7 +1945,7 @@ export default function AdminPage() {
                                  </Button>
                                  <Button 
                                    variant="ghost" 
-                                   onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIs_deleteDialogOpen(true); }}
+                                   onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
                                    className="w-full text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
                                  >
                                     <Trash2 size={14} className="mr-2" /> Delete Voucher
@@ -2020,7 +2019,7 @@ export default function AdminPage() {
                               </div>
                               <div className="flex gap-2">
                                  <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
-                                 <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIs_deleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
+                                 <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
                               </div>
                            </div>
                         </Card>
@@ -2112,7 +2111,7 @@ export default function AdminPage() {
                                           <Edit size={18} />
                                         </button>
                                         <button 
-                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIs_deleteDialogOpen(true); }}
+                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
                                           className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                           <Trash2 size={18} />
@@ -2350,7 +2349,7 @@ export default function AdminPage() {
                                        </div>
                                        <div className="flex gap-2">
                                           <button onClick={() => handleOpenPaymentMethodDialog(m)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit size={18} /></button>
-                                          <button onClick={() => { setDeleteTarget({id:m.id, type:'paymentMethod'}); setIs_deleteDialogOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
+                                          <button onClick={() => { setDeleteTarget({id:m.id, type:'paymentMethod'}); setIsDeleteDialogOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
                                        </div>
                                     </div>
                                  ))}
@@ -2961,7 +2960,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase text-slate-400">Order Multiplier (Multiplier)</Label>
+                         <Label className="text-[9px] font-black uppercase text-slate-400">Order multiplier</Label>
                          <Select value={productForm.fazercardsMultiQuantity?.toString() || "1"} onValueChange={v => setProductForm({ ...productForm, fazercardsMultiQuantity: parseInt(v) })}>
                             <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
                                <SelectValue />
@@ -2970,15 +2969,8 @@ export default function AdminPage() {
                                {[1, 2, 3, 4, 5].map(m => <SelectItem key={m} value={m.toString()} className="text-xs font-bold">{m}x Order</SelectItem>)}
                             </SelectContent>
                          </Select>
-                         <p className="text-[8px] text-muted-foreground italic ml-1">E.g. If set to 3x, FazerCards will receive 3 duplicate orders for this item.</p>
+                         <p className="text-[8px] text-muted-foreground italic ml-1">Labo ama sedex laab item ka</p>
                       </div>
-
-                      {productForm.fazercardsOffer_id && (
-                        <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-between text-[10px] font-black uppercase">
-                           <span>Cost: ${(parseFloat(fazerOffers.find(o => o.id === productForm.fazercardsOffer_id)?.price || '0') * (productForm.fazercardsMultiQuantity || 1)).toFixed(2)}</span>
-                           <span className="text-green-500">Profit: ${(parseFloat(productForm.price) - (parseFloat(fazerOffers.find(o => o.id === productForm.fazercardsOffer_id)?.price || '0') * (productForm.fazercardsMultiQuantity || 1))).toFixed(2)}</span>
-                        </div>
-                      )}
                    </div>
                  )}
               </div>
@@ -3191,7 +3183,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIs_deleteDialogOpen}>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <DialogHeader className="sr-only">
               <DialogTitle>Are you sure?</DialogTitle>
@@ -3201,7 +3193,7 @@ export default function AdminPage() {
            <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white">Are you sure?</h3>
            <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">{getDeleteDescription()}</p>
            <div className="flex gap-3 mt-6 md:mt-10">
-              <Button variant="ghost" onClick={() => setIs_deleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
+              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
               <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
               </Button>
@@ -4089,7 +4081,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
              <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
                 {status === 'active' && (
                   <button 
-                    onClick={onEndearly}
+                    onClick={onEndEarly}
                     className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2 flex items-center"
                   >
                      <Clock className="w-4 h-4" />
