@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -58,6 +59,9 @@ type CartItem = {
   thumbnail?: string;
   details?: Record<string, string>;
   isOneTime?: boolean;
+  autoTopupEnabled?: boolean;
+  fazercardsCategory_id?: string;
+  fazercardsOffer_id?: string;
 };
 
 type Order = {
@@ -66,7 +70,7 @@ type Order = {
   userPhone?: string;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'processing' | 'successful' | 'cancelled';
+  status: 'pending' | 'processing' | 'successful' | 'cancelled' | 'approved';
   cancellationReason?: string;
   createdAt: number;
   processedAt?: number;
@@ -86,6 +90,13 @@ type Order = {
   ffPlayerName?: string;
   ffVerified?: boolean;
   ffRegion?: string;
+  // Automation Fields
+  autoTopupStatus?: 'pending' | 'processing' | 'completed' | 'failed' | null;
+  autoTopupOrderId?: string;
+  autoTopupError?: string;
+  paymentMatchedAt?: number;
+  smsMatchedId?: string;
+  approvedBy?: string;
 };
 
 type AccountPost = {
@@ -293,6 +304,24 @@ type StoreSettings = {
       rank2: number;
       rank3: number;
     };
+  };
+  schedule?: {
+    enabled: boolean;
+    openTime: string;
+    closeTime: string;
+    timezone: string;
+  };
+  fazercards?: {
+    apiKey?: string;
+    enabled: boolean;
+    autoTopupEnabled: boolean;
+    balance?: string;
+    lastBalanceCheck?: number;
+  };
+  sms_webhook?: {
+    enabled: boolean;
+    secret?: string;
+    lastReceived?: number;
   };
   config?: {
     shop?: {
@@ -719,7 +748,7 @@ const translations: Record<Language, Record<string, string>> = {
     admin_response_title: "Jawaabta Maamulka",
     urgent_notice_label: "Ogeysiis Degdeg ah",
     read_decision_btn: "Waan akhriyay go'aanka",
-    auto_delete_prefix: "Record-ka waxaa si toos ah loo tirtiri doonaa:",
+    auto_delete_prefix: "Auto-Deleting record in:",
     purchase_claims_title: "Purchase Claims",
     verify_buyer_desc: "Xaqiiji qofka kula soo xiriiray",
     requests_count_label: "Requests",
@@ -1503,10 +1532,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
-    if (status === 'successful') {
+    if (status === 'successful' || status === 'approved') {
       updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val();
+      
+      // Auto Topup Logic
+      if ((status === 'successful' || status === 'approved') && storeSettings.fazercards?.autoTopupEnabled) {
+        const item = orderData.items?.[0];
+        // Trigger auto top-up if configured for this item
+        if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id && orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
+          fetch('/api/fazercards/place-topup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              category_id: item.fazercardsCategory_id,
+              offer_id: item.fazercardsOffer_id,
+              playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
+              region: orderData.ffRegion || 'ME'
+            })
+          }).then(async (res) => {
+            const data = await res.json();
+            if (data.success) toast({ title: "Auto Top-up Successful!", description: `FazerCards ID: ${data.fazercardsOrderId}` });
+            else toast({ title: "Auto Top-up Failed", description: data.error, variant: "destructive" });
+          }).catch(err => {
+            console.error("Auto topup failed trigger:", err);
+          });
+        }
+      }
+
       if (orderData?.userId && !(orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts')) {
         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
       }
@@ -1521,10 +1576,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const orderData = orderSnap.val();
     if (orderData?.userId) {
       fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: orderData.userId, status }) }).catch(() => {});
-      broadcastNotification(status === 'successful' ? "Diamonds Delivered! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, orderData.userId);
+      broadcastNotification(status === 'successful' || status === 'approved' ? "Diamonds Delivered! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, orderData.userId);
     }
     setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim]);
+  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim, storeSettings.fazercards?.autoTopupEnabled]);
 
   const updateAccountPostStatus = useCallback(async (postId: string, status: string, boughtBy?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
