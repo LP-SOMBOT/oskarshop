@@ -1462,7 +1462,7 @@ export default function AdminPage() {
                                         <Eye size={18} />
                                       </button>
                                       <button 
-                                        onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIs_deleteDialogOpen(true); }}
+                                        onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
                                         className="w-10 h-10 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
                                       >
                                         <Trash2 size={16} />
@@ -1562,7 +1562,7 @@ export default function AdminPage() {
                                           <Eye size={18} />
                                         </button>
                                         <button 
-                                          onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIs_deleteDialogOpen(true); }}
+                                          onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
                                           className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                           <Trash2 size={18} />
@@ -1630,7 +1630,7 @@ export default function AdminPage() {
                                  <PencilLine size={24} />
                                </button>
                                <button 
-                                 onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:g.id, type:'game'}); setIs_deleteDialogOpen(true); }}
+                                 onClick={(e) => { e.stopPropagation(); setDeleteTarget({id:g.id, type:'game'}); setIsDeleteDialogOpen(true); }}
                                  className="text-red-500 hover:scale-110 transition-transform"
                                >
                                  <Trash2 size={24} />
@@ -1670,7 +1670,7 @@ export default function AdminPage() {
                                              key={p.id} 
                                              p={p} 
                                              onEdit={() => handleOpenProductDialog(p)}
-                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIs_deleteDialogOpen(true); }}
+                                             onDelete={(e) => { e.stopPropagation(); setDeleteTarget({id:p.id, type:'product'}); setIsDeleteDialogOpen(true); }}
                                            />
                                          ))}
                                        </div>
@@ -1788,7 +1788,7 @@ export default function AdminPage() {
                                  <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Edit size={14} />
                                  </button>
-                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIs_deleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Trash2 size={14} />
                                  </button>
                               </div>
@@ -1812,7 +1812,7 @@ export default function AdminPage() {
                             <div key={b.id} className="relative w-40 md:w-64 aspect-[3/1] rounded-2xl md:rounded-[1.5rem] overflow-hidden group shadow-lg">
                                <Image src={b.imageUrl} alt="" fill className="object-cover" unoptimized />
                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                  <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIs_deleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
+                                  <button onClick={() => { setDeleteTarget({id:b.id, type:'banner'}); setIsDeleteDialogOpen(true); }} className="p-2 bg-red-600 text-white rounded-full hover:scale-110 transition-transform">
                                      <Trash2 size={16} />
                                   </button>
                                </div>
@@ -1907,7 +1907,7 @@ export default function AdminPage() {
                                  </Button>
                                  <Button 
                                    variant="ghost" 
-                                   onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIs_deleteDialogOpen(true); }}
+                                   onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
                                    className="w-full text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
                                  >
                                     <Trash2 size={14} className="mr-2" /> Delete Voucher
@@ -1981,7 +1981,7 @@ export default function AdminPage() {
                               </div>
                               <div className="flex gap-2">
                                  <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
-                                 <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIs_deleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
+                                 <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
                               </div>
                            </div>
                         </Card>
@@ -2073,7 +2073,7 @@ export default function AdminPage() {
                                           <Edit size={18} />
                                         </button>
                                         <button 
-                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIs_deleteDialogOpen(true); }}
+                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
                                           className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                           <Trash2 size={18} />
@@ -2311,7 +2311,7 @@ export default function AdminPage() {
                                        </div>
                                        <div className="flex gap-2">
                                           <button onClick={() => handleOpenPaymentMethodDialog(m)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit size={18} /></button>
-                                          <button onClick={() => { setDeleteTarget({id:m.id, type:'paymentMethod'}); setIs_deleteDialogOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
+                                          <button onClick={() => { setDeleteTarget({id:m.id, type:'paymentMethod'}); setIsDeleteDialogOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
                                        </div>
                                     </div>
                                  ))}
@@ -3106,7 +3106,7 @@ export default function AdminPage() {
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
               </div>
-              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => setPaymentMethodForm(f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
+              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => setLanguage === 'so' ? (f => ({ ...f, name: v })) : (f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
               <SettingInput label="USSD Template" value={paymentMethodForm.ussdTemplate} onChange={v => setPaymentMethodForm(f => ({ ...f, ussdTemplate: v }))} placeholder="*712*613982172*$#" />
               <p className="text-[9px] font-bold text-slate-400 italic leading-relaxed">Use $ as a placeholder for the price (e.g. *711*613982172*$#)</p>
               <div className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
@@ -3139,7 +3139,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIs_deleteDialogOpen}>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <DialogHeader className="sr-only">
               <DialogTitle>Confirm Deletion</DialogTitle>
@@ -3149,7 +3149,7 @@ export default function AdminPage() {
            <h3 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white">Are you sure?</h3>
            <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">{getDeleteDescription()}</p>
            <div className="flex gap-3 mt-6 md:mt-10">
-              <Button variant="ghost" onClick={() => setIs_deleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
+              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isDeleting}>Maya</Button>
               <Button variant="destructive" onClick={executeDelete} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
               </Button>
@@ -4135,13 +4135,16 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
   );
 }
 
-function StatusInfo({ icon: Icon, label, value, color }: { icon: any, label: string, value: any, color?: string }) {
-  return (
-    <div className="space-y-1 min-w-0">
-      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
-        <Icon size={10} /> {label}
-      </p>
-      <p className={cn("text-xs sm:text-base font-bold truncate", color || "text-slate-900 dark:text-white")}>{value}</p>
-    </div>
-  );
+export {
+  OrderDetailView,
+  AccountDetailView,
+  SideNavItem,
+  StatCard,
+  StatusBadge,
+  StatItem,
+  InsightStat,
+  DetailRow,
+  SettingInput,
+  EventAccountAdminCard,
+  EventAccountParticipantsView
 }
