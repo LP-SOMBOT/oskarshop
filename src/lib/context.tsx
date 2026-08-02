@@ -459,11 +459,10 @@ type AppContextType = {
   setIsPostingAccount: (isPosting: boolean) => void;
   acceptTerms: () => Promise<void>;
   language: Language;
-  setLanguage: (lang: Language) => void;
-  userProfile: UserProfile | null;
   t: (key: string) => string;
   resetLeaderboard: () => Promise<void>;
   rtdb: any;
+  setLanguage: (lang: Language) => void;
   
   // Event Account Functions
   saveEventAccount: (event: Partial<EventAccount>) => Promise<void>;
@@ -1010,7 +1009,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       const exists = Object.values(allUsersData).some((u: any) => {
         const uPhone = (u.phoneNumber || "").replace(/\D/g, "");
-        return uPhone === normalizedPhone || u.email === realEmail;
+        return uPhone === normalizedPhone || uPhone === ph || u.email === realEmail;
       });
 
       if (exists) {
@@ -1119,6 +1118,76 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setIsGlobalLoading(false), 2000);
   }, [authUser, router]);
 
+  const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored', targetUid?: string) => {
+    if (!rtdb || (!authUser && !targetUid)) return;
+    const uid = targetUid || authUser?.uid; if (!uid) return;
+    setIsGlobalLoading(true);
+    try {
+      const currentEventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
+      const eventData = currentEventSnap.val();
+      const currentModalId = eventData?.winnerClaim?.modalId;
+      if (outcome === 'accepted') {
+        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), { status: 'accepted' });
+        if (currentModalId) localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'accepted');
+      } else {
+        const partSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
+        const sorted = Object.values(partSnap.val() || {}).sort((a: any, b: any) => b.taps - a.taps || a.lastTapTime - b.lastTapTime);
+        const currentIndex = sorted.findIndex((p: any) => p.uid === uid);
+        const nextWinner = sorted[currentIndex + 1] as any;
+        if (currentModalId) localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'ignored');
+        if (nextWinner) {
+          await update(ref(rtdb, `eventAccounts/${eventId}`), { winnerId: nextWinner.uid, winnerClaim: { status: 'pending', finalPrice: nextWinner.value, modalId: Date.now().toString() } });
+          broadcastNotification("Hampalyo! 🏆", "Waad ku guulaysatay auction-ka!", nextWinner.uid);
+        } else { await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), { status: 'ignored' }); }
+      }
+    } finally { setIsGlobalLoading(false); }
+  }, [rtdb, authUser, broadcastNotification]);
+
+  const updateOrderStatus = useCallback(async (orderId: string, status: string, cancellationReason?: string) => {
+    if (!rtdb || !enhancedUser?.isAdmin) return;
+    setIsGlobalLoading(true);
+    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
+    if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
+    if (status === 'successful' || status === 'approved') {
+      updates.completedAt = Date.now();
+      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+      const orderData = orderSnap.val();
+      
+      // Auto Topup Logic Trigger
+      const item = orderData?.items?.[0];
+      if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id && orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
+          fetch('/api/fazercards/place-topup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              category_id: item.fazercardsCategory_id,
+              offer_id: item.fazercardsOffer_id,
+              playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
+              region: orderData.ffRegion || 'ME'
+            })
+          }).catch(err => console.error("Manual approve auto-topup trigger failed:", err));
+      }
+
+      if (orderData?.userId && !(orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts')) {
+        await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
+      }
+    }
+    if (status === 'cancelled') {
+      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+      const orderData = orderSnap.val();
+      if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
+    }
+    await update(ref(rtdb, `orders/${orderId}`), updates);
+    const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+    const orderData = orderSnap.val();
+    if (orderData?.userId) {
+      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: orderData.userId, status }) }).catch(() => {});
+      broadcastNotification(status === 'successful' || status === 'approved' ? "Diamonds Delivered! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, orderData.userId);
+    }
+    setIsGlobalLoading(false);
+  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim, storeSettings.fazercards]);
+
   const createOrder = useCallback(async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
     if (!rtdb || !authUser) return;
     setIsGlobalLoading(true);
@@ -1158,6 +1227,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newOrder.ffVerified = gameDetails.ffVerified;
       newOrder.ffRegion = gameDetails.ffRegion;
     }
+
+    // REAL-TIME SMS MATCHING Logic on Order Placement
+    let wasAutoApproved = false;
+    if (storeSettings.sms_webhook?.enabled) {
+      try {
+        const smsPaymentsSnap = await get(ref(rtdb, 'sms_payments'));
+        const smsPayments = smsPaymentsSnap.val() || {};
+        const now = Date.now();
+        const twoHours = 2 * 60 * 60 * 1000;
+        
+        // Normalize search phone
+        const targetPhone = (gameDetails.senderNumber || userProfile?.phoneNumber || '')
+          .toString().replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '');
+
+        const matchingSms = Object.entries(smsPayments)
+          .find(([id, sms]: [string, any]) => {
+            if (sms.matched) return false;
+            const amountMatch = Math.abs(parseFloat(sms.amount) - directItem.price) < 0.01;
+            const phoneMatch = sms.senderPhone === targetPhone;
+            const timeMatch = Math.abs(now - sms.receivedAt) <= twoHours;
+            return amountMatch && phoneMatch && timeMatch;
+          });
+
+        if (matchingSms) {
+          const [smsId] = matchingSms;
+          newOrder.status = 'approved';
+          newOrder.paymentMatchedAt = now;
+          newOrder.smsMatchedId = smsId;
+          newOrder.approvedBy = 'auto_sms';
+          wasAutoApproved = true;
+          
+          // Mark SMS as matched
+          await update(ref(rtdb, `sms_payments/${smsId}`), { matched: true, matchedOrderId: orderId });
+          
+          // Auto Topup trigger immediately after placement if matched
+          if (directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
+             fetch('/api/fazercards/place-topup', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                 orderId,
+                 category_id: directItem.fazercardsCategory_id,
+                 offer_id: directItem.fazercardsOffer_id,
+                 playerUid: newOrder.ffUid || gameDetails.playerID,
+                 region: newOrder.ffRegion || 'ME'
+               })
+             }).catch(e => console.error("Initial placement auto-topup trigger failed:", e));
+          }
+        }
+      } catch (err) { console.error("Real-time SMS match scan failed:", err); }
+    }
     
     await set(ref(rtdb, `orders/${orderId}`), newOrder);
 
@@ -1166,18 +1286,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const promoRef = ref(rtdb, `promo_codes/${standardizedCode}`);
       const promoSnap = await get(promoRef);
       const promoData = promoSnap.val();
-      
       if (promoData) {
-        if (promoData.type === 'single_use' || !promoData.type) {
-          await update(promoRef, { claimed: true, usedBy: authUser.uid });
-        } else {
-          await update(ref(rtdb, `promo_codes/${standardizedCode}/usedByUsers/${authUser.uid}`), {
-            uid: authUser.uid,
-            name: userProfile?.name || 'Guest',
-            whatsapp: userProfile?.phoneNumber || 'N/A',
-            timestamp: Date.now()
-          });
-        }
+        if (promoData.type === 'single_use' || !promoData.type) await update(promoRef, { claimed: true, usedBy: authUser.uid });
+        else await update(ref(rtdb, `promo_codes/${standardizedCode}/usedByUsers/${authUser.uid}`), { uid: authUser.uid, name: userProfile?.name || 'Guest', whatsapp: userProfile?.phoneNumber || 'N/A', timestamp: Date.now() });
       }
     }
 
@@ -1194,6 +1305,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ffPlayerName: gameDetails.ffPlayerName || null,
         promoCode: promoCode || null,
         discount: userProfile?.leaderboardDiscount || null,
+        message: wasAutoApproved ? "✅ Auto-approved via real-time SMS match!" : undefined
       }),
     }).catch(() => {});
 
@@ -1203,9 +1315,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ orderId, itemTitle: directItem.title })
     }).catch(err => console.error("OneSignal admin broadcast failed", err));
 
-    await broadcastAdminNotification("New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is pending verification.`, true);
+    await broadcastAdminNotification(wasAutoApproved ? "Order Auto-Approved! ✅" : "New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is ${newOrder.status}.`, true);
     setIsGlobalLoading(false);
-  }, [rtdb, authUser, userProfile, broadcastAdminNotification]);
+  }, [rtdb, authUser, userProfile, broadcastAdminNotification, storeSettings.sms_webhook]);
 
   const orders = useMemo(() => {
     if (!authUser) return [];
@@ -1502,85 +1614,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     else { const updates: any = {}; adminNotifications.forEach(n => updates[`adminNotifications/${n.id}/readBy/${enhancedUser.uid}`] = true); await update(ref(rtdb), updates); }
   }, [rtdb, enhancedUser, adminNotifications]);
 
-  const respondToEventClaim = useCallback(async (eventId: string, outcome: 'accepted' | 'ignored', targetUid?: string) => {
-    if (!rtdb || (!authUser && !targetUid)) return;
-    const uid = targetUid || authUser?.uid; if (!uid) return;
-    setIsGlobalLoading(true);
-    try {
-      const currentEventSnap = await get(ref(rtdb, `eventAccounts/${eventId}`));
-      const eventData = currentEventSnap.val();
-      const currentModalId = eventData?.winnerClaim?.modalId;
-      if (outcome === 'accepted') {
-        await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), { status: 'accepted' });
-        if (currentModalId) localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'accepted');
-      } else {
-        const partSnap = await get(ref(rtdb, `eventParticipants/${eventId}`));
-        const sorted = Object.values(partSnap.val() || {}).sort((a: any, b: any) => b.taps - a.taps || a.lastTapTime - b.lastTapTime);
-        const currentIndex = sorted.findIndex((p: any) => p.uid === uid);
-        const nextWinner = sorted[currentIndex + 1] as any;
-        if (currentModalId) localStorage.setItem(`oskar_claim_responded_${eventId}_${currentModalId}`, 'ignored');
-        if (nextWinner) {
-          await update(ref(rtdb, `eventAccounts/${eventId}`), { winnerId: nextWinner.uid, winnerClaim: { status: 'pending', finalPrice: nextWinner.value, modalId: Date.now().toString() } });
-          broadcastNotification("Hampalyo! 🏆", "Waad ku guulaysatay auction-ka!", nextWinner.uid);
-        } else { await update(ref(rtdb, `eventAccounts/${eventId}/winnerClaim`), { status: 'ignored' }); }
-      }
-    } finally { setIsGlobalLoading(false); }
-  }, [rtdb, authUser, broadcastNotification]);
-
-  const updateOrderStatus = useCallback(async (orderId: string, status: string, cancellationReason?: string) => {
-    if (!rtdb || !enhancedUser?.isAdmin) return;
-    setIsGlobalLoading(true);
-    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
-    if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
-    if (status === 'successful' || status === 'approved') {
-      updates.completedAt = Date.now();
-      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
-      const orderData = orderSnap.val();
-      
-      // Auto Topup Logic
-      if ((status === 'successful' || status === 'approved') && storeSettings.fazercards?.autoTopupEnabled) {
-        const item = orderData.items?.[0];
-        // Trigger auto top-up if configured for this item
-        if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id && orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
-          fetch('/api/fazercards/place-topup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId,
-              category_id: item.fazercardsCategory_id,
-              offer_id: item.fazercardsOffer_id,
-              playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
-              region: orderData.ffRegion || 'ME'
-            })
-          }).then(async (res) => {
-            const data = await res.json();
-            if (data.success) toast({ title: "Auto Top-up Successful!", description: `FazerCards ID: ${data.fazercardsOrderId}` });
-            else toast({ title: "Auto Top-up Failed", description: data.error, variant: "destructive" });
-          }).catch(err => {
-            console.error("Auto topup failed trigger:", err);
-          });
-        }
-      }
-
-      if (orderData?.userId && !(orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts')) {
-        await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
-      }
-    }
-    if (status === 'cancelled') {
-      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
-      const orderData = orderSnap.val();
-      if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
-    }
-    await update(ref(rtdb, `orders/${orderId}`), updates);
-    const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
-    const orderData = orderSnap.val();
-    if (orderData?.userId) {
-      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: orderData.userId, status }) }).catch(() => {});
-      broadcastNotification(status === 'successful' || status === 'approved' ? "Diamonds Delivered! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, orderData.userId);
-    }
-    setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim, storeSettings.fazercards?.autoTopupEnabled]);
-
   const updateAccountPostStatus = useCallback(async (postId: string, status: string, boughtBy?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
@@ -1824,7 +1857,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateUserProfile, manageUser, deleteUser, saveGame, deleteGame, saveProduct, deleteProduct, updateProductsOrder, saveEvent, deleteEvent, saveBanner, deleteBanner, savePaymentMethod, deletePaymentMethod, savePromoCode, deletePromoCode, checkPromoCode, storeSettings, updateStoreSettings, updateAdminSettings,
       broadcastNotification, broadcastAdminNotification, messages, allChatSessions, chatTargetId, setChatTargetId, sendMessage, markMessagesAsRead, refreshAdminData, refreshFcmToken,
       theme, toggleTheme, isBannedModalOpen, setIsBannedModalOpen, bannedInfo, isPostingAccount, setIsPostingAccount,
-      acceptTerms, language, setLanguage, userProfile, t, resetLeaderboard, rtdb,
+      acceptTerms, language, t, resetLeaderboard, rtdb, setLanguage,
       saveEventAccount, deleteEventAccount, tapEventAccount, assignEventWinner, updateEventStatus, respondToEventClaim
     }}>
       {children}
