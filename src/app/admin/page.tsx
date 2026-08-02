@@ -1052,8 +1052,8 @@ export default function AdminPage() {
 
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden">
-          <SheetHeader className="sr-only">
-            <SheetTitle>Admin Navigation</SheetTitle>
+          <SheetHeader className="px-6 py-4 border-b dark:border-white/5">
+            <SheetTitle className="text-left font-headline font-bold uppercase tracking-tight">Navigation</SheetTitle>
           </SheetHeader>
           <SidebarContent isMobile={true} />
         </SheetContent>
@@ -1463,7 +1463,7 @@ export default function AdminPage() {
                                         {p.authorIsVerified && <VerifiedBadge />}
                                       </div>
                                    </div>
-                                   <StatusBadge status={p} />
+                                   <StatusBadge status={p.status} />
                                  </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -1804,7 +1804,7 @@ export default function AdminPage() {
                             <Plus size={18} /> New Banner
                          </Button>
                          <Button 
-                           onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" }); setIsEditingEvent(true); }}
+                           onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days", duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" }); setIsEditingEvent(true); }}
                            className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:auto"
                          >
                             <Megaphone size={18} /> Create Event
