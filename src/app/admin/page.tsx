@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -3423,7 +3422,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <User size={24} />
               </div>
-              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Buyer Identity</h4>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
             </div>
 
             <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center gap-6">
@@ -3454,7 +3453,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
        </Card>
 
-       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
           <div className="p-6 md:p-10 space-y-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 md:gap-4 text-primary">
