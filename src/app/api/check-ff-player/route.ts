@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 
 /**
@@ -8,7 +7,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const uid = searchParams.get('uid');
-  const region = searchParams.get('region') || 'ME';
+  const region = searchParams.get('region') || 'MENA';
 
   if (!uid || uid.trim().length < 5) {
     return NextResponse.json(

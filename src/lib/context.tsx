@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -1188,7 +1187,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   category_id: item.fazercardsCategory_id,
                   offer_id: item.fazercardsOffer_id,
                   playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
-                  region: orderData.ffRegion || 'ME'
+                  region: orderData.ffRegion || 'MENA'
                 })
               });
               const topupResult = await res.json();
@@ -1263,7 +1262,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newOrder.ffUid = gameDetails.ffUid;
       newOrder.ffPlayerName = gameDetails.ffPlayerName;
       newOrder.ffVerified = gameDetails.ffVerified;
-      newOrder.ffRegion = gameDetails.ffRegion;
+      newOrder.ffRegion = gameDetails.ffRegion || 'MENA';
     }
 
     // REAL-TIME SMS MATCHING
@@ -1305,7 +1304,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                  category_id: directItem.fazercardsCategory_id,
                  offer_id: directItem.fazercardsOffer_id,
                  playerUid: newOrder.ffUid || gameDetails.playerID,
-                 region: newOrder.ffRegion || 'ME'
+                 region: newOrder.ffRegion || 'MENA'
                })
              }).catch(e => console.error("Initial placement auto-topup trigger failed:", e));
           }

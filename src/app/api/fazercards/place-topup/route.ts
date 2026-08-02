@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
@@ -37,8 +36,14 @@ export async function POST(request: Request) {
 
     // 3. Prepare FazerCards Payload
     // Based on documentation: fields is a key-value object
-    const fields: any = { player_id: playerUid };
-    if (region) fields.region = region;
+    const fields: any = { player_id: playerUid.toString() };
+    
+    // Use user-provided region 'MENA' if specified, or passed region
+    const effectiveRegion = region || 'MENA';
+    
+    // We only include region if it's not explicitly disabled (some categories fail if provided)
+    // However, user specifically asked to include it.
+    fields.region = effectiveRegion;
 
     // Use lowercase header name and deterministic unique string for idempotency
     const idempotencyKey = `oskarshop-${orderId}`;
@@ -71,7 +76,32 @@ export async function POST(request: Request) {
         status: data.order.status
       });
     } else {
-      // FAILURE
+      // FAILURE - If the error was about unexpected 'region', we try a fallback once automatically
+      if (data.error && data.error.includes('region') && data.error.includes('not expected')) {
+        console.log(`Auto-retry without region for category ${category_id}`);
+        
+        const fallbackRes = await fetch('https://api.fzr.cards/api/v2/topups/order', {
+          method: 'POST',
+          headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json',
+            'idempotency-key': `${idempotencyKey}-retry`
+          },
+          body: JSON.stringify({ category_id, offer_id, fields: { player_id: playerUid.toString() } })
+        });
+        
+        const fallbackData = await fallbackRes.json();
+        if (fallbackData.ok && fallbackData.order) {
+          await orderRef.update({
+            autoTopupStatus: 'completed',
+            autoTopupOrderId: fallbackData.order.id,
+            status: 'successful',
+            completedAt: Date.now()
+          });
+          return NextResponse.json({ success: true, fazercardsOrderId: fallbackData.order.id });
+        }
+      }
+
       await orderRef.update({
         autoTopupStatus: 'failed',
         autoTopupError: data.error || 'FazerCards order failed'

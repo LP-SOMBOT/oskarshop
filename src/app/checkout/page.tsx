@@ -23,7 +23,8 @@ import {
   UserCheck,
   User,
   ShieldAlert,
-  AlertCircle
+  AlertCircle,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,7 @@ function CheckoutContent() {
   // FazerCards Auto-Detect States
   const [ffUid, setFfUid] = useState('');
   const [ffPlayerName, setFfPlayerName] = useState('');
-  const [ffRegion, setFfRegion] = useState('ME');
+  const [ffRegion, setFfRegion] = useState('MENA');
   const [checking, setChecking] = useState(false);
   const [verified, setVerified] = useState(false);
   const [lookupError, setLookupError] = useState('');
@@ -432,23 +433,39 @@ function CheckoutContent() {
               <div className="space-y-3 md:space-y-4">
                 {isAutoDetectEnabled ? (
                   <>
-                    <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                          <Gamepad2 size={18} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                            <Gamepad2 size={18} />
+                          </div>
+                          <Input 
+                            placeholder="Tusaale: 1803494801" 
+                            required 
+                            type="tel" 
+                            inputMode="numeric" 
+                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                            value={ffUid} 
+                            onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
+                          />
                         </div>
-                        <Input 
-                          placeholder="Tusaale: 1803494801" 
-                          required 
-                          type="tel" 
-                          inputMode="numeric" 
-                          className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
-                          value={ffUid} 
-                          onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
-                        />
+                      </div>
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Region</Label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                            <Globe size={18} />
+                          </div>
+                          <Input 
+                            readOnly 
+                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-100 dark:bg-slate-800/50 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-black text-xs md:text-base opacity-70" 
+                            value={ffRegion} 
+                          />
+                        </div>
                       </div>
                     </div>
+                    
                     <div className="space-y-1 md:space-y-2">
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
                       <div className="relative">
@@ -677,6 +694,7 @@ function CheckoutContent() {
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Lacag Diraha:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.senderNumber}</span></div>
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Player ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{isAutoDetectEnabled ? ffUid : gameDetails.playerID}</span></div>
+                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Region:</span><span className="font-bold text-primary shrink-0">{isAutoDetectEnabled ? ffRegion : 'N/A'}</span></div>
               </div>
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">

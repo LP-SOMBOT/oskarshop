@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
@@ -117,7 +116,7 @@ export async function POST(request: Request) {
            category_id: item.fazercardsCategory_id,
            offer_id: item.fazercardsOffer_id,
            playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID,
-           region: matchOrder.ffRegion || 'ME'
+           region: matchOrder.ffRegion || 'MENA'
          })
        }).catch(() => {});
     }
