@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -3347,17 +3348,60 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           </div>
 
           {/* Automation Insight */}
-          {order.autoTopupStatus && (
-            <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border dark:border-white/5 space-y-4">
-               <div className="flex items-center gap-3 text-indigo-500">
-                  <Cpu size={20} />
-                  <h5 className="font-headline font-bold text-sm uppercase">Automation Log</h5>
+          {(order.autoTopupStatus || order.smsMatchedId) && (
+            <div className="mt-12 p-6 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border dark:border-white/5 space-y-6">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-indigo-500">
+                     <Cpu size={20} />
+                     <h5 className="font-headline font-bold text-xs md:text-sm uppercase tracking-tight">Automation System Log</h5>
+                  </div>
+                  {order.autoTopupStatus === 'completed' && <Badge className="bg-green-100 text-green-700 dark:bg-green-500/20 border-none text-[8px] font-black uppercase px-3">Sync Active</Badge>}
                </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <DetailRow label="Auto Top-up Status" value={order.autoTopupStatus.toUpperCase()} color={order.autoTopupStatus === 'completed' ? 'text-green-500' : order.autoTopupStatus === 'failed' ? 'text-red-500' : 'text-amber-500'} />
-                  <DetailRow label="Reseller ID" value={order.autoTopupOrderId || '---'} />
-                  {order.autoTopupError && <DetailRow label="Error Message" value={order.autoTopupError} color="text-red-500" />}
-                  {order.smsMatchedId && <DetailRow label="Matched via SMS" value="Yes" color="text-green-500" />}
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  <div className="space-y-1">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reseller Status</p>
+                     <p className={cn(
+                       "font-bold text-sm uppercase",
+                       order.autoTopupStatus === 'completed' ? "text-green-500" : 
+                       order.autoTopupStatus === 'failed' ? "text-red-500" : "text-amber-500"
+                     )}>
+                        {order.autoTopupStatus?.toUpperCase() || 'NOT TRIGGERED'}
+                     </p>
+                  </div>
+
+                  <div className="space-y-1">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Provider Order ID</p>
+                     <p className="font-mono text-xs md:text-sm text-slate-600 dark:text-slate-300">
+                        {order.autoTopupOrderId || '---'}
+                     </p>
+                  </div>
+
+                  {order.autoTopupError && (
+                    <div className="col-span-full space-y-1 p-4 bg-red-50 dark:bg-red-500/5 rounded-xl border border-red-100 dark:border-red-900/20">
+                       <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Provider Error Message</p>
+                       <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                          {order.autoTopupError}
+                       </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Validation</p>
+                     <div className="flex items-center gap-2">
+                        {order.smsMatchedId ? (
+                           <>
+                             <div className="w-2 h-2 rounded-full bg-green-500" />
+                             <span className="text-xs font-bold text-green-600">Auto-Matched via SMS</span>
+                           </>
+                        ) : (
+                           <>
+                             <div className="w-2 h-2 rounded-full bg-slate-300" />
+                             <span className="text-xs font-bold text-slate-400">Manual verification</span>
+                           </>
+                        )}
+                     </div>
+                  </div>
                </div>
             </div>
           )}
@@ -4030,7 +4074,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
              <div className="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end pt-4 sm:pt-0">
                 {status === 'active' && (
                   <button 
-                    onClick={onEndEarly}
+                    onClick={onEndearly}
                     className="h-12 px-4 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 active:scale-95 transition-all shrink-0 font-bold uppercase text-[10px] gap-2 flex items-center"
                   >
                      <Clock className="w-4 h-4" />

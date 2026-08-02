@@ -1173,45 +1173,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsGlobalLoading(true);
     const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
+    
     if (status === 'successful' || status === 'approved') {
       updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
-      const orderData = orderSnap.val();
+      const orderData = orderSnap.val() as Order;
       
-      // Auto Topup Logic Trigger
+      // TRIGGER AUTO TOP-UP ON APPROVAL
       const item = orderData?.items?.[0];
-      if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id && orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
-          fetch('/api/fazercards/place-topup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId,
-              category_id: item.fazercardsCategory_id,
-              offer_id: item.fazercardsOffer_id,
-              playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
-              region: orderData.ffRegion || 'ME'
-            })
-          }).catch(err => console.error("Manual approve auto-topup trigger failed:", err));
+      if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
+          if (orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
+            try {
+              const res = await fetch('/api/fazercards/place-topup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  orderId,
+                  category_id: item.fazercardsCategory_id,
+                  offer_id: item.fazercardsOffer_id,
+                  playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
+                  region: orderData.ffRegion || 'ME'
+                })
+              });
+              const topupResult = await res.json();
+              if (topupResult.success) {
+                toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderId}` });
+              } else {
+                toast({ title: "Auto Top-up Failed", description: topupResult.error, variant: "destructive" });
+              }
+            } catch (err) {
+              console.error("Top-up placement error:", err);
+              toast({ title: "Top-up Error", description: "Could not reach automation provider.", variant: "destructive" });
+            }
+          }
       }
 
-      if (orderData?.userId && !(orderData.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'accounts')) {
+      if (orderData?.userId && !(orderData.items?.[0]?.gameId === 'accounts' || orderData.gameDetails?.postId)) {
         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
       }
     }
+
     if (status === 'cancelled') {
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val();
       if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
     }
+
     await update(ref(rtdb, `orders/${orderId}`), updates);
-    const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
-    const orderData = orderSnap.val();
-    if (orderData?.userId) {
-      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: orderData.userId, status }) }).catch(() => {});
-      broadcastNotification(status === 'successful' || status === 'approved' ? "Diamonds Delivered! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, orderData.userId);
+    const finalOrderSnap = await get(ref(rtdb, `orders/${orderId}`));
+    const finalOrderData = finalOrderSnap.val();
+
+    if (finalOrderData?.userId) {
+      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: finalOrderData.userId, status }) }).catch(() => {});
+      broadcastNotification(status === 'successful' || status === 'approved' ? "Order Approved! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, finalOrderData.userId);
     }
     setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim, storeSettings.fazercards]);
+  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim]);
 
   const createOrder = useCallback(async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
     if (!rtdb || !authUser) return;
@@ -1253,7 +1270,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newOrder.ffRegion = gameDetails.ffRegion;
     }
 
-    // REAL-TIME SMS MATCHING Logic on Order Placement
+    // REAL-TIME SMS MATCHING
     let wasAutoApproved = false;
     if (storeSettings.sms_webhook?.enabled) {
       try {
@@ -1262,7 +1279,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const now = Date.now();
         const twoHours = 2 * 60 * 60 * 1000;
         
-        // Normalize search phone
         const targetPhone = (gameDetails.senderNumber || userProfile?.phoneNumber || '')
           .toString().replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '');
 
@@ -1282,11 +1298,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           newOrder.smsMatchedId = smsId;
           newOrder.approvedBy = 'auto_sms';
           wasAutoApproved = true;
-          
-          // Mark SMS as matched
           await update(ref(rtdb, `sms_payments/${smsId}`), { matched: true, matchedOrderId: orderId });
           
-          // Auto Topup trigger immediately after placement if matched
           if (directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
              fetch('/api/fazercards/place-topup', {
                method: 'POST',
