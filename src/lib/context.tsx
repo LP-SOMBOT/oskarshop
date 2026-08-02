@@ -895,6 +895,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
+  // --- REORDERED MEMOS TO PREVENT INITIALIZATION ERRORS ---
+  
+  const userRankData = useMemo(() => {
+    if (!authUser || !allUsers.length || !syncStatus.settings) return { rank: null, discount: 0 };
+    const settings = storeSettings.leaderboard || { rewardsActive: false, rewards: { rank1: 0, rank2: 0, rank3: 0 } };
+    if (!settings.rewardsActive) return { rank: null, discount: 0 };
+    const sorted = [...allUsers].sort((a, b) => (b.points || 0) - (a.points || 0) || (a.createdAt || 0) - (b.createdAt || 0));
+    const top50 = sorted.slice(0, 50);
+    const rankIndex = top50.findIndex(u => u.uid === authUser.uid);
+    const rank = rankIndex !== -1 ? rankIndex + 1 : null;
+    let discount = 0;
+    if (rank === 1) discount = Number(settings.rewards?.rank1) || 0;
+    else if (rank === 2) discount = Number(settings.rewards?.rank2) || 0;
+    else if (rank === 3) discount = Number(settings.rewards?.rank3) || 0;
+    return { rank, discount };
+  }, [authUser, allUsers, storeSettings.leaderboard, syncStatus.settings]);
+
+  const enhancedUser = useMemo(() => {
+    if (!authUser) return null;
+    const role = userProfile?.role || 'user';
+    return { ...authUser, ...userProfile, isAdmin: role === 'admin', leaderboardRank: userRankData.rank, leaderboardDiscount: userRankData.discount };
+  }, [authUser, userProfile, userRankData]);
+
+  // --- REORDERED FUNCTIONS ---
+
   const broadcastNotification = useCallback(async (title: string, body: string, targetUid?: string) => {
     if (!rtdb) return;
     const uid = targetUid || authUser?.uid;
@@ -1324,21 +1349,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return allOrders.filter(o => o.userId === authUser.uid).sort((a,b) => b.createdAt - a.createdAt);
   }, [allOrders, authUser]);
 
-  const userRankData = useMemo(() => {
-    if (!authUser || !allUsers.length || !syncStatus.settings) return { rank: null, discount: 0 };
-    const settings = storeSettings.leaderboard || { rewardsActive: false, rewards: { rank1: 0, rank2: 0, rank3: 0 } };
-    if (!settings.rewardsActive) return { rank: null, discount: 0 };
-    const sorted = [...allUsers].sort((a, b) => (b.points || 0) - (a.points || 0) || (a.createdAt || 0) - (b.createdAt || 0));
-    const top50 = sorted.slice(0, 50);
-    const rankIndex = top50.findIndex(u => u.uid === authUser.uid);
-    const rank = rankIndex !== -1 ? rankIndex + 1 : null;
-    let discount = 0;
-    if (rank === 1) discount = Number(settings.rewards?.rank1) || 0;
-    else if (rank === 2) discount = Number(settings.rewards?.rank2) || 0;
-    else if (rank === 3) discount = Number(settings.rewards?.rank3) || 0;
-    return { rank, discount };
-  }, [authUser, allUsers, storeSettings.leaderboard, syncStatus.settings]);
-
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -1505,12 +1515,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     return () => unsubscribe();
   }, [messaging, storeSettings.logo]);
-
-  const enhancedUser = useMemo(() => {
-    if (!authUser) return null;
-    const role = userProfile?.role || 'user';
-    return { ...authUser, ...userProfile, isAdmin: role === 'admin', leaderboardRank: userRankData.rank, leaderboardDiscount: userRankData.discount };
-  }, [authUser, userProfile, userRankData]);
 
   useEffect(() => {
     if (!rtdb || !authUser) { setAllOrders([]); setAdminNotifications([]); setAllChatSessions([]); return; }
