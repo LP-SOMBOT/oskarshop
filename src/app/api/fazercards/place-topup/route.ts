@@ -1,9 +1,11 @@
+
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * POST: Places a top-up order on FazerCards.
  * Optimized for v2 documentation schema.
+ * Supports Multi-Order logic (multiplier) for fulfilling higher quantities.
  */
 export async function POST(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Fetch API Key from database
+    // Fetch API Key and Reseller settings from database
     const settingsSnap = await adminDb.ref('settings/fazercards').get();
     const apiKey = settingsSnap.val()?.apiKey;
 
@@ -31,89 +33,110 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Top-up already processed', alreadyProcessed: true });
     }
 
-    // 2. Mark as processing immediately (locking)
-    await orderRef.update({ autoTopupStatus: 'processing' });
+    // 2. Determine Multiplier (How many times to repeat the offer)
+    // We check if the product has a specific multiplier set
+    const item = order.items?.[0];
+    const multiplier = item?.fazercardsMultiQuantity || 1;
 
-    // 3. Prepare FazerCards Payload
-    // Based on documentation: fields is a key-value object
-    const fields: any = { player_id: playerUid.toString() };
-    
-    // Use user-provided region 'MENA' if specified, or passed region
-    const effectiveRegion = region || 'MENA';
-    
-    // We only include region if it's not explicitly disabled (some categories fail if provided)
-    // However, user specifically asked to include it.
-    fields.region = effectiveRegion;
-
-    // Use lowercase header name and deterministic unique string for idempotency
-    const idempotencyKey = `oskarshop-${orderId}`;
-
-    // 4. Send to Reseller API
-    const res = await fetch('https://api.fzr.cards/api/v2/topups/order', {
-      method: 'POST',
-      headers: {
-        'X-API-Key': apiKey,
-        'Content-Type': 'application/json',
-        'idempotency-key': idempotencyKey
-      },
-      body: JSON.stringify({ category_id, offer_id, fields })
+    // 3. Mark as processing immediately (locking)
+    await orderRef.update({ 
+      autoTopupStatus: 'processing',
+      autoTopupBatchTotal: multiplier,
+      autoTopupBatchCompleted: 0
     });
 
-    const data = await res.json();
+    const results: string[] = [];
+    let errors: string[] = [];
+    const effectiveRegion = region || 'MENA';
 
-    if (data.ok && data.order) {
-      // SUCCESS
+    // 4. Execute Multi-Order Loop
+    for (let i = 0; i < multiplier; i++) {
+      const partId = i + 1;
+      const idempotencyKey = `oskarshop-${orderId}-${partId}`;
+      const fields: any = { 
+        player_id: playerUid.toString(),
+        region: effectiveRegion
+      };
+
+      try {
+        const res = await fetch('https://api.fzr.cards/api/v2/topups/order', {
+          method: 'POST',
+          headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json',
+            'idempotency-key': idempotencyKey
+          },
+          body: JSON.stringify({ category_id, offer_id, fields })
+        });
+
+        const data = await res.json();
+
+        if (data.ok && data.order) {
+          results.push(data.order.id);
+          // Update progress in DB for long-running batches
+          await orderRef.update({ autoTopupBatchCompleted: partId });
+        } else {
+          // Handle specific errors like 'region not expected'
+          if (data.error && data.error.includes('region') && data.error.includes('not expected')) {
+             // Retry part without region
+             const retryRes = await fetch('https://api.fzr.cards/api/v2/topups/order', {
+               method: 'POST',
+               headers: {
+                 'X-API-Key': apiKey,
+                 'Content-Type': 'application/json',
+                 'idempotency-key': `${idempotencyKey}-fallback`
+               },
+               body: JSON.stringify({ category_id, offer_id, fields: { player_id: playerUid.toString() } })
+             });
+             const retryData = await retryRes.json();
+             if (retryData.ok && retryData.order) {
+               results.push(retryData.order.id);
+               await orderRef.update({ autoTopupBatchCompleted: partId });
+               continue; // Move to next in multiplier loop
+             }
+          }
+          errors.push(`Part ${partId}: ${data.error || 'Failed'}`);
+          // If a part fails, we stop the sequence to prevent partial fulfillment issues
+          break;
+        }
+      } catch (err: any) {
+        errors.push(`Part ${partId}: ${err.message}`);
+        break;
+      }
+    }
+
+    // 5. Finalize Order Status
+    if (results.length === multiplier) {
+      // FULL SUCCESS
       await orderRef.update({
         autoTopupStatus: 'completed',
-        autoTopupOrderId: data.order.id,
-        status: 'successful', // Consolidate to successful
+        autoTopupOrderId: results.join(', '),
+        status: 'successful',
         completedAt: Date.now()
       });
 
       return NextResponse.json({
         success: true,
-        fazercardsOrderId: data.order.id,
-        status: data.order.status
+        fazercardsOrderIds: results,
+        multiplierUsed: multiplier
       });
     } else {
-      // FAILURE - If the error was about unexpected 'region', we try a fallback once automatically
-      if (data.error && data.error.includes('region') && data.error.includes('not expected')) {
-        console.log(`Auto-retry without region for category ${category_id}`);
-        
-        const fallbackRes = await fetch('https://api.fzr.cards/api/v2/topups/order', {
-          method: 'POST',
-          headers: {
-            'X-API-Key': apiKey,
-            'Content-Type': 'application/json',
-            'idempotency-key': `${idempotencyKey}-retry`
-          },
-          body: JSON.stringify({ category_id, offer_id, fields: { player_id: playerUid.toString() } })
-        });
-        
-        const fallbackData = await fallbackRes.json();
-        if (fallbackData.ok && fallbackData.order) {
-          await orderRef.update({
-            autoTopupStatus: 'completed',
-            autoTopupOrderId: fallbackData.order.id,
-            status: 'successful',
-            completedAt: Date.now()
-          });
-          return NextResponse.json({ success: true, fazercardsOrderId: fallbackData.order.id });
-        }
-      }
-
+      // PARTIAL OR FULL FAILURE
       await orderRef.update({
         autoTopupStatus: 'failed',
-        autoTopupError: data.error || 'FazerCards order failed'
+        autoTopupError: errors.join('; '),
+        autoTopupOrderId: results.length > 0 ? results.join(', ') : undefined
       });
 
       return NextResponse.json({
         success: false,
-        error: data.error || 'FazerCards API error'
+        error: errors.join('; '),
+        completedParts: results.length,
+        totalParts: multiplier
       });
     }
   } catch (err: any) {
-    console.error('FazerCards Top-up Placement Error:', err);
+    console.error('FazerCards Multi-Top-up Error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
