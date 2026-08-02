@@ -60,6 +60,7 @@ function CheckoutContent() {
   const [checking, setChecking] = useState(false);
   const [verified, setVerified] = useState(false);
   const [lookupError, setLookupError] = useState('');
+  const [isValidationUnsupported, setIsValidationUnsupported] = useState(false);
 
   const [gameDetails, setGameDetails] = useState({
     playerID: "",
@@ -106,6 +107,7 @@ function CheckoutContent() {
       setFfPlayerName('');
       setVerified(false);
       setLookupError('');
+      setIsValidationUnsupported(false);
       return;
     }
 
@@ -114,9 +116,8 @@ function CheckoutContent() {
       setVerified(false);
       setLookupError('');
       setFfPlayerName('');
+      setIsValidationUnsupported(false);
 
-      // Use the mapped category ID for official validation
-      // If not set, validation can't proceed accurately
       const categoryId = item?.fazercardsCategory_id;
       if (!categoryId) {
         setChecking(false);
@@ -136,20 +137,24 @@ function CheckoutContent() {
 
         const data = await res.json();
 
-        if (data.ok && data.valid && data.player_name) {
-          // SUCCESS: Official validation returned valid player name
+        // Updated check for FazerCards v2 response structure
+        if (data.ok && data.player_name) {
           setFfPlayerName(data.player_name);
           setVerified(true);
           setLookupError('');
+          setIsValidationUnsupported(false);
           setGameDetails(prev => ({ 
             ...prev, 
             playerName: data.player_name, 
             playerID: ffUid.trim() 
           }));
         } else {
-          // FAILURE: API returned not valid or specific error
+          // Check if validation is simply not available for this category
+          const isUnsupported = data.error?.toLowerCase().includes('not available') || data.error?.toLowerCase().includes('unsupported');
+          
           setFfPlayerName('');
           setVerified(false);
+          setIsValidationUnsupported(isUnsupported);
           setLookupError(data.error || 'Player not found or ID is invalid.');
         }
       } catch (err) {
@@ -160,7 +165,7 @@ function CheckoutContent() {
       } finally {
         setChecking(false);
       }
-    }, 1000); // 1s debounce to avoid spamming reseller API
+    }, 1000); 
 
     return () => clearTimeout(timer);
   }, [ffUid, isAutoDetectEnabled, item?.fazercardsCategory_id]);
@@ -218,12 +223,14 @@ function CheckoutContent() {
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
-    if (effectivePlayerName.trim().length < 2) {
+    // Allow empty name if validation is unsupported, but user must enter it manually in that case
+    if (!isAutoDetectEnabled && effectivePlayerName.trim().length < 2) {
       toast({ title: "Magaca wuu gaabanyahay", description: "Magaca game-ka waa qasab.", variant: "destructive" });
       return;
     }
+
     if (effectivePlayerID.length < 5) {
-      toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah (ugu yaraan 5 nambar).", variant: "destructive" });
+      toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah.", variant: "destructive" });
       return;
     }
     const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
@@ -243,14 +250,11 @@ function CheckoutContent() {
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
-    if (effectivePlayerName.trim().length < 2) { toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" }); return; }
+    if (!effectivePlayerName && !isAutoDetectEnabled) { toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" }); return; }
     if (effectivePlayerID.length < 5) { toast({ title: "Game ID khaldan", variant: "destructive" }); return; }
-    const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
-    const cleanSender = gameDetails.senderNumber.replace(/\D/g, '');
-    if (cleanWhatsapp.length < 9 || cleanSender.length < 9) { toast({ title: "Fadlan geli number-ada saxda ah (9+ nambar)", variant: "destructive" }); return; }
     
     const adminWa = formatWhatsAppNumber(item?.whatsappNumber || "252613982172");
-    const message = `Asc, Oskar Shop.\nWaxaan rabaa Booyah Pass: *${item?.title}*\nQiimaha: *$${total.toFixed(2)}*\n\n*Xogta Dalabka:*\nGame ID: ${effectivePlayerID}\nin-Game name: ${effectivePlayerName}\nWhatsApp: ${gameDetails.whatsappNumber}\nLacag Diraha: ${gameDetails.senderNumber}\n\nFadlan ila soo xiriir.`;
+    const message = `Asc, Oskar Shop.\nWaxaan rabaa Booyah Pass: *${item?.title}*\nQiimaha: *$${total.toFixed(2)}*\n\n*Xogta Dalabka:*\nGame ID: ${effectivePlayerID}\nin-Game name: ${effectivePlayerName || 'N/A'}\nWhatsApp: ${gameDetails.whatsappNumber}\nLacag Diraha: ${gameDetails.senderNumber}\n\nFadlan ila soo xiriir.`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${adminWa}?text=${encoded}`, '_blank');
     setIsSuccess(true);
@@ -332,8 +336,10 @@ function CheckoutContent() {
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
   const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
-  const isLookupFailure = lookupError && !checking;
-  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified);
+  
+  // Submit is disabled ONLY if actively checking, OR if ID is entered but failed validation AND it's NOT a "not supported" error.
+  // If it's "not supported", we allow them to enter the name manually if they choose to.
+  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -433,7 +439,7 @@ function CheckoutContent() {
                           <Gamepad2 size={18} />
                         </div>
                         <Input 
-                          placeholder="Tusaale: 5783204760" 
+                          placeholder="Tusaale: 1803494801" 
                           required 
                           type="tel" 
                           inputMode="numeric" 
@@ -450,22 +456,28 @@ function CheckoutContent() {
                           <User size={18} />
                         </div>
                         <Input 
-                          placeholder={checking ? "Xaqiijinta ID-ga..." : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
-                          readOnly 
+                          placeholder={checking ? "Xaqiijinta ID-ga..." : isValidationUnsupported ? "Geli magacaaga manually" : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
+                          readOnly={!isValidationUnsupported}
                           className={cn(
-                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
-                            checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10 text-green-600" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
+                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
+                            checking ? "border-slate-200 animate-pulse bg-slate-100" : 
+                            verified ? "border-green-500 bg-green-50/10 text-green-600" : 
+                            isValidationUnsupported ? "border-amber-300 bg-white dark:bg-slate-800" :
+                            lookupError ? "border-red-500 bg-red-50/10" : "border-transparent bg-slate-100 opacity-70"
                           )} 
-                          value={ffPlayerName} 
+                          value={ffPlayerName}
+                          onChange={(e) => isValidationUnsupported && setFfPlayerName(e.target.value)}
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
                            {checking && <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-slate-400" />}
                            {verified && <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-green-500" />}
-                           {lookupError && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
+                           {lookupError && !isValidationUnsupported && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
+                           {isValidationUnsupported && <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />}
                         </div>
                       </div>
                       {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Xogta waa sax</p>}
-                      {lookupError && <p className="text-[10px] font-bold text-red-500 ml-1">{lookupError}</p>}
+                      {lookupError && <p className={cn("text-[10px] font-bold ml-1", isValidationUnsupported ? "text-amber-600" : "text-red-500")}>{lookupError}</p>}
+                      {isValidationUnsupported && <p className="text-[9px] font-medium text-slate-400 ml-1 italic">Validation isn't supported for this category, but you can still proceed.</p>}
                     </div>
                   </>
                 ) : (
@@ -535,9 +547,9 @@ function CheckoutContent() {
                 <p className="text-[8px] md:text-[11px] text-muted-foreground dark:text-slate-500 font-medium italic ml-1">* Number-kan waxaa loo isticmaali doonaa in lagu hubiyo lacag bixintaada.</p>
               </div>
 
-              {isLookupFailure && !verified && (
-                <p className="text-[10px] md:text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200">
-                  ⚠️ Validation unavailable or ID invalid. Double-check your Game ID. OskarShop is not responsible for wrong IDs.
+              {lookupError && !verified && !isValidationUnsupported && (
+                <p className="text-[10px] md:text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-200">
+                  ⚠️ {lookupError}
                 </p>
               )}
 
