@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * GET: Fetches offers for a specific category ID.
@@ -11,8 +12,10 @@ export async function GET(request: Request) {
 
     if (!category_id) return NextResponse.json({ error: 'Category ID required' }, { status: 400 });
 
-    const apiKey = process.env.FAZERCARDS_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: 'Not Configured' }, { status: 500 });
+    const settingsSnap = await adminDb.ref('settings/fazercards').get();
+    const apiKey = settingsSnap.val()?.apiKey;
+
+    if (!apiKey) return NextResponse.json({ error: 'FazerCards API Key not configured' }, { status: 500 });
 
     const res = await fetch(`https://api.fzr.cards/api/v2/topups/offers?category_id=${category_id}`, {
       headers: { 'X-API-Key': apiKey }

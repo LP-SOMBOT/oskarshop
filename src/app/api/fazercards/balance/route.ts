@@ -4,14 +4,17 @@ import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * GET: Fetches current FazerCards wallet balance.
- * Requires FAZERCARDS_API_KEY environment variable.
+ * Uses the API key stored in Realtime Database.
  */
 export async function GET() {
   try {
-    const apiKey = process.env.FAZERCARDS_API_KEY;
+    // Fetch settings from database
+    const settingsSnap = await adminDb.ref('settings/fazercards').get();
+    const config = settingsSnap.val();
+    const apiKey = config?.apiKey;
 
     if (!apiKey) {
-      return NextResponse.json({ success: false, error: 'FazerCards API Key not configured' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'FazerCards API Key not configured in Admin Settings' }, { status: 500 });
     }
 
     const res = await fetch('https://api.fzr.cards/api/v2/balance', {
@@ -25,7 +28,7 @@ export async function GET() {
     const data = await res.json();
 
     if (data.ok) {
-      // Sync with Firebase for admin display
+      // Sync balance string with Firebase for admin display
       await adminDb.ref('settings/fazercards').update({
         balance: `${data.balance} ${data.currency}`,
         lastBalanceCheck: Date.now()

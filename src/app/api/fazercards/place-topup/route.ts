@@ -14,8 +14,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const apiKey = process.env.FAZERCARDS_API_KEY;
-    if (!apiKey) return NextResponse.json({ success: false, error: 'FazerCards API Key missing' }, { status: 500 });
+    // Fetch API Key from database
+    const settingsSnap = await adminDb.ref('settings/fazercards').get();
+    const apiKey = settingsSnap.val()?.apiKey;
+
+    if (!apiKey) return NextResponse.json({ success: false, error: 'FazerCards API Key missing in settings' }, { status: 500 });
 
     // 1. Fetch Order and Verify State
     const orderRef = adminDb.ref(`orders/${orderId}`);
