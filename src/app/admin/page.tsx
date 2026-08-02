@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -158,7 +157,7 @@ import {
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
-import { ref, onValue, off, get } from "firebase/database";
+import { ref, onValue, off, get, query, limitToLast } from "firebase/database";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -2838,7 +2837,7 @@ export default function AdminPage() {
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Category</Label>
                  <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl border-none shadow-2xl">
+                    <SelectContent className="rounded-2xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Top-Up Items</SelectItem>
                        <SelectItem value="accounts" className="p-3 font-bold text-xs">Account Marketplace</SelectItem>
                     </SelectContent>
@@ -3823,11 +3822,12 @@ function StatusBadge({ status }: { status: string }) {
 
 function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
   return (
-    <div className="space-y-1 min-w-0">
-      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
-        <Icon size={12} className={cn("opacity-60", color)} /> {label}
-      </p>
-      <p className={cn("text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white")}>{value}</p>
+    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
+       <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
+       <div className="min-w-0 w-full">
+         <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
+         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
+       </div>
     </div>
   );
 }
