@@ -1,21 +1,41 @@
 
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
+import crypto from 'crypto';
 
 /**
  * Webhook for FazerCards order status updates.
- * Updates the shop order status in Realtime Database based on provider feedback.
+ * Includes HMAC-SHA256 signature verification for security.
+ * Path: /api/fazercards-notify
  */
+
+const SIGNING_SECRET = 'whsec_033364c467ad4f195ef041b3d40e8fb6f8af5b1da29f681a31fab134457c7e29';
+
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
+    const rawBody = await request.text();
+    const signature = request.headers.get('X-Webhook-Signature');
+
+    // 1. Verify Webhook Signature (Security Protocol)
+    if (signature && SIGNING_SECRET) {
+      const hmac = crypto.createHmac('sha256', SIGNING_SECRET);
+      hmac.update(rawBody);
+      const expectedSignature = `sha256=${hmac.digest('hex')}`;
+
+      if (signature !== expectedSignature) {
+        console.warn('FazerCards Webhook: Unauthorized attempt blocked (Invalid Signature)');
+        return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 401 });
+      }
+    }
+
+    const data = JSON.parse(rawBody);
     const { id: fazercardsOrderId, status: fazercardsStatus, error } = data;
 
     if (!fazercardsOrderId) {
       return NextResponse.json({ success: false, error: 'Missing FazerCards ID' }, { status: 400 });
     }
 
-    // 1. Find the corresponding order in our database
+    // 2. Find the corresponding order in our database
     const ordersSnap = await adminDb.ref('orders').get();
     const orders = ordersSnap.val() || {};
     
@@ -31,11 +51,11 @@ export async function POST(request: Request) {
     }
 
     if (!matchedOrderId || !matchedOrder) {
+      console.warn(`FazerCards Webhook: No internal order match found for provider ID ${fazercardsOrderId}`);
       return NextResponse.json({ success: false, error: 'Order not found for this FazerCards ID' });
     }
 
-    // 2. Map FazerCards status to shop status
-    // Expected FazerCards statuses: completed, processing, failed, rejected
+    // 3. Map FazerCards status to shop status
     const updates: any = {};
     
     if (fazercardsStatus === 'completed') {
@@ -45,18 +65,18 @@ export async function POST(request: Request) {
     } else if (fazercardsStatus === 'failed' || fazercardsStatus === 'rejected') {
       updates.autoTopupStatus = 'failed';
       updates.autoTopupError = error || 'FazerCards failed delivery';
-      // We don't automatically cancel the order to allow admin retry
+      // We keep status as approved/processing to allow admin to see the failure reason
     } else if (fazercardsStatus === 'processing') {
       updates.autoTopupStatus = 'processing';
     }
 
-    // 3. Persist changes
+    // 4. Persist changes
     await adminDb.ref(`orders/${matchedOrderId}`).update(updates);
 
-    return NextResponse.json({ success: true, message: `Order ${matchedOrderId} updated to ${fazercardsStatus}` });
+    return NextResponse.json({ success: true, message: `Order ${matchedOrderId} synced to ${fazercardsStatus}` });
 
   } catch (err: any) {
-    console.error('FazerCards Webhook Error:', err);
+    console.error('FazerCards Webhook Logic Error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
