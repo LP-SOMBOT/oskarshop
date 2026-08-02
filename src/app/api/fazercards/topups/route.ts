@@ -10,15 +10,18 @@ export async function GET() {
     const settingsSnap = await adminDb.ref('settings/fazercards').get();
     const apiKey = settingsSnap.val()?.apiKey;
 
-    if (!apiKey) return NextResponse.json({ error: 'FazerCards API Key not configured' }, { status: 500 });
+    if (!apiKey) return NextResponse.json({ ok: false, error: 'FazerCards API Key not configured' }, { status: 500 });
 
     const res = await fetch('https://api.fzr.cards/api/v2/topups?limit=100', {
-      headers: { 'X-API-Key': apiKey }
+      headers: { 
+        'X-API-Key': apiKey,
+        'Content-Type': 'application/json'
+      }
     });
 
     const data = await res.json();
     return NextResponse.json(data);
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

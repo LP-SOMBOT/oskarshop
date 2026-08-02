@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -189,7 +190,11 @@ const safeFormatDistanceToNow = (timestamp: any, options?: any) => {
   if (!timestamp) return "---";
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return "---";
-  return formatDistanceToNow(date, options);
+  try {
+    return formatDistanceToNow(date, options);
+  } catch {
+    return "---";
+  }
 };
 
 function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, status: string }) {
@@ -686,21 +691,19 @@ export default function AdminPage() {
     setEditingProduct(p || null);
     setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "" });
     
-    // Fetch FazerCards categories if enabled
-    if (storeSettings.fazercards?.enabled) {
-      try {
-        const res = await fetch('/api/fazercards/topups');
-        const data = await res.json();
-        if (data.ok) setFazerCategories(data.categories || []);
-        
-        if (p?.fazercardsCategory_id) {
-           const offRes = await fetch(`/api/fazercards/topups/offers?category_id=${p.fazercardsCategory_id}`);
-           const offData = await offRes.json();
-           if (offData.ok) setFazerOffers(offData.offers || []);
-        }
-      } catch (err) {
-        console.error("Failed to load categories/offers", err);
+    // Fetch FazerCards categories - allow even if disabled globally to set up items
+    try {
+      const res = await fetch('/api/fazercards/topups');
+      const data = await res.json();
+      if (data.ok) setFazerCategories(data.topups || data.categories || []);
+      
+      if (p?.fazercardsCategory_id) {
+         const offRes = await fetch(`/api/fazercards/topups/offers?category_id=${p.fazercardsCategory_id}`);
+         const offData = await offRes.json();
+         if (offData.ok) setFazerOffers(offData.offers || []);
       }
+    } catch (err) {
+      console.error("Failed to load categories/offers", err);
     }
     
     setIsProductDialogOpen(true);
@@ -1777,7 +1780,7 @@ export default function AdminPage() {
                          <Button 
                            variant="outline"
                            onClick={() => { setBannerForm({ imageUrl: "", linkTo: "" }); setIsBannerDialogOpen(true); }}
-                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
+                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
                          >
                             <Plus size={18} /> New Banner
                          </Button>
@@ -2066,7 +2069,7 @@ export default function AdminPage() {
                                             </span>
                                         </div>
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
-                                            {!isNaN(lastActive) ? formatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
+                                            {!isNaN(lastActive) ? safeFormatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
                                         </span>
                                       </div>
                                   </TableCell>
@@ -2905,7 +2908,6 @@ export default function AdminPage() {
                        <h5 className="font-bold text-sm">Reseller Automation</h5>
                     </div>
                     <Switch 
-                      disabled={!storeSettings.fazercards?.enabled}
                       checked={productForm.autoTopupEnabled} 
                       onCheckedChange={v => setProductForm({ ...productForm, autoTopupEnabled: v })} 
                     />
@@ -3120,7 +3122,7 @@ export default function AdminPage() {
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'paymentIcon')} />
                  </div>
               </div>
-              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => (f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
+              <SettingInput label="Provider Name" value={paymentMethodForm.name} onChange={v => setPaymentMethodForm(f => ({ ...f, name: v }))} placeholder="e.g. EVC Plus" />
               <SettingInput label="USSD Template" value={paymentMethodForm.ussdTemplate} onChange={v => setPaymentMethodForm(f => ({ ...f, ussdTemplate: v }))} placeholder="*712*613982172*$#" />
               <p className="text-[9px] font-bold text-slate-400 italic leading-relaxed">Use $ as a placeholder for the price (e.g. *711*613982172*$#)</p>
               <div className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
@@ -3765,7 +3767,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                          </SelectTrigger>
                          <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                             <div className="max-h-[300px] overflow-y-auto">
-                               {allUsers.map((u: any) => (
+                               {(allUsers || []).map((u: any) => (
                                  <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
                                     {u.name || "Unknown User"} ({u.phoneNumber})
                                  </SelectItem>
