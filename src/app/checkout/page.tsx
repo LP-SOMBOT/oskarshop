@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -23,7 +22,8 @@ import {
   Ticket,
   UserCheck,
   User,
-  ShieldAlert
+  ShieldAlert,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
