@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -1285,6 +1286,7 @@ export default function AdminPage() {
                {selectedOrderId ? (
                  <OrderDetailView 
                    order={selectedOrder} 
+                   allUsers={allUsers}
                    onBack={() => setSelectedOrderId(null)} 
                    onUpdate={handleStatusUpdate}
                    status={pendingOrderStatus}
@@ -3259,9 +3261,10 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
   );
 }
 
-function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
+function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
   if (!order) return null;
   const item = order.items?.[0];
+  const buyer = allUsers?.find((u: any) => u.uid === order.userId);
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(order.id.toUpperCase());
@@ -3411,6 +3414,44 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                </div>
             </div>
           )}
+       </Card>
+
+       {/* Buyer Profile Card */}
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <User size={24} />
+              </div>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Buyer Identity</h4>
+            </div>
+
+            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center gap-6">
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white">
+                {buyer?.photoURL ? (
+                  <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
+                    <User size={40} />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="truncate font-bold text-lg md:text-3xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
+                  {buyer?.isVerified && <VerifiedBadge className="text-xl md:text-2xl" />}
+                </div>
+                <div className="flex items-center gap-2 mt-1 md:mt-2">
+                  <Smartphone size={14} className="text-primary" />
+                  <span className="text-xs md:text-xl font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2 md:mt-3">
+                  <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
+                  <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
        </Card>
 
        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
