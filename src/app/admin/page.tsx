@@ -406,7 +406,7 @@ export default function AdminPage() {
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [isPromoUsageOpen, setIsPromoUsageOpen] = useState(false);
   const [isUserManageOpen, setIsUserManageOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [is_deleteDialogOpen, setIs_deleteDialogOpen] = useState(false);
   const [isEndEarlyDialogOpen, setIsEndEarlyDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
 
@@ -987,8 +987,6 @@ export default function AdminPage() {
     return `${h.toString().padStart(2, '0')}:${m}`;
   };
 
-  const setIs_deleteDialogOpen = setIsDeleteDialogOpen;
-
   if (loading || isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-6">
@@ -1051,15 +1049,6 @@ export default function AdminPage() {
       <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
         <SidebarContent />
       </aside>
-
-      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-900 border-none [&>button]:hidden">
-          <SheetHeader className="sr-only">
-             <SheetTitle>Admin Menu</SheetTitle>
-          </SheetHeader>
-          <SidebarContent isMobile={true} />
-        </SheetContent>
-      </Sheet>
 
       <div className="flex-1 flex flex-col overflow-hidden w-full">
         <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
@@ -1465,7 +1454,7 @@ export default function AdminPage() {
                                         {p.authorIsVerified && <VerifiedBadge />}
                                       </div>
                                    </div>
-                                   <StatusBadge status={p.status} />
+                                   <StatusBadge status={p} />
                                  </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -2892,7 +2881,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent className="max-w-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="max-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
            <div className="h-2 bg-primary w-full" />
            <DialogHeader className="p-6 md:p-10 pb-0">
               <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
