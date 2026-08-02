@@ -1129,7 +1129,7 @@ export default function AdminPage() {
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                  <StatCard label="Total Revenue" value={`$${allOrders.filter(order => order.status === 'successful' || order.status === 'approved').reduce((acc, order) => acc + order.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
+                  <StatCard label="Total Revenue" value={`$${allOrders.filter(order => order.status === 'successful').reduce((acc, order) => acc + order.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
                   <StatCard label="Pending Items" value={(allOrders.filter(order => order.status === 'pending').length + accountPosts.filter(p => p.status === 'pending').length).toString()} icon={Clock} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" pulse />
                   <StatCard label="Active Users" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
                   <StatCard label="Market Supply" value={accountPosts.filter(p => p.status === 'approved' && !p.sold).length.toString()} icon={ShieldCheck} color="text-emerald-500" bgColor="bg-emerald-50 dark:bg-emerald-500/10" />
@@ -2611,7 +2611,7 @@ export default function AdminPage() {
                                     <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
                                       <History size={20} className="text-amber-500" />
                                       <p className="text-[11px] font-black uppercase text-slate-400">Next Auto-Action</p>
-                                      <p className="text-lg font-bold text-slate-900 dark:text-white uppercase truncate">
+                                      <p className="text-lg font-bold text-slate-900 dark:text-white uppercase tabular-nums">
                                         ⏭ {nextScheduleEvent || "None scheduled"}
                                       </p>
                                     </div>
@@ -3483,7 +3483,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                          <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                         {['pending', 'processing', 'successful', 'approved', 'cancelled'].map(s => (
+                         {['pending', 'processing', 'successful', 'cancelled'].map(s => (
                            <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
                          ))}
                       </SelectContent>
@@ -3892,7 +3892,6 @@ function StatusBadge({ status }: { status: string }) {
     pending: "bg-amber-100 text-amber-700",
     processing: "bg-blue-100 text-blue-700",
     successful: "bg-green-100 text-green-700",
-    approved: "bg-green-100 text-green-700",
     holding: "bg-indigo-100 text-indigo-700",
     cancelled: "bg-red-100 text-red-700",
     rejected: "bg-red-100 text-red-700",

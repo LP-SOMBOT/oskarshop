@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     } else if (fazercardsStatus === 'failed' || fazercardsStatus === 'rejected') {
       updates.autoTopupStatus = 'failed';
       updates.autoTopupError = error || 'FazerCards failed delivery';
-      // We keep status as approved/processing to allow admin to see the failure reason
+      // We keep status as processing to allow admin to see the failure reason
     } else if (fazercardsStatus === 'processing') {
       updates.autoTopupStatus = 'processing';
     }

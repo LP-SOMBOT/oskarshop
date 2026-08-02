@@ -70,7 +70,7 @@ type Order = {
   userPhone?: string;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'processing' | 'successful' | 'cancelled' | 'approved';
+  status: 'pending' | 'processing' | 'successful' | 'cancelled';
   cancellationReason?: string;
   createdAt: number;
   processedAt?: number;
@@ -613,7 +613,6 @@ const translations: Record<Language, Record<string, string>> = {
     session_label: "Session #",
     final_total: "Final Total:",
     promo_code_prompt: "Enter Promo Code (If you have one)",
-    approved: "Approved",
     pending: "Pending",
     holding: "Holding",
     rejected: "Rejected",
@@ -631,7 +630,8 @@ const translations: Record<Language, Record<string, string>> = {
     event: "EVENT",
     kaalmaha: "Ranking",
     Qiimaha_Asalka: "Initial Price",
-    Qiimaha_Hadda: "Highest Bid"
+    Qiimaha_Hadda: "Highest Bid",
+    successful: "Successful"
   },
   so: {
     home: "HOME",
@@ -759,7 +759,6 @@ const translations: Record<Language, Record<string, string>> = {
     session_label: "Siisoon #",
     final_total: "Wadarta:",
     promo_code_prompt: "Geli Promo Code (Hadaad haysato)",
-    approved: "La aqbalay",
     pending: "Wali",
     holding: "Hada lama heli karo",
     rejected: "Lama aqbalin",
@@ -777,7 +776,8 @@ const translations: Record<Language, Record<string, string>> = {
     event: "EVENT",
     kaalmaha: "kaalmaha",
     Qiimaha_Asalka: "Qiimaha Asalka",
-    Qiimaha_Hadda: "Qiimaha Hadda"
+    Qiimaha_Hadda: "Qiimaha Hadda",
+    successful: "Waa lagu guulaystay"
   }
 };
 
@@ -895,8 +895,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const sessionStartTime = useRef(Date.now());
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
-  // --- REORDERED MEMOS TO PREVENT INITIALIZATION ERRORS ---
-  
   const userRankData = useMemo(() => {
     if (!authUser || !allUsers.length || !syncStatus.settings) return { rank: null, discount: 0 };
     const settings = storeSettings.leaderboard || { rewardsActive: false, rewards: { rank1: 0, rank2: 0, rank3: 0 } };
@@ -917,8 +915,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const role = userProfile?.role || 'user';
     return { ...authUser, ...userProfile, isAdmin: role === 'admin', leaderboardRank: userRankData.rank, leaderboardDiscount: userRankData.discount };
   }, [authUser, userProfile, userRankData]);
-
-  // --- REORDERED FUNCTIONS ---
 
   const broadcastNotification = useCallback(async (title: string, body: string, targetUid?: string) => {
     if (!rtdb) return;
@@ -1174,7 +1170,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
     
-    if (status === 'successful' || status === 'approved') {
+    if (status === 'successful') {
       updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
@@ -1225,7 +1221,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (finalOrderData?.userId) {
       fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: finalOrderData.userId, status }) }).catch(() => {});
-      broadcastNotification(status === 'successful' || status === 'approved' ? "Order Approved! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, finalOrderData.userId);
+      broadcastNotification(status === 'successful' ? "Order Approved! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, finalOrderData.userId);
     }
     setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim]);
@@ -1293,7 +1289,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         if (matchingSms) {
           const [smsId] = matchingSms;
-          newOrder.status = 'approved';
+          newOrder.status = 'successful';
           newOrder.paymentMatchedAt = now;
           newOrder.smsMatchedId = smsId;
           newOrder.approvedBy = 'auto_sms';

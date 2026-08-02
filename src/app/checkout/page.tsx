@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -52,7 +53,7 @@ function CheckoutContent() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
-  // Free Fire Auto-Detect States
+  // FazerCards Auto-Detect States
   const [ffUid, setFfUid] = useState('');
   const [ffPlayerName, setFfPlayerName] = useState('');
   const [ffRegion, setFfRegion] = useState('ME');
@@ -95,6 +96,9 @@ function CheckoutContent() {
     setGlobalLoading(false);
   }, [setGlobalLoading]);
 
+  /**
+   * Official FazerCards ID Validation Effect
+   */
   useEffect(() => {
     if (!isAutoDetectEnabled) return;
     
@@ -110,32 +114,56 @@ function CheckoutContent() {
       setVerified(false);
       setLookupError('');
       setFfPlayerName('');
+
+      // Use the mapped category ID for official validation
+      // If not set, validation can't proceed accurately
+      const categoryId = item?.fazercardsCategory_id;
+      if (!categoryId) {
+        setChecking(false);
+        setLookupError('Item needs configuration for auto-detect.');
+        return;
+      }
+
       try {
-        const res = await fetch(
-          `/api/check-ff-player?uid=${ffUid.trim()}&region=${ffRegion}`
-        );
+        const res = await fetch('/api/fazercards/validate-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category_id: categoryId,
+            player_id: ffUid.trim()
+          })
+        });
+
         const data = await res.json();
-        if (data.success && data.nickname) {
-          setFfPlayerName(data.nickname);
+
+        if (data.ok && data.valid && data.player_name) {
+          // SUCCESS: Official validation returned valid player name
+          setFfPlayerName(data.player_name);
           setVerified(true);
           setLookupError('');
-          setGameDetails(prev => ({ ...prev, playerName: data.nickname, playerID: ffUid.trim() }));
+          setGameDetails(prev => ({ 
+            ...prev, 
+            playerName: data.player_name, 
+            playerID: ffUid.trim() 
+          }));
         } else {
+          // FAILURE: API returned not valid or specific error
           setFfPlayerName('');
           setVerified(false);
-          setLookupError(data.message || 'Player not found. Check your UID.');
+          setLookupError(data.error || 'Player not found or ID is invalid.');
         }
-      } catch {
+      } catch (err) {
+        console.error("Validation error:", err);
         setFfPlayerName('');
         setVerified(false);
-        setLookupError('Could not verify. Check your ID manually.');
+        setLookupError('Could not verify ID at this moment.');
       } finally {
         setChecking(false);
       }
-    }, 800);
+    }, 1000); // 1s debounce to avoid spamming reseller API
 
     return () => clearTimeout(timer);
-  }, [ffUid, ffRegion, isAutoDetectEnabled]);
+  }, [ffUid, isAutoDetectEnabled, item?.fazercardsCategory_id]);
 
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
@@ -243,7 +271,18 @@ function CheckoutContent() {
     if (!item) return;
     setIsProcessing(true);
     setGlobalLoading(true);
-    const purchaseItem = { id: item.id, title: item.title, price: total, quantity: 1, gameId: item.gameId, thumbnail: item.thumbnail, isOneTime: !!item.isOneTime };
+    const purchaseItem = { 
+      id: item.id, 
+      title: item.title, 
+      price: total, 
+      quantity: 1, 
+      gameId: item.gameId, 
+      thumbnail: item.thumbnail, 
+      isOneTime: !!item.isOneTime,
+      autoTopupEnabled: !!item.autoTopupEnabled,
+      fazercardsCategory_id: item.fazercardsCategory_id,
+      fazercardsOffer_id: item.fazercardsOffer_id
+    };
     const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId);
     
     const finalDetails = { 
@@ -293,8 +332,8 @@ function CheckoutContent() {
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
   const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
-  const isLookupFailure = lookupError.includes("Could not verify");
-  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isLookupFailure);
+  const isLookupFailure = lookupError && !checking;
+  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified);
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -411,11 +450,11 @@ function CheckoutContent() {
                           <User size={18} />
                         </div>
                         <Input 
-                          placeholder={checking ? "Checking..." : (language === 'so' ? "Magaca game-ka kugu qoran" : "Auto-detecting...")} 
+                          placeholder={checking ? "Xaqiijinta ID-ga..." : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
                           readOnly 
                           className={cn(
                             "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
-                            checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
+                            checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10 text-green-600" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
                           )} 
                           value={ffPlayerName} 
                         />
@@ -425,7 +464,7 @@ function CheckoutContent() {
                            {lookupError && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
                         </div>
                       </div>
-                      {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Verified</p>}
+                      {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Xogta waa sax</p>}
                       {lookupError && <p className="text-[10px] font-bold text-red-500 ml-1">{lookupError}</p>}
                     </div>
                   </>
@@ -496,9 +535,9 @@ function CheckoutContent() {
                 <p className="text-[8px] md:text-[11px] text-muted-foreground dark:text-slate-500 font-medium italic ml-1">* Number-kan waxaa loo isticmaali doonaa in lagu hubiyo lacag bixintaada.</p>
               </div>
 
-              {isLookupFailure && (
+              {isLookupFailure && !verified && (
                 <p className="text-[10px] md:text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200">
-                  ⚠️ Auto-detect unavailable. Double-check your Game ID. No refunds for wrong IDs.
+                  ⚠️ Validation unavailable or ID invalid. Double-check your Game ID. OskarShop is not responsible for wrong IDs.
                 </p>
               )}
 

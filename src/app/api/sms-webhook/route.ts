@@ -96,12 +96,13 @@ export async function POST(request: Request) {
       matchedOrderId: matchId
     });
 
-    // 4. Update Order (Approving automatically)
+    // 4. Update Order (Approving automatically to successful)
     await adminDb.ref(`orders/${matchId}`).update({
-      status: 'approved',
+      status: 'successful',
       paymentMatchedAt: now,
       smsMatchedId: smsRef.key,
-      approvedBy: 'auto_sms'
+      approvedBy: 'auto_sms',
+      completedAt: now
     });
 
     // 5. Trigger Auto Topup if enabled on item

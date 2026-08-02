@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * POST: Places a top-up order on FazerCards.
- * Protected with double-charge prevention and idempotency.
+ * Optimized for v2 documentation schema.
  */
 export async function POST(request: Request) {
   try {
@@ -36,10 +36,12 @@ export async function POST(request: Request) {
     await orderRef.update({ autoTopupStatus: 'processing' });
 
     // 3. Prepare FazerCards Payload
+    // Based on documentation: fields is a key-value object
     const fields: any = { player_id: playerUid };
     if (region) fields.region = region;
 
-    const idempotencyKey = `oskarshop-${orderId}-${Date.now()}`;
+    // Use lowercase header name and deterministic unique string for idempotency
+    const idempotencyKey = `oskarshop-${orderId}`;
 
     // 4. Send to Reseller API
     const res = await fetch('https://api.fzr.cards/api/v2/topups/order', {
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
       headers: {
         'X-API-Key': apiKey,
         'Content-Type': 'application/json',
-        'Idempotency-Key': idempotencyKey
+        'idempotency-key': idempotencyKey
       },
       body: JSON.stringify({ category_id, offer_id, fields })
     });
@@ -59,7 +61,8 @@ export async function POST(request: Request) {
       await orderRef.update({
         autoTopupStatus: 'completed',
         autoTopupOrderId: data.order.id,
-        status: 'successful' // Auto-complete shop order
+        status: 'successful', // Consolidate to successful
+        completedAt: Date.now()
       });
 
       return NextResponse.json({
