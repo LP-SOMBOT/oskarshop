@@ -1052,6 +1052,9 @@ export default function AdminPage() {
 
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Admin Navigation</SheetTitle>
+          </SheetHeader>
           <SidebarContent isMobile={true} />
         </SheetContent>
       </Sheet>
@@ -2556,7 +2559,7 @@ export default function AdminPage() {
                                         checked={scheduleForm.enabled} 
                                         onCheckedChange={async (v) => {
                                           const updatedSchedule = { ...scheduleForm, enabled: v };
-                                          setTeamSchedule(updatedSchedule);
+                                          setScheduleForm(updatedSchedule);
                                           
                                           // If disabling, force the app online immediately
                                           if (!v) {
