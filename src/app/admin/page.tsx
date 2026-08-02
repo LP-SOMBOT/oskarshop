@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -691,16 +690,29 @@ export default function AdminPage() {
     setEditingProduct(p || null);
     setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "" } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "" });
     
-    // Fetch FazerCards categories - allow even if disabled globally to set up items
+    // Fetch FazerCards categories
     try {
       const res = await fetch('/api/fazercards/topups');
       const data = await res.json();
-      if (data.ok) setFazerCategories(data.topups || data.categories || []);
+      if (data.ok) {
+        const mapped = (data.items || []).map((c: any) => ({
+          id: c.category_id,
+          name: c.name
+        }));
+        setFazerCategories(mapped);
+      }
       
       if (p?.fazercardsCategory_id) {
          const offRes = await fetch(`/api/fazercards/topups/offers?category_id=${p.fazercardsCategory_id}`);
          const offData = await offRes.json();
-         if (offData.ok) setFazerOffers(offData.offers || []);
+         if (offData.ok) {
+           const mapped = (offData.items || offData.offers || []).map((o: any) => ({
+             id: o.offer_id || o.id,
+             name: o.name,
+             price: o.price
+           }));
+           setFazerOffers(mapped);
+         }
       }
     } catch (err) {
       console.error("Failed to load categories/offers", err);
@@ -715,7 +727,14 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/fazercards/topups/offers?category_id=${cid}`);
       const data = await res.json();
-      if (data.ok) setFazerOffers(data.offers || []);
+      if (data.ok) {
+        const mapped = (data.items || data.offers || []).map((o: any) => ({
+          id: o.offer_id || o.id,
+          name: o.name,
+          price: o.price
+        }));
+        setFazerOffers(mapped);
+      }
     } catch (err) {
       console.error("Failed to change category", err);
     }
@@ -3158,7 +3177,7 @@ export default function AdminPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <DialogHeader className="sr-only">
-              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogTitle>Are you sure?</DialogTitle>
               <DialogDescription>{getDeleteDescription()}</DialogDescription>
            </DialogHeader>
            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
