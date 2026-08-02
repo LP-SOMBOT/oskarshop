@@ -3565,6 +3565,17 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
 }
 
+function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
+  return (
+    <div className="space-y-1 min-w-0">
+      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
+        <Icon size={12} className={cn("opacity-60", color)} /> {label}
+      </p>
+      <p className={cn("text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white")}>{value}</p>
+    </div>
+  );
+}
+
 function InsightStat({ label, value, icon: Icon, isPrimary, action }: any) {
   return (
     <div className="space-y-2 group/stat">
