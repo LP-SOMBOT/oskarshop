@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -1167,17 +1168,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateOrderStatus = useCallback(async (orderId: string, status: string, cancellationReason?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
     setIsGlobalLoading(true);
-    const updates: any = { status, processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, processedAt: Date.now() };
-    if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
     
+    const updates: any = { 
+      status, 
+      processedBy: { uid: enhancedUser.uid, name: enhancedUser.name || "Admin", photoURL: enhancedUser.photoURL || "" }, 
+      processedAt: Date.now() 
+    };
+    if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
+    if (status === 'successful') updates.completedAt = Date.now();
+
+    // 1. Update the order status in DB immediately to prevent overwrite by automation
+    await update(ref(rtdb, `orders/${orderId}`), updates);
+
+    // 2. Trigger side effects
     if (status === 'successful') {
-      updates.completedAt = Date.now();
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
       
       // TRIGGER AUTO TOP-UP ON APPROVAL
       const item = orderData?.items?.[0];
-      // Only call if globally enabled
       if (storeSettings.fazercards?.enabled && item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
           if (orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
             try {
@@ -1196,12 +1205,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               if (topupResult.success) {
                 toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderIds}` });
               } else {
-                // place-topup API already marked as cancelled in DB if it failed to complete
                 toast({ title: "Auto Top-up Failed", description: topupResult.error, variant: "destructive" });
               }
             } catch (err) {
-              console.error("Top-up placement error:", err);
-              toast({ title: "Top-up Error", description: "Could not reach automation provider.", variant: "destructive" });
+              // Network/API failure - force cancellation
+              await update(ref(rtdb, `orders/${orderId}`), {
+                status: 'cancelled',
+                autoTopupStatus: 'failed',
+                autoTopupError: 'Connection failure calling provider API',
+                cancellationReason: 'Automation failure: Could not reach provider.'
+              });
+              toast({ title: "Automation Error", description: "Could not reach provider.", variant: "destructive" });
             }
           }
       }
@@ -1217,13 +1231,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (orderData?.gameDetails?.isEventWinner && orderData?.gameDetails?.eventId) await respondToEventClaim(orderData.gameDetails.eventId, 'ignored', orderData.userId);
     }
 
-    await update(ref(rtdb, `orders/${orderId}`), updates);
     const finalOrderSnap = await get(ref(rtdb, `orders/${orderId}`));
     const finalOrderData = finalOrderSnap.val();
 
     if (finalOrderData?.userId) {
-      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: finalOrderData.userId, status }) }).catch(() => {});
-      broadcastNotification(status === 'successful' ? "Order Approved! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, finalOrderData.userId);
+      fetch('/api/notify-order-complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, userId: finalOrderData.userId, status: finalOrderData.status }) }).catch(() => {});
+      broadcastNotification(finalOrderData.status === 'successful' ? "Order Approved! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${finalOrderData.status}`, finalOrderData.userId);
     }
     setIsGlobalLoading(false);
   }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim, storeSettings.fazercards]);

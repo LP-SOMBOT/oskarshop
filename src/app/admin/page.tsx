@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -3379,7 +3380,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-indigo-500">
                      <Cpu size={20} />
-                     <h5 className="font-headline font-bold text-xs md:text-sm uppercase tracking-tight">Automation System Log</h5>
+                     <h5 className="font-headline font-bold text-[10px] md:text-sm uppercase tracking-tight">Automation System Log</h5>
                   </div>
                   {order.autoTopupStatus === 'completed' && <Badge className="bg-green-100 text-green-700 dark:bg-green-500/20 border-none text-[8px] font-black uppercase px-3">Sync Active</Badge>}
                </div>
