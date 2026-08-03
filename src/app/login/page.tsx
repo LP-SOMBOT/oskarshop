@@ -242,6 +242,18 @@ export default function LoginPage() {
                     </Button>
                   </Link>
                 </div>
+                
+                {/* YouTube Tutorial Embed */}
+                <div className="mt-6 md:mt-8 rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-white/5 aspect-video w-full">
+                  <iframe
+                    className="w-full h-full"
+                    src="https://www.youtube.com/embed/VfCH0iYmzcU"
+                    title="OskarShop Tutorial"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  ></iframe>
+                </div>
               </form>
             </div>
           )}
