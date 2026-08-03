@@ -1070,7 +1070,7 @@ export default function AdminPage() {
       </Sheet>
 
       <div className="flex-1 flex flex-col overflow-hidden w-full relative">
-        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
+        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-[100] shadow-sm">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
@@ -2574,7 +2574,7 @@ export default function AdminPage() {
                                           
                                           // If disabling, force the app online immediately
                                           if (!v) {
-                                            setIsSavingStatus(true);
+                                            setIsGlobalLoading(true);
                                             try {
                                               const updates = {
                                                 schedule: updatedSchedule,
@@ -2584,17 +2584,17 @@ export default function AdminPage() {
                                               setAppStatusForm(f => ({ ...f, offline: false }));
                                               toast({ title: "Schedule Disabled", description: "Shop is now forced Online." });
                                             } finally {
-                                              setIsSavingStatus(false);
+                                              setIsGlobalLoading(false);
                                             }
                                           } else {
                                             // If enabling, just update the schedule settings
                                             // The background hook will take over and enforce the window in 3 seconds
-                                            setIsSavingStatus(true);
+                                            setIsGlobalLoading(true);
                                             try {
                                               await updateStoreSettings({ schedule: updatedSchedule });
                                               toast({ title: "Schedule Enabled", description: "Operating hours are now active." });
                                             } finally {
-                                              setIsSavingStatus(false);
+                                              setIsGlobalLoading(false);
                                             }
                                           }
                                         }} 
@@ -2897,8 +2897,8 @@ export default function AdminPage() {
                  <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
-                       <SelectItem value="top-up" className="p-3 font-bold text-xs">Top-Up Items</SelectItem>
-                       <SelectItem value="accounts" className="p-3 font-bold text-xs">Account Marketplace</SelectItem>
+                       <SelectItem value="top-up" className="p-3 font-bold text-xs uppercase">Top-Up Items</SelectItem>
+                       <SelectItem value="accounts" className="p-3 font-bold text-xs uppercase">Account Marketplace</SelectItem>
                     </SelectContent>
                  </Select>
               </div>

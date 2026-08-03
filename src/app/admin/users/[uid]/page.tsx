@@ -99,7 +99,7 @@ export default function UserInspectPage() {
   };
 
   const handleWhatsApp = () => {
-    if (!targetUser?.phoneNumber) return;
+    if (!targetUser?.phoneNumber || !targetUser.name) return;
     const phone = formatWhatsAppNumber(targetUser.phoneNumber);
     const message = `Asc ${targetUser.name}, waxaan ahay OskarShop...`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
@@ -334,7 +334,6 @@ export default function UserInspectPage() {
                                ) : (
                                  <Badge className="bg-green-100 text-green-700 border-none uppercase font-black text-[8px] h-5">CLEAR</Badge>
                                )}
-                               {/* Admin usually does this via main modal but adding switch for quick access if needed */}
                              </div>
                           </div>
                           <div className="p-3 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex justify-between items-center gap-3">
