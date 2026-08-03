@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -86,7 +87,8 @@ import {
   BellRing,
   Activity,
   Cpu,
-  Unlink
+  Unlink,
+  ExternalLink as LinkExternal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -2838,7 +2840,18 @@ export default function AdminPage() {
                  </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-3">
+                 <Button 
+                    onClick={() => {
+                      setIsUserManageOpen(false);
+                      setGlobalLoading(true);
+                      router.push(`/admin/users/${selectedUser?.uid}`);
+                    }}
+                    className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 text-xs"
+                 >
+                    <LinkExternal size={14} /> Inspect Customer
+                 </Button>
+
                  <Button 
                     variant={selectedUser?.banned ? "default" : "destructive"} 
                     onClick={async () => { 
