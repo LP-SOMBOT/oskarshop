@@ -336,7 +336,7 @@ export default function UserInspectPage() {
                                )}
                              </div>
                           </div>
-                          <div className="p-3 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex justify-between items-center gap-3">
+                          <div className="p-3 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                              <div className="min-w-0">
                                 <span className="block text-[10px] sm:text-xs font-bold leading-tight truncate">User Verification</span>
                                 <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Blue Tick Badge</span>
@@ -396,3 +396,4 @@ function AnalyticsCard({ label, value, icon: Icon, color, bgColor }: { label: st
     </Card>
   );
 }
+
