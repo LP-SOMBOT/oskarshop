@@ -61,6 +61,7 @@ type CartItem = {
   autoTopupEnabled?: boolean;
   fazercardsCategory_id?: string;
   fazercardsOffer_id?: string;
+  fazercardsMultiQuantity?: number;
 };
 
 type Order = {
@@ -1176,7 +1177,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       // TRIGGER AUTO TOP-UP ON APPROVAL
       const item = orderData?.items?.[0];
-      if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
+      // Only call if globally enabled
+      if (storeSettings.fazercards?.enabled && item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
           if (orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
             try {
               const res = await fetch('/api/fazercards/place-topup', {
@@ -1192,8 +1194,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               });
               const topupResult = await res.json();
               if (topupResult.success) {
-                toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderId}` });
+                toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderIds}` });
               } else {
+                // place-topup API already marked as cancelled in DB if it failed to complete
                 toast({ title: "Auto Top-up Failed", description: topupResult.error, variant: "destructive" });
               }
             } catch (err) {
@@ -1223,7 +1226,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       broadcastNotification(status === 'successful' ? "Order Approved! ✅" : "Order Update 📦", `Order #${orderId.toUpperCase()} status: ${status}`, finalOrderData.userId);
     }
     setIsGlobalLoading(false);
-  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim]);
+  }, [rtdb, enhancedUser, broadcastNotification, respondToEventClaim, storeSettings.fazercards]);
 
   const createOrder = useCallback(async (paymentMethod: string, gameDetails: any, directItem: CartItem, promoCode?: string) => {
     if (!rtdb || !authUser) return;
@@ -1295,7 +1298,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           wasAutoApproved = true;
           await update(ref(rtdb, `sms_payments/${smsId}`), { matched: true, matchedOrderId: orderId });
           
-          if (directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
+          if (storeSettings.fazercards?.enabled && directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
              fetch('/api/fazercards/place-topup', {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -1350,7 +1353,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     await broadcastAdminNotification(wasAutoApproved ? "Order Auto-Approved! ✅" : "New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is ${newOrder.status}.`, true);
     setIsGlobalLoading(false);
-  }, [rtdb, authUser, userProfile, broadcastAdminNotification, storeSettings.sms_webhook]);
+  }, [rtdb, authUser, userProfile, broadcastAdminNotification, storeSettings.sms_webhook, storeSettings.fazercards]);
 
   const orders = useMemo(() => {
     if (!authUser) return [];
@@ -1584,7 +1587,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postRef = push(ref(rtdb, 'accountPosts'));
     await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, authorIsVerified: enhancedUser?.isVerified || false, status: 'pending', createdAt: Date.now(), views: 0, sold: false });
     fetch('/api/notify-telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, customerName: enhancedUser?.name, customerPhone: enhancedUser?.phoneNumber, itemName: `${data.gameType} Account Listing`, amount: 0 }) }).catch(() => {});
-    fetch('/api/notify-new-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` }) }).catch(() => {});
+    fetch('/api/notify-new-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` }) }).catch(err => console.error("OneSignal admin broadcast failed", err));
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`, true);
     setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, broadcastAdminNotification]);

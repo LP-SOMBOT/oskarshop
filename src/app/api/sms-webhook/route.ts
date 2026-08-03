@@ -104,9 +104,12 @@ export async function POST(request: Request) {
       completedAt: now
     });
 
-    // 5. Trigger Auto Topup if enabled on item
+    // 5. Trigger Auto Topup if enabled on item AND global reseller settings
     const item = matchOrder.items?.[0];
-    if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
+    const fazercardsConfigSnap = await adminDb.ref('settings/fazercards').get();
+    const fazercardsConfig = fazercardsConfigSnap.val();
+
+    if (fazercardsConfig?.enabled && item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
        // Fire and forget
        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-topup`, {
          method: 'POST',

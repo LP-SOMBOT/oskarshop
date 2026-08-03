@@ -17,7 +17,17 @@ export async function POST(request: Request) {
 
     // Fetch API Key and Reseller settings from database
     const settingsSnap = await adminDb.ref('settings/fazercards').get();
-    const apiKey = settingsSnap.val()?.apiKey;
+    const config = settingsSnap.val();
+    const apiKey = config?.apiKey;
+    const isEnabled = config?.enabled;
+
+    // 0. Global Automation Toggle Check
+    if (!isEnabled) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Reseller automation is globally disabled in admin settings.' 
+      }, { status: 403 });
+    }
 
     if (!apiKey) return NextResponse.json({ success: false, error: 'FazerCards API Key missing in settings' }, { status: 500 });
 
@@ -111,15 +121,20 @@ export async function POST(request: Request) {
 
     // 5. Finalize Order Status
     if (results.length > 0) {
-      const finalStatus = results.length === multiplier ? 'completed' : 'failed';
+      const isFullSuccess = results.length === multiplier;
+      const finalStatus = isFullSuccess ? 'completed' : 'failed';
       const orderUpdate: any = {
         autoTopupStatus: finalStatus,
         autoTopupOrderId: results.join(', '),
       };
 
-      if (finalStatus === 'completed') {
+      if (isFullSuccess) {
         orderUpdate.status = 'successful';
         orderUpdate.completedAt = Date.now();
+      } else {
+        // ANY failure to complete (including partial) marks as cancelled as per requirements
+        orderUpdate.status = 'cancelled';
+        orderUpdate.cancellationReason = `Automation partial failure: Only ${results.length}/${multiplier} parts delivered. Error: ${errors.join('; ')}`;
       }
 
       if (errors.length > 0) {
@@ -129,17 +144,19 @@ export async function POST(request: Request) {
       await orderRef.update(orderUpdate);
 
       return NextResponse.json({
-        success: results.length === multiplier,
+        success: isFullSuccess,
         fazercardsOrderIds: results.join(', '),
         multiplierUsed: multiplier,
         completedParts: results.length,
         errors: errors.length > 0 ? errors.join('; ') : undefined
       });
     } else {
-      // FULL FAILURE
+      // FULL FAILURE: Mark order as cancelled
       await orderRef.update({
         autoTopupStatus: 'failed',
-        autoTopupError: errors.join('; ')
+        autoTopupError: errors.join('; '),
+        status: 'cancelled',
+        cancellationReason: 'Automation failed to initiate: ' + errors.join('; ')
       });
 
       return NextResponse.json({
