@@ -70,7 +70,6 @@ export default function AccountsView() {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   
   // High-precision clock for real-time hiding of ended events
   const [now, setNow] = useState(Date.now());
@@ -110,7 +109,7 @@ export default function AccountsView() {
 
     return [...posts, ...events]
       .filter(p => {
-        const query = searchQuery.toLowerCase();
+        const query = (searchQuery || "").toLowerCase();
         return (
           (p.title || "").toLowerCase().includes(query) || 
           (p.authorName || "").toLowerCase().includes(query) || 
@@ -140,6 +139,8 @@ export default function AccountsView() {
         return (b.createdAt || 0) - (a.createdAt || 0);
       });
   }, [accountPosts, eventAccounts, searchQuery, user, now, allUsers]);
+
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleDeleteFinal = async () => {
     if (!deletingPostId) return;
@@ -181,6 +182,15 @@ export default function AccountsView() {
     <div className="min-h-screen pb-24 page-transition bg-slate-50 dark:bg-transparent">
       <header className="sticky top-0 z-50 bg-white dark:bg-slate-950/80 dark:backdrop-blur-md shadow-sm border-b border-gray-100 dark:border-white/5 h-16 flex items-center justify-between px-4 md:hidden">
         <h1 className="text-lg font-headline font-bold text-slate-900 dark:text-white tracking-tight">ciwaanada</h1>
+        {user && (
+          <button 
+            onClick={() => setIsPosting(true)}
+            className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-amber-500/20"
+          >
+            <Plus size={16} strokeWidth={3} />
+            <span>iibi account</span>
+          </button>
+        )}
       </header>
 
       <main className="px-4 md:px-8 py-6 md:py-12 space-y-6 md:space-y-16 max-w-[1600px] mx-auto">
@@ -231,15 +241,6 @@ export default function AccountsView() {
           })}
         </div>
       </main>
-
-      {user && (
-        <button 
-          onClick={() => setIsPosting(true)}
-          className="fixed bottom-24 right-4 w-14 h-14 bg-amber-500 text-white rounded-2xl shadow-2xl flex items-center justify-center active:scale-90 transition-all z-[90]"
-        >
-          <Plus className="w-8 h-8" strokeWidth={3} />
-        </button>
-      )}
 
       <Dialog open={!!deletingPostId} onOpenChange={(v) => !v && setDeletingPostId(null)}>
         <DialogContent className="max-sm w-[90vw] rounded-[1.5rem]">
@@ -372,7 +373,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
                   </div>
                   {form.imageUrls.slice(1, 3).map((url, idx) => (
                     <div key={idx} className="relative aspect-video rounded-xl overflow-hidden">
-                       <Image src={form.imageUrls} alt="" fill className="object-cover" unoptimized />
+                       <Image src={url} alt="" fill className="object-cover" unoptimized />
                     </div>
                   ))}
                </div>
