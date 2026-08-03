@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
@@ -6,6 +5,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
  * POST: Places a top-up order on FazerCards.
  * Optimized for v2 documentation schema.
  * Supports Multi-Order logic (multiplier) for fulfilling higher quantities.
+ * Includes explicit delays between batch calls to prevent rate-limiting/conflicts.
  */
 export async function POST(request: Request) {
   try {
@@ -34,7 +34,6 @@ export async function POST(request: Request) {
     }
 
     // 2. Determine Multiplier (How many times to repeat the offer)
-    // We check if the product has a specific multiplier set
     const item = order.items?.[0];
     const multiplier = item?.fazercardsMultiQuantity || 1;
 
@@ -52,7 +51,13 @@ export async function POST(request: Request) {
     // 4. Execute Multi-Order Loop
     for (let i = 0; i < multiplier; i++) {
       const partId = i + 1;
-      const idempotencyKey = `oskarshop-${orderId}-${partId}`;
+      
+      // Delay consecutive requests to prevent provider-side "duplicate request" blocks
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      const idempotencyKey = `oskarshop-${orderId}-${partId}-${Date.now()}`;
       const fields: any = { 
         player_id: playerUid.toString(),
         region: effectiveRegion
@@ -92,12 +97,11 @@ export async function POST(request: Request) {
              if (retryData.ok && retryData.order) {
                results.push(retryData.order.id);
                await orderRef.update({ autoTopupBatchCompleted: partId });
-               continue; // Move to next in multiplier loop
+               continue; 
              }
           }
           errors.push(`Part ${partId}: ${data.error || 'Failed'}`);
-          // If a part fails, we stop the sequence to prevent partial fulfillment issues
-          break;
+          break; 
         }
       } catch (err: any) {
         errors.push(`Part ${partId}: ${err.message}`);
@@ -106,32 +110,42 @@ export async function POST(request: Request) {
     }
 
     // 5. Finalize Order Status
-    if (results.length === multiplier) {
-      // FULL SUCCESS
-      await orderRef.update({
-        autoTopupStatus: 'completed',
+    if (results.length > 0) {
+      const finalStatus = results.length === multiplier ? 'completed' : 'failed';
+      const orderUpdate: any = {
+        autoTopupStatus: finalStatus,
         autoTopupOrderId: results.join(', '),
-        status: 'successful',
-        completedAt: Date.now()
-      });
+      };
+
+      if (finalStatus === 'completed') {
+        orderUpdate.status = 'successful';
+        orderUpdate.completedAt = Date.now();
+      }
+
+      if (errors.length > 0) {
+        orderUpdate.autoTopupError = errors.join('; ');
+      }
+
+      await orderRef.update(orderUpdate);
 
       return NextResponse.json({
-        success: true,
-        fazercardsOrderIds: results,
-        multiplierUsed: multiplier
+        success: results.length === multiplier,
+        fazercardsOrderIds: results.join(', '),
+        multiplierUsed: multiplier,
+        completedParts: results.length,
+        errors: errors.length > 0 ? errors.join('; ') : undefined
       });
     } else {
-      // PARTIAL OR FULL FAILURE
+      // FULL FAILURE
       await orderRef.update({
         autoTopupStatus: 'failed',
-        autoTopupError: errors.join('; '),
-        autoTopupOrderId: results.length > 0 ? results.join(', ') : undefined
+        autoTopupError: errors.join('; ')
       });
 
       return NextResponse.json({
         success: false,
         error: errors.join('; '),
-        completedParts: results.length,
+        completedParts: 0,
         totalParts: multiplier
       });
     }

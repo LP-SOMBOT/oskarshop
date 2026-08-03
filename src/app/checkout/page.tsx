@@ -286,7 +286,8 @@ function CheckoutContent() {
       isOneTime: !!item.isOneTime,
       autoTopupEnabled: !!item.autoTopupEnabled,
       fazercardsCategory_id: item.fazercardsCategory_id,
-      fazercardsOffer_id: item.fazercardsOffer_id
+      fazercardsOffer_id: item.fazercardsOffer_id,
+      fazercardsMultiQuantity: item.fazercardsMultiQuantity || 1
     };
     const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId);
     
@@ -401,7 +402,7 @@ function CheckoutContent() {
                   ? "bg-red-500 text-white border-none" 
                   : isBooyahPass 
                     ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/20 text-blue-600 dark:text-blue-400" 
-                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400"
+                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-blue-400"
               )}>
                  {isOneTime ? <ShieldAlert className="shrink-0 w-5 h-5 md:w-8 md:h-8 animate-pulse" /> : <AlertTriangle className="shrink-0 w-4 h-4 md:w-6 md:h-6" />}
                  {isBooyahPass ? (
