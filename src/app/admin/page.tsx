@@ -1052,8 +1052,15 @@ export default function AdminPage() {
 
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden">
-          <SheetHeader className="px-6 py-4 border-b dark:border-white/5">
-            <SheetTitle className="text-left font-headline font-bold uppercase tracking-tight">Navigation</SheetTitle>
+          <SheetHeader className="px-4 py-4 border-b dark:border-white/5">
+            <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
+            <Button 
+              variant="ghost" 
+              onClick={() => { setGlobalLoading(true); router.push('/'); }}
+              className="w-full justify-start gap-3 font-headline font-bold uppercase tracking-tight text-primary hover:bg-primary/5"
+            >
+              <Home size={20} /> Back to Store
+            </Button>
           </SheetHeader>
           <SidebarContent isMobile={true} />
         </SheetContent>
@@ -3523,7 +3530,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 
              <div className="grid grid-cols-1 gap-8">
                 <div className="space-y-3">
-                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
+                   <label className="text-11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
                    <Select value={status} onValueChange={setStatus}>
                       <SelectTrigger className="h-16 md:h-20 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
                          <SelectValue />
@@ -3538,7 +3545,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
 
                 {status === 'cancelled' && (
                   <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                     <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Cancellation Reason</label>
+                     <label className="text-11px] font-black text-red-500 uppercase tracking-widest ml-1">Cancellation Reason</label>
                      <Textarea 
                        value={reason} 
                        onChange={(e) => setReason(e.target.value)} 
@@ -3854,7 +3861,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
 
              <div className="grid grid-cols-1 gap-8">
                 <div className="space-y-3">
-                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
+                   <label className="text-11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Account Status</label>
                    <Select value={status} onValueChange={setStatus}>
                       <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
                          <SelectValue />
@@ -3869,7 +3876,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
 
                 {status === 'sold' && (
                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <label className="text-[11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
+                      <label className="text-11px] font-black text-primary uppercase tracking-widest ml-1">Assign Final Buyer</label>
                       <Select value={buyerId} onValueChange={setBuyerId}>
                          <SelectTrigger className="h-16 md:h-20 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
                             <SelectValue placeholder="Select User..." />
