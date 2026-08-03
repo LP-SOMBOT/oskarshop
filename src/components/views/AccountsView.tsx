@@ -71,7 +71,6 @@ export default function AccountsView() {
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // High-precision clock for real-time hiding of ended events
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -118,13 +117,11 @@ export default function AccountsView() {
         );
       })
       .sort((a, b) => {
-        // 1. Prioritize Events/Auctions
         const aIsEvent = !!a.isEvent;
         const bIsEvent = !!b.isEvent;
         if (aIsEvent && !bIsEvent) return -1;
         if (!aIsEvent && bIsEvent) return 1;
 
-        // 2. Prioritize Verified Sellers (real-time check)
         if (!aIsEvent && !bIsEvent) {
           const aProfile = allUsers.find(u => u.uid === a.uid);
           const bProfile = allUsers.find(u => u.uid === b.uid);
@@ -135,7 +132,6 @@ export default function AccountsView() {
           if (!aVerified && bVerified) return 1;
         }
 
-        // 3. Fallback to newest first
         return (b.createdAt || 0) - (a.createdAt || 0);
       });
   }, [accountPosts, eventAccounts, searchQuery, user, now, allUsers]);
@@ -219,7 +215,6 @@ export default function AccountsView() {
               );
             }
 
-            // Real-time verification status check
             const authorProfile = allUsers.find(u => u.uid === post.uid);
             const authorIsVerified = authorProfile?.isVerified ?? post.authorIsVerified;
 
@@ -247,7 +242,7 @@ export default function AccountsView() {
             <DialogDescription>Post-kan waa la tirtiri doonaa.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-10" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10" disabled={isDeleting}>Maya</Button>
              <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
              </Button>
@@ -481,19 +476,19 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
            <div className="grid grid-cols-2 gap-4">
               {form.gameType === 'bloodstrike' ? (
                 <>
-                  <AssetInput icon={Sword} label="EVO WEAPONS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="54" />
-                  <AssetInput icon={Target} label="INTERNAL WEAPONS" value={form.internalWeapons} onChange={v => setForm({...form, internalWeapons: v})} placeholder="3" />
-                  <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="63" />
-                  <AssetInput icon={Bomb} label="EXECUTION EMOTES" value={form.executionEmotes} onChange={v => setForm({...form, executionEmotes: v})} placeholder="12" />
-                  <AssetInput icon={Star} label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="8" />
+                  <AssetInput label="EVO WEAPONS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="54" />
+                  <AssetInput label="INTERNAL WEAPONS" value={form.internalWeapons} onChange={v => setForm({...form, internalWeapons: v})} placeholder="3" />
+                  <AssetInput label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="63" />
+                  <AssetInput label="EXECUTION EMOTES" value={form.executionEmotes} onChange={v => setForm({...form, executionEmotes: v})} placeholder="12" />
+                  <AssetInput label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="8" />
                 </>
               ) : (
                 <>
-                  <AssetInput icon={Sword} label="EVO GUNS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="12" />
-                  <AssetInput icon={Target} label="TOTAL WEAPONS" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} placeholder="240" />
-                  <AssetInput icon={Zap} label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="85" />
-                  <AssetInput icon={Star} label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="5" />
-                  <AssetInput icon={ShoppingBag} label="DHARKA" value={form.dharka} onChange={v => setForm({...form, dharka: v})} placeholder="150" />
+                  <AssetInput label="EVO GUNS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="12" />
+                  <AssetInput label="TOTAL WEAPONS" value={form.totalWeapons} onChange={v => setForm({...form, totalWeapons: v})} placeholder="240" />
+                  <AssetInput label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="85" />
+                  <AssetInput label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="5" />
+                  <AssetInput label="DHARKA" value={form.dharka} onChange={v => setForm({...form, dharka: v})} placeholder="150" />
                 </>
               )}
            </div>
@@ -529,13 +524,10 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
   );
 }
 
-function AssetInput({ icon: Icon, label, value, onChange, placeholder }: { icon: any, label: string, value: string, onChange: (v: string) => void, placeholder?: string }) {
+function AssetInput({ label, value, onChange, placeholder }: { label: string, value: string, onChange: (v: string) => void, placeholder?: string }) {
   return (
     <div className="space-y-1.5">
-       <div className="flex items-center gap-1 text-primary ml-1">
-          <Icon size={10} />
-          <Label className="text-[8px] font-black uppercase text-slate-400 truncate">{label}</Label>
-       </div>
+       <Label className="text-[8px] font-black uppercase text-slate-400 truncate ml-1">{label}</Label>
        <Input 
           type="number" 
           value={value} 
@@ -610,22 +602,22 @@ function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner,
            )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-wrap gap-1.5">
            {post.gameType === 'bloodstrike' ? (
              <>
-               <AssetPill icon={Sword} colorClass="bg-orange-500" label="EVO" value={post.evoWeapons} />
-               <AssetPill icon={Target} colorClass="bg-blue-500" label="INTERNAL" value={post.internalWeapons} />
-               <AssetPill icon={Zap} colorClass="bg-purple-500" label="EMOTES" value={post.emotes} />
-               <AssetPill icon={Bomb} colorClass="bg-indigo-500" label="EXECUTION" value={post.executionEmotes} />
-               <AssetPill icon={Star} colorClass="bg-cyan-500" label="ARRIVAL" value={post.arrivalEmotes} />
+               <AssetPill label="Evo" value={post.evoWeapons} />
+               <AssetPill label="Internal" value={post.internalWeapons} />
+               <AssetPill label="Emotes" value={post.emotes} />
+               <AssetPill label="Execution" value={post.executionEmotes} />
+               <AssetPill label="Arrival" value={post.arrivalEmotes} />
              </>
            ) : (
              <>
-               <AssetPill icon={Sword} colorClass="bg-orange-500" label="EVO" value={post.evoWeapons} />
-               <AssetPill icon={Target} colorClass="bg-blue-500" label="WEAPONS" value={post.totalWeapons} />
-               <AssetPill icon={Zap} colorClass="bg-purple-500" label="EMOTES" value={post.emotes} />
-               <AssetPill icon={Star} colorClass="bg-indigo-500" label="ARRIVAL" value={post.arrivalEmotes} />
-               <AssetPill icon={ShoppingBag} colorClass="bg-pink-500" label="DHARKA" value={post.dharka} />
+               <AssetPill label="Evo" value={post.evoWeapons} />
+               <AssetPill label="Weapons" value={post.totalWeapons} />
+               <AssetPill label="Emote" value={post.emotes} />
+               <AssetPill label="Arrival" value={post.arrivalEmotes} />
+               <AssetPill label="Dharka" value={post.dharka} />
              </>
            )}
         </div>
@@ -644,17 +636,12 @@ function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner,
   );
 }
 
-function AssetPill({ icon: Icon, colorClass, label, value }: { icon: any, colorClass: string, label: string, value: any }) {
+function AssetPill({ label, value }: { label: string, value: any }) {
   return (
-    <div className="bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100/50 dark:border-white/5 p-1.5 md:p-2 rounded-xl md:rounded-2xl flex flex-col items-center justify-center text-center gap-1 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-md group/asset">
-       <div className={cn("w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 mb-0.5 transition-transform group-hover/asset:scale-110", colorClass, "bg-opacity-10 dark:bg-opacity-20")}>
-          <Icon size={12} className={cn("md:size-4", colorClass.replace('bg-', 'text-'))} strokeWidth={2.5} />
-       </div>
-       <div className="flex flex-col items-center">
-          <span className="text-[10px] md:text-sm font-black text-slate-900 dark:text-white leading-none">{value || 0}</span>
-          <span className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter truncate w-full mt-1 opacity-70">{label}</span>
-       </div>
-    </div>
+    <Badge className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-none px-2 py-1 md:px-3 md:py-1.5 rounded-lg flex items-center gap-1.5 font-bold shadow-sm ring-1 ring-slate-100 dark:ring-white/5 whitespace-nowrap hover:ring-primary/20 transition-all">
+       <span className="text-[7px] md:text-[9px] uppercase tracking-wider">{label}:</span>
+       <span className="text-[9px] md:text-xs text-primary font-black">{value || 0}</span>
+    </Badge>
   );
 }
 
@@ -691,7 +678,6 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
           
-          {/* Top Badges */}
           <div className="absolute top-4 left-4 flex flex-col gap-2">
              <div className="bg-orange-500 text-white rounded-full px-4 py-1.5 font-black text-[9px] sm:text-[10px] uppercase tracking-widest shadow-lg w-fit">
                 EVENT
@@ -701,7 +687,6 @@ function EventAccountCard({ event, onClick }: { event: any, onClick: () => void 
              </div>
           </div>
 
-          {/* Text Overlays */}
           <div className="absolute bottom-4 left-5 right-5 text-white">
              <div className="flex items-center gap-2 mb-1.5">
                 <Clock size={14} className="text-orange-400" />
