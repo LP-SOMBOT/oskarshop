@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -70,6 +69,7 @@ export default function AccountsView() {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   // High-precision clock for real-time hiding of ended events
   const [now, setNow] = useState(Date.now());
@@ -109,12 +109,12 @@ export default function AccountsView() {
 
     return [...posts, ...events]
       .filter(p => {
-        const query = (searchQuery || "").toLowerCase();
+        const queryStr = (searchQuery || "").toLowerCase();
         return (
-          (p.title || "").toLowerCase().includes(query) || 
-          (p.authorName || "").toLowerCase().includes(query) || 
-          (p.gameType || "").toLowerCase().includes(query) ||
-          (p.gameName || "").toLowerCase().includes(query)
+          (p.title || "").toLowerCase().includes(queryStr) || 
+          (p.authorName || "").toLowerCase().includes(queryStr) || 
+          (p.gameType || "").toLowerCase().includes(queryStr) ||
+          (p.gameName || "").toLowerCase().includes(queryStr)
         );
       })
       .sort((a, b) => {
@@ -139,8 +139,6 @@ export default function AccountsView() {
         return (b.createdAt || 0) - (a.createdAt || 0);
       });
   }, [accountPosts, eventAccounts, searchQuery, user, now, allUsers]);
-
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleDeleteFinal = async () => {
     if (!deletingPostId) return;
