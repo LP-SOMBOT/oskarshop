@@ -25,7 +25,8 @@ import {
   User,
   ShieldAlert,
   AlertCircle,
-  Globe
+  Globe,
+  Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const productId = searchParams.get('id');
 
-  const [step, setSet] = useState(1);
+  const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
@@ -63,6 +64,10 @@ function CheckoutContent() {
   const [verified, setVerified] = useState(false);
   const [lookupError, setLookupError] = useState('');
   const [isValidationUnsupported, setIsValidationUnsupported] = useState(false);
+
+  // Dynamic Fields Support
+  const [fazerRequiredFields, setFazerRequiredFields] = useState<string[]>([]);
+  const [zoneId, setZoneId] = useState("");
 
   const [gameDetails, setGameDetails] = useState({
     playerID: "",
@@ -98,6 +103,22 @@ function CheckoutContent() {
   useEffect(() => {
     setGlobalLoading(false);
   }, [setGlobalLoading]);
+
+  /**
+   * Fetch Required Fields for Category
+   */
+  useEffect(() => {
+    if (item?.fazercardsCategory_id) {
+      fetch(`/api/fazercards/topups/offers?category_id=${item.fazercardsCategory_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok && data.fields) {
+            setFazerRequiredFields(data.fields.map((f: any) => f.key));
+          }
+        })
+        .catch(err => console.error("Error fetching category fields:", err));
+    }
+  }, [item?.fazercardsCategory_id]);
 
   /**
    * Official FazerCards ID Validation Effect
@@ -139,7 +160,6 @@ function CheckoutContent() {
 
         const data = await res.json();
 
-        // Updated check for FazerCards v2 response structure
         if (data.ok && data.player_name) {
           setFfPlayerName(data.player_name);
           setVerified(true);
@@ -151,9 +171,7 @@ function CheckoutContent() {
             playerID: ffUid.trim() 
           }));
         } else {
-          // Check if validation is simply not available for this category
           const isUnsupported = data.error?.toLowerCase().includes('not available') || data.error?.toLowerCase().includes('unsupported');
-          
           setFfPlayerName('');
           setVerified(false);
           setIsValidationUnsupported(isUnsupported);
@@ -175,7 +193,6 @@ function CheckoutContent() {
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
   
-  // Calculate item's specific percentage discount
   const storeDiscountPct = useMemo(() => {
     if (storeDiscountedPrice > 0 && storeDiscountedPrice < basePrice) {
       return Math.round(((basePrice - storeDiscountedPrice) / basePrice) * 100);
@@ -184,8 +201,6 @@ function CheckoutContent() {
   }, [basePrice, storeDiscountedPrice]);
 
   const rankDiscount = user?.leaderboardDiscount || 0;
-  
-  // Combine additive discounts (Item + Rank)
   const totalInitialDiscountPct = storeDiscountPct + rankDiscount;
 
   const priceAfterInitialDiscounts = useMemo(() => {
@@ -194,7 +209,6 @@ function CheckoutContent() {
 
   const total = useMemo(() => {
     if (appliedPromoCode && promoDiscount > 0) {
-      // Promo code applies to the already discounted subtotal
       return priceAfterInitialDiscounts * (1 - promoDiscount / 100);
     }
     return priceAfterInitialDiscounts;
@@ -246,6 +260,12 @@ function CheckoutContent() {
       toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah.", variant: "destructive" });
       return;
     }
+
+    if (fazerRequiredFields.includes('zone_id') && zoneId.length < 1) {
+      toast({ title: "Zone ID Required", description: "Fadlan geli Zone ID-gaaga.", variant: "destructive" });
+      return;
+    }
+
     const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
     if (cleanWhatsapp.length < 9) {
       toast({ title: "WhatsApp No. khaldan", description: "WhatsApp number-ka waa inuu ka koobnaadaa ugu yaraan 9 nambar.", variant: "destructive" });
@@ -256,7 +276,7 @@ function CheckoutContent() {
       toast({ title: "Lacag Diraha khaldan", description: "Number-ka lacagta laga soo diray waa inuu ka koobnaadaa ugu yaraan 9 nambar.", variant: "destructive" });
       return;
     }
-    setSet(2);
+    setStep(2);
   };
 
   const handleBooyahRedirect = () => {
@@ -271,7 +291,7 @@ function CheckoutContent() {
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${adminWa}?text=${encoded}`, '_blank');
     setIsSuccess(true);
-    setSet(4);
+    setStep(4);
   };
 
   const handlePaymentInitiation = () => {
@@ -281,13 +301,17 @@ function CheckoutContent() {
     const ussd = method.ussdTemplate.replace('$', formattedPrice);
     toast({ title: "Opening Dialer", description: `Please complete the ${method.name} transaction.` });
     window.location.href = `tel:${ussd.replace(/#/g, '%23')}`;
-    setSet(3);
+    setStep(3);
   };
 
   const handleFinalConfirm = () => {
     if (!item) return;
     setIsProcessing(true);
     setGlobalLoading(true);
+
+    const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
+    const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
+
     const purchaseItem = { 
       id: item.id, 
       title: item.title, 
@@ -301,15 +325,24 @@ function CheckoutContent() {
       fazercardsOffer_id: item.fazercardsOffer_id,
       fazercardsMultiQuantity: item.fazercardsMultiQuantity || 1
     };
+
     const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId);
     
     const finalDetails = { 
       ...gameDetails, 
-      playerName: isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName,
-      playerID: isAutoDetectEnabled ? ffUid : gameDetails.playerID,
+      playerName: effectivePlayerName,
+      playerID: effectivePlayerID,
+      zoneId: zoneId || null,
       gameTitle: game?.title || "Unknown Game", 
       itemTitle: item.title, 
       category: isFreeFire ? "Free Fire" : isBloodStrike ? "Blood Strike" : "General" 
+    };
+
+    // Generic game fields for automation
+    (finalDetails as any).gameFields = {
+      player_id: effectivePlayerID,
+      zone_id: zoneId || null,
+      region: ffRegion || null,
     };
 
     if (isAutoDetectEnabled) {
@@ -324,7 +357,7 @@ function CheckoutContent() {
     setTimeout(() => {
       setIsProcessing(false);
       setIsSuccess(true);
-      setSet(4);
+      setStep(4);
       setGlobalLoading(false);
       toast({ title: "Order Confirmed!", description: "Your diamonds are on the way!" });
     }, 1500);
@@ -462,19 +495,42 @@ function CheckoutContent() {
                           />
                         </div>
                       </div>
-                      <div className="space-y-1 md:space-y-2">
-                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Region</Label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                            <Globe size={18} />
+
+                      {fazerRequiredFields.includes('zone_id') && (
+                        <div className="space-y-1 md:space-y-2">
+                          <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Zone ID</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                              <Layers size={18} />
+                            </div>
+                            <Input 
+                              placeholder="Tusaale: 2134" 
+                              required 
+                              type="tel" 
+                              inputMode="numeric" 
+                              className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                              value={zoneId} 
+                              onChange={(e) => setZoneId(e.target.value.replace(/\D/g, ''))} 
+                            />
                           </div>
-                          <Input 
-                            readOnly 
-                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-100 dark:bg-slate-800/50 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-black text-xs md:text-base opacity-70" 
-                            value={ffRegion} 
-                          />
                         </div>
-                      </div>
+                      )}
+
+                      {!fazerRequiredFields.includes('zone_id') && (
+                        <div className="space-y-1 md:space-y-2">
+                          <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Region</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                              <Globe size={18} />
+                            </div>
+                            <Input 
+                              readOnly 
+                              className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-100 dark:bg-slate-800/50 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-black text-xs md:text-base opacity-70" 
+                              value={ffRegion} 
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="space-y-1 md:space-y-2">
@@ -677,7 +733,7 @@ function CheckoutContent() {
             <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
               <Button 
                 variant="ghost" 
-                onClick={() => setSet(1)} 
+                onClick={() => setStep(1)} 
                 className="order-2 sm:order-1 w-full sm:w-auto flex-1 h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] gap-2 font-bold dark:text-slate-300 text-xs md:text-xl transition-all active:scale-95"
               >
                 <ArrowLeft className="w-3.5 h-3.5 md:w-5 md:h-5" /> {language === 'so' ? 'Dib U noqo' : 'Back'}
@@ -705,12 +761,12 @@ function CheckoutContent() {
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Lacag Diraha:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.senderNumber}</span></div>
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Player ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{isAutoDetectEnabled ? ffUid : gameDetails.playerID}</span></div>
-                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Region:</span><span className="font-bold text-primary shrink-0">{isAutoDetectEnabled ? ffRegion : 'N/A'}</span></div>
+                {zoneId && <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Zone ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{zoneId}</span></div>}
               </div>
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">
               <Button onClick={handleFinalConfirm} disabled={isProcessing} className="w-full h-14 xs:h-16 md:h-20 rounded-xl md:rounded-[2.5rem] text-sm xs:text-lg md:text-2xl font-bold shadow-xl shadow-primary/30 active:scale-95 transition-all uppercase tracking-widest">{isProcessing ? <div className="flex items-center justify-center gap-2 md:gap-3"><Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" /><span>Verifying...</span></div> : "Waan Bixiyay (Xaqiiji)"}</Button>
-              <Button variant="ghost" onClick={() => setSet(2)} className="w-full h-11 md:h-14 rounded-xl text-[10px] md:text-sm text-muted-foreground dark:text-slate-500 hover:dark:text-slate-300 font-bold uppercase tracking-widest">Dib u noqo</Button>
+              <Button variant="ghost" onClick={() => setStep(2)} className="w-full h-11 md:h-14 rounded-xl text-[10px] md:text-sm text-muted-foreground dark:text-slate-500 hover:dark:text-slate-300 font-bold uppercase tracking-widest">Dib u noqo</Button>
             </div>
           </CardContent>
         </Card>
@@ -736,15 +792,6 @@ export default function CheckoutPage() {
       <Suspense fallback={<Skeleton className="h-[600px] w-full rounded-[2.5rem]" />}>
         <CheckoutContent />
       </Suspense>
-    </div>
-  );
-}
-
-export function FormGroup({ label, children }: { label: string, children: React.ReactNode }) {
-  return (
-    <div className="space-y-2.5">
-       <label className="text-[10px] sm:text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">{label}</label>
-       {children}
     </div>
   );
 }

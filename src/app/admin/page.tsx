@@ -460,6 +460,7 @@ export default function AdminPage() {
   // FazerCards & Automation UI States
   const [fazerCategories, setFazerCategories] = useState<any[]>([]);
   const [fazerOffers, setFazerOffers] = useState<any[]>([]);
+  const [fazerRequiredFields, setFazerRequiredFields] = useState<string[]>([]);
   const [isTestingFazer, setIsTestingFazer] = useState(false);
   const [fazerApiKey, setFazerApiKey] = useState("");
   const [recentSms, setRecentSms] = useState<any[]>([]);
@@ -692,6 +693,8 @@ export default function AdminPage() {
     setEditingProduct(p || null);
     setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "", fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1 } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1 });
     
+    setFazerRequiredFields([]);
+
     // Fetch FazerCards categories
     try {
       const res = await fetch('/api/fazercards/topups');
@@ -714,6 +717,8 @@ export default function AdminPage() {
              price: o.price
            }));
            setFazerOffers(mapped);
+           const required = (offData.fields || []).map((f: any) => f.key);
+           setFazerRequiredFields(required);
          }
       }
     } catch (err) {
@@ -726,6 +731,7 @@ export default function AdminPage() {
   const handleFazerCategoryChange = async (cid: string) => {
     setProductForm({ ...productForm, fazercardsCategory_id: cid, fazercardsOffer_id: "" });
     setFazerOffers([]);
+    setFazerRequiredFields([]);
     try {
       const res = await fetch(`/api/fazercards/topups/offers?category_id=${cid}`);
       const data = await res.json();
@@ -736,6 +742,8 @@ export default function AdminPage() {
           price: o.price
         }));
         setFazerOffers(mapped);
+        const required = (data.fields || []).map((f: any) => f.key);
+        setFazerRequiredFields(required);
       }
     } catch (err) {
       console.error("Failed to change category", err);
@@ -2749,7 +2757,7 @@ export default function AdminPage() {
                  </div>
                  <Badge className={cn(
                    "rounded-full uppercase text-[7px] font-black tracking-widest px-2 py-0.5 border-none shadow-sm shrink-0",
-                   selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
+                   selectedUser?.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
                  )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
                  </Badge>
@@ -2977,6 +2985,13 @@ export default function AdminPage() {
                          </Select>
                       </div>
 
+                      {fazerRequiredFields.length > 0 && (
+                        <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-2 text-primary text-[10px] font-bold">
+                           <Info size={14} className="shrink-0 mt-0.5" />
+                           <p>Required fields for this category: {fazerRequiredFields.join(', ')}</p>
+                        </div>
+                      )}
+
                       <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase text-slate-400">Order multiplier</Label>
                          <Select value={productForm.fazercardsMultiQuantity?.toString() || "1"} onValueChange={v => setProductForm({ ...productForm, fazercardsMultiQuantity: parseInt(v) })}>
@@ -3098,10 +3113,10 @@ export default function AdminPage() {
 
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">
-                  Sababta code-ka loo sameeyay (Sababta)
+                  Internal Note
                 </Label>
                 <Textarea 
-                  placeholder="Internal note for admins..."
+                  placeholder="Internal note..."
                   value={promoCodeForm.note}
                   onChange={e => setPromoCodeInput({...promoCodeForm, note: e.target.value})}
                   className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[80px] p-4 font-medium shadow-inner"
@@ -3117,9 +3132,7 @@ export default function AdminPage() {
 
       <Dialog open={isPromoUsageOpen} onOpenChange={setIsPromoUsageOpen}>
          <DialogContent className="max-md w-[95%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
-            <div className="bg-primary p-6 text-white">
-               <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka ({selectedPromo?.code})</DialogTitle>
-            </div>
+            <div className="bg-primary p-6 text-white"><DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka ({selectedPromo?.code})</DialogTitle></div>
             <div className="p-6 max-h-[60vh] overflow-y-auto scrollbar-hide space-y-3">
                {selectedPromo && (selectedPromo.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo.claimed ? [{ uid: selectedPromo.usedBy, timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).length === 0 ? (
                  <div className="py-12 text-center opacity-30 italic font-bold uppercase text-xs">No users have used this code yet.</div>
@@ -3131,9 +3144,7 @@ export default function AdminPage() {
                          <div className="flex items-center gap-3 min-w-0">
                             <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm shrink-0">
                                <AvatarImage src={profile?.photoURL} />
-                               <AvatarFallback className="bg-primary/10 text-primary">
-                                 <User size={20}/>
-                               </AvatarFallback>
+                               <AvatarFallback className="bg-primary/10 text-primary"><User size={20}/></AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
                                <div className="flex items-center gap-1 min-w-0">
