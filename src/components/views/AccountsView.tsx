@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -269,7 +270,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
     emotes: "",
     arrivalEmotes: "",
     dharka: "",
-    internalWeapons: "",
+    internalValue: "",
     executionEmotes: "",
     age: "",
     primeLevel: "Prime 1"
@@ -287,7 +288,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         emotes: (editingPost.emotes ?? "").toString(),
         arrivalEmotes: (editingPost.arrivalEmotes ?? "").toString(),
         dharka: (editingPost.dharka ?? "").toString(),
-        internalWeapons: (editingPost.internalWeapons ?? "").toString(),
+        internalValue: (editingPost.internalValue ?? "").toString(),
         executionEmotes: (editingPost.executionEmotes ?? "").toString(),
         primeLevel: editingPost.primeLevel || "Prime 1"
       });
@@ -319,7 +320,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
         emotes: parseInt(form.emotes) || 0,
         arrivalEmotes: parseInt(form.arrivalEmotes) || 0,
         dharka: parseInt(form.dharka) || 0,
-        internalWeapons: parseInt(form.internalWeapons) || 0,
+        internalValue: parseInt(form.internalValue) || 0,
         executionEmotes: parseInt(form.executionEmotes) || 0,
         thumbnailUrl: form.imageUrls[0] || "",
       };
@@ -477,7 +478,7 @@ function AccountPostingFlow({ editingPost, onCancel, onComplete, postAccount, up
               {form.gameType === 'bloodstrike' ? (
                 <>
                   <AssetInput label="EVO WEAPONS" value={form.evoWeapons} onChange={v => setForm({...form, evoWeapons: v})} placeholder="54" />
-                  <AssetInput label="INTERNAL WEAPONS" value={form.internalWeapons} onChange={v => setForm({...form, internalWeapons: v})} placeholder="3" />
+                  <AssetInput label="INTERNAL WEAPONS" value={form.internalValue} onChange={v => setForm({...form, internalValue: v})} placeholder="3" />
                   <AssetInput label="EMOTES" value={form.emotes} onChange={v => setForm({...form, emotes: v})} placeholder="63" />
                   <AssetInput label="EXECUTION EMOTES" value={form.executionEmotes} onChange={v => setForm({...form, executionEmotes: v})} placeholder="12" />
                   <AssetInput label="ARRIVAL EMOTES" value={form.arrivalEmotes} onChange={v => setForm({...form, arrivalEmotes: v})} placeholder="8" />
@@ -606,7 +607,7 @@ function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner,
            {post.gameType === 'bloodstrike' ? (
              <>
                <AssetPill label="Evo" value={post.evoWeapons} />
-               <AssetPill label="Internal" value={post.internalWeapons} />
+               <AssetPill label="Internal" value={post.internalValue} />
                <AssetPill label="Emotes" value={post.emotes} />
                <AssetPill label="Execution" value={post.executionEmotes} />
                <AssetPill label="Arrival" value={post.arrivalEmotes} />

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -136,7 +137,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/accordion";
+} from "@/components/ui/accordion";
 import {
   Tabs,
   TabsContent,
@@ -407,7 +408,7 @@ export default function AdminPage() {
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [isPromoUsageOpen, setIsPromoUsageOpen] = useState(false);
   const [isUserManageOpen, setIsUserManageOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIs_deleteDialogOpen] = useState(false);
   const [isEndEarlyDialogOpen, setIsEndEarlyDialogOpen] = useState(false);
   const [isEnforceDialogOpen, setIsEnforceDialogOpen] = useState(false);
 
@@ -845,8 +846,8 @@ export default function AdminPage() {
     if (!over || active.id === over.id) return;
 
     const gameItems = products.filter(p => p.gameId === gameId).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-    const oldIndex = gameItems.findIndex(p => p.id === active.id);
-    const newIndex = gameItems.findIndex(p => p.id === over.id);
+    const oldIndex = gameItems.slice().findIndex(p => p.id === active.id);
+    const newIndex = gameItems.slice().findIndex(p => p.id === over.id);
 
     const reordered = arrayMove(gameItems, oldIndex, newIndex);
     const updates = reordered.map((p, i) => ({ id: p.id, orderIndex: i }));
@@ -988,8 +989,6 @@ export default function AdminPage() {
     if (newPeriod === 'PM' && h < 12) h += 12;
     return `${h.toString().padStart(2, '0')}:${m}`;
   };
-
-  const [is_deleteDialogOpen, setIs_deleteDialogOpen] = useState(false);
 
   if (loading || isInitialLoading) {
     return (
@@ -1814,7 +1813,7 @@ export default function AdminPage() {
                             <Plus size={18} /> New Banner
                          </Button>
                          <Button 
-                           onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days", duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" }); setIsEditingEvent(true); }}
+                           onClick={() => { setEditingEvent(null); setEventForm({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event", active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" }); setIsEditingEvent(true); }}
                            className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-black shadow-xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 transition-all w-full sm:auto"
                          >
                             <Megaphone size={18} /> Create Event
@@ -1880,7 +1879,7 @@ export default function AdminPage() {
             <div className="space-y-12 animate-in fade-in duration-700">
                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
                   <Button 
-                    onClick={() => setIsPromoDialogOpen(true)}
+                    onClick={() => setIs_promoDialogOpen(true)}
                     className="rounded-2xl h-14 md:h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 w-full sm:w-auto"
                   >
                     <PlusCircle size={20} /> New Promo Code
@@ -1946,7 +1945,7 @@ export default function AdminPage() {
                               <div className="pt-4 border-t dark:border-white/5 space-y-2">
                                  <Button 
                                    variant="outline" 
-                                   onClick={() => { setSelectedPromo(promo); setIsPromoUsageOpen(true); }}
+                                   onClick={() => { setSelectedPromo(promo); setIs_promoUsageOpen(true); }}
                                    className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-2"
                                  >
                                     <Users size={14} className="mr-2" /> View Usage
@@ -2026,7 +2025,7 @@ export default function AdminPage() {
                                  <span className="text-[10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
                               </div>
                               <div className="flex gap-2">
-                                 <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
+                                 <button onClick={() => { setSelectedUser(u); setIs_userManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
                                  <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIs_deleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
                               </div>
                            </div>
@@ -2113,7 +2112,7 @@ export default function AdminPage() {
                                   <TableCell className="text-right px-6 lg:px-10">
                                       <div className="flex justify-end items-center gap-3">
                                         <button 
-                                          onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
+                                          onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIs_userManageOpen(true); }}
                                           className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
                                         >
                                           <Edit size={18} />
@@ -2713,13 +2712,13 @@ export default function AdminPage() {
         </main>
       </div>
 
-      <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
+      <Dialog open={isUserManageOpen} onOpenChange={setIs_userManageOpen}>
         <DialogContent className="max-w-md w-[94%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col [&>button]:hidden">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
            <div className="h-24 md:h-28 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
               <button 
-                onClick={() => setIsUserManageOpen(false)}
+                onClick={() => setIs_userManageOpen(false)}
                 className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 text-white flex items-center justify-center hover:bg-black/40 transition-colors z-20"
               >
                  <X size={16} strokeWidth={3} />
@@ -2842,7 +2841,7 @@ export default function AdminPage() {
               <div className="pt-2 space-y-3">
                  <Button 
                     onClick={() => {
-                      setIsUserManageOpen(false);
+                      setIs_userManageOpen(false);
                       setGlobalLoading(true);
                       router.push(`/admin/users/${selectedUser?.uid}`);
                     }}
@@ -3038,7 +3037,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPromoDialogOpen} onOpenChange={setIsPromoDialogOpen}>
+      <Dialog open={is_promoDialogOpen} onOpenChange={setIs_promoDialogOpen}>
         <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
            <DialogHeader>
               <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Create Promo Voucher</DialogTitle>
@@ -3116,7 +3115,7 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPromoUsageOpen} onOpenChange={setIsPromoUsageOpen}>
+      <Dialog open={is_promoUsageOpen} onOpenChange={setIs_promoUsageOpen}>
          <DialogContent className="max-md w-[95%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
             <div className="bg-primary p-6 text-white">
                <DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka ({selectedPromo?.code})</DialogTitle>
@@ -3154,7 +3153,7 @@ export default function AdminPage() {
                )}
             </div>
             <div className="p-6 pt-0">
-               <Button onClick={() => setIsPromoUsageOpen(false)} className="w-full rounded-xl">Close</Button>
+               <Button onClick={() => setIs_promoUsageOpen(false)} className="w-full rounded-xl">Close</Button>
             </div>
          </DialogContent>
       </Dialog>
