@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,6 +16,7 @@ import {
   EMAILJS_TEMPLATE_ID, 
   EMAILJS_PUBLIC_KEY 
 } from "@/lib/emailjs-config";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const [view, setView] = useState<'login' | 'forgot' | 'verify'>('login');
@@ -142,43 +144,44 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#7C3AED] overflow-x-hidden page-transition">
-      <div className="pt-8 pb-6 sm:pt-24 sm:pb-16 px-6 sm:px-10 shrink-0">
-        <h1 className="text-xl sm:text-4xl font-headline font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
-          Ku Soo dhawoow OskarShop
+      {/* Reduced padding in header for small screens */}
+      <div className="pt-6 pb-4 sm:pt-20 sm:pb-12 px-6 sm:px-10 shrink-0">
+        <h1 className="text-lg sm:text-4xl font-headline font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+          OskarShop
         </h1>
-        <p className="text-sm sm:text-2xl font-headline text-white/80 mt-1 font-medium">
+        <p className="text-xs sm:text-2xl font-headline text-white/80 mt-1 font-medium">
           {view === 'login' ? 'Soo gal' : view === 'forgot' ? 'Bedel password kaaga' : 'Xaqiijinta Account-ka'}
         </p>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[3.5rem] px-6 py-8 sm:p-10 shadow-2xl relative flex flex-col items-center justify-center">
+      <div className="flex-1 bg-white rounded-t-[2.5rem] sm:rounded-t-[3.5rem] px-4 py-6 sm:p-10 shadow-2xl relative flex flex-col">
         {(isGlobalLoading || user) && (
-          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
-             <Loader2 className="w-12 h-12 animate-spin text-[#7C3AED]" />
-             <p className="text-sm font-bold text-[#7C3AED] animate-pulse">
+          <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm rounded-t-[2.5rem] sm:rounded-t-[3.5rem] flex flex-col items-center justify-center gap-4 text-center p-8">
+             <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-[#7C3AED]" />
+             <p className="text-xs sm:text-sm font-bold text-[#7C3AED] animate-pulse">
                 {user ? "Authenticating..." : "Loading..."}
              </p>
           </div>
         )}
 
-        <div className="max-w-md w-full">
+        <div className="max-w-md w-full mx-auto">
           {(authError || serverError) && (
-             <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
+             <div className="mb-4 p-2.5 sm:p-3 bg-red-50 border border-red-100 rounded-xl sm:rounded-2xl flex gap-2 sm:gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p className="text-[10px] font-bold leading-relaxed">{authError || serverError}</p>
              </div>
           )}
           
           {view === 'login' && (
-            <div className="space-y-6">
-              <h2 className="text-xl sm:text-3xl font-headline font-bold text-gray-900">Login</h2>
-              <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-4 sm:space-y-6">
+              <h2 className="text-lg sm:text-3xl font-headline font-bold text-gray-900 hidden sm:block">Login</h2>
+              <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Number</Label>
+                  <Label className="text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">Number</Label>
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
-                      <Smartphone className="w-5 h-5 text-[#7C3AED]" />
-                      <span className="font-bold text-gray-400 border-r border-gray-200 pr-2">+252</span>
+                    <div className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10 pointer-events-none">
+                      <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-[#7C3AED]" />
+                      <span className="font-bold text-gray-400 border-r border-gray-200 pr-2 text-[10px] sm:text-sm">+252</span>
                     </div>
                     <Input 
                       type="tel" 
@@ -190,49 +193,66 @@ export default function LoginPage() {
                         const normalized = val.startsWith('0') ? val.substring(1) : val;
                         setPhone(normalized.substring(0, 9));
                       }}
-                      className="h-12 sm:h-16 pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
+                      className="h-11 sm:h-16 pl-20 sm:pl-24 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all text-xs sm:text-base"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password</Label>
+                  <Label className="text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password</Label>
                   <div className="relative group">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Lock className="w-5 h-5" /></div>
+                    <div className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-[#7C3AED] z-10"><Lock className="w-4 h-4 sm:w-5 sm:h-5" /></div>
                     <Input 
                       type={showPassword ? "text" : "password"} 
                       placeholder="Password-kaaga" 
                       required 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-12 sm:h-16 pl-14 pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all"
+                      className="h-11 sm:h-16 pl-12 sm:pl-14 pr-12 sm:pr-14 rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-[#7C3AED] font-bold text-gray-900 transition-all text-xs sm:text-base"
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 p-1">
-                      {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 p-1">
+                      {showPassword ? <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> : <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <button type="button" onClick={() => setView('forgot')} className="text-blue-600 text-xs font-bold hover:underline">
+                  <button type="button" onClick={() => setView('forgot')} className="text-blue-600 text-[10px] sm:text-xs font-bold hover:underline">
                     Ma ilaawday password-ka?
                   </button>
                 </div>
 
-                <Button type="submit" disabled={isSubmitting || isGlobalLoading} className="w-full h-12 sm:h-16 rounded-full text-base font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase">
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : "Login"}
-                </Button>
+                {/* SIDE-BY-SIDE BUTTONS FOR MOBILE RESPONSIVENESS */}
+                <div className="flex flex-col min-[360px]:flex-row gap-2 sm:gap-4 pt-1">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || isGlobalLoading} 
+                    className="flex-1 h-12 sm:h-16 rounded-full text-sm sm:text-base font-bold bg-[#7C3AED] hover:bg-[#6D28D9] shadow-lg shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase"
+                  >
+                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login"}
+                  </Button>
 
-                <div className="text-center pt-2">
-                  <Link href="/signup" className="block w-full">
+                  <Link href="/signup" className="flex-1">
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="w-full h-12 sm:h-16 rounded-full text-base font-bold border-2 border-[#7C3AED]/10 text-[#7C3AED] hover:bg-[#7C3AED]/5 hover:border-[#7C3AED]/20 transition-all active:scale-95"
+                      className="w-full h-12 sm:h-16 rounded-full text-[10px] sm:text-sm font-bold border-2 border-[#7C3AED]/10 text-[#7C3AED] hover:bg-[#7C3AED]/5 hover:border-[#7C3AED]/20 transition-all active:scale-95 px-1 leading-tight"
                     >
                       SAMEEY ACCOUNT
                     </Button>
                   </Link>
+                </div>
+                
+                {/* YouTube Tutorial Embed */}
+                <div className="mt-6 md:mt-8 rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-white/5 aspect-video w-full">
+                  <iframe
+                    className="w-full h-full"
+                    src="https://www.youtube.com/embed/VfCH0iYmzcU"
+                    title="OskarShop Tutorial"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  ></iframe>
                 </div>
               </form>
             </div>
@@ -241,8 +261,8 @@ export default function LoginPage() {
           {view === 'forgot' && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="space-y-1">
-                <h2 className="text-xl sm:text-3xl font-headline font-bold text-gray-900">Ma ilaawday password-ka?</h2>
-                <p className="text-xs sm:text-base text-gray-500 font-medium leading-relaxed">Geli numbarkaaga si aan code ugu soo dirno email-kaaga.</p>
+                <h2 className="text-lg sm:text-3xl font-headline font-bold text-gray-900">Ilaawday Password?</h2>
+                <p className="text-[10px] sm:text-base text-gray-500 font-medium leading-relaxed">Geli numbarkaaga si aan code ugu soo dirno email-kaaga.</p>
               </div>
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
@@ -265,8 +285,8 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="w-full h-12 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase tracking-wide">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : (language === 'so' ? "Dir code ka" : "Verify Phone & Send OTP")}
+                <Button type="submit" disabled={isSubmitting} className="w-full h-12 sm:h-16 rounded-full bg-[#7C3AED] font-bold text-base sm:text-lg shadow-xl shadow-[#7C3AED]/20 transition-all active:scale-95 uppercase tracking-wide">
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : (language === 'so' ? "Dir code ka" : "Verify & Send OTP")}
                 </Button>
 
                 <button type="button" onClick={() => setView('login')} className="flex items-center justify-center gap-2 text-[#7C3AED] text-sm font-bold mt-2 w-full group">
@@ -282,15 +302,15 @@ export default function LoginPage() {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#7C3AED]">
                   <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <h2 className="text-lg sm:text-3xl font-headline font-bold text-gray-900 leading-tight">Xaqiiji Code-ka</h2>
+                <h2 className="text-base sm:text-3xl font-headline font-bold text-gray-900 leading-tight">Xaqiiji Code-ka</h2>
                 <p className="text-[10px] sm:text-base text-gray-500 font-medium leading-relaxed">
-                  Waxaan code-ka u dirnay email-kaaga: <span className="font-bold text-[#7C3AED] block truncate max-w-full">{targetEmail}</span>
+                  Code-ka u dirnay: <span className="font-bold text-[#7C3AED] block truncate max-w-full">{targetEmail}</span>
                 </p>
               </div>
 
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div className="space-y-1">
-                  <Label className="text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">6-Digit Code</Label>
+                  <Label className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">6-Digit Code</Label>
                   <Input 
                     type="text" 
                     placeholder="000000" 
@@ -302,11 +322,11 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="space-y-1">
-                    <Label className="text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password Cusub</Label>
+                    <Label className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">Password Cusub</Label>
                     <div className="relative">
-                      <KeyRound className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                      <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <Input 
                         type="password" 
                         placeholder="Ugu yaraan 8 xaraf" 
@@ -314,15 +334,15 @@ export default function LoginPage() {
                         minLength={8}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="h-11 sm:h-14 pl-14 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold shadow-sm"
+                        className="h-10 sm:h-14 pl-12 sm:pl-14 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold shadow-sm text-xs sm:text-base"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">Xaqiiji Password-ka</Label>
+                    <Label className="text-[8px] sm:text-[9px] font-black uppercase text-gray-400 ml-4 tracking-widest">Xaqiiji Password-ka</Label>
                     <div className="relative">
-                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <Input 
                         type="password" 
                         placeholder="Ku celi password-ka" 
@@ -330,14 +350,14 @@ export default function LoginPage() {
                         minLength={8}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="h-11 sm:h-14 pl-14 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold shadow-sm"
+                        className="h-10 sm:h-14 pl-12 sm:pl-14 rounded-full bg-gray-50 border-gray-100 focus:border-[#7C3AED] font-bold shadow-sm text-xs sm:text-base"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-2 space-y-3">
-                  <Button type="submit" disabled={isSubmitting} className="w-full h-12 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 font-bold text-base sm:text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest transition-all active:scale-95 group">
+                  <Button type="submit" disabled={isSubmitting} className="w-full h-12 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 font-bold text-sm sm:text-lg shadow-xl shadow-green-600/20 uppercase tracking-widest transition-all active:scale-95 group">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2 w-4 h-4" /> Bedel Password-ka</>}
                   </Button>
 

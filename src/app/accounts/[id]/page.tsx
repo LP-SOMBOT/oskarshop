@@ -178,19 +178,19 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex flex-wrap gap-1.5 md:gap-2">
                    {post.gameType === 'bloodstrike' ? (
                      <>
-                        <AssetBadge icon={Sword} label="Evo" value={post.evoWeapons} />
-                        <AssetBadge icon={Target} label="Internal" value={post.internalWeapons} />
-                        <AssetBadge icon={Zap} label="Emotes" value={post.emotes} />
-                        <AssetBadge icon={Bomb} label="Execution" value={post.executionEmotes} />
-                        <AssetBadge icon={Star} label="Arrival" value={post.arrivalEmotes} />
+                        <AssetBadge label="Evo" value={post.evoWeapons} />
+                        <AssetBadge label="Internal" value={post.internalWeapons} />
+                        <AssetBadge label="Emotes" value={post.emotes} />
+                        <AssetBadge label="Execution" value={post.executionEmotes} />
+                        <AssetBadge label="Arrival" value={post.arrivalEmotes} />
                      </>
                    ) : (
                      <>
-                        <AssetBadge icon={Sword} label="Evo" value={post.evoWeapons} />
-                        <AssetBadge icon={Target} label="Weapons" value={post.totalWeapons} />
-                        <AssetBadge icon={Zap} label="Emote" value={post.emotes} />
-                        <AssetBadge icon={Star} label="Arrival" value={post.arrivalEmotes} />
-                        <AssetBadge icon={ShoppingBag} label="Dharka" value={post.dharka} />
+                        <AssetBadge label="Evo" value={post.evoWeapons} />
+                        <AssetBadge label="Weapons" value={post.totalWeapons} />
+                        <AssetBadge label="Emote" value={post.emotes} />
+                        <AssetBadge label="Arrival" value={post.arrivalEmotes} />
+                        <AssetBadge label="Dharka" value={post.dharka} />
                      </>
                    )}
                 </div>
@@ -218,10 +218,10 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                           </div>
                         </div>
                         <div className="flex flex-col xs:flex-row gap-2 md:gap-3">
-                          <Button onClick={() => reportAccountOutcome(post.id, 'bought')} className="flex-1 h-11 md:h-12 rounded-xl bg-green-600 hover:bg-green-700 font-bold gap-2 text-xs md:text-sm">
+                          <Button onClick={() => reportAccountOutcome(post.id, 'bought')} className="flex-1 h-11 md:h-12 rounded-xl bg-green-600 hover:bg-green-700 font-bold gap-2 text-xs md:sm">
                              <Check size={16} /> Waan iibsaday
                           </Button>
-                          <Button onClick={() => reportAccountOutcome(post.id, 'not_bought')} variant="outline" className="flex-1 h-11 md:h-12 rounded-xl font-bold border-red-200 text-red-500 text-xs md:text-sm">
+                          <Button onClick={() => reportAccountOutcome(post.id, 'not_bought')} variant="outline" className="flex-1 h-11 md:h-12 rounded-xl font-bold border-red-200 text-red-500 text-xs md:sm">
                              Ma iibsanin
                           </Button>
                         </div>
@@ -293,10 +293,9 @@ function StatItem({ label, value, icon: Icon, color }: { label: string, value: a
   );
 }
 
-function AssetBadge({ icon: Icon, label, value }: { icon: any, label: string, value: number }) {
+function AssetBadge({ label, value }: { label: string, value: number }) {
   return (
     <Badge className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-none px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl flex items-center gap-1.5 md:gap-2 font-bold shadow-sm ring-1 ring-slate-100 dark:ring-white/5">
-       <Icon size={12} className="text-primary md:w-3.5 md:h-3.5" />
        <span className="text-[8px] md:text-[10px] uppercase tracking-tight">{label}:</span>
        <span className="text-[10px] md:text-xs text-primary font-black">{value || 0}</span>
     </Badge>

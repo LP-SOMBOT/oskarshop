@@ -22,7 +22,9 @@ import {
   Ticket,
   UserCheck,
   User,
-  ShieldAlert
+  ShieldAlert,
+  AlertCircle,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,13 +54,14 @@ function CheckoutContent() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
-  // Free Fire Auto-Detect States
+  // FazerCards Auto-Detect States
   const [ffUid, setFfUid] = useState('');
   const [ffPlayerName, setFfPlayerName] = useState('');
-  const [ffRegion, setFfRegion] = useState('ME');
+  const [ffRegion, setFfRegion] = useState('MENA');
   const [checking, setChecking] = useState(false);
   const [verified, setVerified] = useState(false);
   const [lookupError, setLookupError] = useState('');
+  const [isValidationUnsupported, setIsValidationUnsupported] = useState(false);
 
   const [gameDetails, setGameDetails] = useState({
     playerID: "",
@@ -95,6 +98,9 @@ function CheckoutContent() {
     setGlobalLoading(false);
   }, [setGlobalLoading]);
 
+  /**
+   * Official FazerCards ID Validation Effect
+   */
   useEffect(() => {
     if (!isAutoDetectEnabled) return;
     
@@ -102,6 +108,7 @@ function CheckoutContent() {
       setFfPlayerName('');
       setVerified(false);
       setLookupError('');
+      setIsValidationUnsupported(false);
       return;
     }
 
@@ -110,32 +117,59 @@ function CheckoutContent() {
       setVerified(false);
       setLookupError('');
       setFfPlayerName('');
+      setIsValidationUnsupported(false);
+
+      const categoryId = item?.fazercardsCategory_id;
+      if (!categoryId) {
+        setChecking(false);
+        setLookupError('Item needs configuration for auto-detect.');
+        return;
+      }
+
       try {
-        const res = await fetch(
-          `/api/check-ff-player?uid=${ffUid.trim()}&region=${ffRegion}`
-        );
+        const res = await fetch('/api/fazercards/validate-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category_id: categoryId,
+            player_id: ffUid.trim()
+          })
+        });
+
         const data = await res.json();
-        if (data.success && data.nickname) {
-          setFfPlayerName(data.nickname);
+
+        // Updated check for FazerCards v2 response structure
+        if (data.ok && data.player_name) {
+          setFfPlayerName(data.player_name);
           setVerified(true);
           setLookupError('');
-          setGameDetails(prev => ({ ...prev, playerName: data.nickname, playerID: ffUid.trim() }));
+          setIsValidationUnsupported(false);
+          setGameDetails(prev => ({ 
+            ...prev, 
+            playerName: data.player_name, 
+            playerID: ffUid.trim() 
+          }));
         } else {
+          // Check if validation is simply not available for this category
+          const isUnsupported = data.error?.toLowerCase().includes('not available') || data.error?.toLowerCase().includes('unsupported');
+          
           setFfPlayerName('');
           setVerified(false);
-          setLookupError(data.message || 'Player not found. Check your UID.');
+          setIsValidationUnsupported(isUnsupported);
+          setLookupError(data.error || 'Player not found or ID is invalid.');
         }
-      } catch {
+      } catch (err) {
+        console.error("Validation error:", err);
         setFfPlayerName('');
         setVerified(false);
-        setLookupError('Could not verify. Check your ID manually.');
+        setLookupError('Could not verify ID at this moment.');
       } finally {
         setChecking(false);
       }
-    }, 800);
+    }, 1000); 
 
     return () => clearTimeout(timer);
-  }, [ffUid, ffRegion, isAutoDetectEnabled]);
+  }, [ffUid, isAutoDetectEnabled, item?.fazercardsCategory_id]);
 
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
@@ -190,12 +224,14 @@ function CheckoutContent() {
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
-    if (effectivePlayerName.trim().length < 2) {
+    // Allow empty name if validation is unsupported, but user must enter it manually in that case
+    if (!isAutoDetectEnabled && effectivePlayerName.trim().length < 2) {
       toast({ title: "Magaca wuu gaabanyahay", description: "Magaca game-ka waa qasab.", variant: "destructive" });
       return;
     }
+
     if (effectivePlayerID.length < 5) {
-      toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah (ugu yaraan 5 nambar).", variant: "destructive" });
+      toast({ title: "Game ID khaldan", description: "Fadlan geli Game ID sax ah.", variant: "destructive" });
       return;
     }
     const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
@@ -215,14 +251,11 @@ function CheckoutContent() {
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
-    if (effectivePlayerName.trim().length < 2) { toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" }); return; }
+    if (!effectivePlayerName && !isAutoDetectEnabled) { toast({ title: "Magaca wuu gaabanyahay", variant: "destructive" }); return; }
     if (effectivePlayerID.length < 5) { toast({ title: "Game ID khaldan", variant: "destructive" }); return; }
-    const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
-    const cleanSender = gameDetails.senderNumber.replace(/\D/g, '');
-    if (cleanWhatsapp.length < 9 || cleanSender.length < 9) { toast({ title: "Fadlan geli number-ada saxda ah (9+ nambar)", variant: "destructive" }); return; }
     
     const adminWa = formatWhatsAppNumber(item?.whatsappNumber || "252613982172");
-    const message = `Asc, Oskar Shop.\nWaxaan rabaa Booyah Pass: *${item?.title}*\nQiimaha: *$${total.toFixed(2)}*\n\n*Xogta Dalabka:*\nGame ID: ${effectivePlayerID}\nin-Game name: ${effectivePlayerName}\nWhatsApp: ${gameDetails.whatsappNumber}\nLacag Diraha: ${gameDetails.senderNumber}\n\nFadlan ila soo xiriir.`;
+    const message = `Asc, Oskar Shop.\nWaxaan rabaa Booyah Pass: *${item?.title}*\nQiimaha: *$${total.toFixed(2)}*\n\n*Xogta Dalabka:*\nGame ID: ${effectivePlayerID}\nin-Game name: ${effectivePlayerName || 'N/A'}\nWhatsApp: ${gameDetails.whatsappNumber}\nLacag Diraha: ${gameDetails.senderNumber}\n\nFadlan ila soo xiriir.`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${adminWa}?text=${encoded}`, '_blank');
     setIsSuccess(true);
@@ -243,7 +276,19 @@ function CheckoutContent() {
     if (!item) return;
     setIsProcessing(true);
     setGlobalLoading(true);
-    const purchaseItem = { id: item.id, title: item.title, price: total, quantity: 1, gameId: item.gameId, thumbnail: item.thumbnail, isOneTime: !!item.isOneTime };
+    const purchaseItem = { 
+      id: item.id, 
+      title: item.title, 
+      price: total, 
+      quantity: 1, 
+      gameId: item.gameId, 
+      thumbnail: item.thumbnail, 
+      isOneTime: !!item.isOneTime,
+      autoTopupEnabled: !!item.autoTopupEnabled,
+      fazercardsCategory_id: item.fazercardsCategory_id,
+      fazercardsOffer_id: item.fazercardsOffer_id,
+      fazercardsMultiQuantity: item.fazercardsMultiQuantity || 1
+    };
     const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId);
     
     const finalDetails = { 
@@ -293,8 +338,10 @@ function CheckoutContent() {
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
   const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
-  const isLookupFailure = lookupError.includes("Could not verify");
-  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isLookupFailure);
+  
+  // Submit is disabled ONLY if actively checking, OR if ID is entered but failed validation AND it's NOT a "not supported" error.
+  // If it's "not supported", we allow them to enter the name manually if they choose to.
+  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -355,7 +402,7 @@ function CheckoutContent() {
                   ? "bg-red-500 text-white border-none" 
                   : isBooyahPass 
                     ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/20 text-blue-600 dark:text-blue-400" 
-                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400"
+                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-blue-400"
               )}>
                  {isOneTime ? <ShieldAlert className="shrink-0 w-5 h-5 md:w-8 md:h-8 animate-pulse" /> : <AlertTriangle className="shrink-0 w-4 h-4 md:w-6 md:h-6" />}
                  {isBooyahPass ? (
@@ -387,23 +434,39 @@ function CheckoutContent() {
               <div className="space-y-3 md:space-y-4">
                 {isAutoDetectEnabled ? (
                   <>
-                    <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                          <Gamepad2 size={18} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                            <Gamepad2 size={18} />
+                          </div>
+                          <Input 
+                            placeholder="Tusaale: 1803494801" 
+                            required 
+                            type="tel" 
+                            inputMode="numeric" 
+                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                            value={ffUid} 
+                            onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
+                          />
                         </div>
-                        <Input 
-                          placeholder="Tusaale: 5783204760" 
-                          required 
-                          type="tel" 
-                          inputMode="numeric" 
-                          className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
-                          value={ffUid} 
-                          onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
-                        />
+                      </div>
+                      <div className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Region</Label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                            <Globe size={18} />
+                          </div>
+                          <Input 
+                            readOnly 
+                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-100 dark:bg-slate-800/50 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-black text-xs md:text-base opacity-70" 
+                            value={ffRegion} 
+                          />
+                        </div>
                       </div>
                     </div>
+                    
                     <div className="space-y-1 md:space-y-2">
                       <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
                       <div className="relative">
@@ -411,22 +474,28 @@ function CheckoutContent() {
                           <User size={18} />
                         </div>
                         <Input 
-                          placeholder={checking ? "Checking..." : (language === 'so' ? "Magaca game-ka kugu qoran" : "Auto-detecting...")} 
-                          readOnly 
+                          placeholder={checking ? "Xaqiijinta ID-ga..." : isValidationUnsupported ? "Geli magacaaga manually" : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
+                          readOnly={!isValidationUnsupported}
                           className={cn(
-                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all cursor-not-allowed bg-slate-100 dark:bg-slate-900/80 text-slate-500 opacity-70 border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
-                            checking ? "border-slate-200 animate-pulse" : verified ? "border-green-500 bg-green-50/10" : lookupError ? "border-red-500 bg-red-50/10" : "border-transparent"
+                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
+                            checking ? "border-slate-200 animate-pulse bg-slate-100" : 
+                            verified ? "border-green-500 bg-green-50/10 text-green-600" : 
+                            isValidationUnsupported ? "border-amber-300 bg-white dark:bg-slate-800" :
+                            lookupError ? "border-red-500 bg-red-50/10" : "border-transparent bg-slate-100 opacity-70"
                           )} 
-                          value={ffPlayerName} 
+                          value={ffPlayerName}
+                          onChange={(e) => isValidationUnsupported && setFfPlayerName(e.target.value)}
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
                            {checking && <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-slate-400" />}
                            {verified && <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-green-500" />}
-                           {lookupError && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
+                           {lookupError && !isValidationUnsupported && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
+                           {isValidationUnsupported && <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />}
                         </div>
                       </div>
-                      {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Verified</p>}
-                      {lookupError && <p className="text-[10px] font-bold text-red-500 ml-1">{lookupError}</p>}
+                      {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Xogta waa sax</p>}
+                      {lookupError && <p className={cn("text-[10px] font-bold ml-1", isValidationUnsupported ? "text-amber-600" : "text-red-500")}>{lookupError}</p>}
+                      {isValidationUnsupported && <p className="text-[9px] font-medium text-slate-400 ml-1 italic">Validation isn't supported for this category, but you can still proceed.</p>}
                     </div>
                   </>
                 ) : (
@@ -496,9 +565,9 @@ function CheckoutContent() {
                 <p className="text-[8px] md:text-[11px] text-muted-foreground dark:text-slate-500 font-medium italic ml-1">* Number-kan waxaa loo isticmaali doonaa in lagu hubiyo lacag bixintaada.</p>
               </div>
 
-              {isLookupFailure && (
-                <p className="text-[10px] md:text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200">
-                  ⚠️ Auto-detect unavailable. Double-check your Game ID. No refunds for wrong IDs.
+              {lookupError && !verified && !isValidationUnsupported && (
+                <p className="text-[10px] md:text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-200">
+                  ⚠️ {lookupError}
                 </p>
               )}
 
@@ -626,6 +695,7 @@ function CheckoutContent() {
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Lacag Diraha:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.senderNumber}</span></div>
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Player ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{isAutoDetectEnabled ? ffUid : gameDetails.playerID}</span></div>
+                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Region:</span><span className="font-bold text-primary shrink-0">{isAutoDetectEnabled ? ffRegion : 'N/A'}</span></div>
               </div>
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">

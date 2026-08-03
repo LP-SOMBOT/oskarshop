@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 export default function RankingView() {
   const { allUsers, setActiveTab, storeSettings, t } = useApp();
@@ -45,7 +46,7 @@ export default function RankingView() {
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      const s = Math.floor((diff % (1000 * 60)) / (1000 * 60));
       
       setTimeLeft({ d, h, m, s });
     };
@@ -145,11 +146,8 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
   const isGold = color === 'gold';
   const isSilver = color === 'silver';
 
-  const borderClasses = isGold 
-    ? "border-yellow-400 ring-4 ring-yellow-400/20 shadow-[0_0_25px_rgba(234,179,8,0.5)]" 
-    : isSilver 
-      ? "border-slate-300 ring-4 ring-slate-300/20 shadow-[0_0_15px_rgba(203,213,225,0.3)]" 
-      : "border-amber-700 ring-4 ring-amber-700/20 shadow-[0_0_15px_rgba(180,83,9,0.3)]";
+  const effectClass = rank === 1 ? "flame-card" : rank === 2 ? "ice-card" : "electric-card";
+  const ringClass = rank === 1 ? "flame-frame-ring" : rank === 2 ? "ice-frame-ring" : "electric-frame-ring";
 
   return (
     <div className={cn(
@@ -158,9 +156,12 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
       delay
     )}>
        <div className="relative">
+          {/* Animated Ring */}
+          <div className={ringClass} />
+
           <div className={cn(
-            "w-16 h-16 md:w-28 md:h-28 rounded-full border-[4px] md:border-[6px] relative overflow-hidden",
-            borderClasses
+            "w-16 h-16 md:w-28 md:h-28 rounded-full relative overflow-hidden bg-white dark:bg-slate-900 z-10",
+            effectClass
           )}>
              <Avatar className="w-full h-full">
                 <AvatarImage src={user.photoURL} />
@@ -170,17 +171,20 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
              </Avatar>
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-white dark:border-slate-950 shadow-lg text-[10px] md:text-sm",
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-white dark:border-slate-950 shadow-lg text-[10px] md:text-sm z-20",
             isGold ? "bg-yellow-500 text-white" : isSilver ? "bg-slate-400 text-white" : "bg-amber-700 text-white"
           )}>
             {rank}
           </Badge>
        </div>
        
-       <div className="text-center min-w-0 px-1">
-          <p className="font-bold text-[10px] md:text-base text-slate-900 dark:text-white truncate max-w-full">
-            {user.name?.split(' ')[0] || "Gamer"}
-          </p>
+       <div className="text-center min-w-0 px-1 w-full">
+          <div className="flex items-center justify-center gap-1 min-w-0">
+            <p className="truncate font-semibold text-[10px] md:text-base text-slate-900 dark:text-white max-w-full">
+              {user.name?.split(' ')[0] || "Gamer"}
+            </p>
+            {user.isVerified && <VerifiedBadge />}
+          </div>
           <div className="flex items-center justify-center gap-1 text-primary">
              <Star size={10} fill="currentColor" />
              <span className="text-[10px] md:text-sm font-black">{user.points || 0}</span>
@@ -206,19 +210,22 @@ function RankListItem({ user, rank }: { user: any, rank: number }) {
   const { t } = useApp();
   return (
     <Card className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-none bg-white dark:bg-slate-900 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
-       <div className="flex items-center gap-3 md:gap-6">
-          <span className="w-6 md:w-10 font-headline font-bold text-sm md:text-xl text-slate-400 group-hover:text-primary transition-colors text-center">{rank}</span>
-          <Avatar className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl shadow-sm border-2 border-white dark:border-white/5">
+       <div className="flex items-center gap-1 min-w-0 flex-1">
+          <span className="w-6 md:w-10 font-headline font-bold text-sm md:text-xl text-slate-400 group-hover:text-primary transition-colors text-center shrink-0">{rank}</span>
+          <Avatar className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl shadow-sm border-2 border-white dark:border-white/5 shrink-0">
              <AvatarImage src={user.photoURL} />
              <AvatarFallback className="bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <User className="w-1/2 h-1/2 text-slate-300 dark:text-slate-700" />
              </AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
-             <p className="font-bold text-sm md:text-xl text-slate-900 dark:text-white truncate">{user.name?.split(' ')[0] || "Gamer"}</p>
+          <div className="min-w-0 flex-1">
+             <div className="flex items-center gap-1 min-w-0">
+               <p className="truncate font-semibold text-sm md:text-xl text-slate-900 dark:text-white max-w-[200px]">{user.name?.split(' ')[0] || "Gamer"}</p>
+               {user.isVerified && <VerifiedBadge />}
+             </div>
           </div>
        </div>
-       <div className="flex flex-col items-end gap-1">
+       <div className="flex flex-col items-end gap-1 shrink-0 ml-4">
           <div className="flex items-center gap-1.5 md:gap-3 text-primary font-headline font-bold text-sm md:text-2xl">
              <Star size={14} className="fill-primary/20 md:size-6" />
              <span>{user.points || 0}</span>

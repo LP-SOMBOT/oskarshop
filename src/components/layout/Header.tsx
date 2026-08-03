@@ -34,13 +34,13 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {user?.isAdmin ? (
-            <Link href="/admin" className="hidden md:block">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Settings className="w-4 h-4" /> Admin
+          {user?.isAdmin && (
+            <Link href="/admin">
+              <Button variant="ghost" size="icon" className="text-primary">
+                <Settings className="w-6 h-6" />
               </Button>
             </Link>
-          ) : null}
+          )}
 
           {user ? (
             <button 

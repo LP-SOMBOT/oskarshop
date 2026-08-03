@@ -128,3 +128,72 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Rotating conic gradient ring */
+.flame-frame-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #FF4500, #FF8C00, #FFD700, #FF8C00, #FF4500
+  );
+  animation: rotateRing 2s linear infinite;
+  z-index: 1;
+}
+@keyframes rotateRing {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+/* Card glow */
+.flame-card {
+  background: linear-gradient(135deg,
+    rgba(255,69,0,0.12), rgba(255,140,0,0.08));
+  border: 1px solid rgba(255,140,0,0.3);
+  animation: flamePulse 2s ease-in-out infinite;
+}
+@keyframes flamePulse {
+  0%,100% { box-shadow: 0 0 12px rgba(255,140,0,0.4); }
+  50%      { box-shadow: 0 0 28px rgba(255,69,0,0.7); }
+}
+
+/* Top 2 */
+.ice-frame-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #00BFFF, #87CEEB, #1E90FF, #87CEEB, #00BFFF
+  );
+  animation: rotateRing 3s linear infinite reverse;
+  z-index: 1;
+}
+.ice-card {
+  background: linear-gradient(135deg,
+    rgba(0,191,255,0.1), rgba(30,144,255,0.06));
+  border: 1px solid rgba(0,191,255,0.3);
+  animation: icePulse 2.5s ease-in-out infinite;
+}
+@keyframes icePulse {
+  0%,100% { box-shadow: 0 0 8px rgba(0,191,255,0.3); }
+  50%      { box-shadow: 0 0 20px rgba(0,191,255,0.7); }
+}
+
+/* Top 3 */
+.electric-frame-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #9400D3, #DA70D6, #7B00FF, #DA70D6, #9400D3
+  );
+  animation: rotateRing 1.5s linear infinite;
+  z-index: 1;
+}
+.electric-card {
+  border: 1px solid rgba(148,0,211,0.3);
+  animation: electricPulse 1.8s ease-in-out infinite;
+}
+@keyframes electricPulse {
+  0%,100% { box-shadow: 0 0 6px rgba(148,0,211,0.4); }
+  50%      { box-shadow: 0 0 18px rgba(218,112,214,0.8); }
+}

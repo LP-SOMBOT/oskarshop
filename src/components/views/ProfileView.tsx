@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -38,6 +37,7 @@ import Image from "next/image";
 import { uploadToImgbb } from "@/lib/imgbb";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 export default function ProfileView() {
   const { 
@@ -111,7 +111,7 @@ export default function ProfileView() {
         <div className="flex flex-col items-center">
           <Skeleton className="w-32 h-32 md:w-56 md:h-56 rounded-full mb-8" />
           <Skeleton className="h-10 w-48 md:h-12 md:w-64 mb-4" />
-          <Skeleton className="h-6 w-32 md:h-8 md:w-40" />
+          <Skeleton className="h-6 w-32 h-8 md:w-40" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
            {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 sm:h-64 w-full rounded-[2rem] md:rounded-[3rem]" />)}
@@ -123,7 +123,7 @@ export default function ProfileView() {
   if (!user) return null;
 
   return (
-    <div className="pb-32 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition">
+    <div className={cn("pb-48 px-4 py-8 md:py-10 max-w-[1600px] mx-auto space-y-10 md:space-y-16 lg:space-y-24 page-transition")}>
       <section className="flex flex-col items-center text-center">
         <div className="relative group mb-6 md:mb-10">
           <div className="w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 rounded-full border-[6px] md:border-[10px] border-white dark:border-slate-800 shadow-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 ring-2 md:ring-4 ring-primary/10 relative group-hover:scale-105 transition-transform duration-500">
@@ -136,9 +136,10 @@ export default function ProfileView() {
         </div>
 
         <div className="space-y-3 md:space-y-4">
-          <div className="flex items-center justify-center gap-2 md:gap-3">
-            <h2 className="text-2xl sm:text-4xl lg:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tight truncate max-w-[280px] sm:max-w-none">{user.name}</h2>
-            {user.isAdmin && <ShieldCheck className="text-primary w-6 h-6 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />}
+          <div className="flex items-center justify-center gap-2 min-w-0 px-4">
+            <h2 className="truncate font-bold text-2xl sm:text-4xl lg:text-7xl text-slate-900 dark:text-white tracking-tight max-w-[280px] sm:max-w-none">{user.name}</h2>
+            {user.isVerified && <VerifiedBadge />}
+            {user.isAdmin && !user.isVerified && <ShieldCheck className="text-primary w-6 h-6 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />}
           </div>
           <div className="flex items-center justify-center gap-2 md:gap-4">
             <Badge className="bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-none px-4 py-1.5 md:px-6 md:py-2.5 rounded-full flex gap-1.5 items-center font-black text-[10px] sm:text-sm lg:text-xl shadow-sm">
@@ -174,7 +175,6 @@ export default function ProfileView() {
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 lg:gap-14">
             <ProfileGroup title={t('store_marketplace')}>
-                <ProfileOption icon={ShoppingBag} label={t('orders')} onClick={() => setActiveTab('orders')} />
                 <ProfileOption icon={AccountIcon} label={t('my_accounts')} onClick={() => setActiveTab('my-accounts')} />
                 <ProfileOption icon={Gamepad2} label={t('sell_account')} onClick={() => setActiveTab('accounts')} />
                 <ProfileOption icon={Trophy} label={t('leaderboard')} onClick={() => setActiveTab('ranking')} />
@@ -279,7 +279,7 @@ function ProfileOption({ icon: Icon, label, onClick, variant, subLabel }: { icon
             {subLabel && <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-widest">{subLabel}</p>}
          </div>
       </div>
-      <ChevronRight size={18} className="text-slate-300 dark:text-white/20 shrink-0" />
+      <ChevronRight size={18} className="text-slate-300 dark:white/20 shrink-0" />
     </button>
   );
 }

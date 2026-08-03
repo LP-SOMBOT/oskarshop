@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -5,6 +6,7 @@ import { useApp } from "@/lib/context";
 import { 
   Settings as SettingsIcon, 
   Plus, 
+  Minus,
   Trash2, 
   Edit, 
   Users, 
@@ -83,7 +85,10 @@ import {
   UserCheck,
   Globe,
   BellRing,
-  Activity
+  Activity,
+  Cpu,
+  Unlink,
+  ExternalLink as LinkExternal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -154,8 +159,9 @@ import {
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
-import { ref, onValue, off, get } from "firebase/database";
+import { ref, onValue, off, get, query, limitToLast } from "firebase/database";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 // DND Kit Imports
 import {
@@ -178,6 +184,20 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
+/**
+ * Utility to safe-format relative dates
+ */
+const safeFormatDistanceToNow = (timestamp: any, options?: any) => {
+  if (!timestamp) return "---";
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return "---";
+  try {
+    return formatDistanceToNow(date, options);
+  } catch {
+    return "---";
+  }
+};
+
 function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, status: string }) {
   const [age, setAge] = useState("Just now");
 
@@ -185,7 +205,7 @@ function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, stat
     if (!createdAt) return;
     
     const update = () => {
-      setAge(formatDistanceToNow(new Date(createdAt)));
+      setAge(safeFormatDistanceToNow(createdAt));
     };
     update();
     const interval = setInterval(update, 60000);
@@ -246,7 +266,7 @@ function WaitTime({ post }: { post: any }) {
     <div className="flex items-center gap-2">
       <span className={cn(
         "text-[10px] font-bold", 
-        elapsed === "None" ? "text-slate-200 italic" : isUrgent ? "text-red-500" : "text-slate-500"
+        elapsed === "None" ? "text-slate-200 italic" : isUrgent ? "text-red-500" : "text-slate-50"
       )}>
         {elapsed}
       </span>
@@ -298,6 +318,7 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
           <div className="flex items-center gap-2">
             <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight truncate">{p.title}</p>
             {p.isOneTime && <Badge className="bg-red-500 text-white text-[7px] uppercase font-black px-1.5 h-4">One Time</Badge>}
+            {p.autoTopupEnabled && <Badge className="bg-green-500 text-white text-[7px] uppercase font-black px-1.5 h-4">Auto</Badge>}
           </div>
           <p className="text-[10px] md:sm font-black text-primary mt-0.5">${p.price}</p>
         </div>
@@ -359,11 +380,10 @@ export default function AdminPage() {
     deleteAccountPost,
     logout,
     isInitialLoading,
-    refreshAdminData,
     resetLeaderboard,
     setGlobalLoading,
-    rtdb,
-    adminNotifications
+    adminNotifications,
+    rtdb
   } = useApp();
 
   const router = useRouter();
@@ -409,7 +429,7 @@ export default function AdminPage() {
   const [endEarlyTargetId, setEndEarlyTargetId] = useState<string | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
-  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
+  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1 });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -426,6 +446,23 @@ export default function AdminPage() {
     rewardsActive: true,
     rewards: { rank1: "", rank2: "", rank3: "" } as any
   });
+
+  // Auto Schedule State
+  const [scheduleForm, setScheduleForm] = useState({
+    enabled: false,
+    openTime: "09:00",
+    closeTime: "21:30",
+    timezone: "Africa/Mogadishu"
+  });
+  const [mogadishuTime, setMogadishuTime] = useState("");
+  const [isScheduleBannerDismissed, setIsScheduleBannerDismissed] = useState(false);
+
+  // FazerCards & Automation UI States
+  const [fazerCategories, setFazerCategories] = useState<any[]>([]);
+  const [fazerOffers, setFazerOffers] = useState<any[]>([]);
+  const [isTestingFazer, setIsTestingFazer] = useState(false);
+  const [fazerApiKey, setFazerApiKey] = useState("");
+  const [recentSms, setRecentSms] = useState<any[]>([]);
 
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -459,6 +496,20 @@ export default function AdminPage() {
     if (!loading && !user?.isAdmin) router.replace('/');
   }, [user, loading, router]);
 
+  // Live Mogadishu Clock (12h format)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMogadishuTime(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Africa/Mogadishu',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }).format(new Date()));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     if (storeSettings && !formsInitialized.current) {
       setBrandForm({
@@ -477,6 +528,15 @@ export default function AdminPage() {
         telegramAdminChatIds: storeSettings.telegramAdminChatIds || ""
       });
       
+      setScheduleForm(storeSettings.schedule || {
+        enabled: false,
+        openTime: "09:00",
+        closeTime: "21:30",
+        timezone: "Africa/Mogadishu"
+      });
+
+      setFazerApiKey(storeSettings.fazercards?.apiKey || "");
+
       const lb = storeSettings.leaderboard || {
         rewardsActive: true,
         rewards: { rank1: 0, rank2: 0, rank3: 0 }
@@ -492,6 +552,18 @@ export default function AdminPage() {
       formsInitialized.current = true;
     }
   }, [storeSettings]);
+
+  // Fetch SMS History
+  useEffect(() => {
+    if (activeView === 'settings' && rtdb) {
+      const smsRef = query(ref(rtdb, 'sms_payments'), limitToLast(10));
+      const unsub = onValue(smsRef, (snap) => {
+        const val = snap.val();
+        if (val) setRecentSms(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.receivedAt - a.receivedAt));
+      });
+      return () => off(smsRef);
+    }
+  }, [activeView, rtdb]);
 
   const chartData = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -516,6 +588,66 @@ export default function AdminPage() {
     return last7Days.map(d => ({ day: d.label, v: d.v }));
   }, [allOrders]);
 
+  const scheduleAlert = useMemo(() => {
+    if (!scheduleForm.enabled || !mogadishuTime) return null;
+    
+    // Get numeric parts from Mogadishu time for calculation
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Mogadishu',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const [h, m] = formatter.format(now).split(':').map(Number);
+    const [oh, om] = scheduleForm.openTime.split(':').map(Number);
+    const [ch, cm] = scheduleForm.closeTime.split(':').map(Number);
+    
+    const currentMins = h * 60 + m;
+    const openMins = oh * 60 + om;
+    const closeMins = ch * 60 + cm;
+
+    if (closeMins - currentMins === 2) return { type: 'close', text: '⚠️ Website ka wuxuu xidhmi doonaa 2 daqiiqo gudahood' };
+    if (openMins - currentMins === 2) return { type: 'open', text: '✅ Website ka wuxuu furan doonaa 2 daqiiqo gudahood' };
+    return null;
+  }, [scheduleForm, mogadishuTime]);
+
+  const nextScheduleEvent = useMemo(() => {
+    if (!scheduleForm.enabled || !mogadishuTime) return null;
+
+    // Get numeric parts from Mogadishu time for calculation
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Mogadishu',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const [h, m] = formatter.format(now).split(':').map(Number);
+    const [oh, om] = scheduleForm.openTime.split(':').map(Number);
+    const [ch, cm] = scheduleForm.closeTime.split(':').map(Number);
+    
+    const currentMins = h * 60 + m;
+    const openMins = oh * 60 + om;
+    const closeMins = ch * 60 + cm;
+
+    const format12h = (time24: string) => {
+      const [h, m] = time24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+    };
+
+    if (openMins < closeMins) {
+      if (currentMins < openMins) return `Furmaysa ${format12h(scheduleForm.openTime)}`;
+      if (currentMins < closeMins) return `Xidhmaysa ${format12h(scheduleForm.closeTime)}`;
+      return `Furmaysa ${format12h(scheduleForm.openTime)} (Berri)`;
+    } else {
+      if (currentMins >= openMins || currentMins < closeMins) return `Xidhmaysa ${format12h(scheduleForm.closeTime)}`;
+      return `Furmaysa ${format12h(scheduleForm.openTime)}`;
+    }
+  }, [scheduleForm, mogadishuTime]);
+
   const selectedOrder = useMemo(() => allOrders.find(o => o.id === selectedOrderId), [selectedOrderId, allOrders]);
   const selectedAccount = useMemo(() => accountPosts.find(p => p.id === selectedAccountId), [selectedAccountId, accountPosts]);
   const selectedEventAccount = useMemo(() => eventAccounts.find(e => e.id === selectedEventId), [selectedEventId, eventAccounts]);
@@ -523,11 +655,19 @@ export default function AdminPage() {
   const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
 
   const filteredUsers = useMemo(() => {
-    return allUsers.filter(u => 
+    const filtered = allUsers.filter(u => 
       u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.uid?.toLowerCase().includes(userSearch.toLowerCase())
     );
+
+    return filtered.sort((a, b) => {
+      const aIsAdmin = a.role === 'admin';
+      const bIsAdmin = b.role === 'admin';
+      if (aIsAdmin && !bIsAdmin) return -1;
+      if (!aIsAdmin && bIsAdmin) return 1;
+      return 0;
+    });
   }, [allUsers, userSearch]);
 
   const onlineUsersCount = useMemo(() => {
@@ -548,10 +688,58 @@ export default function AdminPage() {
     setIsGameDialogOpen(true);
   };
 
-  const handleOpenProductDialog = (p?: any, gameId?: string) => {
+  const handleOpenProductDialog = async (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false });
+    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "", fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1 } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1 });
+    
+    // Fetch FazerCards categories
+    try {
+      const res = await fetch('/api/fazercards/topups');
+      const data = await res.json();
+      if (data.ok) {
+        const mapped = (data.items || []).map((c: any) => ({
+          id: c.category_id,
+          name: c.name
+        }));
+        setFazerCategories(mapped);
+      }
+      
+      if (p?.fazercardsCategory_id) {
+         const offRes = await fetch(`/api/fazercards/topups/offers?category_id=${p.fazercardsCategory_id}`);
+         const offData = await offRes.json();
+         if (offData.ok) {
+           const mapped = (offData.items || offData.offers || []).map((o: any) => ({
+             id: o.offer_id || o.id,
+             name: o.name,
+             price: o.price
+           }));
+           setFazerOffers(mapped);
+         }
+      }
+    } catch (err) {
+      console.error("Failed to load categories/offers", err);
+    }
+    
     setIsProductDialogOpen(true);
+  };
+
+  const handleFazerCategoryChange = async (cid: string) => {
+    setProductForm({ ...productForm, fazercardsCategory_id: cid, fazercardsOffer_id: "" });
+    setFazerOffers([]);
+    try {
+      const res = await fetch(`/api/fazercards/topups/offers?category_id=${cid}`);
+      const data = await res.json();
+      if (data.ok) {
+        const mapped = (data.items || data.offers || []).map((o: any) => ({
+          id: o.offer_id || o.id,
+          name: o.name,
+          price: o.price
+        }));
+        setFazerOffers(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to change category", err);
+    }
   };
 
   const handleOpenPaymentMethodDialog = (m?: any) => {
@@ -658,8 +846,8 @@ export default function AdminPage() {
     if (!over || active.id === over.id) return;
 
     const gameItems = products.filter(p => p.gameId === gameId).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-    const oldIndex = gameItems.findIndex(p => p.id === active.id);
-    const newIndex = gameItems.findIndex(p => p.id === over.id);
+    const oldIndex = gameItems.slice().findIndex(p => p.id === active.id);
+    const newIndex = gameItems.slice().findIndex(p => p.id === over.id);
 
     const reordered = arrayMove(gameItems, oldIndex, newIndex);
     const updates = reordered.map((p, i) => ({ id: p.id, orderIndex: i }));
@@ -757,6 +945,51 @@ export default function AdminPage() {
     }
   };
 
+  const handleSaveSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingStatus(true);
+    try {
+      await updateStoreSettings({
+        schedule: scheduleForm
+      });
+      toast({ title: "Schedule Updated", description: "Auto open/close times synced successfully." });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
+  const handleTestFazerConnection = async () => {
+    setIsTestingFazer(true);
+    try {
+      const res = await fetch('/api/fazercards/balance');
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Connection Successful!", description: `Balance: ${data.balance} ${data.currency}` });
+      } else {
+        toast({ title: "Connection Failed", description: data.error, variant: "destructive" });
+      }
+    } catch (err) {
+       toast({ title: "Error", description: "Failed to reach FazerCards API.", variant: "destructive" });
+    } finally {
+      setIsTestingFazer(false);
+    }
+  };
+
+  // Helper functions for 12h time switching
+  const getPeriod = (time24: string) => {
+    const [h] = (time24 || "00:00").split(':').map(Number);
+    return h >= 12 ? 'PM' : 'AM';
+  };
+
+  const setPeriod = (time24: string, newPeriod: 'AM' | 'PM') => {
+    const parts = (time24 || "00:00").split(':');
+    let h = parseInt(parts[0]);
+    const m = parts[1];
+    if (newPeriod === 'AM' && h >= 12) h -= 12;
+    if (newPeriod === 'PM' && h < 12) h += 12;
+    return `${h.toString().padStart(2, '0')}:${m}`;
+  };
+
   if (loading || isInitialLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-6">
@@ -775,16 +1008,14 @@ export default function AdminPage() {
         </div>
       )}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-hide">
-        <SideNavItem icon={Home} label="Back to Store" active={false} expanded={isSidebarExpanded || isMobile} onClick={() => { setGlobalLoading(true); router.push('/'); }} className="text-primary hover:bg-primary/5 mb-4" />
-        <div className="h-px bg-slate-100 dark:bg-white/5 my-4" />
         <SideNavItem icon={LayoutDashboard} label="Dashboard" active={activeView === 'dashboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={ShoppingBag} label="Orders" active={activeView === 'orders'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); setIsMobileMenuOpen(false); }} badge={topUpOrders.filter(o => o.status === 'pending').length} />
-        <SideNavItem icon={Gamepad2} label="Marketplace" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} />
-        <SideNavItem icon={Sparkles} label="Account Events" active={activeView === 'account-events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-events'); setSelectedEventId(null); setIsMobileMenuOpen(false); }} badge={eventAccounts.filter(e => e.status === 'active').length} />
+        <SideNavItem icon={Gamepad2} label="ciwaanada" active={activeView === 'account-posts'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-posts'); setSelectedAccountId(null); setIsMobileMenuOpen(false); }} badge={accountPosts.filter(p => p.status === 'pending').length} badgeVariant="primary" />
+        <SideNavItem icon={Sparkles} label="Account Events" active={activeView === 'account-events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('account-events'); setSelectedEventId(null); setIsMobileMenuOpen(false); }} badge={eventAccounts.filter(e => e.status === 'active').length} badgeVariant="primary" />
         <SideNavItem icon={Trophy} label="Leaderboard" active={activeView === 'leaderboard'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('leaderboard'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Box} label="Inventory" active={activeView === 'inventory'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('inventory'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={Megaphone} label="Live Events" active={activeView === 'events'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('events'); setIsMobileMenuOpen(false); }} />
-        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} badge={promoCodes.filter(p => !p.claimed).length} />
+        <SideNavItem icon={Ticket} label="Promo Codes" active={activeView === 'promo-codes'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('promo-codes'); setIsMobileMenuOpen(false); }} badge={promoCodes.filter(p => !p.claimed).length} badgeVariant="primary" />
         <SideNavItem icon={Users} label="Users" active={activeView === 'users'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('users'); setIsMobileMenuOpen(false); }} />
         <SideNavItem icon={SettingsIcon} label="Settings" active={activeView === 'settings'} expanded={isSidebarExpanded || isMobile} onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} />
       </nav>
@@ -815,22 +1046,29 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
-      <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
+    <div className="h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
+      <aside className={cn("hidden md:flex h-full bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
         <SidebarContent />
       </aside>
 
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-900 border-none">
-          <SheetHeader className="sr-only">
-             <SheetTitle>Admin Menu</SheetTitle>
+        <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden z-50">
+          <SheetHeader className="px-4 py-4 border-b dark:border-white/5">
+            <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
+            <Button 
+              variant="ghost" 
+              onClick={() => { setGlobalLoading(true); router.push('/'); }}
+              className="w-full justify-start gap-3 font-headline font-bold uppercase tracking-tight text-primary hover:bg-primary/5"
+            >
+              <Home size={20} /> Back to Store
+            </Button>
           </SheetHeader>
           <SidebarContent isMobile={true} />
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
-        <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
+      <div className="flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide h-screen">
+        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30 shadow-sm">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
@@ -865,7 +1103,7 @@ export default function AdminPage() {
                         <div key={n.id} className={cn("p-4 rounded-xl transition-all", n.readBy?.[user.uid] ? "opacity-40" : "bg-primary/5 border border-primary/10")}>
                            <p className="text-xs font-bold leading-tight">{n.title}</p>
                            <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{n.body}</p>
-                           <p className="text-[8px] font-black uppercase text-slate-300 mt-2">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
+                           <p className="text-[8px] font-black uppercase text-slate-300 mt-2">{safeFormatDistanceToNow(n.createdAt, { addSuffix: true })}</p>
                         </div>
                       ))
                     )}
@@ -880,12 +1118,26 @@ export default function AdminPage() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
+        {/* Global Warning Banner for Scheduled Transitions */}
+        {scheduleAlert && !isScheduleBannerDismissed && (
+          <div className={cn(
+            "p-3 px-6 flex items-center justify-between animate-in slide-in-from-top-full duration-500 z-50",
+            scheduleAlert.type === 'close' ? "bg-amber-600 text-white" : "bg-green-600 text-white"
+          )}>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className={cn("shrink-0", scheduleAlert.type === 'close' && "animate-pulse")} />
+              <p className="text-sm font-bold uppercase tracking-tight">{scheduleAlert.text}</p>
+            </div>
+            <button onClick={() => setIsScheduleBannerDismissed(true)} className="p-1 hover:bg-black/10 rounded-full"><X size={18} /></button>
+          </div>
+        )}
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 space-y-10 bg-slate-50 dark:bg-slate-950">
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                  <StatCard label="Total Revenue" value={`$${allOrders.filter(o => o.status === 'successful').reduce((acc, o) => acc + o.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
-                  <StatCard label="Pending Items" value={(allOrders.filter(o => o.status === 'pending').length + accountPosts.filter(p => p.status === 'pending').length).toString()} icon={Clock} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" pulse />
+                  <StatCard label="Total Revenue" value={`$${allOrders.filter(order => order.status === 'successful').reduce((acc, order) => acc + order.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
+                  <StatCard label="Pending Items" value={(allOrders.filter(order => order.status === 'pending').length + accountPosts.filter(p => p.status === 'pending').length).toString()} icon={Clock} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" pulse />
                   <StatCard label="Active Users" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
                   <StatCard label="Market Supply" value={accountPosts.filter(p => p.status === 'approved' && !p.sold).length.toString()} icon={ShieldCheck} color="text-emerald-500" bgColor="bg-emerald-50 dark:bg-emerald-500/10" />
                </div>
@@ -909,27 +1161,27 @@ export default function AdminPage() {
                   <div className="relative p-4 sm:p-8 md:p-12 space-y-12 md:space-y-12">
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-[2.5rem] border dark:border-white/5">
+                     <div className="flex flex-col lg:flex-row lg:items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-5 sm:p-8 md:p-10 rounded-[2rem] sm:rounded-[2.5rem] border dark:border-white/5 gap-8">
                         <div className="flex items-center gap-4 sm:gap-6">
                            <div className="w-12 h-12 sm:w-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl sm:rounded-3xl flex items-center justify-center text-primary shadow-inner shrink-0">
                               <Trophy size={28} className="sm:size-10 md:size-12" />
                            </div>
-                           <div>
-                              <h3 className="font-headline font-bold text-lg sm:text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white">Leaderboard Rewards</h3>
-                              <p className="text-[9px] sm:text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-0.5 sm:mt-1">Control active discount incentives</p>
+                           <div className="min-w-0">
+                              <h3 className="font-headline font-bold text-lg sm:text-2xl md:text-4xl uppercase tracking-tight text-slate-900 dark:text-white truncate">Leaderboard Rewards</h3>
+                              <p className="text-[9px] sm:text-[10px] md:text-sm font-black text-muted-foreground uppercase tracking-widest opacity-60 mt-0.5 sm:mt-1 truncate">Control active discount incentives</p>
                            </div>
                         </div>
                         
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
                            <Button 
                              variant="outline" 
                              onClick={resetLeaderboard}
-                             className="h-12 sm:h-16 rounded-xl sm:rounded-2xl border-2 font-black uppercase text-[10px] sm:text-xs tracking-widest gap-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50"
+                             className="w-full sm:w-auto h-12 sm:h-16 rounded-xl sm:rounded-2xl border-2 font-black uppercase text-[10px] sm:text-xs tracking-widest gap-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50"
                            >
                              <RefreshCw size={16} /> Reset All Points
                            </Button>
                            
-                           <div className="flex flex-col items-center gap-2 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 min-w-[160px] sm:min-w-[200px]">
+                           <div className="flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-4 sm:gap-3 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl sm:rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5 w-full sm:min-w-[160px] md:sm:min-w-[200px]">
                               <Label className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400">Status</Label>
                               <div className="flex items-center gap-3 sm:gap-4">
                                  <span className={cn("text-xs font-bold uppercase", leaderboardForm.rewardsActive ? "text-green-500" : "text-slate-400")}>
@@ -1041,6 +1293,7 @@ export default function AdminPage() {
                {selectedOrderId ? (
                  <OrderDetailView 
                    order={selectedOrder} 
+                   allUsers={allUsers}
                    onBack={() => setSelectedOrderId(null)} 
                    onUpdate={handleStatusUpdate}
                    status={pendingOrderStatus}
@@ -1056,39 +1309,41 @@ export default function AdminPage() {
                        {topUpOrders.length === 0 ? (
                          <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No orders found.</div>
                        ) : (
-                         topUpOrders.map(o => {
-                           const item = o.items?.[0];
-                           const isEventWinnerOrder = !!o.gameDetails?.isEventWinner;
+                         topUpOrders.map(order => {
+                           const item = order.items?.[0];
+                           const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
                            return (
-                             <Card key={o.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
+                             <Card key={order.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                                 <div className="flex items-center justify-between">
-                                   <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{o.id.toUpperCase()}</p>
-                                   <StatusBadge status={o.status} />
+                                   <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{order.id.toUpperCase()}</p>
+                                   <StatusBadge status={order.status} />
                                 </div>
                                 <div className="space-y-1">
-                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</p>
+                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">
+                                     {order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest")}
+                                   </p>
                                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
                                      {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                    </p>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
                                    <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
-                                      {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
+                                      {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
                                    </div>
                                    <div className="min-w-0">
                                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
-                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{o.processedBy?.name || "Wali lama furin"}</p>
+                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{order.processedBy?.name || "Wali lama furin"}</p>
                                    </div>
                                 </div>
                                 <div className="flex gap-2 pt-2 border-t dark:border-white/5">
                                    <button 
-                                     onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                     onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
                                      className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
                                    >
                                      <Eye size={16} /> View
                                    </button>
                                    <button 
-                                     onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                     onClick={() => { setDeleteTarget({id:order.id, type:'order'}); setIsDeleteDialogOpen(true); }}
                                      className="w-12 h-12 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
                                    >
                                      <Trash2 size={16} />
@@ -1116,15 +1371,17 @@ export default function AdminPage() {
                              {topUpOrders.length === 0 ? (
                                <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
                              ) : (
-                               topUpOrders.map(o => {
-                                 const item = o.items?.[0];
-                                 const isEventWinnerOrder = !!o.gameDetails?.isEventWinner;
+                               topUpOrders.map(order => {
+                                 const item = order.items?.[0];
+                                 const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
                                  return (
-                                 <TableRow key={o.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
-                                    <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{o.id.toUpperCase()}</TableCell>
+                                 <TableRow key={order.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
+                                    <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{order.id.toUpperCase()}</TableCell>
                                     <TableCell>
                                        <div className="flex flex-col">
-                                          <span className="font-bold text-base text-slate-900 dark:text-white">{o.gameDetails?.playerName || o.gameDetails?.name || "Guest"}</span>
+                                          <span className="font-bold text-base text-slate-900 dark:text-white">
+                                            {order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest")}
+                                          </span>
                                           <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
                                             {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
                                           </span>
@@ -1133,24 +1390,24 @@ export default function AdminPage() {
                                     <TableCell>
                                        <div className="flex items-center gap-3">
                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {o.processedBy?.photoURL ? <Image src={o.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
+                                             {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
                                           </div>
-                                          <span className={cn("text-xs font-bold", o.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
-                                            {o.processedBy?.name || "Wali lama furin"}
+                                          <span className={cn("text-xs font-bold", order.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
+                                            {order.processedBy?.name || "Wali lama furin"}
                                           </span>
                                        </div>
                                     </TableCell>
-                                    <TableCell><StatusBadge status={o.status} /></TableCell>
+                                    <TableCell><StatusBadge status={order.status} /></TableCell>
                                     <TableCell className="text-right px-6 lg:px-10">
                                        <div className="flex justify-end items-center gap-3">
                                           <button 
-                                            onClick={() => { setSelectedOrderId(o.id); setPendingStatus(o.status); setCancellationReason(o.cancellationReason || ""); }}
+                                            onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
                                             className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
                                           >
                                             <Eye size={18} />
                                           </button>
                                           <button 
-                                            onClick={() => { setDeleteTarget({id:o.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                            onClick={() => { setDeleteTarget({id:order.id, type:'order'}); setIsDeleteDialogOpen(true); }}
                                             className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                             <Trash2 size={18} />
@@ -1197,27 +1454,23 @@ export default function AdminPage() {
                        ) : (
                          accountPosts.map(p => {
                            const claimantsList = Object.values(p.claimants || {});
-                           const pendingClaims = claimantsList.filter((c: any) => c.status === 'pending');
-                           const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
-                             const t = Number(c.timestamp);
-                             return isNaN(t) ? Infinity : t;
-                           })) : null;
-                           const isOverdue = earliestClaim && earliestClaim !== Infinity && (Date.now() - earliestClaim) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
-
                            return (
                              <Card 
                                key={p.id} 
                                className={cn(
                                  "p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-5 transition-all",
-                                 isOverdue && "ring-2 ring-red-500/50 bg-red-50/50"
+                                 claimantsList.length > 0 && "ring-2 ring-red-500 bg-red-50/10"
                                )}
                              >
                                 <div className="flex items-center justify-between">
-                                   <div className="flex items-center gap-3">
+                                   <div className="flex items-center gap-1 min-w-0">
                                       <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white">
                                          {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                       </div>
-                                      <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                      <div className="flex items-center gap-1 min-w-0">
+                                        <span className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[120px]">{p.authorName || "Market User"}</span>
+                                        {p.authorIsVerified && <VerifiedBadge />}
+                                      </div>
                                    </div>
                                    <StatusBadge status={p.status} />
                                  </div>
@@ -1236,7 +1489,7 @@ export default function AdminPage() {
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 grid grid-cols-2 gap-4">
                                    <div className="space-y-1">
                                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Claims</p>
-                                      <Badge className="bg-green-100 text-green-700 border-none text-[8px] font-black px-3">{claimantsList.length} Active</Badge>
+                                      <Badge className={cn("border-none text-[8px] font-black px-3", claimantsList.length > 0 ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}>{claimantsList.length} Active</Badge>
                                    </div>
                                    <div className="space-y-1">
                                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p>
@@ -1288,8 +1541,7 @@ export default function AdminPage() {
                              ) : (
                                accountPosts.map(p => {
                                  const claimantsList = Object.values(p.claimants || {});
-                                 const pendingClaims = claimantsList.filter((c: any) => c.status === 'pending');
-                                 const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+                                 const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => {
                                    const t = Number(c.timestamp);
                                    return isNaN(t) ? Infinity : t;
                                  })) : null;
@@ -1300,15 +1552,18 @@ export default function AdminPage() {
                                     key={p.id} 
                                     className={cn(
                                       "border-slate-50 dark:border-white/5 h-24 transition-colors",
-                                      isOverdue ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-slate-50/50"
+                                      claimantsList.length > 0 ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-slate-50/50"
                                     )}
                                  >
                                     <TableCell className="px-6 lg:px-10">
-                                       <div className="flex items-center gap-3">
+                                       <div className="flex items-center gap-1 min-w-0">
                                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative shrink-0 shadow-sm border border-white dark:border-white/10">
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                           </div>
-                                          <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{p.authorName || "Market User"}</span>
+                                          <div className="flex items-center gap-1 min-w-0">
+                                            <span className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[120px]">{p.authorName || "Market User"}</span>
+                                            {p.authorIsVerified && <VerifiedBadge />}
+                                          </div>
                                        </div>
                                     </TableCell>
                                     <TableCell>
@@ -1321,7 +1576,7 @@ export default function AdminPage() {
                                        <div className="flex items-center gap-2">
                                           <Badge className={cn(
                                             "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
-                                            claimantsList.length > 0 ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
+                                            claimantsList.length > 0 ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400"
                                           )}>
                                             {claimantsList.length} Claims
                                           </Badge>
@@ -1354,7 +1609,7 @@ export default function AdminPage() {
                                         <button 
                                           onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
                                           className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
-                                        >
+                                          >
                                           <Trash2 size={18} />
                                         </button>
                                       </div>
@@ -1416,7 +1671,7 @@ export default function AdminPage() {
                                <button 
                                  onClick={(e) => { e.stopPropagation(); handleOpenGameDialog(g); }}
                                  className="text-blue-500 hover:scale-110 transition-transform"
-                               >
+                                >
                                  <PencilLine size={24} />
                                </button>
                                <button 
@@ -1523,7 +1778,7 @@ export default function AdminPage() {
                              <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Unit</Label>
                                 <Select value={eventForm.durationUnit} onValueChange={v => setEventForm({ ...eventForm, durationUnit: v })}>
-                                   <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                                   <SelectTrigger className="h-14 md:h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                                       <SelectItem value="days" className="p-4 font-bold text-xs uppercase">Days</SelectItem>
                                       <SelectItem value="hours" className="p-4 font-bold text-xs uppercase">Hours</SelectItem>
@@ -1553,7 +1808,7 @@ export default function AdminPage() {
                          <Button 
                            variant="outline"
                            onClick={() => { setBannerForm({ imageUrl: "", linkTo: "" }); setIsBannerDialogOpen(true); }}
-                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:text-sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
+                           className="rounded-2xl h-14 md:h-16 px-8 gap-3 font-bold border-2 text-xs md:sm uppercase tracking-widest active:scale-95 w-full sm:w-auto"
                          >
                             <Plus size={18} /> New Banner
                          </Button>
@@ -1575,10 +1830,10 @@ export default function AdminPage() {
                                  <Badge className="bg-green-500 text-white border-none font-bold text-[8px] uppercase px-2 py-0.5">LIVE</Badge>
                               </div>
                               <div className="absolute top-4 right-4 flex gap-2">
-                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Edit size={14} />
                                  </button>
-                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-500/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Trash2 size={14} />
                                  </button>
                               </div>
@@ -1741,10 +1996,13 @@ export default function AdminPage() {
                         <Card key={u.uid} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
                            <div className="flex items-center gap-4">
                               <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                 {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                 {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={24} /></div>}
                               </div>
                               <div className="min-w-0">
-                                 <p className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</p>
+                                 <div className="flex items-center gap-1 min-w-0">
+                                   <p className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[150px]">{u.name || "Legendary Gamer"}</p>
+                                   {u.isVerified && <VerifiedBadge />}
+                                 </div>
                                  <p className="text-[10px] text-muted-foreground truncate">{u.phoneNumber}</p>
                               </div>
                            </div>
@@ -1802,20 +2060,23 @@ export default function AdminPage() {
                                   <TableCell className="px-6 lg:px-10">
                                       <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                            {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 font-black">U</div>}
+                                            {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={20} /></div>}
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="font-bold text-sm md:text-lg text-slate-900 dark:text-white truncate">{u.name || "Legendary Gamer"}</span>
+                                            <div className="flex items-center gap-1 min-w-0">
+                                              <span className="truncate font-semibold text-sm md:text-lg text-slate-900 dark:text-white max-w-[200px]">{u.name || "Legendary Gamer"}</span>
+                                              {u.isVerified && <VerifiedBadge />}
+                                            </div>
                                             <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
                                         </div>
                                       </div>
                                   </TableCell>
                                   <TableCell>
                                       <div className="flex flex-col gap-1">
-                                        <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
+                                        <span className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
                                         <Badge className={cn(
                                           "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
-                                          u.role === 'admin' || u.role === 'super_admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
+                                          u.role === 'admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
                                         )}>
                                           {u.role || "USER"}
                                         </Badge>
@@ -1836,7 +2097,7 @@ export default function AdminPage() {
                                             </span>
                                         </div>
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
-                                            {!isNaN(lastActive) ? formatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
+                                            {!isNaN(lastActive) ? safeFormatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
                                         </span>
                                       </div>
                                   </TableCell>
@@ -1915,6 +2176,129 @@ export default function AdminPage() {
                                  </div>
                               </div>
                               <Button onClick={() => updateStoreSettings(brandForm).then(()=>toast({title:"Branding Synced"}))} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">Save Brand Updates</Button>
+                           </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  <AccordionItem value="automation" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-indigo-500">
+                              <Cpu className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Reseller & Automation</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">FazerCards & SMS Matcher</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                              {/* FazerCards Config */}
+                              <div className="space-y-6">
+                                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                       <div>
+                                          <h5 className="font-bold text-sm">FazerCards Reseller</h5>
+                                          <p className="text-[10px] text-muted-foreground font-medium uppercase">fazercards.com API</p>
+                                       </div>
+                                       <Switch 
+                                          checked={storeSettings.fazercards?.enabled || false} 
+                                          onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } })} 
+                                       />
+                                    </div>
+                                    
+                                    <SettingInput 
+                                       label="FazerCards API Key" 
+                                       type="password"
+                                       value={fazerApiKey} 
+                                       onChange={v => setFazerApiKey(v)} 
+                                       placeholder="Enter API Key" 
+                                    />
+                                    <Button size="sm" onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(()=>toast({title:"API Key Saved"}))} className="w-full h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Keydi / Save</Button>
+
+                                    <div className="pt-4 border-t dark:border-white/5 space-y-4">
+                                       <div className="flex items-center justify-between">
+                                          <p className="text-xs font-bold">Auto Top-Up</p>
+                                          <Switch 
+                                             checked={storeSettings.fazercards?.autoTopupEnabled || false} 
+                                             onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } })} 
+                                          />
+                                       </div>
+                                       <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 shadow-sm">
+                                          <div className="flex flex-col">
+                                             <span className="text-[10px] font-black uppercase text-slate-400">API Balance</span>
+                                             <span className="text-sm font-bold text-primary">{storeSettings.fazercards?.balance || "---"}</span>
+                                          </div>
+                                          <div className="flex gap-2">
+                                             <Button variant="ghost" size="sm" onClick={handleTestFazerConnection} disabled={isTestingFazer} className="h-8 rounded-lg text-[9px] font-black uppercase">{isTestingFazer ? <Loader2 className="animate-spin" /> : "Sync"}</Button>
+                                          </div>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+
+                              {/* SMS Payment Matcher */}
+                              <div className="space-y-6">
+                                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                       <div>
+                                          <h5 className="font-bold text-sm">SMS Auto-Matcher</h5>
+                                          <p className="text-[10px] text-muted-foreground font-medium uppercase">Auto-approve via EVC Plus</p>
+                                       </div>
+                                       <Switch 
+                                          checked={storeSettings.sms_webhook?.enabled || false} 
+                                          onCheckedChange={v => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } })} 
+                                       />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                       <div className="space-y-1">
+                                          <Label className="text-[9px] font-black uppercase text-slate-400">Webhook URL</Label>
+                                          <div className="flex gap-2">
+                                             <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
+                                             <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
+                                          </div>
+                                       </div>
+                                       <div className="space-y-1">
+                                          <Label className="text-[9px] font-black uppercase text-slate-400">Webhook Secret</Label>
+                                          <Input readOnly type="password" value="oskar-secure-secret-2026" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
+                                       </div>
+                                    </div>
+
+                                    <Accordion type="single" collapsible>
+                                       <AccordionItem value="sms-steps" className="border-none">
+                                          <AccordionTrigger className="text-[9px] font-black uppercase py-2">Setup Instructions</AccordionTrigger>
+                                          <AccordionContent className="text-[10px] leading-relaxed text-muted-foreground space-y-2">
+                                             <p>1. Install "SMS Forwarder" from Play Store</p>
+                                             <p>2. Create rule: HTTP POST</p>
+                                             <p>3. URL: Webhook URL above</p>
+                                             <p>4. Header: x-webhook-secret: oskar-secure-secret-2026</p>
+                                             <p>5. Body: {"{\"sms\": \"%body%\"}"}</p>
+                                             <p>6. Filter: sender contains "EVCPLUS"</p>
+                                          </AccordionContent>
+                                       </AccordionItem>
+                                    </Accordion>
+                                 </div>
+
+                                 <div className="space-y-3">
+                                    <h6 className="text-[9px] font-black uppercase text-slate-400 ml-1">Recent SMS Traffic</h6>
+                                    <div className="space-y-2">
+                                       {recentSms.map(sms => (
+                                          <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px]">
+                                             <div className="min-w-0">
+                                                <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
+                                                <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
+                                             </div>
+                                             <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
+                                                {sms.matched ? "Matched" : "Unmatched"}
+                                             </Badge>
+                                          </div>
+                                       ))}
+                                       {recentSms.length === 0 && <div className="text-center py-4 opacity-20 text-[10px] font-bold uppercase">No data</div>}
+                                    </div>
+                                 </div>
+                              </div>
                            </div>
                         </AccordionContent>
                      </Card>
@@ -2037,7 +2421,7 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-6 sm:space-y-10">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="flex flex-col md:flex-row gap-6 md:gap-10">
                                  <div className="space-y-6">
                                     <SettingInput label="WhatsApp Support No" value={helpLinksForm.whatsappNumber} onChange={v => setHelpLinksForm(f => ({ ...f, whatsappNumber: v }))} placeholder="252613982172" />
                                     <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tiktokUrl: v }))} placeholder="https://tiktok.com/@..." />
@@ -2112,15 +2496,30 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <div className="space-y-8 sm:space-y-12">
-                              <div className="p-6 md:p-10 bg-red-50 dark:bg-red-950/20 rounded-3xl flex items-center justify-between border-2 border-red-100 dark:border-red-900/30">
+                              <div className={cn(
+                                "p-6 md:p-10 rounded-3xl flex items-center justify-between border-2 transition-all",
+                                scheduleForm.enabled ? "bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-white/5 opacity-80" : "bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30"
+                              )}>
                                  <div className="flex items-center gap-4 md:gap-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg"><Monitor className="w-7 h-7" /></div>
+                                    <div className={cn(
+                                      "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg",
+                                      scheduleForm.enabled ? "bg-slate-400 text-white" : "bg-red-600 text-white"
+                                    )}>
+                                      <Monitor className="w-7 h-7" />
+                                    </div>
                                     <div>
                                        <p className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Maintenance Mode</p>
-                                       <p className="text-xs text-sm font-medium text-red-700 dark:text-red-400">Lock entire store for maintenance</p>
+                                       <p className="text-xs text-sm font-medium text-slate-500 dark:text-slate-400">
+                                         {scheduleForm.enabled ? "Controlled by Auto Schedule" : "Lock entire store for maintenance"}
+                                       </p>
                                     </div>
                                  </div>
-                                 <Switch checked={appStatusForm.offline} onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} className="scale-125" />
+                                 <Switch 
+                                   checked={appStatusForm.offline} 
+                                   disabled={scheduleForm.enabled}
+                                   onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} 
+                                   className="scale-125" 
+                                 />
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14">
@@ -2145,6 +2544,168 @@ export default function AdminPage() {
                         </AccordionContent>
                      </Card>
                   </AccordionItem>
+
+                  <AccordionItem value="auto-schedule" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-indigo-600">
+                              <CalendarIcon className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Auto offline/online</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Scheduled Operating Hours</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-8 sm:space-y-12">
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div className="flex items-center justify-between w-full gap-4 bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-3xl border dark:border-white/5">
+                                      <div className="text-left">
+                                        <p className="text-[10px] sm:text-xs font-black uppercase text-slate-400">auto close/open</p>
+                                        <p className="text-[9px] sm:text-10px] font-bold text-muted-foreground uppercase">Automatically switch status</p>
+                                      </div>
+                                      <Switch 
+                                        checked={scheduleForm.enabled} 
+                                        onCheckedChange={async (v) => {
+                                          const updatedSchedule = { ...scheduleForm, enabled: v };
+                                          setScheduleForm(updatedSchedule);
+                                          
+                                          // If disabling, force the app online immediately
+                                          if (!v) {
+                                            setIsGlobalLoading(true);
+                                            try {
+                                              const updates = {
+                                                schedule: updatedSchedule,
+                                                appStatus: { ...appStatusForm, offline: false }
+                                              };
+                                              await updateStoreSettings(updates);
+                                              setAppStatusForm(f => ({ ...f, offline: false }));
+                                              toast({ title: "Schedule Disabled", description: "Shop is now forced Online." });
+                                            } finally {
+                                              setIsGlobalLoading(false);
+                                            }
+                                          } else {
+                                            // If enabling, just update the schedule settings
+                                            // The background hook will take over and enforce the window in 3 seconds
+                                            setIsGlobalLoading(true);
+                                            try {
+                                              await updateStoreSettings({ schedule: updatedSchedule });
+                                              toast({ title: "Schedule Enabled", description: "Operating hours are now active." });
+                                            } finally {
+                                              setIsGlobalLoading(false);
+                                            }
+                                          }
+                                        }} 
+                                        className="scale-110"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t dark:border-white/5">
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                                      <Clock size={20} className="text-indigo-500" />
+                                      <p className="text-[11px] font-black uppercase text-slate-400">Mogadishu Time</p>
+                                      <p className="text-2xl font-headline font-bold text-slate-900 dark:text-white tabular-nums">{mogadishuTime || "0:00:00 AM"}</p>
+                                    </div>
+
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                                      <div className={cn("w-3 h-3 rounded-full animate-pulse", storeSettings.appStatus?.offline ? "bg-red-500" : "bg-green-500")} />
+                                      <p className="text-[11px] font-black uppercase text-slate-400">Shop Status</p>
+                                      <p className="text-xl font-bold text-slate-900 dark:text-white uppercase">
+                                        {storeSettings.appStatus?.offline ? "🔴 Xidhan (Closed)" : "🟢 Furan (Open)"}
+                                      </p>
+                                    </div>
+
+                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
+                                      <History size={20} className="text-amber-500" />
+                                      <p className="text-[11px] font-black uppercase text-slate-400">Next Auto-Action</p>
+                                      <p className="text-lg font-bold text-slate-900 dark:text-white uppercase tabular-nums">
+                                        ⏭ {nextScheduleEvent || "None scheduled"}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {scheduleForm.enabled && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-top-4 duration-500">
+                                      <div className="space-y-3">
+                                        <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga Furitaanka / Open Time</Label>
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <Input 
+                                              type="time" 
+                                              value={scheduleForm.openTime} 
+                                              onChange={(e) => setScheduleForm({...scheduleForm, openTime: e.target.value})}
+                                              className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl h-16 shrink-0 border dark:border-white/5 shadow-inner">
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, openTime: setPeriod(scheduleForm.openTime, 'AM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.openTime) === 'AM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >AM</button>
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, openTime: setPeriod(scheduleForm.openTime, 'PM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.openTime) === 'PM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >PM</button>
+                                          </div>
+                                        </div>
+                                        <p className="text-[9px] font-black uppercase text-slate-300 ml-1">Maalin (AM)</p>
+                                      </div>
+
+                                      <div className="space-y-3">
+                                        <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga xirmaayo / Close Time</Label>
+                                        <div className="flex gap-2">
+                                          <div className="relative flex-1">
+                                            <Input 
+                                              type="time" 
+                                              value={scheduleForm.closeTime} 
+                                              onChange={(e) => setScheduleForm({...scheduleForm, closeTime: e.target.value})}
+                                              className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
+                                            />
+                                          </div>
+                                          <div className="flex flex-col bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl h-16 shrink-0 border dark:border-white/5 shadow-inner">
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, closeTime: setPeriod(scheduleForm.closeTime, 'AM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.closeTime) === 'AM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >AM</button>
+                                            <button 
+                                              type="button"
+                                              onClick={() => setScheduleForm({...scheduleForm, closeTime: setPeriod(scheduleForm.closeTime, 'PM')})}
+                                              className={cn(
+                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
+                                                getPeriod(scheduleForm.closeTime) === 'PM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
+                                              )}
+                                            >PM</button>
+                                          </div>
+                                        </div>
+                                        <p className="text-[9px] font-black uppercase text-slate-300 ml-1">Habeen (PM)</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <Button 
+                                    onClick={handleSaveSchedule}
+                                    disabled={isSavingStatus}
+                                    className="w-full h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-indigo-600 hover:bg-indigo-700"
+                                  >
+                                    {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save Schedule"}
+                                  </Button>
+                                </div>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
                </Accordion>
             </div>
           )}
@@ -2152,105 +2713,143 @@ export default function AdminPage() {
       </div>
 
       <Dialog open={isUserManageOpen} onOpenChange={setIsUserManageOpen}>
-        <DialogContent className="max-md w-[95%] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300">
+        <DialogContent className="max-w-md w-[94%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 animate-in zoom-in duration-300 max-h-[90vh] flex flex-col [&>button]:hidden">
            <DialogHeader className="sr-only"><DialogTitle>User Management</DialogTitle></DialogHeader>
            
-           <div className="h-28 md:h-32 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
+           <div className="h-24 md:h-28 bg-gradient-to-r from-[#7B5CE5] to-[#534AB7] relative shrink-0">
               <button 
                 onClick={() => setIsUserManageOpen(false)}
-                className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 text-white flex items-center justify-center hover:bg-black/40 transition-colors z-20"
               >
-                 <X size={20} />
+                 <X size={16} strokeWidth={3} />
               </button>
               
-              <div className="absolute -bottom-12 left-8">
-                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-[6px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-2xl relative">
+              <div className="absolute -bottom-10 left-6">
+                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-[4px] border-white dark:border-slate-900 bg-slate-100 overflow-hidden shadow-xl relative">
                     {selectedUser?.photoURL ? (
                       <Image src={selectedUser.photoURL} alt={selectedUser.name} fill className="object-cover" unoptimized />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100"><User size={40} /></div>
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-800"><User size={32} /></div>
                     )}
                  </div>
               </div>
            </div>
 
-           <div className="p-6 md:p-8 pt-12 md:pt-16 space-y-6 md:space-y-8">
+           <div className="flex-1 overflow-y-auto p-5 md:p-8 pt-12 md:pt-14 space-y-5 md:space-y-6 scrollbar-hide">
               <div className="flex justify-between items-start">
                  <div className="min-w-0 pr-2">
-                    <h3 className="text-xl md:text-2xl font-headline font-bold tracking-tight text-slate-900 dark:text-white truncate">{selectedUser?.name || "Gamer"}</h3>
-                    <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
-                       <Smartphone size={12} />
-                       <span className="text-[10px] md:text-[11px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h3 className="truncate font-bold text-lg md:text-xl tracking-tight text-slate-900 dark:text-white max-w-[180px]">{selectedUser?.name || "Gamer"}</h3>
+                      {selectedUser?.isVerified && <VerifiedBadge />}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
+                       <Smartphone size={10} />
+                       <span className="text-[9px] md:text-[10px] font-bold">{selectedUser?.phoneNumber || "No Phone"}</span>
                     </div>
                  </div>
                  <Badge className={cn(
-                   "rounded-full uppercase text-[7px] md:text-[8px] font-black tracking-widest px-2 md:px-3 py-1 border-none shadow-sm shrink-0",
-                   selectedUser?.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
+                   "rounded-full uppercase text-[7px] font-black tracking-widest px-2 py-0.5 border-none shadow-sm shrink-0",
+                   selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
                  )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
                  </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                 <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Balance</p>
-                    <div className="flex items-center gap-2">
-                       <Star className="w-4 h-4 md:size-5 text-amber-500 fill-amber-500" />
-                       <p className="text-2xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
+              <div className="grid grid-cols-2 gap-3">
+                 <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl md:rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[7px] md:text-[8px] font-black uppercase text-slate-400 mb-1 tracking-widest">Balance</p>
+                    <div className="flex items-center gap-1.5">
+                       <Star className="w-3 h-3 md:size-4 text-amber-500 fill-amber-500" />
+                       <p className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white leading-none">{selectedUser?.points || 0}</p>
                     </div>
                  </div>
-                 <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl md:rounded-[1.5rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                    <p className="text-[8px] md:text-[9px] font-black uppercase text-slate-400 mb-1 md:mb-2 tracking-widest">Role</p>
-                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 md:px-3 py-0.5 md:py-1 rounded-lg">
+                 <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl md:rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
+                    <p className="text-[7px] md:text-[8px] font-black uppercase text-slate-400 mb-1 tracking-widest">Role</p>
+                    <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase px-2 py-0.5 rounded-lg">
                       {selectedUser?.role || 'user'}
                     </Badge>
                  </div>
               </div>
 
-              <div className="space-y-2 md:space-y-3">
-                 <div className="flex items-center gap-2 text-primary ml-1">
-                    <LayoutGrid size={14} />
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Role Management</Label>
-                 </div>
-                 <Select 
-                    value={selectedUser?.role || 'user'} 
-                    onValueChange={(val: any) => {
-                      manageUser(selectedUser.uid, { role: val });
-                      setSelectedUser({...selectedUser, role: val});
-                      toast({title: "Role Updated"});
-                    }}
-                 >
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold text-sm md:text-base shadow-inner">
-                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900">
-                       <SelectItem value="user" className="rounded-xl p-4 font-bold text-xs uppercase">standard user</SelectItem>
-                       <SelectItem value="staff" className="rounded-xl p-4 font-bold text-xs uppercase">staff member</SelectItem>
-                       <SelectItem value="admin" className="rounded-xl p-4 font-bold text-xs uppercase">admin access</SelectItem>
-                       <SelectItem value="super_admin" className="rounded-xl p-4 font-bold text-xs uppercase">super admin</SelectItem>
-                    </SelectContent>
-                 </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                   <div className="flex items-center gap-1.5 text-primary ml-1">
+                      <LayoutGrid size={12} />
+                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Role</Label>
+                   </div>
+                   <Select 
+                      value={selectedUser?.role || 'user'} 
+                      onValueChange={(val: any) => {
+                        manageUser(selectedUser.uid, { role: val });
+                        setSelectedUser({...selectedUser, role: val});
+                        toast({title: "Role Updated"});
+                      }}
+                   >
+                      <SelectTrigger className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-3 font-bold text-xs shadow-inner">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-none shadow-2xl bg-white dark:bg-slate-900">
+                         <SelectItem value="user" className="rounded-lg p-2 font-bold text-xs uppercase">User</SelectItem>
+                         <SelectItem value="admin" className="rounded-lg p-2 font-bold text-xs uppercase">Admin</SelectItem>
+                      </SelectContent>
+                   </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                   <div className="flex items-center gap-1.5 text-blue-500 ml-1">
+                      <ShieldCheck size={12} />
+                      <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verification status</Label>
+                   </div>
+                   <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
+                          {selectedUser?.isVerified ? 'Verified' : 'unverified'}
+                        </span>
+                        {selectedUser?.isVerified && <VerifiedBadge className="text-[14px]" />}
+                      </div>
+                      <Switch 
+                        checked={selectedUser?.isVerified || false} 
+                        onCheckedChange={async (v) => {
+                          await manageUser(selectedUser.uid, { isVerified: v });
+                          setSelectedUser({...selectedUser, isVerified: v});
+                          toast({ title: v ? "User Verified" : "Verification Removed" });
+                        }} 
+                        className="scale-90"
+                      />
+                   </div>
+                </div>
               </div>
 
-              <div className="space-y-3 md:space-y-4">
-                 <div className="flex items-center gap-2 text-amber-500 ml-1">
-                    <DollarSign size={14} />
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Wallet Adjustments</Label>
+              <div className="space-y-2">
+                 <div className="flex items-center gap-1.5 text-amber-500 ml-1">
+                    <DollarSign size={12} />
+                    <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Adjust Balance</Label>
                  </div>
-                 <div className="flex gap-2 md:gap-3">
+                 <div className="flex gap-2">
                     <Input 
                       type="number" 
                       placeholder="Amt" 
                       value={pointAdjustment} 
                       onChange={e => setPointAdjustment(e.target.value)} 
-                      className="h-12 md:h-16 rounded-xl md:rounded-2xl dark:bg-slate-800 border-none shadow-inner font-bold px-4 md:px-6 text-base md:text-lg focus:ring-2 focus:ring-primary" 
+                      className="h-10 md:h-12 rounded-lg md:rounded-xl dark:bg-slate-800 border-none shadow-inner font-bold px-3 text-sm focus:ring-1 focus:ring-primary" 
                     />
-                    <Button onClick={() => handleAdjustPoints('credit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20 shrink-0"><ArrowUpCircle size={24} className="md:size-7" /></Button>
-                    <Button onClick={() => handleAdjustPoints('debit')} className="h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-red-50 hover:bg-red-600 shadow-lg shadow-red-500/20 shrink-0"><ArrowDownCircle size={24} className="md:size-7" /></Button>
+                    <Button onClick={() => handleAdjustPoints('credit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-green-500 hover:bg-green-600 shadow-md shrink-0 p-0"><Plus size={20} /></Button>
+                    <Button onClick={() => handleAdjustPoints('debit')} size="sm" className="h-10 w-10 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-red-500 hover:bg-red-600 shadow-md shrink-0 p-0"><Minus size={16} /></Button>
                  </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-3">
+                 <Button 
+                    onClick={() => {
+                      setIsUserManageOpen(false);
+                      setGlobalLoading(true);
+                      router.push(`/admin/users/${selectedUser?.uid}`);
+                    }}
+                    className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 text-xs"
+                 >
+                    <LinkExternal size={14} /> Customer info
+                 </Button>
+
                  <Button 
                     variant={selectedUser?.banned ? "default" : "destructive"} 
                     onClick={async () => { 
@@ -2260,19 +2859,19 @@ export default function AdminPage() {
                       toast({title: newBanned ? "User Banned" : "User Restored"}); 
                     }} 
                     className={cn(
-                      "w-full h-14 md:h-18 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3",
+                      "w-full h-11 md:h-13 rounded-xl md:rounded-2xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-xs",
                       selectedUser?.banned 
                         ? "bg-green-600 hover:bg-green-700 text-white border-none" 
-                        : "bg-red-50 dark:bg-red-500/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-100 dark:border-red-500/20"
+                        : "bg-red-600 hover:bg-red-700 text-white border-none"
                     )}
                  >
                     {selectedUser?.banned ? (
-                      <><RefreshCw size={18} /> RESTORE ACCESS</>
+                      <><RefreshCw size={14} /> Restore User</>
                     ) : (
-                      <><Ban size={18} /> BAN</>
+                      <><Ban size={14} /> Ban User</>
                     )}
                  </Button>
-                 <p className="text-[7px] md:text-[8px] text-center text-slate-300 uppercase font-black tracking-widest mt-4 md:mt-6 opacity-40">
+                 <p className="text-[6px] md:text-[7px] text-center text-slate-300 dark:text-slate-600 uppercase font-black tracking-widest mt-4 opacity-60">
                     JOINED: {selectedUser?.createdAt ? format(new Date(selectedUser.createdAt), 'MMM d, yyyy').toUpperCase() : 'N/A'}
                  </p>
               </div>
@@ -2292,12 +2891,12 @@ export default function AdminPage() {
               </div>
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
-                 <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Category</Label>
+                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
                  <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl border-none shadow-2xl">
-                       <SelectItem value="top-up" className="p-3 font-bold text-xs">Top-Up Items</SelectItem>
-                       <SelectItem value="accounts" className="p-3 font-bold text-xs">Account Marketplace</SelectItem>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl">
+                       <SelectItem value="top-up" className="p-3 font-bold text-xs uppercase">Top-Up Items</SelectItem>
+                       <SelectItem value="accounts" className="p-3 font-bold text-xs uppercase">Account Marketplace</SelectItem>
                     </SelectContent>
                  </Select>
               </div>
@@ -2311,7 +2910,7 @@ export default function AdminPage() {
       </Dialog>
 
       <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent className="max-w-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <DialogContent className="max-xl w-[95%] rounded-[2rem] md:rounded-[3rem] p-0 border-none shadow-2xl bg-white dark:bg-slate-900 max-h-[90vh] overflow-y-auto scrollbar-hide">
            <div className="h-2 bg-primary w-full" />
            <DialogHeader className="p-6 md:p-10 pb-0">
               <DialogTitle className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight">
@@ -2326,7 +2925,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Package Title" value={productForm.title} onChange={v => setProductForm({ ...productForm, title: v })} placeholder="110 Diamonds" />
                  <div className="space-y-2">
-                    <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
+                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
                     <Select value={productForm.gameId} onValueChange={v => setProductForm({ ...productForm, gameId: v })}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue placeholder="Select Game" /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
@@ -2339,10 +2938,65 @@ export default function AdminPage() {
                  <SettingInput label="Standard Price ($)" type="number" value={productForm.price} onChange={v => setProductForm({ ...productForm, price: v })} placeholder="2.99" />
                  <SettingInput label="Discounted Price ($)" type="number" value={productForm.discountedPrice} onChange={v => setProductForm({ ...productForm, discountedPrice: v })} placeholder="1.99" />
               </div>
+
+              {/* Automation Section */}
+              <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl border dark:border-white/5 space-y-6">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                       <Cpu className="text-primary w-5 h-5" />
+                       <h5 className="font-bold text-sm">Reseller Automation</h5>
+                    </div>
+                    <Switch 
+                      checked={productForm.autoTopupEnabled} 
+                      onCheckedChange={v => setProductForm({ ...productForm, autoTopupEnabled: v })} 
+                    />
+                 </div>
+                 
+                 {productForm.autoTopupEnabled && (
+                   <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-slate-400">FazerCards Category</Label>
+                         <Select value={productForm.fazercardsCategory_id} onValueChange={handleFazerCategoryChange}>
+                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                               <SelectValue placeholder="Select category..." />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                               {(fazerCategories || []).map(cat => <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold">{cat.name}</SelectItem>)}
+                            </SelectContent>
+                         </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-slate-400">FazerCards Offer</Label>
+                         <Select value={productForm.fazercardsOffer_id} onValueChange={v => setProductForm({ ...productForm, fazercardsOffer_id: v })}>
+                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                               <SelectValue placeholder="Select offer..." />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                               {(fazerOffers || []).map(off => <SelectItem key={off.id} value={off.id} className="text-xs font-bold">{off.name} - ${off.price}</SelectItem>)}
+                            </SelectContent>
+                         </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase text-slate-400">Order multiplier</Label>
+                         <Select value={productForm.fazercardsMultiQuantity?.toString() || "1"} onValueChange={v => setProductForm({ ...productForm, fazercardsMultiQuantity: parseInt(v) })}>
+                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                               <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                               {[1, 2, 3, 4, 5].map(m => <SelectItem key={m} value={m.toString()} className="text-xs font-bold">{m}x Order</SelectItem>)}
+                            </SelectContent>
+                         </Select>
+                         <p className="text-[8px] text-muted-foreground italic ml-1">Labo ama sedex laab item ka</p>
+                      </div>
+                   </div>
+                 )}
+              </div>
+
               <div className="space-y-2">
-                 <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
+                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
                  <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-[2.5rem] bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Standard Delivery</SelectItem>
                        <SelectItem value="booyah-pass" className="p-3 font-bold text-xs">Booyah Pass (Direct WhatsApp)</SelectItem>
@@ -2392,11 +3046,11 @@ export default function AdminPage() {
            <form onSubmit={handleSavePromo} className="space-y-6 mt-6">
               <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Code</Label>
-                 <Input 
+                 <input 
                    placeholder="e.g. DEVL26%OFF" 
                    value={promoCodeForm.code} 
                    onChange={e => setPromoCodeInput({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
-                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all uppercase" 
+                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus-ring-primary transition-all uppercase w-full" 
                  />
               </div>
 
@@ -2474,21 +3128,24 @@ export default function AdminPage() {
                     const profile = allUsers.find(u => u.uid === usage.uid);
                     return (
                       <div key={usage.uid} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm">
+                         <div className="flex items-center gap-3 min-w-0">
+                            <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm shrink-0">
                                <AvatarImage src={profile?.photoURL} />
                                <AvatarFallback className="bg-primary/10 text-primary">
                                  <User size={20}/>
                                </AvatarFallback>
                             </Avatar>
-                            <div>
-                               <p className="text-sm font-bold">{usage.name || profile?.name || 'Gamer'}</p>
+                            <div className="min-w-0 flex-1">
+                               <div className="flex items-center gap-1 min-w-0">
+                                 <p className="truncate font-semibold text-sm max-w-[120px]">{usage.name || profile?.name || 'Gamer'}</p>
+                                 {profile?.isVerified && <VerifiedBadge />}
+                               </div>
                                <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp || profile?.phoneNumber || 'N/A'}</p>
                             </div>
                          </div>
-                         <div className="text-right">
-                            <p className="text-[10px] font-black text-primary uppercase">{formatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
-                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{format(usage.timestamp, 'MMM d, HH:mm')}</p>
+                         <div className="text-right shrink-0">
+                            <p className="text-[10px] font-black text-primary uppercase">{safeFormatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
+                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{usage.timestamp && !isNaN(new Date(usage.timestamp).getTime()) ? format(usage.timestamp, 'MMM d, HH:mm') : '---'}</p>
                          </div>
                       </div>
                     );
@@ -2547,7 +3204,7 @@ export default function AdminPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-sm rounded-[2rem] p-6 md:p-10 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
            <DialogHeader className="sr-only">
-              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogTitle>Are you sure?</DialogTitle>
               <DialogDescription>{getDeleteDescription()}</DialogDescription>
            </DialogHeader>
            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4 md:mb-6"><AlertCircle size={32} className="md:size-10" /></div>
@@ -2573,7 +3230,7 @@ export default function AdminPage() {
            <p className="text-[10px] md:text-xs uppercase font-black text-slate-400 mt-1 md:mt-2">Ma hubtaa inaad hadda joojiso?</p>
            <div className="flex gap-3 mt-6 md:mt-10">
               <Button variant="ghost" onClick={() => setIsEndEarlyDialogOpen(false)} className="flex-1 rounded-xl h-12 md:h-14 font-bold" disabled={isSavingStatus}>Maya</Button>
-              <Button variant="destructive" onClick={executeEndEarly} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-red-500/20" disabled={isSavingStatus}>
+              <Button variant="destructive" onClick={executeEndEarly} className="flex-1 rounded-xl h-12 md:h-14 font-black uppercase tracking-widest shadow-lg shadow-center active:scale-95 transition-all" disabled={isSavingStatus}>
                 {isSavingStatus ? <Loader2 className="animate-spin" /> : "Haa, Jooji"}
               </Button>
            </div>
@@ -2622,9 +3279,10 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
   );
 }
 
-function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete }: any) {
+function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
   if (!order) return null;
   const item = order.items?.[0];
+  const buyer = allUsers?.find((u: any) => u.uid === order.userId);
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(order.id.toUpperCase());
@@ -2678,7 +3336,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                       {order.paymentMethod || "WHATSAPP DIRECT"}
                    </Badge>
                    <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
-                      ABOUT {formatDistanceToNow(new Date(order.createdAt))} AGO
+                      ABOUT {safeFormatDistanceToNow(order.createdAt)} AGO
                    </span>
                 </div>
              </div>
@@ -2692,84 +3350,179 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
           <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={ (order.ffUid || order.gameDetails?.playerID) && ( <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> ) } />
+             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> : null} />
              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                    <User size={14} className="opacity-40" />
                    <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
                 </div>
-                <div className="flex items-center gap-2">
-                   <p className="text-sm md:text-xl font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
+                <div className="flex items-center gap-1 min-w-0">
+                   <p className="text-sm md:text-xl font-semibold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
                    {order.ffVerified ? (
-                     <Badge className="bg-green-100 text-green-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Verified</Badge>
+                     <VerifiedBadge />
                    ) : order.ffUid ? (
                      <Badge className="bg-amber-100 text-amber-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
                    ) : null}
                 </div>
              </div>
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
-             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={ order.gameDetails?.whatsappNumber && ( <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> ) } />
-             <InsightStat label="Order Date" value={format(new Date(order.createdAt), "MMM d, h:mm a")} icon={Clock} />
-             <InsightStat label="Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> : null} />
+             <InsightStat label="Order Date" value={order.createdAt && !isNaN(new Date(order.createdAt).getTime()) ? format(new Date(order.createdAt), "MMM d, h:mm a") : "---"} icon={Clock} />
+             <InsightStat label="Order Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
              {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
           </div>
+
+          {/* Automation Insight */}
+          {(order.autoTopupStatus || order.smsMatchedId) && (
+            <div className="mt-12 p-6 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border dark:border-white/5 space-y-6">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-indigo-500">
+                     <Cpu size={20} />
+                     <h5 className="font-headline font-bold text-[10px] md:text-sm uppercase tracking-tight">Automation System Log</h5>
+                  </div>
+                  {order.autoTopupStatus === 'completed' && <Badge className="bg-green-100 text-green-700 dark:bg-green-500/20 border-none text-[8px] font-black uppercase px-3">Sync Active</Badge>}
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  <div className="space-y-1">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reseller Status</p>
+                     <p className={cn(
+                       "font-bold text-sm uppercase",
+                       order.autoTopupStatus === 'completed' ? "text-green-500" : 
+                       order.autoTopupStatus === 'failed' ? "text-red-500" : "text-amber-500"
+                     )}>
+                        {order.autoTopupStatus?.toUpperCase() || 'NOT TRIGGERED'}
+                     </p>
+                  </div>
+
+                  <div className="space-y-1">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Provider Order ID(s)</p>
+                     <p className="font-mono text-[10px] md:text-xs text-slate-600 dark:text-slate-300 break-words">
+                        {order.autoTopupOrderId || '---'}
+                     </p>
+                  </div>
+
+                  {order.autoTopupError && (
+                    <div className="col-span-full space-y-1 p-4 bg-red-50 dark:bg-red-500/5 rounded-xl border border-red-100 dark:border-red-900/20">
+                       <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Provider Error Message</p>
+                       <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                          {order.autoTopupError}
+                       </p>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Validation</p>
+                     <div className="flex items-center gap-2">
+                        {order.smsMatchedId ? (
+                           <>
+                             <div className="w-2 h-2 rounded-full bg-green-500" />
+                             <span className="text-xs font-bold text-green-600">Auto-Matched via SMS</span>
+                           </>
+                        ) : (
+                           <>
+                             <div className="w-2 h-2 rounded-full bg-slate-300" />
+                             <span className="text-xs font-bold text-slate-400">Manual verification</span>
+                           </>
+                        )}
+                     </div>
+                  </div>
+               </div>
+            </div>
+          )}
        </Card>
 
-       <Card className="rounded-[3.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-14 space-y-8 md:space-y-12">
+       {/* Buyer Profile Card */}
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <User size={24} />
+              </div>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
+            </div>
+
+            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center gap-6">
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white">
+                {buyer?.photoURL ? (
+                  <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
+                    <User size={40} />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="truncate font-bold text-lg md:text-3xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
+                  {buyer?.isVerified && <VerifiedBadge className="text-xl md:text-2xl" />}
+                </div>
+                <div className="flex items-center gap-2 mt-1 md:mt-2">
+                  <Smartphone size={14} className="text-primary" />
+                  <span className="text-xs md:text-xl font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2 md:mt-3">
+                  <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
+                  <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+       </Card>
+
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-primary">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
-                  <ShieldCheck size={24} />
+              <div className="flex items-center gap-3 md:gap-4 text-primary">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={20} className="md:size-6" />
                 </div>
-                <div>
-                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
-                </div>
+                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
               </div>
             </div>
 
             <div className="relative">
               <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              <div className="p-6 md:p-12 flex flex-row items-center justify-between gap-8">
-                <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
+              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
+                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
-                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
                       {order.processedBy?.photoURL ? (
                         <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="min-w-0 space-y-1.5">
-                    <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
-                    <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
-                      {order.processedBy?.name || "Wali lama furin"}
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
+                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
+                      {order.approvedBy === 'auto_sms' ? 'Auto-SMS Match' : order.processedBy?.name || "Wali lama furin"}
                     </h5>
                     {order.processedAt && (
-                      <div className="flex items-center gap-2 text-muted-foreground justify-start">
-                         <Clock size={14} className="opacity-40" />
-                         <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(order.processedAt))} ago
+                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
+                         <Clock size={12} className="opacity-40" />
+                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
+                            {safeFormatDistanceToNow(order.processedAt)} ago
                          </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="w-px h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
+                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
 
-                <div className="text-right space-y-2 shrink-0">
-                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
-                  <div className="space-y-1">
-                     <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
-                        {order.completedAt ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-0.5">
+                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
                      </p>
-                     <p className="text-sm md:text-lg font-bold text-primary">
-                        {order.completedAt ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                     <p className="text-xs md:text-lg font-bold text-primary">
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
                 </div>
@@ -2840,7 +3593,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
   );
 }
 
-function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
+function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
   const [now, setNow] = useState(Date.now());
   
   useEffect(() => {
@@ -2849,18 +3602,20 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   }, []);
 
   if (!post) return null;
+  const seller = allUsers.find((u: any) => u.uid === post.uid);
   const claimants = Object.values(post.claimants || {});
   const { updateAccountPostStatus } = useApp();
 
   const pendingClaims = claimants.filter((c: any) => c.status === 'pending');
-  const earliestClaim = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
+  const claimTime = pendingClaims.length > 0 ? Math.min(...pendingClaims.map((c: any) => {
     const t = Number(c.timestamp);
     return isNaN(t) ? Infinity : t;
   })) : null;
-  const isStalling = earliestClaim && earliestClaim !== Infinity && (now - earliestClaim) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+  const isStalling = claimTime && claimTime !== Infinity && (now - claimTime) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
-  const isWaiting = earliestClaim && earliestClaim !== Infinity && !post.sellerReported && !post.sold;
-  const waitValue = isWaiting ? formatDistanceToNow(new Date(earliestClaim!)) : "None";
+  const waitValue = (claimTime && claimTime !== Infinity && !post.sellerReported && !post.sold) 
+    ? safeFormatDistanceToNow(claimTime) 
+    : "None";
 
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
@@ -2918,8 +3673,11 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   )}
                </div>
                <div>
-                  <p className="text-[10px] md:text-11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
-                  <p className="text-xl md:text-2xl font-bold">{finalBuyer?.name || "Market User"}</p>
+                  <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <p className="truncate font-semibold text-xl md:text-2xl max-w-[200px]">{finalBuyer?.name || "Market User"}</p>
+                    {finalBuyer?.isVerified && <VerifiedBadge />}
+                  </div>
                   <p className="text-xs text-white/40">{finalBuyer?.phoneNumber}</p>
                </div>
             </div>
@@ -3019,9 +3777,9 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                          {post.platform}
                       </Badge>
                       <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
-                         ABOUT {formatDistanceToNow(new Date(post.createdAt))} AGO
+                         ABOUT {safeFormatDistanceToNow(post.createdAt)} AGO
                       </span>
-                   </div>
+                </div>
                 </div>
                 <div className="text-right">
                    <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
@@ -3041,61 +3799,63 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </Card>
 
-       <Card className="rounded-[3.5rem] md:rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-14 space-y-8 md:space-y-12">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-primary">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
-                  <ShieldCheck size={24} />
-                </div>
-                <div>
-                  <h4 className="font-headline font-bold text-lg md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
-                </div>
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-4 text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Users size={24} />
               </div>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholders</h4>
             </div>
 
-            <div className="relative">
-              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              <div className="p-6 md:p-12 flex flex-row items-center justify-between gap-8">
-                <div className="flex flex-row items-center gap-6 md:gap-8 text-left">
-                  <div className="relative shrink-0">
-                    <div className="w-20 h-20 md:w-32 md:h-32 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
-                      {post.processedBy?.photoURL ? (
-                        <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-5xl">O</div>
-                      )}
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Originating Seller</p>
+                <div className="p-5 md:p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border dark:border-white/5 flex items-center gap-5">
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md">
+                    {seller?.photoURL ? <Image src={seller.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={32}/></div>}
                   </div>
-                  
-                  <div className="min-w-0 space-y-1.5">
-                    <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Handling Admin</p>
-                    <h5 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[200px] md:max-w-md">
-                      {post.processedBy?.name || "Wali lama furin"}
-                    </h5>
-                    {post.processedAt && (
-                      <div className="flex items-center gap-2 text-muted-foreground justify-start">
-                         <Clock size={14} className="opacity-40" />
-                         <p className="text-[9px] md:text-xs font-bold uppercase tracking-tight">
-                            {formatDistanceToNow(new Date(post.processedAt))} ago
-                         </p>
-                      </div>
-                    )}
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="truncate font-bold text-lg md:text-xl text-slate-900 dark:text-white">{seller?.name || "Deleted User"}</p>
+                        {seller?.isVerified && <VerifiedBadge />}
+                     </div>
+                     <div className="flex items-center gap-2 mt-1">
+                        <Smartphone size={12} className="text-primary" />
+                        <span className="text-xs font-black text-slate-500">{seller?.phoneNumber || "N/A"}</span>
+                     </div>
+                     <Badge className="mt-2 bg-amber-500 text-white border-none font-bold text-[8px] uppercase">{seller?.points || 0} Points</Badge>
                   </div>
                 </div>
+              </div>
 
-                <div className="w-px h-24 bg-slate-200 dark:bg-white/10 hidden md:block" />
-
-                <div className="text-right space-y-2 shrink-0">
-                  <p className="text-[10px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
-                  <div className="space-y-1">
-                     <p className="text-lg md:text-2xl font-black text-slate-900 dark:text-white">
-                        {post.completedAt ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
-                     </p>
-                     <p className="text-sm md:text-lg font-bold text-primary">
-                        {post.completedAt ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
-                     </p>
-                  </div>
+              <div className="space-y-4">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-2">Active Claimants ({claimants.length})</p>
+                <div className="space-y-3">
+                  {claimants.length === 0 ? (
+                    <div className="p-10 text-center border-2 border-dashed rounded-3xl opacity-20 italic font-bold uppercase text-[10px]">No active buyer claims</div>
+                  ) : (
+                    claimants.map((c: any) => (
+                      <div key={c.uid} className={cn(
+                        "p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border dark:border-white/5 flex items-center justify-between group transition-all",
+                        c.status === 'accepted' ? "ring-2 ring-green-500/50 bg-green-50 dark:bg-green-500/5" : ""
+                      )}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl overflow-hidden relative shadow-sm border border-white">
+                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={16}/></div>}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{c.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{c.whatsapp}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                           <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(c.whatsapp)}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg active:scale-90 transition-transform shadow-md"><MessageCircle size={14} /></button>
+                           {c.status === 'accepted' && <Badge className="bg-green-500 text-white border-none text-[8px] font-black">ACCEPTED</Badge>}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -3135,7 +3895,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                          </SelectTrigger>
                          <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                             <div className="max-h-[300px] overflow-y-auto">
-                               {allUsers.map((u: any) => (
+                               {(allUsers || []).map((u: any) => (
                                  <SelectItem key={u.uid} value={u.uid} className="p-4 font-bold uppercase text-xs rounded-xl">
                                     {u.name || "Unknown User"} ({u.phoneNumber})
                                  </SelectItem>
@@ -3161,12 +3921,20 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   );
 }
 
-function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number }) {
+function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, badge, badgeVariant = 'destructive' }: { active: boolean, expanded: boolean, onClick: () => void, icon: any, label: string, className?: string, badge?: number, badgeVariant?: 'primary' | 'destructive' }) {
   return (
     <button onClick={onClick} className={cn("w-full h-12 flex items-center transition-all duration-300 rounded-xl relative group", active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 dark:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800", expanded ? "px-4 gap-4" : "justify-center", className)}>
       <Icon size={20} className={cn("shrink-0 transition-transform group-hover:scale-110", active ? "stroke-[2.5px]" : "")} />
       {expanded && <span className="font-bold text-[13px] uppercase tracking-wider whitespace-nowrap overflow-hidden flex-1 text-left">{label}</span>}
-      {badge !== undefined && badge > 0 && <span className={cn("bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center transition-all", expanded ? "px-2.5 py-0.5" : "absolute top-1 right-1 w-4 h-4")}>{badge}</span>}
+      {badge !== undefined && badge > 0 && (
+        <span className={cn(
+          "text-white text-[10px] font-black rounded-full flex items-center justify-center transition-all", 
+          expanded ? "px-2.5 py-0.5" : "absolute top-1 right-1 w-4 h-4",
+          badgeVariant === 'primary' ? "bg-primary" : "bg-red-500"
+        )}>
+          {badge}
+        </span>
+      )}
     </button>
   );
 }
@@ -3189,13 +3957,24 @@ function StatusBadge({ status }: { status: string }) {
     pending: "bg-amber-100 text-amber-700",
     processing: "bg-blue-100 text-blue-700",
     successful: "bg-green-100 text-green-700",
-    approved: "bg-green-100 text-green-700",
     holding: "bg-indigo-100 text-indigo-700",
     cancelled: "bg-red-100 text-red-700",
     rejected: "bg-red-100 text-red-700",
     sold: "bg-slate-900 text-white"
   };
   return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
+}
+
+function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
+  return (
+    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
+       <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
+       <div className="min-w-0 w-full">
+         <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
+         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
+       </div>
+    </div>
+  );
 }
 
 function InsightStat({ label, value, icon: Icon, isPrimary, action }: any) {
@@ -3214,6 +3993,15 @@ function InsightStat({ label, value, icon: Icon, isPrimary, action }: any) {
        </div>
     </div>
   );
+}
+
+function DetailRow({ label, value, color }: { label: string, value: string, color?: string }) {
+   return (
+      <div className="flex justify-between items-center text-[10px] font-black uppercase">
+         <span className="text-slate-400">{label}</span>
+         <span className={cn(color || 'text-slate-600 dark:text-slate-300')}>{value}</span>
+      </div>
+   );
 }
 
 function SettingInput({ label, value, onChange, placeholder, type = "text" }: { label: string, value: string, onChange: (v: string) => void, placeholder: string, type?: string }) {
@@ -3288,7 +4076,10 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                       <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
                    </Avatar>
                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-base md:text-xl truncate">{winnerProfile.name}</p>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <p className="truncate font-semibold text-base md:text-xl max-w-[200px]">{winnerProfile.name}</p>
+                        {winnerProfile.isVerified && <VerifiedBadge />}
+                      </div>
                       <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
                          <Smartphone size={14} />
                          <p className="text-[11px] md:text-sm font-medium">{winnerProfile.phoneNumber}</p>
@@ -3303,16 +4094,16 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
           )}
 
           <div className="grid grid-cols-2 gap-6 md:gap-10 py-6 border-y dark:border-white/5">
-             <div className="space-y-1">
+             <div className="space-y-0.5">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Qiimaha asalka</p>
                 <div className="flex items-center gap-2">
                    <span className="text-primary font-black text-2xl md:text-4xl">$</span>
                    <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.initialPrice}</span>
                 </div>
              </div>
-             <div className="space-y-1">
+             <div className="space-y-0.5">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Ka qeeybalayaal</p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                    <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
                    <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.participantsCount || 0}</span>
                 </div>
@@ -3322,7 +4113,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
           <div className="flex flex-wrap items-center gap-3 md:gap-4 pt-2">
              <button 
                onClick={onEdit}
-               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
              >
                 <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                 <span>Edit</span>
@@ -3330,7 +4121,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
              
              <button 
                onClick={onViewParticipants}
-               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:text-sm active:scale-95 transition-all flex items-center justify-center"
+               className="rounded-2xl h-12 md:h-16 px-4 md:px-6 bg-slate-50 dark:bg-slate-800 border-none font-bold gap-2 text-xs md:sm active:scale-95 transition-all flex items-center justify-center"
              >
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-slate-500" />
                 <span>Leaderboard</span>
@@ -3380,7 +4171,6 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
     const unsub = onValue(participantsRef, (snap) => {
       const data = snap.val();
       if (data) {
-        // Sorting Logic: Bids DESC, then earliest lastBidTime ASC (Tie-breaker)
         const sorted = Object.values(data).sort((a: any, b: any) => {
           if (b.taps !== a.taps) return b.taps - a.taps;
           return a.lastTapTime - b.lastTapTime;
@@ -3439,30 +4229,44 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                       )}>
                         <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
                         <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm shrink-0">
                                   <AvatarImage src={p.avatar} />
                                   <AvatarFallback>{p.name?.[0]}</AvatarFallback>
                               </Avatar>
-                              <div>
-                                  <p className="font-bold text-sm">{p.name}</p>
+                              <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <p className="truncate font-semibold text-sm max-w-[120px]">{p.name}</p>
+                                    {p.isVerified && <VerifiedBadge />}
+                                  </div>
                                   <p className="text-[9px] text-muted-foreground font-black">{p.phone}</p>
                               </div>
                             </div>
                         </TableCell>
                         <TableCell className="font-bold text-lg">{p.taps}</TableCell>
                         <TableCell className="font-bold text-lg text-primary">${p.value.toFixed(2)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground font-medium">{formatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-medium">{safeFormatDistanceToNow(p.lastTapTime, { addSuffix: true })}</TableCell>
                         <TableCell className="text-right px-6 lg:px-10">
-                            <button 
-                              onClick={() => onAssignWinner(eventId, p.uid)}
-                              className={cn(
-                                "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
-                                p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
-                              )} 
-                            >
-                              {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
-                            </button>
+                            <div className="flex justify-end items-center gap-3">
+                               <button 
+                                 onClick={() => {
+                                   const formatted = formatWhatsAppNumber(p.phone);
+                                   window.open(`https://wa.me/${formatted}`, '_blank');
+                                 }}
+                                 className="w-10 h-10 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                               >
+                                  <MessageCircle size={18} />
+                               </button>
+                               <button 
+                                 onClick={() => onAssignWinner(eventId, p.uid)}
+                                 className={cn(
+                                   "rounded-xl h-10 px-4 uppercase font-black text-[9px] tracking-widest gap-2 shadow-lg flex items-center justify-center transition-all active:scale-95",
+                                   p.uid === eventAccount?.winnerId ? "bg-green-600 hover:bg-green-700 text-white border-none" : "bg-primary text-white border-none"
+                                 )} 
+                               >
+                                 {p.uid === eventAccount?.winnerId ? <><Check size={14} /> Winner</> : "Make Winner"}
+                               </button>
+                            </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -3475,39 +4279,16 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
   );
 }
 
-function StatBox({ icon: Icon, label, value, color, bgColor }: { icon: any, label: string, value: string, color: string, bgColor: string }) {
-  return (
-    <div className={cn("p-4 rounded-2xl flex items-center gap-4", bgColor)}>
-       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", color, "bg-white dark:bg-slate-900 shadow-sm")}>
-          <Icon size={20} />
-       </div>
-       <div>
-          <p className="text-xl font-headline font-bold leading-none">{value}</p>
-          <p className="text-[10px] font-black uppercase text-slate-400 mt-1">{label}</p>
-       </div>
-    </div>
-  );
-}
-
-function StatusInfo({ icon: Icon, label, value, color }: { icon: any, label: string, value: any, color?: string }) {
-  return (
-    <div className="space-y-1 min-w-0">
-      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 opacity-50">
-        <Icon size={10} /> {label}
-      </p>
-      <p className={cn("text-xs sm:text-base font-bold truncate", color || "text-slate-900 dark:text-white")}>{value}</p>
-    </div>
-  );
-}
-
-function StatItem({ label, value, icon: Icon, color }: { label: string, value: any, icon: any, color: string }) {
-  return (
-    <div className="bg-white dark:bg-slate-900 p-2 md:p-4 rounded-xl md:rounded-3xl flex flex-col items-center text-center gap-1 md:gap-2 border dark:border-white/5 shadow-sm">
-       <Icon size={16} className={cn(color, "md:w-5 md:h-5")} />
-       <div className="min-w-0 w-full">
-         <p className="text-xs md:text-sm font-bold truncate w-full">{value}</p>
-         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-0.5">{label}</p>
-       </div>
-    </div>
-  );
+export {
+  OrderDetailView,
+  AccountDetailView,
+  SideNavItem,
+  StatCard,
+  StatusBadge,
+  StatItem,
+  InsightStat,
+  DetailRow,
+  SettingInput,
+  EventAccountAdminCard,
+  EventAccountParticipantsView
 }

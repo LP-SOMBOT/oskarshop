@@ -113,9 +113,18 @@ function CheckoutEventContent() {
         isEventWinner: true
       }, purchaseItem);
 
+      // AUTOMATED WHATSAPP REDIRECTION FOR WINNER
+      const adminWa = formatWhatsAppNumber("252614929987");
+      const msg = `Asc Oskar Shop.\n\nWaxaan ahay guuleystaha Auction-ka: *${event.title}*\nQiimaha Final-ka: *$${finalPrice.toFixed(2)}*\n\n*Xogta Xaqiijinta:*\nWhatsApp: ${formData.whatsappNumber}\nLacag Diraha: ${formData.senderNumber}\n\nFadlan account-ka ii soo wareeji, Mahadsanid!`;
+      const encodedMsg = encodeURIComponent(msg);
+      
       setIsProcessing(false);
       setGlobalLoading(false);
       setStep(4);
+      
+      // Open WhatsApp
+      window.open(`https://wa.me/${adminWa}?text=${encodedMsg}`, '_blank');
+
     } catch (e: any) {
        toast({ title: "Khalad", description: e.message, variant: "destructive" });
        setIsProcessing(false);
@@ -126,10 +135,7 @@ function CheckoutEventContent() {
   return (
     <div className="max-w-xl mx-auto px-4 py-8 md:py-16 space-y-8 animate-in fade-in duration-500">
        {step < 4 && (
-         <div className="flex items-center justify-between px-2">
-            <Button variant="ghost" onClick={() => step > 1 ? setStep(step - 1) : router.back()} className="rounded-full gap-2 text-muted-foreground">
-               <ArrowLeft size={18} /> Dib u Noqo
-            </Button>
+         <div className="flex items-center justify-center px-2">
             <div className="flex items-center gap-2">
                <div className={cn("w-2 h-2 rounded-full", step >= 1 ? "bg-primary" : "bg-slate-200")} />
                <div className={cn("w-2 h-2 rounded-full", step >= 2 ? "bg-primary" : "bg-slate-200")} />

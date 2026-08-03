@@ -29,6 +29,7 @@ import { toast } from "@/hooks/use-toast";
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format } from "date-fns";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 function EventAccountEditContent() {
   const router = useRouter();
@@ -135,28 +136,17 @@ function EventAccountEditContent() {
     }
   };
 
+  const isScheduleInvalid = form.startTime && form.endTime && new Date(form.startTime) >= new Date(form.endTime);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 h-16 md:h-20 flex items-center px-4 md:px-10 justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.back()} className="rounded-2xl h-10 w-10 p-0">
-            <ArrowLeft size={24} />
-          </Button>
-          <div>
-            <h1 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">
-              {id ? 'Edit Auction' : 'New Auction Event'}
-            </h1>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Marketplace Auctions</p>
-          </div>
-        </div>
-        <Button 
-          onClick={handleSave} 
-          disabled={isSaving || isUploading}
-          className="rounded-xl px-8 h-12 gap-2 font-black uppercase tracking-widest shadow-xl shadow-primary/20"
-        >
-          {isSaving ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-          {isSaving ? 'Saving...' : 'Save Event'}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 h-16 md:h-20 flex items-center px-4 md:px-10">
+        <Button variant="ghost" onClick={() => router.back()} className="rounded-2xl h-10 w-10 p-0 mr-4">
+          <ArrowLeft size={24} />
         </Button>
+        <h1 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">
+          {id ? 'Edit Auction' : 'New Auction Event'}
+        </h1>
       </header>
 
       <main className="max-w-5xl mx-auto p-4 md:p-10">
@@ -181,6 +171,14 @@ function EventAccountEditContent() {
                       )}
                     </div>
                   ))}
+                  
+                  {isUploading && (
+                    <div className="relative aspect-[4/3] rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 flex flex-col items-center justify-center animate-pulse border-2 border-primary/20">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                      <span className="text-[8px] font-black uppercase text-primary mt-2">Uploading...</span>
+                    </div>
+                  )}
+
                   <div className="relative aspect-[4/3] rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center group hover:bg-slate-100 transition-colors">
                     <ImageIcon className="text-slate-300 w-10 h-10 mb-2 group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] font-black uppercase text-slate-400">Add Media</span>
@@ -224,7 +222,7 @@ function EventAccountEditContent() {
 
           <div className="space-y-8">
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-6 md:p-8 space-y-6">
-              <h3 className="font-headline font-bold text-lg uppercase tracking-tight flex items-center gap-2">
+              <h3 className="font-headline font-bold text-lg uppercase tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
                 <DollarSign size={18} className="text-primary" /> Pricing Config
               </h3>
               <div className="space-y-4">
@@ -254,7 +252,7 @@ function EventAccountEditContent() {
             </Card>
 
             <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-6 md:p-8 space-y-6">
-              <h3 className="font-headline font-bold text-lg uppercase tracking-tight flex items-center gap-2">
+              <h3 className="font-headline font-bold text-lg uppercase tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
                 <Calendar size={18} className="text-primary" /> Schedule
               </h3>
               <div className="space-y-4">
@@ -264,7 +262,10 @@ function EventAccountEditContent() {
                     type="datetime-local" 
                     value={form.startTime} 
                     onChange={e => setForm({...form, startTime: e.target.value})} 
-                    className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6" 
+                    className={cn(
+                      "h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6",
+                      isScheduleInvalid && "ring-2 ring-red-500"
+                    )} 
                   />
                 </div>
                 <div className="space-y-2">
@@ -273,10 +274,13 @@ function EventAccountEditContent() {
                     type="datetime-local" 
                     value={form.endTime} 
                     onChange={e => setForm({...form, endTime: e.target.value})} 
-                    className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6" 
+                    className={cn(
+                      "h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-bold px-6",
+                      isScheduleInvalid && "ring-2 ring-red-500"
+                    )} 
                   />
                 </div>
-                {(form.startTime && form.endTime && new Date(form.startTime) >= new Date(form.endTime)) && (
+                {isScheduleInvalid && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-red-600 text-[9px] font-bold uppercase tracking-wider">
                      <AlertTriangle size={14} className="shrink-0" />
                      <span>Waqtiga dhamaadka waa inuu ka dambeeyaa waqtiga bilaawga.</span>
@@ -287,6 +291,18 @@ function EventAccountEditContent() {
           </div>
         </form>
       </main>
+
+      {/* Sticky Bottom Save Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t dark:border-white/5 z-50 flex justify-center">
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving || isUploading || isScheduleInvalid}
+          className="w-full max-w-xl h-14 md:h-16 rounded-2xl gap-3 font-black uppercase tracking-widest shadow-2xl shadow-primary/30 active:scale-95 transition-all text-sm md:text-lg"
+        >
+          {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+          {isSaving ? 'Saving Event...' : 'Save Auction Event'}
+        </Button>
+      </div>
     </div>
   );
 }

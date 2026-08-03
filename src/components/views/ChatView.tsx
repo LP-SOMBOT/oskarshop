@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -49,7 +48,7 @@ export default function ChatView() {
       formData.append('image', file);
       
       try {
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=4437fb9ba157b8fc7ddef1e251718f66`, {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=0ac8fec95369164cc41b3474e29b2848`, {
           method: 'POST',
           body: formData,
         });

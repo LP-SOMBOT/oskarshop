@@ -17,6 +17,7 @@ import SplashScreen from "@/components/layout/SplashScreen";
 import BannedModal from "@/components/layout/BannedModal";
 import OneSignalInitializer from "@/components/layout/OneSignalInitializer";
 import WinnerClaimGuard from "@/components/events/WinnerClaimGuard";
+import AutoScheduleManager from "@/components/layout/AutoScheduleManager";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -86,6 +87,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <FirebaseClientProvider>
             <AppProvider>
+              <AutoScheduleManager />
               <SWRegistration />
               <DynamicHead />
               <SplashScreen />
