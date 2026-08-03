@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -137,7 +136,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/accordion";
 import {
   Tabs,
   TabsContent,
@@ -1069,7 +1068,7 @@ export default function AdminPage() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col overflow-hidden w-full relative">
+      <div className="flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide">
         <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-[100] shadow-sm">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
@@ -1134,7 +1133,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-10 scrollbar-hide bg-slate-50 dark:bg-slate-950">
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 space-y-10 bg-slate-50 dark:bg-slate-950">
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
@@ -1563,7 +1562,7 @@ export default function AdminPage() {
                                              {p.authorAvatar ? <Image src={p.authorAvatar} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><User size={16}/></div>}
                                           </div>
                                           <div className="flex items-center gap-1 min-w-0">
-                                            <span className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[150px]">{p.authorName || "Market User"}</span>
+                                            <span className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[120px]">{p.authorName || "Market User"}</span>
                                             {p.authorIsVerified && <VerifiedBadge />}
                                           </div>
                                        </div>
