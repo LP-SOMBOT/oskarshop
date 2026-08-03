@@ -898,16 +898,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const userRankData = useMemo(() => {
     if (!authUser || !allUsers.length || !syncStatus.settings) return { rank: null, discount: 0 };
+    
+    // User must have points > 0 to qualify for Top 3 rewards
+    const myProfile = allUsers.find(u => u.uid === authUser.uid);
+    if (!myProfile || (myProfile.points || 0) <= 0) return { rank: null, discount: 0 };
+
     const settings = storeSettings.leaderboard || { rewardsActive: false, rewards: { rank1: 0, rank2: 0, rank3: 0 } };
     if (!settings.rewardsActive) return { rank: null, discount: 0 };
+
+    // Sort to determine current rank
     const sorted = [...allUsers].sort((a, b) => (b.points || 0) - (a.points || 0) || (a.createdAt || 0) - (b.createdAt || 0));
     const top50 = sorted.slice(0, 50);
     const rankIndex = top50.findIndex(u => u.uid === authUser.uid);
     const rank = rankIndex !== -1 ? rankIndex + 1 : null;
+
     let discount = 0;
+    // Only Top 3 are rewarded
     if (rank === 1) discount = Number(settings.rewards?.rank1) || 0;
     else if (rank === 2) discount = Number(settings.rewards?.rank2) || 0;
     else if (rank === 3) discount = Number(settings.rewards?.rank3) || 0;
+    else return { rank: null, discount: 0 }; // Explicitly no reward if not in Top 3
+
     return { rank, discount };
   }, [authUser, allUsers, storeSettings.leaderboard, syncStatus.settings]);
 
@@ -1316,7 +1327,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({
-                 orderId,
+                 orderId: matchId,
                  category_id: directItem.fazercardsCategory_id,
                  offer_id: directItem.fazercardsOffer_id,
                  playerUid: newOrder.ffUid || gameDetails.playerID,

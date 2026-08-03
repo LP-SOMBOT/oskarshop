@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -173,19 +174,31 @@ function CheckoutContent() {
 
   const basePrice = useMemo(() => Number(item?.price || 0), [item]);
   const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
-  const initialPrice = useMemo(() => (storeDiscountedPrice > 0 && storeDiscountedPrice < basePrice) ? storeDiscountedPrice : basePrice, [storeDiscountedPrice, basePrice]);
+  
+  // Calculate item's specific percentage discount
+  const storeDiscountPct = useMemo(() => {
+    if (storeDiscountedPrice > 0 && storeDiscountedPrice < basePrice) {
+      return Math.round(((basePrice - storeDiscountedPrice) / basePrice) * 100);
+    }
+    return 0;
+  }, [basePrice, storeDiscountedPrice]);
 
   const rankDiscount = user?.leaderboardDiscount || 0;
-  const priceAfterRank = useMemo(() => {
-    return initialPrice - (initialPrice * rankDiscount / 100);
-  }, [initialPrice, rankDiscount]);
+  
+  // Combine additive discounts (Item + Rank)
+  const totalInitialDiscountPct = storeDiscountPct + rankDiscount;
+
+  const priceAfterInitialDiscounts = useMemo(() => {
+    return basePrice * (1 - totalInitialDiscountPct / 100);
+  }, [basePrice, totalInitialDiscountPct]);
 
   const total = useMemo(() => {
     if (appliedPromoCode && promoDiscount > 0) {
-      return priceAfterRank - (priceAfterRank * promoDiscount / 100);
+      // Promo code applies to the already discounted subtotal
+      return priceAfterInitialDiscounts * (1 - promoDiscount / 100);
     }
-    return priceAfterRank;
-  }, [priceAfterRank, appliedPromoCode, promoDiscount]);
+    return priceAfterInitialDiscounts;
+  }, [priceAfterInitialDiscounts, appliedPromoCode, promoDiscount]);
   
   const gameTitle = game?.title?.toLowerCase() || "";
   const isFreeFire = gameTitle.includes("free fire");
@@ -224,7 +237,6 @@ function CheckoutContent() {
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
-    // Allow empty name if validation is unsupported, but user must enter it manually in that case
     if (!isAutoDetectEnabled && effectivePlayerName.trim().length < 2) {
       toast({ title: "Magaca wuu gaabanyahay", description: "Magaca game-ka waa qasab.", variant: "destructive" });
       return;
@@ -337,10 +349,8 @@ function CheckoutContent() {
   }
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
-  const hasAnyDiscount = (initialPrice < basePrice) || rankDiscount > 0 || promoDiscount > 0;
+  const hasAnyDiscount = totalInitialDiscountPct > 0 || promoDiscount > 0;
   
-  // Submit is disabled ONLY if actively checking, OR if ID is entered but failed validation AND it's NOT a "not supported" error.
-  // If it's "not supported", we allow them to enter the name manually if they choose to.
   const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
 
   return (
@@ -402,7 +412,7 @@ function CheckoutContent() {
                   ? "bg-red-500 text-white border-none" 
                   : isBooyahPass 
                     ? "bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/20 text-blue-600 dark:text-blue-400" 
-                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-blue-400"
+                    : "bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-blue-400"
               )}>
                  {isOneTime ? <ShieldAlert className="shrink-0 w-5 h-5 md:w-8 md:h-8 animate-pulse" /> : <AlertTriangle className="shrink-0 w-4 h-4 md:w-6 md:h-6" />}
                  {isBooyahPass ? (
@@ -630,17 +640,17 @@ function CheckoutContent() {
                 {hasAnyDiscount && (
                   <div className="flex justify-between items-center text-sm md:text-lg">
                     <span className="text-muted-foreground dark:text-slate-400 font-medium">{language === 'so' ? 'Qiimaha hore' : 'Original Price:'}</span>
-                    <span className={cn("font-bold text-slate-900 dark:text-white", (initialPrice < basePrice || rankDiscount > 0 || promoDiscount > 0) && "line-through opacity-40")}>${(basePrice || 0).toFixed(2)}</span>
+                    <span className={cn("font-bold text-slate-900 dark:text-white", hasAnyDiscount && "line-through opacity-40")}>${(basePrice || 0).toFixed(2)}</span>
                   </div>
                 )}
                 
-                {rankDiscount > 0 && (
+                {totalInitialDiscountPct > 0 && (
                   <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2 text-primary">
                      <div className="flex items-center gap-2">
                         <span className="text-lg">{RankIcon}</span>
-                        <span className="font-bold uppercase tracking-tight">{language === 'so' ? 'Diskoonti' : 'Discount'} (-{rankDiscount}%):</span>
+                        <span className="font-bold uppercase tracking-tight">{language === 'so' ? 'Diskoonti' : 'Discount'} (-{totalInitialDiscountPct}%):</span>
                      </div>
-                     <span className="font-black">-${(initialPrice * rankDiscount / 100).toFixed(2)}</span>
+                     <span className="font-black">-${(basePrice * totalInitialDiscountPct / 100).toFixed(2)}</span>
                   </div>
                 )}
 
@@ -650,13 +660,13 @@ function CheckoutContent() {
                         <Ticket size={16} />
                         <span className="font-bold uppercase tracking-tight">Promo ({appliedPromoCode}) (-{promoDiscount}%):</span>
                      </div>
-                     <span className="font-black">-${(priceAfterRank * promoDiscount / 100).toFixed(2)}</span>
+                     <span className="font-black">-${(priceAfterInitialDiscounts * promoDiscount / 100).toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="h-px bg-slate-200 dark:bg-white/5 my-1" />
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2"><span className="text-xs md:text-base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">{t('final_total')}</span></div>
+                  <div className="flex items-center gap-2"><span className="text-xs md:base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">{t('final_total')}</span></div>
                   <div className="text-right">
                     <span className="text-2xl md:text-5xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
                   </div>

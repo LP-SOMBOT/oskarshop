@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -24,41 +25,41 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
   const { buyNow, user, t, language } = useApp();
 
   const numPrice = Number(price);
-  const numDiscounted = discountedPrice ? Number(discountedPrice) : 0;
-  
-  const hasStoreDiscount = numDiscounted > 0 && numDiscounted < numPrice;
-  let currentPrice = hasStoreDiscount ? numDiscounted : numPrice;
+  const numDiscounted = (discountedPrice && Number(discountedPrice) > 0 && Number(discountedPrice) < numPrice) 
+    ? Number(discountedPrice) 
+    : numPrice;
 
+  // Calculate store discount percentage from base price
+  const storeDiscountPct = numPrice > numDiscounted 
+    ? Math.round(((numPrice - numDiscounted) / numPrice) * 100) 
+    : 0;
+
+  // Get user rank discount
   const rankDiscount = user?.leaderboardDiscount || 0;
-  const hasRankDiscount = rankDiscount > 0;
   
-  if (hasRankDiscount) {
-    currentPrice = currentPrice - (currentPrice * rankDiscount / 100);
-  }
+  // Combine discounts (Additive as requested: 7% rank + 2% item = 9% total)
+  const totalDiscountPct = storeDiscountPct + rankDiscount;
 
-  const savingsPercent = hasStoreDiscount ? Math.round(((numPrice - numDiscounted) / numPrice) * 100) : 0;
+  // Final Price Calculation
+  const currentPrice = totalDiscountPct > 0 
+    ? numPrice * (1 - totalDiscountPct / 100)
+    : numPrice;
+
+  const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     buyNow({ id, title, price: currentPrice, gameId, thumbnail, isOneTime });
   };
 
-  const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
-
   return (
     <Card className="group overflow-hidden bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-[1.5rem] md:rounded-[2rem] flex flex-col h-full relative">
-      {hasStoreDiscount && (
-        <div className="absolute top-2 right-2 md:top-4 md:right-4 z-10 animate-in fade-in zoom-in duration-500">
-           <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1">
-             <Sparkles size={10} className="md:w-3 md:h-3" /> -{savingsPercent}% Discount
-           </Badge>
-        </div>
-      )}
-
-      {hasRankDiscount && (
+      {totalDiscountPct > 0 && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
            <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
-             {RankIcon} -{rankDiscount}% {t('rank_reward')}
+             {RankIcon && <span>{RankIcon}</span>}
+             <Sparkles size={10} className="md:w-3 md:h-3" />
+             {totalDiscountPct}% {t('rank_reward')}
            </Badge>
         </div>
       )}
@@ -105,14 +106,14 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
 
         <div className="flex flex-col mt-auto bg-slate-50 dark:bg-slate-800/50 p-2 md:p-4 rounded-xl border border-slate-100 dark:border-white/5 shadow-inner">
           <div className="flex flex-col items-center justify-center">
-             {(hasStoreDiscount || hasRankDiscount) && (
+             {totalDiscountPct > 0 && (
                <span className="text-[10px] md:text-sm text-muted-foreground line-through opacity-60 mb-0.5">
                  ${numPrice.toFixed(2)}
                </span>
              )}
              <span className={cn(
                "text-xl md:text-3xl font-headline font-bold tracking-tighter",
-               (hasStoreDiscount || hasRankDiscount) ? "text-primary" : "text-slate-900 dark:text-white"
+               totalDiscountPct > 0 ? "text-primary" : "text-slate-900 dark:text-white"
              )}>
                ${currentPrice.toFixed(2)}
              </span>
