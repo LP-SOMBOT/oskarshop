@@ -1069,8 +1069,8 @@ export default function AdminPage() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
-        <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
+      <div className="flex-1 flex flex-col overflow-hidden w-full relative">
+        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
@@ -2849,7 +2849,7 @@ export default function AdminPage() {
                     }}
                     className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 text-xs"
                  >
-                    <LinkExternal size={14} /> Inspect Customer
+                    <LinkExternal size={14} /> Customer info
                  </Button>
 
                  <Button 
@@ -2998,7 +2998,7 @@ export default function AdminPage() {
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
                  <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-[2.5rem] bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs">Standard Delivery</SelectItem>
                        <SelectItem value="booyah-pass" className="p-3 font-bold text-xs">Booyah Pass (Direct WhatsApp)</SelectItem>

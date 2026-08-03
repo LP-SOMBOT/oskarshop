@@ -26,7 +26,9 @@ import {
   Activity,
   CreditCard,
   Gamepad2,
-  AlertTriangle
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,12 +36,15 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import Image from "next/image";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import { StatusBadge } from "@/app/admin/page";
+
+const LOGS_PER_PAGE = 8;
 
 /**
  * User Inspection Page
@@ -48,9 +53,10 @@ import { StatusBadge } from "@/app/admin/page";
 export default function UserInspectPage() {
   const { uid } = useParams();
   const router = useRouter();
-  const { allUsers, allOrders, user: adminUser, loading, setGlobalLoading, notifications } = useApp();
+  const { allUsers, allOrders, user: adminUser, loading, setGlobalLoading, notifications, manageUser } = useApp();
   
   const [isReady, setIsReady] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setGlobalLoading(false);
@@ -75,10 +81,17 @@ export default function UserInspectPage() {
       .reduce((acc, o) => acc + (o.total || 0), 0);
   }, [userOrders]);
 
-  const userNotifications = useMemo(() => {
-    // Only admins can see system broadcast context, but this view shows user-specific logs
-    return notifications.filter(n => !n.isAdminOnly); 
-  }, [notifications]);
+  const warnings = useMemo(() => {
+    if (!targetUser?.warnings) return [];
+    return Object.values(targetUser.warnings).sort((a: any, b: any) => b.timestamp - a.timestamp);
+  }, [targetUser?.warnings]);
+
+  const paginatedWarnings = useMemo(() => {
+    const start = (currentPage - 1) * LOGS_PER_PAGE;
+    return warnings.slice(start, start + LOGS_PER_PAGE);
+  }, [warnings, currentPage]);
+
+  const totalPages = Math.ceil(warnings.length / LOGS_PER_PAGE);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -88,7 +101,7 @@ export default function UserInspectPage() {
   const handleWhatsApp = () => {
     if (!targetUser?.phoneNumber) return;
     const phone = formatWhatsAppNumber(targetUser.phoneNumber);
-    const message = `Asc ${targetUser.name}, waxaan kaala soo xariirayaa Oskar Shop...`;
+    const message = `Asc ${targetUser.name}, waxaan ahay OskarShop...`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -108,24 +121,21 @@ export default function UserInspectPage() {
   const isOnline = lastActive && (Date.now() - lastActive.getTime()) < 300000;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 h-16 md:h-20 flex items-center px-4 md:px-10 justify-between">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20 relative">
+      <header className="sticky top-0 z-[100] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b dark:border-white/5 h-16 md:h-20 flex items-center px-4 md:px-10 justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-2xl">
             <ArrowLeft size={24} />
           </Button>
           <div>
-            <h1 className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Customer Information</h1>
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Deep-Dive Analytics</p>
+            <h1 className="text-base md:text-2xl font-headline font-bold uppercase tracking-tight">Customer info</h1>
+            <div className="flex items-center gap-1.5 mt-0.5">
+               <div className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
+               <span className={cn("text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em]", isOnline ? "text-green-600" : "text-slate-400")}>
+                  {isOnline ? 'Online Now' : 'Offline'}
+               </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge className={cn(
-            "rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest border-none shadow-sm",
-            isOnline ? "bg-green-500 text-white animate-pulse" : "bg-slate-100 text-slate-400"
-          )}>
-            {isOnline ? 'Online Now' : 'Offline'}
-          </Badge>
         </div>
       </header>
 
@@ -175,7 +185,7 @@ export default function UserInspectPage() {
 
                 <div className="pt-10 space-y-4">
                    <Button onClick={handleWhatsApp} className="w-full h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-bold gap-2 text-white shadow-xl shadow-green-600/20 active:scale-95 transition-all">
-                      <MessageCircle size={20} /> Open WhatsApp Chat
+                      <MessageCircle size={20} /> Open WhatsApp chat
                    </Button>
                    <Button variant="outline" onClick={() => router.push('/admin')} className="w-full h-12 rounded-2xl border-2 font-bold text-slate-500">
                       Back to Dashboard
@@ -195,13 +205,13 @@ export default function UserInspectPage() {
 
             <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
                <Tabs defaultValue="orders" className="w-full">
-                  <div className="px-8 pt-8 flex items-center justify-between border-b dark:border-white/5 pb-4">
-                    <TabsList className="bg-slate-100 dark:bg-slate-800 rounded-2xl h-12 p-1 gap-1">
-                      <TabsTrigger value="orders" className="rounded-xl font-bold uppercase text-[10px] tracking-widest px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm">Order History</TabsTrigger>
-                      <TabsTrigger value="listings" className="rounded-xl font-bold uppercase text-[10px] tracking-widest px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm">Marketplace</TabsTrigger>
-                      <TabsTrigger value="security" className="rounded-xl font-bold uppercase text-[10px] tracking-widest px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm">Security Log</TabsTrigger>
+                  <div className="px-4 sm:px-8 pt-8 flex flex-col sm:flex-row sm:items-center justify-between border-b dark:border-white/5 pb-4 gap-4">
+                    <TabsList className="bg-slate-100 dark:bg-slate-800 rounded-2xl h-12 p-1 gap-1 w-full sm:w-auto">
+                      <TabsTrigger value="orders" className="flex-1 rounded-xl font-bold uppercase text-[10px] tracking-widest px-3 sm:px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm whitespace-nowrap">Order History</TabsTrigger>
+                      <TabsTrigger value="listings" className="flex-1 rounded-xl font-bold uppercase text-[10px] tracking-widest px-3 sm:px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm whitespace-nowrap">Marketplace</TabsTrigger>
+                      <TabsTrigger value="security" className="flex-1 rounded-xl font-bold uppercase text-[10px] tracking-widest px-3 sm:px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm whitespace-nowrap">Security Log</TabsTrigger>
                     </TabsList>
-                    <Badge className="bg-slate-50 dark:bg-slate-800 text-slate-400 border-none px-4 py-1 rounded-full text-[10px] font-black uppercase">{userOrders.length} Records</Badge>
+                    <Badge className="bg-slate-50 dark:bg-slate-800 text-slate-400 border-none px-4 py-1 rounded-full text-[10px] font-black uppercase w-fit">Records</Badge>
                   </div>
 
                   <TabsContent value="orders" className="p-0 animate-in fade-in duration-300">
@@ -225,7 +235,7 @@ export default function UserInspectPage() {
                                 <TableCell className="pl-8 font-headline font-bold text-primary">#{order.id.toUpperCase()}</TableCell>
                                 <TableCell>
                                   <div className="flex flex-col">
-                                    <span className="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[200px]">{order.items?.[0]?.title || "Unknown"}</span>
+                                    <span className="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[150px] sm:max-w-[200px]">{order.items?.[0]?.title || "Unknown"}</span>
                                     <span className="text-[9px] font-black text-slate-400 uppercase">{order.gameDetails?.category || 'Top-Up'}</span>
                                   </div>
                                 </TableCell>
@@ -244,49 +254,104 @@ export default function UserInspectPage() {
 
                   <TabsContent value="listings" className="p-8 animate-in fade-in duration-300">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       {/* This could filter accountPosts specifically for this user if needed globally */}
                        <div className="col-span-full py-20 text-center opacity-20 italic font-black uppercase border-2 border-dashed rounded-3xl">
                           Integrated Marketplace History coming soon
                        </div>
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="security" className="p-8 animate-in fade-in duration-300 space-y-6">
+                  <TabsContent value="security" className="p-4 sm:p-8 animate-in fade-in duration-300 space-y-6">
                     <div className="space-y-4">
-                       <h4 className="text-[11px] font-black uppercase text-red-500 tracking-widest ml-1">Formal Warnings</h4>
-                       {Object.values(targetUser.warnings || {}).length === 0 ? (
-                         <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 text-center text-xs font-bold text-slate-400 italic">No warnings issued to this customer.</div>
+                       <h4 className="text-[11px] font-black uppercase text-red-500 tracking-widest ml-1">Recent Formal Warnings</h4>
+                       {paginatedWarnings.length === 0 ? (
+                         <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 text-center text-xs font-bold text-slate-400 italic">No warnings found.</div>
                        ) : (
-                         Object.values(targetUser.warnings || {}).map((w: any) => (
-                           <div key={w.id} className="p-5 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-100 dark:border-red-900/30 flex gap-4">
-                              <AlertTriangle className="text-red-500 shrink-0" size={20} />
-                              <div className="min-w-0">
-                                <p className="font-bold text-sm text-red-700 dark:text-red-400">{w.message}</p>
-                                <p className="text-[10px] font-black text-red-600/40 uppercase mt-1">{format(new Date(w.timestamp), 'MMM d, yyyy - HH:mm')}</p>
-                              </div>
-                           </div>
-                         ))
+                         <div className="space-y-3">
+                           {paginatedWarnings.map((w: any) => (
+                             <div key={w.id} className="p-4 sm:p-5 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-100 dark:border-red-900/30 flex gap-3 sm:gap-4">
+                                <AlertTriangle className="text-red-500 shrink-0 mt-1" size={18} />
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-bold text-xs sm:text-sm text-red-700 dark:text-red-400 leading-tight">{w.message}</p>
+                                  <p className="text-[8px] sm:text-[9px] font-black text-red-600/40 uppercase mt-1.5">{format(new Date(w.timestamp), 'MMM d, yyyy - HH:mm')}</p>
+                                </div>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+
+                       {/* Pagination Controls */}
+                       {totalPages > 1 && (
+                         <div className="flex items-center justify-center gap-4 pt-6 border-t dark:border-white/5">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                              disabled={currentPage === 1}
+                              className="rounded-xl h-10 w-10 p-0"
+                            >
+                               <ChevronLeft size={20} />
+                            </Button>
+                            
+                            <div className="flex items-center gap-2">
+                               {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+                                 <button
+                                   key={num}
+                                   onClick={() => setCurrentPage(num)}
+                                   className={cn(
+                                     "h-10 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
+                                     currentPage === num ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                   )}
+                                 >
+                                    {num}
+                                 </button>
+                               ))}
+                            </div>
+
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                              disabled={currentPage === totalPages}
+                              className="rounded-xl h-10 w-10 p-0"
+                            >
+                               <ChevronRight size={20} />
+                            </Button>
+                         </div>
                        )}
                     </div>
 
                     <div className="space-y-4 pt-6 border-t dark:border-white/5">
                        <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-widest ml-1">Account Flags</h4>
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
-                             <span className="text-xs font-bold">Suspension Status</span>
-                             {targetUser.suspendedUntil && targetUser.suspendedUntil > Date.now() ? (
-                               <Badge className="bg-red-500 text-white border-none uppercase font-black text-[9px]">Suspended</Badge>
-                             ) : (
-                               <Badge className="bg-green-100 text-green-700 border-none uppercase font-black text-[9px]">Clear</Badge>
-                             )}
+                       <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="p-3 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex justify-between items-center gap-3">
+                             <div className="min-w-0">
+                                <span className="block text-[10px] sm:text-xs font-bold leading-tight truncate">Suspension Status</span>
+                                <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Toggle Restriction</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               {targetUser.suspendedUntil && targetUser.suspendedUntil > Date.now() ? (
+                                 <Badge className="bg-red-500 text-white border-none uppercase font-black text-[8px] h-5">SUSPENDED</Badge>
+                               ) : (
+                                 <Badge className="bg-green-100 text-green-700 border-none uppercase font-black text-[8px] h-5">CLEAR</Badge>
+                               )}
+                               {/* Admin usually does this via main modal but adding switch for quick access if needed */}
+                             </div>
                           </div>
-                          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
-                             <span className="text-xs font-bold">Registration Verification</span>
-                             {targetUser.isVerified ? (
-                               <Badge className="bg-blue-500 text-white border-none uppercase font-black text-[9px]">Verified</Badge>
-                             ) : (
-                               <Badge className="bg-slate-200 text-slate-500 border-none uppercase font-black text-[9px]">Standard</Badge>
-                             )}
+                          <div className="p-3 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex justify-between items-center gap-3">
+                             <div className="min-w-0">
+                                <span className="block text-[10px] sm:text-xs font-bold leading-tight truncate">User Verification</span>
+                                <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Blue Tick Badge</span>
+                             </div>
+                             <div className="flex items-center gap-3">
+                                {targetUser.isVerified && <VerifiedBadge />}
+                                <Switch 
+                                  checked={targetUser.isVerified || false} 
+                                  onCheckedChange={async (v) => {
+                                    await manageUser(targetUser.uid, { isVerified: v });
+                                    toast({ title: v ? "Verified" : "Unverified" });
+                                  }} 
+                                />
+                             </div>
                           </div>
                        </div>
                     </div>
