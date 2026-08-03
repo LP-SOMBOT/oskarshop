@@ -12,7 +12,7 @@ export async function GET() {
 
     if (!apiKey) return NextResponse.json({ ok: false, error: 'FazerCards API Key not configured' }, { status: 500 });
 
-    const res = await fetch('https://api.fzr.cards/api/v2/topups?limit=100', {
+    const res = await fetch('https://api.fzr.cards/api/v2/topups?limit=500', {
       headers: { 
         'X-API-Key': apiKey,
         'Content-Type': 'application/json'
