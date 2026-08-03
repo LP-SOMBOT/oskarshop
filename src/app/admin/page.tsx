@@ -1046,8 +1046,8 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
-      <aside className={cn("hidden md:flex h-screen bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
+    <div className="h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden">
+      <aside className={cn("hidden md:flex h-full bg-white dark:bg-slate-900 border-r dark:border-white/5 flex-col transition-all duration-300 z-40 shadow-sm", isSidebarExpanded ? "w-64" : "w-20")}>
         <SidebarContent />
       </aside>
 
@@ -1067,7 +1067,7 @@ export default function AdminPage() {
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide">
+      <div className="flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide h-screen">
         <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-[100] shadow-sm">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
@@ -4094,14 +4094,14 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
           )}
 
           <div className="grid grid-cols-2 gap-6 md:gap-10 py-6 border-y dark:border-white/5">
-             <div className="space-y-1">
+             <div className="space-y-0.5">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Qiimaha asalka</p>
                 <div className="flex items-center gap-2">
                    <span className="text-primary font-black text-2xl md:text-4xl">$</span>
                    <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.initialPrice}</span>
                 </div>
              </div>
-             <div className="space-y-1">
+             <div className="space-y-0.5">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Ka qeeybalayaal</p>
                 <div className="flex items-center gap-3">
                    <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
@@ -4292,4 +4292,3 @@ export {
   EventAccountAdminCard,
   EventAccountParticipantsView
 }
-
