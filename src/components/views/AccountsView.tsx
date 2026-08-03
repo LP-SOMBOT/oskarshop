@@ -47,6 +47,7 @@ import { useRouter } from 'next/navigation';
 import VerifiedBadge from '@/components/VerifiedBadge';
 
 export default function AccountsView() {
+  const [searchQuery, setSearchQuery] = useState("");
   const { 
     accountPosts, 
     eventAccounts,
@@ -69,7 +70,6 @@ export default function AccountsView() {
   const [editingPost, setEditingPost] = useState<any>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   
   // High-precision clock for real-time hiding of ended events
   const [now, setNow] = useState(Date.now());
@@ -247,7 +247,7 @@ export default function AccountsView() {
             <DialogDescription>Post-kan waa la tirtiri doonaa.</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-4 flex-col sm:flex-row">
-             <Button variant="ghost" onClick={() => setDeletingPostId(null)} className="rounded-xl flex-1 h-10" disabled={isDeleting}>Maya</Button>
+             <Button variant="ghost" onClick={() => setDeletingId(null)} className="rounded-xl flex-1 h-10" disabled={isDeleting}>Maya</Button>
              <Button variant="destructive" onClick={handleDeleteFinal} className="rounded-xl flex-1 h-10" disabled={isDeleting}>
                 {isDeleting ? <Loader2 className="animate-spin" /> : "Haa, Tirtir"}
              </Button>
@@ -613,19 +613,19 @@ function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner,
         <div className="grid grid-cols-3 gap-2">
            {post.gameType === 'bloodstrike' ? (
              <>
-               <AssetPill color="bg-orange-500" label="EVO" value={post.evoWeapons} />
-               <AssetPill color="bg-blue-500" label="INTERNAL" value={post.internalWeapons} />
-               <AssetPill color="bg-purple-500" label="EMOTES" value={post.emotes} />
-               <AssetPill color="bg-indigo-500" label="EXECUTION" value={post.executionEmotes} />
-               <AssetPill color="bg-cyan-500" label="ARRIVAL" value={post.arrivalEmotes} />
+               <AssetPill icon={Sword} colorClass="bg-orange-500" label="EVO" value={post.evoWeapons} />
+               <AssetPill icon={Target} colorClass="bg-blue-500" label="INTERNAL" value={post.internalWeapons} />
+               <AssetPill icon={Zap} colorClass="bg-purple-500" label="EMOTES" value={post.emotes} />
+               <AssetPill icon={Bomb} colorClass="bg-indigo-500" label="EXECUTION" value={post.executionEmotes} />
+               <AssetPill icon={Star} colorClass="bg-cyan-500" label="ARRIVAL" value={post.arrivalEmotes} />
              </>
            ) : (
              <>
-               <AssetPill color="bg-orange-500" label="EVO" value={post.evoWeapons} />
-               <AssetPill color="bg-blue-500" label="WEAPONS" value={post.totalWeapons} />
-               <AssetPill color="bg-purple-500" label="EMOTES" value={post.emotes} />
-               <AssetPill color="bg-indigo-500" label="ARRIVAL" value={post.arrivalEmotes} />
-               <AssetPill color="bg-pink-500" label="DHARKA" value={post.dharka} />
+               <AssetPill icon={Sword} colorClass="bg-orange-500" label="EVO" value={post.evoWeapons} />
+               <AssetPill icon={Target} colorClass="bg-blue-500" label="WEAPONS" value={post.totalWeapons} />
+               <AssetPill icon={Zap} colorClass="bg-purple-500" label="EMOTES" value={post.emotes} />
+               <AssetPill icon={Star} colorClass="bg-indigo-500" label="ARRIVAL" value={post.arrivalEmotes} />
+               <AssetPill icon={ShoppingBag} colorClass="bg-pink-500" label="DHARKA" value={post.dharka} />
              </>
            )}
         </div>
@@ -644,12 +644,16 @@ function AccountPostCard({ post, isVerified, onClick, onEdit, onDelete, isOwner,
   );
 }
 
-function AssetPill({ color, label, value }: { color: string, label: string, value: any }) {
+function AssetPill({ icon: Icon, colorClass, label, value }: { icon: any, colorClass: string, label: string, value: any }) {
   return (
-    <div className="bg-slate-50 dark:bg-slate-800/40 border dark:border-white/5 p-1.5 rounded-xl shadow-sm flex flex-col items-center justify-center text-center gap-0.5 min-w-0">
-       <div className={cn("w-1 h-1 rounded-full", color)} />
-       <span className="text-[6px] font-black text-slate-400 uppercase tracking-tighter truncate w-full">{label}</span>
-       <span className="text-[10px] font-bold text-slate-900 dark:text-white leading-none">{value || 0}</span>
+    <div className="bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100/50 dark:border-white/5 p-1.5 md:p-2 rounded-xl md:rounded-2xl flex flex-col items-center justify-center text-center gap-1 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-md group/asset">
+       <div className={cn("w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 mb-0.5 transition-transform group-hover/asset:scale-110", colorClass, "bg-opacity-10 dark:bg-opacity-20")}>
+          <Icon size={12} className={cn("md:size-4", colorClass.replace('bg-', 'text-'))} strokeWidth={2.5} />
+       </div>
+       <div className="flex flex-col items-center">
+          <span className="text-[10px] md:text-sm font-black text-slate-900 dark:text-white leading-none">{value || 0}</span>
+          <span className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase tracking-tighter truncate w-full mt-1 opacity-70">{label}</span>
+       </div>
     </div>
   );
 }
