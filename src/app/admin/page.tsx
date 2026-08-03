@@ -1052,7 +1052,7 @@ export default function AdminPage() {
       </aside>
 
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden">
+        <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden z-50">
           <SheetHeader className="px-4 py-4 border-b dark:border-white/5">
             <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
             <Button 
@@ -1068,7 +1068,7 @@ export default function AdminPage() {
       </Sheet>
 
       <div className="flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide h-screen">
-        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-[100] shadow-sm">
+        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30 shadow-sm">
           <div className="flex items-center gap-4">
              <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
              <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
@@ -4103,7 +4103,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
              </div>
              <div className="space-y-0.5">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Ka qeeybalayaal</p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                    <Users className="text-slate-300 w-6 h-6 md:w-8 md:h-8" />
                    <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{event.participantsCount || 0}</span>
                 </div>
@@ -4292,3 +4292,4 @@ export {
   EventAccountAdminCard,
   EventAccountParticipantsView
 }
+
