@@ -1192,11 +1192,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await update(ref(rtdb, `orders/${orderId}`), updates);
 
     // 2. Trigger side effects
-    if (status === 'successful') {
+    if (status === 'processing') { // Trigger FazerCards automation when set to processing
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
       
-      // TRIGGER AUTO TOP-UP ON APPROVAL
+      // TRIGGER AUTO TOP-UP ON PROCESSING
       const item = orderData?.items?.[0];
       if (storeSettings.fazercards?.enabled && item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
           if (orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
@@ -1230,7 +1230,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           }
       }
+    }
 
+    if (status === 'successful') {
+      const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
+      const orderData = orderSnap.val() as Order;
+      
+      // Add ranking point if successful
       if (orderData?.userId && !(orderData.items?.[0]?.gameId === 'accounts' || orderData.gameDetails?.postId)) {
         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
       }
@@ -1327,7 +1333,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({
-                 orderId: matchId,
+                 orderId: orderId,
                  category_id: directItem.fazercardsCategory_id,
                  offer_id: directItem.fazercardsOffer_id,
                  playerUid: newOrder.ffUid || gameDetails.playerID,

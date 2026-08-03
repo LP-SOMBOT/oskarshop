@@ -2073,7 +2073,7 @@ export default function AdminPage() {
                                   </TableCell>
                                   <TableCell>
                                       <div className="flex flex-col gap-1">
-                                        <span className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
+                                        <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
                                         <Badge className={cn(
                                           "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
                                           u.role === 'admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
@@ -2892,7 +2892,7 @@ export default function AdminPage() {
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
-                 <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
+                 <Select value={gameForm.category} onValueChange={v => setForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs uppercase">Top-Up Items</SelectItem>
