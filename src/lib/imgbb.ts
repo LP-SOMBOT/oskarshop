@@ -5,7 +5,7 @@
  * Utility to upload images to ImgBB
  */
 export const uploadToImgbb = async (file: File) => {
-  const apiKey = '4437fb9ba157b8fc7ddef1e251718f66';
+  const apiKey = '0ac8fec95369164cc41b3474e29b2848';
   const formData = new FormData();
   formData.append('image', file);
 
