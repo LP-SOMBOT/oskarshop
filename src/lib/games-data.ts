@@ -17,6 +17,11 @@ export type GamePackage = {
   whatsappNumber?: string;
   orderIndex?: number;
   isOneTime?: boolean;
+  autoTopupEnabled?: boolean;
+  fazercardsCategory_id?: string;
+  fazercardsOffer_id?: string;
+  fazercardsMultiQuantity?: number;
+  requiredFields?: { key: string; name: string }[];
 };
 
 // Always empty in code. Real data is loaded from Firebase Realtime Database.

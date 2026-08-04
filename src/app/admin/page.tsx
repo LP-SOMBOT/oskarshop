@@ -429,7 +429,7 @@ export default function AdminPage() {
   const [endEarlyTargetId, setEndEarlyTargetId] = useState<string | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
-  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1 });
+  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1, requiredFields: [] as any[] });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -691,13 +691,13 @@ export default function AdminPage() {
 
   const handleOpenProductDialog = async (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "", fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1 } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1 });
+    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "", fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1, requiredFields: p.requiredFields || [] } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1, requiredFields: [] });
     
     setFazerRequiredFields([]);
 
     // Fetch FazerCards categories
     try {
-      const res = await fetch('/api/fazercards/topups');
+      const res = await fetch('/api/fazercards/topups?limit=500');
       const data = await res.json();
       if (data.ok) {
         const mapped = (data.items || []).map((c: any) => ({
@@ -717,7 +717,7 @@ export default function AdminPage() {
              price: o.price
            }));
            setFazerOffers(mapped);
-           const required = (offData.fields || []).map((f: any) => f.key);
+           const required = (offData.fields || []).map((f: any) => f.name || f.key);
            setFazerRequiredFields(required);
          }
       }
@@ -729,7 +729,7 @@ export default function AdminPage() {
   };
 
   const handleFazerCategoryChange = async (cid: string) => {
-    setProductForm({ ...productForm, fazercardsCategory_id: cid, fazercardsOffer_id: "" });
+    setProductForm({ ...productForm, fazercardsCategory_id: cid, fazercardsOffer_id: "", requiredFields: [] });
     setFazerOffers([]);
     setFazerRequiredFields([]);
     try {
@@ -742,8 +742,13 @@ export default function AdminPage() {
           price: o.price
         }));
         setFazerOffers(mapped);
-        const required = (data.fields || []).map((f: any) => f.key);
-        setFazerRequiredFields(required);
+        
+        // Extract raw fields to store in product doc for instant checkout
+        const fieldsToStore = (data.fields || []).map((f: any) => ({ key: f.key, name: f.name }));
+        setProductForm(prev => ({ ...prev, fazercardsCategory_id: cid, requiredFields: fieldsToStore }));
+
+        const requiredNames = (data.fields || []).map((f: any) => f.name || f.key);
+        setFazerRequiredFields(requiredNames);
       }
     } catch (err) {
       console.error("Failed to change category", err);

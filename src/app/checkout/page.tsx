@@ -56,8 +56,7 @@ function CheckoutContent() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
-  // FazerCards Dynamic Field States
-  const [fazerFields, setFazerFields] = useState<any[]>([]);
+  // FazerCards Dynamic Field States - NOW INSTANT FROM STORED METADATA
   const [dynamicFields, setDynamicFields] = useState<Record<string, string>>({});
   
   // FazerCards Auto-Detect States
@@ -105,24 +104,15 @@ function CheckoutContent() {
   }, [setGlobalLoading]);
 
   /**
-   * Dynamic Field Discovery Effect
+   * Initialize dynamic fields object from pre-stored product metadata
    */
   useEffect(() => {
-    if (item?.fazercardsCategory_id) {
-      fetch(`/api/fazercards/topups/offers?category_id=${item.fazercardsCategory_id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.ok && data.fields) {
-            setFazerFields(data.fields);
-            // Initialize dynamic fields object
-            const initial: any = {};
-            data.fields.forEach((f: any) => initial[f.key] = "");
-            setDynamicFields(initial);
-          }
-        })
-        .catch(err => console.error("Error fetching category fields:", err));
+    if (item?.requiredFields && item.requiredFields.length > 0) {
+      const initial: any = {};
+      item.requiredFields.forEach((f: any) => initial[f.key] = "");
+      setDynamicFields(initial);
     }
-  }, [item?.fazercardsCategory_id]);
+  }, [item?.requiredFields]);
 
   /**
    * Official FazerCards ID Validation Effect
@@ -278,10 +268,12 @@ function CheckoutContent() {
     }
 
     // Validate Dynamic Fields
-    for (const f of fazerFields) {
-      if (!dynamicFields[f.key]?.trim()) {
-        toast({ title: "Missing Information", description: `Please enter ${f.name}.`, variant: "destructive" });
-        return;
+    if (item?.requiredFields) {
+      for (const f of item.requiredFields) {
+        if (!dynamicFields[f.key]?.trim()) {
+          toast({ title: "Missing Information", description: `Please enter ${f.name}.`, variant: "destructive" });
+          return;
+        }
       }
     }
 
@@ -400,8 +392,8 @@ function CheckoutContent() {
 
   // Group Dynamic Fields for rendering
   const isIdentifier = (k: string) => ['player_id', 'user_id', 'uid'].includes(k);
-  const identifierField = fazerFields.find(f => isIdentifier(f.key));
-  const otherFields = fazerFields.filter(f => !isIdentifier(f.key));
+  const identifierField = item?.requiredFields?.find(f => isIdentifier(f.key));
+  const otherFields = item?.requiredFields?.filter(f => !isIdentifier(f.key)) || [];
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -502,7 +494,7 @@ function CheckoutContent() {
                       <Gamepad2 size={18} />
                     </div>
                     <Input 
-                      placeholder="Tusaale: 1803494801" 
+                      placeholder={identifierField ? `Geli ${identifierField.name.toLowerCase()} ka` : "Tusaale: 1803494801"}
                       required 
                       type="tel" 
                       inputMode="numeric" 
@@ -567,7 +559,7 @@ function CheckoutContent() {
                               <Layers size={18} />
                            </div>
                            <Input 
-                            placeholder={field.name} 
+                            placeholder={`Geli ${field.name.toLowerCase()} ka`}
                             required 
                             className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
                             value={dynamicFields[field.key] || ""}
@@ -584,7 +576,7 @@ function CheckoutContent() {
                   <div className="space-y-1 md:space-y-2">
                     <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">in-game name</Label>
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 z-10 pointer-events-none">
                         <User size={18} />
                       </div>
                       <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
@@ -600,7 +592,7 @@ function CheckoutContent() {
                     </div>
                     <Input 
                       type="tel" 
-                      placeholder="613982172" 
+                      placeholder="Geli number ka xogta"
                       required 
                       className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-16 md:pl-20 pr-4 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
                       value={gameDetails.whatsappNumber} 
@@ -623,7 +615,7 @@ function CheckoutContent() {
                   <Input 
                     id="sender" 
                     type="tel" 
-                    placeholder="613982172" 
+                    placeholder="Geli number ka lacagta laga soo diray"
                     required 
                     className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-base md:text-xl dark:text-white pl-20 md:pl-28 pr-4 md:pr-6" 
                     value={gameDetails.senderNumber} 
