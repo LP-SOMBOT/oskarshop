@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -271,7 +270,7 @@ function CheckoutContent() {
     if (item?.requiredFields) {
       for (const f of item.requiredFields) {
         if (!dynamicFields[f.key]?.trim()) {
-          toast({ title: "Missing Information", description: `Please enter ${f.name}.`, variant: "destructive" });
+          toast({ title: "Missing Information", description: `Please enter ${f.name.replace('_', ' ')}.`, variant: "destructive" });
           return;
         }
       }
@@ -395,6 +394,11 @@ function CheckoutContent() {
   const identifierField = item?.requiredFields?.find(f => isIdentifier(f.key));
   const otherFields = item?.requiredFields?.filter(f => !isIdentifier(f.key)) || [];
 
+  const formatLabel = (name: string) => {
+    let label = name.replace(/_/g, ' ');
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  };
+
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
       {step < 4 && (
@@ -487,14 +491,14 @@ function CheckoutContent() {
                 {/* PRIMARY IDENTIFIER FIELD (Support Auto-Detect) */}
                 <div className="space-y-1 md:space-y-2">
                   <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">
-                    {identifierField?.name || (isFreeFire ? "Game UID" : "Game ID")}
+                    {identifierField ? formatLabel(identifierField.name) : (isFreeFire ? "Game UID" : "Game ID")}
                   </Label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
                       <Gamepad2 size={18} />
                     </div>
                     <Input 
-                      placeholder={identifierField ? `Geli ${identifierField.name.toLowerCase()} ka` : "Tusaale: 1803494801"}
+                      placeholder={identifierField ? `Geli ${formatLabel(identifierField.name).toLowerCase()} ka` : "Tusaale: 1803494801"}
                       required 
                       type="tel" 
                       inputMode="numeric" 
@@ -553,13 +557,15 @@ function CheckoutContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {otherFields.map(field => (
                       <div key={field.key} className="space-y-1 md:space-y-2">
-                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">{field.name}</Label>
+                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">
+                          {formatLabel(field.name)}
+                        </Label>
                         <div className="relative">
                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
                               <Layers size={18} />
                            </div>
                            <Input 
-                            placeholder={`Geli ${field.name.toLowerCase()} ka`}
+                            placeholder={`Geli ${formatLabel(field.name).toLowerCase()} ka`}
                             required 
                             className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
                             value={dynamicFields[field.key] || ""}
@@ -755,7 +761,7 @@ function CheckoutContent() {
                 {/* Display all captured game fields */}
                 {Object.entries(dynamicFields).map(([k, v]) => (
                   <div key={k} className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2">
-                    <span className="truncate uppercase">{k.replace('_', ' ')}:</span>
+                    <span className="truncate uppercase">{k.replace(/_/g, ' ')}:</span>
                     <span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{v}</span>
                   </div>
                 ))}

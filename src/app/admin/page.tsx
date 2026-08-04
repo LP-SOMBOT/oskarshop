@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -2996,7 +2995,7 @@ export default function AdminPage() {
                       {fazerRequiredFields.length > 0 && (
                         <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-2 text-primary text-[10px] font-bold">
                            <Info size={14} className="shrink-0 mt-0.5" />
-                           <p>Required fields for this category: {fazerRequiredFields.join(', ')}</p>
+                           <p>Required fields for this category: {fazerRequiredFields.map(f => f.replace('_', ' ')).join(', ')}</p>
                         </div>
                       )}
 
@@ -3392,6 +3391,24 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
              {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
           </div>
+
+          {/* Additional Dynamic Fields Display */}
+          {order.gameDetails?.gameFields && Object.keys(order.gameDetails.gameFields).length > 0 && (
+            <div className="mt-10 pt-10 border-t dark:border-white/5">
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6">Additional Player Identifiers</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
+                {Object.entries(order.gameDetails.gameFields).map(([key, val]: any) => (
+                  <InsightStat 
+                    key={key} 
+                    label={key.replace(/_/g, ' ')} 
+                    value={val} 
+                    icon={Layers} 
+                    isPrimary 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Automation Insight */}
           {(order.autoTopupStatus || order.smsMatchedId) && (
