@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -37,6 +38,10 @@ export default function HomeView() {
     const now = Date.now();
     return (events || []).filter(e => e.active && (!e.expiresAt || e.expiresAt > now));
   }, [events]);
+
+  const visibleGames = useMemo(() => {
+    return games.filter(g => g.category === 'top-up' && g.active !== false);
+  }, [games]);
 
   if (isInitialLoading) {
     return (
@@ -99,7 +104,7 @@ export default function HomeView() {
               </div>
               <div className="space-y-0.5">
                 <h3 className="font-headline font-bold text-lg md:text-3xl text-slate-900 dark:text-white leading-tight">Oskar is LIVE</h3>
-                <p className="text-[10px] md:text-sm text-muted-foreground font-medium max-w-[200px] md:max-w-md leading-tight">Join our TikTok for exclusive deals!</p>
+                <p className="text-[10px] md:sm text-muted-foreground font-medium max-w-[200px] md:max-w-md leading-tight">Join our TikTok for exclusive deals!</p>
               </div>
             </div>
             <Button 
@@ -124,7 +129,7 @@ export default function HomeView() {
           </div>
           
           <div className="flex flex-col gap-3 md:gap-4 w-full">
-            {games.filter(g => g.category === 'top-up').map((game) => (
+            {visibleGames.map((game) => (
               <GameCollectionCard 
                 key={game.id} 
                 game={game} 

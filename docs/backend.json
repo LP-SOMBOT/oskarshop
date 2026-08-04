@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -30,7 +31,9 @@
         "title": { "type": "string" },
         "icon": { "type": "string" },
         "category": { "type": "string", "enum": ["top-up", "accounts"] },
-        "createdAt": { "type": "number" }
+        "createdAt": { "type": "number" },
+        "autoDetectName": { "type": "boolean" },
+        "active": { "type": "boolean", "description": "Whether the game collection is visible in the shop." }
       }
     },
     "AccountPost": {

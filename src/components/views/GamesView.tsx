@@ -38,7 +38,7 @@ export default function GamesView() {
   };
 
   const filteredGames = useMemo(() => {
-    return (games || []).filter(g => g.category === 'top-up');
+    return (games || []).filter(g => g.category === 'top-up' && g.active !== false);
   }, [games]);
 
   const selectedGame = useMemo(() => {

@@ -48,6 +48,7 @@ type Game = {
   category: 'top-up' | 'accounts';
   createdAt: number;
   autoDetectName?: boolean;
+  active?: boolean;
 };
 
 type CartItem = {

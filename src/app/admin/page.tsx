@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -427,7 +428,7 @@ export default function AdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, type: string } | null>(null);
   const [endEarlyTargetId, setEndEarlyTargetId] = useState<string | null>(null);
 
-  const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false });
+  const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false, active: true });
   const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1, requiredFields: [] as any[] });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
@@ -684,7 +685,7 @@ export default function AdminPage() {
 
   const handleOpenGameDialog = (game?: any) => {
     setEditingGame(game || null);
-    setGameForm(game ? { title: game.title, icon: game.icon || "", category: game.category, autoDetectName: !!game.autoDetectName } : { title: "", icon: "", category: "top-up", autoDetectName: false });
+    setGameForm(game ? { title: game.title, icon: game.icon || "", category: game.category, autoDetectName: !!game.autoDetectName, active: game.active !== false } : { title: "", icon: "", category: "top-up", autoDetectName: false, active: true });
     setIsGameDialogOpen(true);
   };
 
@@ -1679,6 +1680,7 @@ export default function AdminPage() {
                                   <div className="flex items-center gap-2 mt-1">
                                     <p className="text-[10px] sm:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-60">{g.category}</p>
                                     {g.autoDetectName && <Badge className="bg-primary/10 text-primary border-none text-[7px] uppercase font-black px-1.5 h-4">Auto Detect</Badge>}
+                                    {g.active === false && <Badge className="bg-red-500 text-white border-none text-[7px] uppercase font-black px-1.5 h-4">Hidden</Badge>}
                                   </div>
                                </div>
                             </div>
@@ -2919,6 +2921,13 @@ export default function AdminPage() {
                  <Label className="font-bold text-sm">Auto Detect Name</Label>
                  <Switch checked={gameForm.autoDetectName} onCheckedChange={v => setGameForm(f => ({ ...f, autoDetectName: v }))} />
               </div>
+              <div className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                 <div>
+                    <p className="font-bold text-sm">Active (Show in Shop)</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Toggle visibility in shop collections</p>
+                 </div>
+                 <Switch checked={gameForm.active} onCheckedChange={v => setGameForm(f => ({ ...f, active: v }))} />
+              </div>
               <Button type="submit" disabled={isUploading} className="w-full h-12 md:h-14 rounded-2xl font-bold shadow-lg uppercase tracking-widest">{isUploading ? <Loader2 className="animate-spin" /> : "Save Collection"}</Button>
            </form>
         </DialogContent>
@@ -3427,7 +3436,8 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                      <p className={cn(
                        "font-bold text-sm uppercase",
                        order.autoTopupStatus === 'completed' ? "text-green-500" : 
-                       order.autoTopupStatus === 'failed' ? "text-red-500" : "text-amber-500"
+                       order.autoTopupStatus === 'failed' ? "text-red-500" : 
+                       order.autoTopupStatus === 'processing' ? "text-amber-500" : "text-slate-400"
                      )}>
                         {order.autoTopupStatus?.toUpperCase() || 'NOT TRIGGERED'}
                      </p>
@@ -3493,7 +3503,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <p className="truncate font-bold text-lg md:text-3xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
-                  {buyer?.isVerified && <VerifiedBadge className="text-xl md:text-2xl" />}
+                  {buyer?.isVerified && <VerifiedBadge />}
                 </div>
                 <div className="flex items-center gap-2 mt-1 md:mt-2">
                   <Smartphone size={14} className="text-primary" />
