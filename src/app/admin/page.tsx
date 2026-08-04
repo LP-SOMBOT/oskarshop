@@ -744,7 +744,10 @@ export default function AdminPage() {
         setFazerOffers(mapped);
         
         // Extract raw fields to store in product doc for instant checkout
-        const fieldsToStore = (data.fields || []).map((f: any) => ({ key: f.key, name: f.name }));
+        const fieldsToStore = (data.fields || []).map((f: any) => ({ 
+          key: f.key || "unknown", 
+          name: f.name || f.key || "Field" 
+        }));
         setProductForm(prev => ({ ...prev, fazercardsCategory_id: cid, requiredFields: fieldsToStore }));
 
         const requiredNames = (data.fields || []).map((f: any) => f.name || f.key);
@@ -2012,7 +2015,7 @@ export default function AdminPage() {
                                  {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={24} /></div>}
                               </div>
                               <div className="min-w-0">
-                                 <div className="flex items-center gap-1 min-w-0">
+                                 <div className="flex items-center gap-1.5 min-w-0">
                                    <p className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[150px]">{u.name || "Legendary Gamer"}</p>
                                    {u.isVerified && <VerifiedBadge />}
                                  </div>
@@ -2076,7 +2079,7 @@ export default function AdminPage() {
                                             {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={20} /></div>}
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <div className="flex items-center gap-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 min-w-0">
                                               <span className="truncate font-semibold text-sm md:text-lg text-slate-900 dark:text-white max-w-[200px]">{u.name || "Legendary Gamer"}</span>
                                               {u.isVerified && <VerifiedBadge />}
                                             </div>
@@ -2474,7 +2477,7 @@ export default function AdminPage() {
                               <ScrollText className="w-6 h-6" />
                               <div className="text-left">
                                  <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Compliance Editor</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Terms & Conditions (EN/SO)</p>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Terms &amp; Conditions (EN/SO)</p>
                               </div>
                            </div>
                         </AccordionTrigger>
@@ -2483,7 +2486,6 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
-                                    <Button onClick={() => updateStoreSettings({ termsAndConditions: termsForm }).then(()=>toast({title:"Policy Updated"}))} className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl bg-emerald-600">Sync Legal Policy</Button>
                                     <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
                                  </div>
                                  <div className="space-y-3">
@@ -2491,6 +2493,7 @@ export default function AdminPage() {
                                     <Textarea value={termsForm.so} onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Geli shuruudaha afka Soomaaliga..." />
                                  </div>
                               </div>
+                              <Button onClick={() => updateStoreSettings({ termsAndConditions: termsForm }).then(()=>toast({title:"Policy Updated"}))} className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl bg-emerald-600">Sync Legal Policy</Button>
                            </div>
                         </AccordionContent>
                      </Card>
@@ -2585,7 +2588,7 @@ export default function AdminPage() {
                                           
                                           // If disabling, force the app online immediately
                                           if (!v) {
-                                            setIsGlobalLoading(true);
+                                            setGlobalLoading(true);
                                             try {
                                               const updates = {
                                                 schedule: updatedSchedule,
@@ -2595,17 +2598,17 @@ export default function AdminPage() {
                                               setAppStatusForm(f => ({ ...f, offline: false }));
                                               toast({ title: "Schedule Disabled", description: "Shop is now forced Online." });
                                             } finally {
-                                              setIsGlobalLoading(false);
+                                              setGlobalLoading(false);
                                             }
                                           } else {
                                             // If enabling, just update the schedule settings
                                             // The background hook will take over and enforce the window in 3 seconds
-                                            setIsGlobalLoading(true);
+                                            setGlobalLoading(true);
                                             try {
                                               await updateStoreSettings({ schedule: updatedSchedule });
                                               toast({ title: "Schedule Enabled", description: "Operating hours are now active." });
                                             } finally {
-                                              setIsGlobalLoading(false);
+                                              setGlobalLoading(false);
                                             }
                                           }
                                         }} 
@@ -2905,7 +2908,7 @@ export default function AdminPage() {
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
-                 <Select value={gameForm.category} onValueChange={v => setForm({ ...gameForm, category: v as any })}>
+                 <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs uppercase">Top-Up Items</SelectItem>
@@ -3152,7 +3155,7 @@ export default function AdminPage() {
                                <AvatarFallback className="bg-primary/10 text-primary"><User size={20}/></AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
-                               <div className="flex items-center gap-1 min-w-0">
+                               <div className="flex items-center gap-1.5 min-w-0">
                                  <p className="truncate font-semibold text-sm max-w-[120px]">{usage.name || profile?.name || 'Gamer'}</p>
                                  {profile?.isVerified && <VerifiedBadge />}
                                </div>
@@ -3372,7 +3375,7 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                    <User size={14} className="opacity-40" />
                    <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
                 </div>
-                <div className="flex items-center gap-1 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
                    <p className="text-sm md:text-xl font-semibold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
                    {order.ffVerified ? (
                      <VerifiedBadge />
@@ -3690,7 +3693,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                </div>
                <div>
                   <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-white/60 mb-0.5">Final Buyer</p>
-                  <div className="flex items-center gap-1 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <p className="truncate font-semibold text-xl md:text-2xl max-w-[200px]">{finalBuyer?.name || "Market User"}</p>
                     {finalBuyer?.isVerified && <VerifiedBadge />}
                   </div>
@@ -4092,7 +4095,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                       <AvatarFallback className="bg-primary/20 text-primary font-bold">{winnerProfile.name?.[0]}</AvatarFallback>
                    </Avatar>
                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <p className="truncate font-semibold text-base md:text-xl max-w-[200px]">{winnerProfile.name}</p>
                         {winnerProfile.isVerified && <VerifiedBadge />}
                       </div>
@@ -4245,13 +4248,13 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
                       )}>
                         <TableCell className="px-6 lg:px-10 font-headline font-bold text-xl">{idx + 1}</TableCell>
                         <TableCell>
-                            <div className="flex items-center gap-1 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0">
                               <Avatar className="w-10 h-10 border-2 border-white dark:border-slate-700 shadow-sm shrink-0">
                                   <AvatarImage src={p.avatar} />
                                   <AvatarFallback>{p.name?.[0]}</AvatarFallback>
                               </Avatar>
                               <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 min-w-0">
                                     <p className="truncate font-semibold text-sm max-w-[120px]">{p.name}</p>
                                     {p.isVerified && <VerifiedBadge />}
                                   </div>

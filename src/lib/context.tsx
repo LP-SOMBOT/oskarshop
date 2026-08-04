@@ -1790,7 +1790,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const saveGame = useCallback(async (g: any) => { if (!rtdb) return; setIsGlobalLoading(true); const { id, ...data } = g; if (id) await update(ref(rtdb, `games/${id}`), data); else await push(ref(rtdb, 'games'), { ...data, createdAt: Date.now() }); setIsGlobalLoading(false); }, [rtdb]);
   const deleteGame = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `games/${id}`)); const dbUpdates: any = {}; products.filter(p => p.gameId === id).forEach(p => dbUpdates[`products/${p.id}`] = null); await update(ref(rtdb), dbUpdates); setIsGlobalLoading(false); }, [rtdb, products]);
-  const saveProduct = useCallback(async (p: any) => { if (!rtdb) return; setIsGlobalLoading(true); const { id, ...data } = p; if (id) await update(ref(rtdb, `products/${id}`), data); else await push(ref(rtdb, 'products'), data); setIsGlobalLoading(false); }, [rtdb]);
+  
+  const saveProduct = useCallback(async (p: any) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true); 
+    const { id, ...data } = p; 
+    
+    // Deep clean undefined values which RTDB rejects
+    const cleanData = JSON.parse(JSON.stringify(data));
+
+    if (id) await update(ref(rtdb, `products/${id}`), cleanData); 
+    else await push(ref(rtdb, 'products'), cleanData); 
+    setIsGlobalLoading(false); 
+  }, [rtdb]);
+
   const deleteProduct = useCallback(async (id: string) => { setIsGlobalLoading(true); await remove(ref(rtdb, `products/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
   const updateProductsOrder = useCallback(async (updates: any[]) => { if (!rtdb) return; setIsGlobalLoading(true); const dbUpdates: any = {}; updates.forEach(u => dbUpdates[`products/${u.id}/orderIndex`] = u.orderIndex); await update(ref(rtdb), dbUpdates); setIsGlobalLoading(false); }, [rtdb]);
   const saveEvent = useCallback(async (e: any) => { 
