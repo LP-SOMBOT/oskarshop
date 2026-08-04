@@ -137,7 +137,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/accordion";
+} from "@/components/ui/accordion";
 import {
   Tabs,
   TabsContent,
@@ -2499,10 +2499,12 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
+                                    <span className="sr-only">English Terms Textarea</span>
                                     <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
                                  </div>
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Somali Terms (Shuruudaha)</Label>
+                                    <span className="sr-only">Somali Terms Textarea</span>
                                     <Textarea value={termsForm.so} onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Geli shuruudaha afka Soomaaliga..." />
                                  </div>
                               </div>
@@ -3015,7 +3017,7 @@ export default function AdminPage() {
 
                       {fazerRequiredFields.length > 0 && (
                         <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-2 text-primary text-[10px] font-bold">
-                           <Info size={14} className="shrink-0 mt-0.5" />
+                           <span className="shrink-0 mt-0.5"><Info size={14} /></span>
                            <p>Required fields for this category: {fazerRequiredFields.map(f => f.replace('_', ' ')).join(', ')}</p>
                         </div>
                       )}
@@ -4122,7 +4124,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
 
        <div className="p-6 md:p-10 space-y-8">
           <div className="space-y-1">
-             <h4 className="font-black text-2xl md:text-4xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
+             <h4 className="font-headline font-bold text-2xl md:text-4xl uppercase tracking-tighter text-slate-900 dark:text-white leading-none">{event.title}</h4>
              <p className="text-sm font-bold text-[#D97706] uppercase tracking-[0.2em]">{event.gameName}</p>
           </div>
 
