@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'Logged. No match found.' });
     }
 
-    const [matchId, matchOrder] = matchingOrders[0];
+    const [matchId, matchOrder] = matchingOrders[0] as [string, any];
 
     // 3. Mark Matched
     await adminDb.ref(`sms_payments/${smsRef.key}`).update({
@@ -104,7 +105,21 @@ export async function POST(request: Request) {
       completedAt: now
     });
 
-    // 5. Trigger Auto Topup if enabled on item AND global reseller settings
+    // 5. CREDIT POINT FOR SUCCESSFUL ITEM ORDER
+    const isAccountOrder = 
+      matchOrder.items?.[0]?.gameId === 'accounts' || 
+      matchOrder.items?.[0]?.gameId === 'event-accounts' || 
+      matchOrder.gameDetails?.postId || 
+      matchOrder.gameDetails?.isEventWinner;
+
+    if (matchOrder.userId && !isAccountOrder) {
+      const { ServerValue } = await import('firebase-admin/database');
+      await adminDb.ref(`users/${matchOrder.userId}`).update({
+        points: ServerValue.increment(1)
+      });
+    }
+
+    // 6. Trigger Auto Topup if enabled on item AND global reseller settings
     const item = matchOrder.items?.[0];
     const fazercardsConfigSnap = await adminDb.ref('settings/fazercards').get();
     const fazercardsConfig = fazercardsConfigSnap.val();

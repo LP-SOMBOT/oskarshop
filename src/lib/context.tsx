@@ -688,7 +688,7 @@ const translations: Record<Language, Record<string, string>> = {
     time_left: "Waqtiga haray",
     buy_button: "iibso",
     terms_of_service: "Shuruucda/xeerarka website ka",
-    read_terms: "Aqri sharuucda",
+    read_terms: "Aqri shuruucda",
     photo_updated: "Sawirka waa la soo geliyey!",
     terms_welcome: "Ku soo dhawoow OskarShop, fadlan aqri shuruucda website ka inta aadan isticmaalin, MAHADSANID!.",
     compliance_protocol: "Hab-maamuuska u hoggaansanaanta",
@@ -1236,8 +1236,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
       
-      // Add ranking point if successful
-      if (orderData?.userId && !(orderData.items?.[0]?.gameId === 'accounts' || orderData.gameDetails?.postId)) {
+      // Determine if this is a standard item order (Top-up)
+      // Exclude marketplace accounts, auction events, and items in the 'accounts' category
+      const isAccountOrder = 
+        orderData.items?.[0]?.gameId === 'accounts' || 
+        orderData.items?.[0]?.gameId === 'event-accounts' || 
+        orderData.gameDetails?.postId || 
+        orderData.gameDetails?.isEventWinner;
+
+      // Add ranking point if successful item order
+      if (orderData?.userId && !isAccountOrder) {
         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
       }
     }
@@ -1314,7 +1322,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .find(([id, sms]: [string, any]) => {
             if (sms.matched) return false;
             const amountMatch = Math.abs(parseFloat(sms.amount) - directItem.price) < 0.01;
-            const phoneMatch = sms.senderPhone === targetPhone;
+            phoneMatch = sms.senderPhone === targetPhone;
             const timeMatch = Math.abs(now - sms.receivedAt) <= twoHours;
             return amountMatch && phoneMatch && timeMatch;
           });

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const orders = ordersSnap.val() || {};
     
     let matchedOrderId = null;
-    let matchedOrder = null;
+    let matchedOrder: any = null;
 
     for (const [id, order] of Object.entries(orders)) {
       if ((order as any).autoTopupOrderId === fazercardsOrderId) {
@@ -62,15 +62,31 @@ export async function POST(request: Request) {
       updates.status = 'successful';
       updates.autoTopupStatus = 'completed';
       updates.completedAt = Date.now();
+
+      // 4. CREDIT POINT FOR SUCCESSFUL AUTOMATED DELIVERY
+      // Only credit point if the order wasn't ALREADY successful (prevent double points)
+      if (matchedOrder.status !== 'successful' && matchedOrder.userId) {
+        const isAccountOrder = 
+          matchedOrder.items?.[0]?.gameId === 'accounts' || 
+          matchedOrder.items?.[0]?.gameId === 'event-accounts' || 
+          matchedOrder.gameDetails?.postId || 
+          matchedOrder.gameDetails?.isEventWinner;
+
+        if (!isAccountOrder) {
+          const { ServerValue } = await import('firebase-admin/database');
+          await adminDb.ref(`users/${matchedOrder.userId}`).update({
+            points: ServerValue.increment(1)
+          });
+        }
+      }
     } else if (fazercardsStatus === 'failed' || fazercardsStatus === 'rejected') {
       updates.autoTopupStatus = 'failed';
       updates.autoTopupError = error || 'FazerCards failed delivery';
-      // We keep status as processing to allow admin to see the failure reason
     } else if (fazercardsStatus === 'processing') {
       updates.autoTopupStatus = 'processing';
     }
 
-    // 4. Persist changes
+    // 5. Persist changes
     await adminDb.ref(`orders/${matchedOrderId}`).update(updates);
 
     return NextResponse.json({ success: true, message: `Order ${matchedOrderId} synced to ${fazercardsStatus}` });
