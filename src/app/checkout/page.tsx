@@ -479,7 +479,7 @@ function CheckoutContent() {
                        <p className="text-[9px] md:text-xs font-bold leading-relaxed opacity-90">
                           {language === 'so' 
                             ? 'Fadlan iska fiiri bahashaan waa wax Hal mar la furan karo ( one time use) hada horo u Soo furate mar kale ma furan kartid❗ iska firi intaa ku dhaqaaqin.' 
-                            : 'This item is limited to ONE PURCHASE per user. Double-check your ID carefully. OskarShop is not responsible for errors after submission.'}
+                            : 'This item is limited to ONE PURCHASE per user account/ID. Double-check your ID carefully. OskarShop is not responsible for errors after submission.'}
                        </p>
                     </div>
                  ) : (
@@ -502,7 +502,7 @@ function CheckoutContent() {
                       required 
                       type="tel" 
                       inputMode="numeric" 
-                      className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                      className="h-10 md:h-12 rounded-xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-sm focus-visible:ring-primary shadow-inner" 
                       value={isAutoDetectEnabled ? ffUid : gameDetails.playerID} 
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '');
@@ -531,7 +531,7 @@ function CheckoutContent() {
                         placeholder={checking ? "Xaqiijinta ID-ga..." : isValidationUnsupported ? "Geli magacaaga manually" : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
                         readOnly={!isValidationUnsupported}
                         className={cn(
-                          "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
+                          "h-10 md:h-12 rounded-xl transition-all border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-sm",
                           checking ? "border-slate-200 animate-pulse bg-slate-100" : 
                           verified ? "border-green-500 bg-green-50/10 text-green-600" : 
                           isValidationUnsupported ? "border-amber-300 bg-white dark:bg-slate-800" :
@@ -567,7 +567,7 @@ function CheckoutContent() {
                            <Input 
                             placeholder={`Geli ${formatLabel(field.name).toLowerCase()} ka`}
                             required 
-                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                            className="h-10 md:h-12 rounded-xl bg-gray-50 dark:bg-slate-800 border-none pl-12 font-bold text-xs md:text-sm focus-visible:ring-primary shadow-inner" 
                             value={dynamicFields[field.key] || ""}
                             onChange={(e) => setDynamicFields({...dynamicFields, [field.key]: e.target.value})}
                            />
@@ -585,7 +585,7 @@ function CheckoutContent() {
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 z-10 pointer-events-none">
                         <User size={18} />
                       </div>
-                      <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
+                      <Input placeholder="Geli magaca game ka kugu qoran" required className="h-10 md:h-12 rounded-xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-sm focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
                     </div>
                   </div>
                 )}
@@ -598,9 +598,9 @@ function CheckoutContent() {
                     </div>
                     <Input 
                       type="tel" 
-                      placeholder="Geli number ka xogta"
+                      placeholder="613982172"
                       required 
-                      className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-16 md:pl-20 pr-4 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                      className="h-10 md:h-12 rounded-xl bg-gray-50 dark:bg-slate-800 border-none pl-16 md:pl-20 pr-4 md:pr-5 font-bold text-xs md:text-sm focus-visible:ring-primary shadow-inner" 
                       value={gameDetails.whatsappNumber} 
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '');
@@ -621,9 +621,9 @@ function CheckoutContent() {
                   <Input 
                     id="sender" 
                     type="tel" 
-                    placeholder="Geli number ka lacagta laga soo diray"
+                    placeholder="geli number ka lacagta"
                     required 
-                    className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-base md:text-xl dark:text-white pl-20 md:pl-28 pr-4 md:pr-6" 
+                    className="h-11 md:h-14 rounded-xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-sm md:text-lg dark:text-white pl-20 md:pl-28 pr-4 md:pr-6" 
                     value={gameDetails.senderNumber} 
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '');
