@@ -35,8 +35,9 @@ export async function POST(request: Request) {
 
     if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
 
+    // Allow retry if failed, but block if already processing or completed
     if (order.autoTopupStatus === 'completed' || order.autoTopupStatus === 'processing') {
-      return NextResponse.json({ success: false, error: 'Top-up already processed', alreadyProcessed: true });
+      return NextResponse.json({ success: false, error: 'Top-up already in progress or completed', alreadyProcessed: true });
     }
 
     // STEP 1: Fetch required fields for this category
@@ -52,14 +53,12 @@ export async function POST(request: Request) {
     await orderRef.update({ 
       autoTopupStatus: 'processing',
       autoTopupBatchTotal: multiplier,
-      autoTopupBatchCompleted: 0
+      autoTopupBatchCompleted: 0,
+      autoTopupStartedAt: Date.now()
     });
 
     // STEP 2: Build fields object dynamically
-    // Use the comprehensive gameFields collected at checkout
     const sourceData = providedFields || order.gameDetails?.gameFields || {};
-    
-    // Also include top-level identifiers for backward compatibility
     const fallbackData: any = {
       player_id: order.ffUid || order.gameDetails?.playerID,
       user_id: order.ffUid || order.gameDetails?.playerID,
@@ -111,24 +110,35 @@ export async function POST(request: Request) {
 
     if (results.length > 0) {
       const isFullSuccess = results.length === multiplier;
-      const finalStatus = isFullSuccess ? 'completed' : 'failed';
-      const orderUpdate: any = {
-        autoTopupStatus: finalStatus,
+      
+      // DO NOT mark as successful yet. Wait for Webhook or Polling.
+      await orderRef.update({
+        autoTopupStatus: 'processing',
         autoTopupOrderId: results.join(', '),
-      };
+        autoTopupError: errors.length > 0 ? errors.join('; ') : null
+      });
 
-      if (isFullSuccess) {
-        orderUpdate.status = 'successful';
-        orderUpdate.completedAt = Date.now();
-      } else {
-        orderUpdate.status = 'cancelled';
-        orderUpdate.cancellationReason = `Automation partial failure: ${results.length}/${multiplier} delivered. Error: ${errors.join('; ')}`;
-      }
+      // Send Telegram processing notification
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/notify-telegram`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: order.gameDetails?.playerName || order.userPhone,
+          customerPhone: order.gameDetails?.whatsappNumber,
+          itemName: order.items?.[0]?.title,
+          amount: order.total,
+          ffUid: order.ffUid,
+          orderId: orderId,
+          message: `⏳ Auto top-up PROCESSING — FazerCards: ${results.join(', ')}. Waiting for delivery confirmation via webhook.`
+        })
+      }).catch(() => {});
 
-      if (errors.length > 0) orderUpdate.autoTopupError = errors.join('; ');
-      await orderRef.update(orderUpdate);
-
-      return NextResponse.json({ success: isFullSuccess, fazercardsOrderIds: results.join(', ') });
+      return NextResponse.json({ 
+        success: true, 
+        fazercardsOrderId: results.join(', '),
+        status: 'processing',
+        message: 'Order placed. Waiting for delivery confirmation.'
+      });
     } else {
       await orderRef.update({
         autoTopupStatus: 'failed',

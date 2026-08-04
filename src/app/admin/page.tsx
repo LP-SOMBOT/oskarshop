@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -469,6 +470,7 @@ export default function AdminPage() {
   const [isTestingFazer, setIsTestingFazer] = useState(false);
   const [fazerApiKey, setFazerApiKey] = useState("");
   const [recentSms, setRecentSms] = useState<any[]>([]);
+  const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
 
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -559,15 +561,22 @@ export default function AdminPage() {
     }
   }, [storeSettings]);
 
-  // Fetch SMS History
+  // Fetch SMS History & Webhook Logs
   useEffect(() => {
     if (activeView === 'settings' && rtdb) {
       const smsRef = query(ref(rtdb, 'sms_payments'), limitToLast(10));
-      const unsub = onValue(smsRef, (snap) => {
+      const smsUnsub = onValue(smsRef, (snap) => {
         const val = snap.val();
         if (val) setRecentSms(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.receivedAt - a.receivedAt));
       });
-      return () => off(smsRef);
+
+      const webhookRef = query(ref(rtdb, 'webhook_logs/fazercards'), limitToLast(20));
+      const webhookUnsub = onValue(webhookRef, (snap) => {
+        const val = snap.val();
+        if (val) setWebhookLogs(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.receivedAt - a.receivedAt));
+      });
+
+      return () => { off(smsRef); off(webhookRef); };
     }
   }, [activeView, rtdb]);
 
@@ -853,16 +862,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleAccountStatusUpdate = async () => {
-    if (!selectedAccountId || !pendingAccountStatus) return;
-    setIsSavingStatus(true);
-    try { 
-      await updateAccountPostStatus(selectedAccountId, pendingAccountStatus, pendingAccountStatus === 'sold' ? assignBuyerId : undefined); 
-      setSelectedAccountId(null); 
-      toast({ title: "Listing Updated" }); 
-    } finally { setIsSavingStatus(false); }
-  };
-
   const handleAdjustPoints = async (type: 'credit' | 'debit') => {
     if (!selectedUser || !pointAdjustment) return;
     const amount = parseInt(pointAdjustment);
@@ -1004,6 +1003,43 @@ export default function AdminPage() {
        toast({ title: "Error", description: "Failed to reach FazerCards API.", variant: "destructive" });
     } finally {
       setIsTestingFazer(false);
+    }
+  };
+
+  const handleRetryTopup = async () => {
+    if (!selectedOrderId || !selectedOrder) return;
+    setIsSavingStatus(true);
+    try {
+      const item = selectedOrder.items?.[0];
+      const res = await fetch('/api/fazercards/place-topup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedOrderId,
+          category_id: item?.fazercardsCategory_id,
+          offer_id: item?.fazercardsOffer_id,
+          fields: selectedOrder.gameDetails?.gameFields
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Retry Initiated", description: "Waiting for confirmation." });
+      } else {
+        toast({ title: "Retry Failed", description: data.error, variant: "destructive" });
+      }
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
+  const handleClearWebhookLogs = async () => {
+    if (!rtdb) return;
+    try {
+      await remove(ref(rtdb, 'webhook_logs/fazercards'));
+      setWebhookLogs([]);
+      toast({ title: "Logs Cleared" });
+    } catch (e) {
+      toast({ title: "Failed to clear logs", variant: "destructive" });
     }
   };
 
@@ -1329,6 +1365,7 @@ export default function AdminPage() {
                    onBack={() => setSelectedOrderId(null)} 
                    onUpdate={handleStatusUpdate}
                    onManualSuccess={handleManualSuccess}
+                   onRetryTopup={handleRetryTopup}
                    status={pendingOrderStatus}
                    setStatus={setPendingStatus}
                    reason={cancellationReason}
@@ -2205,7 +2242,7 @@ export default function AdminPage() {
                                              <p className="text-[10px] text-muted-foreground font-medium">Show TikTok live banner on home</p>
                                           </div>
                                        </div>
-                                       <Switch checked={brandForm.isLive} onCheckedChange={v => setBrandForm(f => ({ ...f, iisLive: v }))} />
+                                       <Switch checked={brandForm.isLive} onCheckedChange={v => setBrandForm(f => ({ ...f, isLive: v }))} />
                                     </div>
                                  </div>
                               </div>
@@ -2222,118 +2259,156 @@ export default function AdminPage() {
                               <Cpu className="w-6 h-6" />
                               <div className="text-left">
                                  <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Reseller & Automation</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">FazerCards & SMS Matcher</p>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">FazerCards & Webhooks</p>
                               </div>
                            </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                              {/* FazerCards Config */}
-                              <div className="space-y-6">
-                                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                       <div>
-                                          <h5 className="font-bold text-sm">FazerCards Reseller</h5>
-                                          <p className="text-[10px] text-muted-foreground font-medium uppercase">fazercards.com API</p>
-                                       </div>
-                                       <Switch 
-                                          checked={storeSettings.fazercards?.enabled || false} 
-                                          onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } })} 
-                                       />
-                                    </div>
-                                    
-                                    <SettingInput 
-                                       label="FazerCards API Key" 
-                                       type="password"
-                                       value={fazerApiKey} 
-                                       onChange={v => setFazerApiKey(v)} 
-                                       placeholder="Enter API Key" 
-                                    />
-                                    <Button size="sm" onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(()=>toast({title:"API Key Saved"}))} className="w-full h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Keydi / Save</Button>
+                           <Tabs defaultValue="config">
+                              <TabsList className="bg-slate-50 dark:bg-slate-800 mb-6">
+                                 <TabsTrigger value="config">Settings</TabsTrigger>
+                                 <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
+                                 <TabsTrigger value="sms">SMS Matcher</TabsTrigger>
+                              </TabsList>
 
-                                    <div className="pt-4 border-t dark:border-white/5 space-y-4">
-                                       <div className="flex items-center justify-between">
-                                          <p className="text-xs font-bold">Auto Top-Up</p>
+                              <TabsContent value="config">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                  {/* FazerCards Config */}
+                                  <div className="space-y-6">
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                          <div>
+                                              <h5 className="font-bold text-sm">FazerCards Reseller</h5>
+                                              <p className="text-[10px] text-muted-foreground font-medium uppercase">fazercards.com API</p>
+                                          </div>
                                           <Switch 
-                                             checked={storeSettings.fazercards?.autoTopupEnabled || false} 
-                                             onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } })} 
+                                              checked={storeSettings.fazercards?.enabled || false} 
+                                              onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } })} 
+                                          />
+                                        </div>
+                                        
+                                        <SettingInput 
+                                          label="FazerCards API Key" 
+                                          type="password"
+                                          value={fazerApiKey} 
+                                          onChange={v => setFazerApiKey(v)} 
+                                          placeholder="Enter API Key" 
+                                        />
+                                        <Button size="sm" onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(()=>toast({title:"API Key Saved"}))} className="w-full h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Keydi / Save</Button>
+
+                                        <div className="pt-4 border-t dark:border-white/5 space-y-4">
+                                          <div className="flex items-center justify-between">
+                                              <p className="text-xs font-bold">Auto Top-Up</p>
+                                              <Switch 
+                                                checked={storeSettings.fazercards?.autoTopupEnabled || false} 
+                                                onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } })} 
+                                              />
+                                          </div>
+                                          <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 shadow-sm">
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] font-black uppercase text-slate-400">API Balance</span>
+                                                <span className="text-sm font-bold text-primary">{storeSettings.fazercards?.balance || "---"}</span>
+                                              </div>
+                                              <div className="flex gap-2">
+                                                <Button variant="ghost" size="sm" onClick={handleTestFazerConnection} disabled={isTestingFazer} className="h-8 rounded-lg text-[9px] font-black uppercase">{isTestingFazer ? <Loader2 className="animate-spin" /> : "Sync"}</Button>
+                                              </div>
+                                          </div>
+                                        </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </TabsContent>
+
+                              <TabsContent value="webhooks">
+                                 <div className="space-y-4">
+                                    <div className="flex justify-between items-center px-1">
+                                       <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Incoming FazerCards Hooks</h6>
+                                       <Button variant="ghost" size="sm" onClick={handleClearWebhookLogs} className="h-8 text-red-500 font-bold uppercase text-[9px]">Clear Logs</Button>
+                                    </div>
+                                    <div className="border rounded-2xl overflow-hidden bg-white dark:bg-slate-900 divide-y dark:divide-white/5">
+                                       {webhookLogs.length === 0 ? (
+                                          <div className="p-12 text-center opacity-20 italic font-bold uppercase text-xs">No logs found</div>
+                                       ) : (
+                                          webhookLogs.map(log => (
+                                             <div key={log.id} className="p-4 text-xs font-medium grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                                                <div className="flex flex-col">
+                                                   <span className="text-[8px] font-black text-slate-400 uppercase">Received</span>
+                                                   <span>{safeFormatDistanceToNow(log.receivedAt)} ago</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                   <span className="text-[8px] font-black text-slate-400 uppercase">Fazer ID</span>
+                                                   <span className="font-mono text-primary">{log.raw?.id || log.raw?.order_id || '---'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                   <span className="text-[8px] font-black text-slate-400 uppercase">Status</span>
+                                                   <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase">{log.raw?.status || '---'}</Badge>
+                                                </div>
+                                                <div className="flex justify-end">
+                                                   <button onClick={() => { console.log(log.raw); toast({title:"Log details printed to console"}); }} className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Info size={14}/></button>
+                                                </div>
+                                             </div>
+                                          ))
+                                       )}
+                                    </div>
+                                 </div>
+                              </TabsContent>
+
+                              <TabsContent value="sms">
+                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
+                                       <div className="flex items-center justify-between">
+                                          <div>
+                                             <h5 className="font-bold text-sm">SMS Auto-Matcher</h5>
+                                             <p className="text-[10px] text-muted-foreground font-medium uppercase">Auto-approve via EVC Plus</p>
+                                          </div>
+                                          <Switch 
+                                             checked={storeSettings.sms_webhook?.enabled || false} 
+                                             onCheckedChange={v => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } })} 
                                           />
                                        </div>
-                                       <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 shadow-sm">
-                                          <div className="flex flex-col">
-                                             <span className="text-[10px] font-black uppercase text-slate-400">API Balance</span>
-                                             <span className="text-sm font-bold text-primary">{storeSettings.fazercards?.balance || "---"}</span>
-                                          </div>
-                                          <div className="flex gap-2">
-                                             <Button variant="ghost" size="sm" onClick={handleTestFazerConnection} disabled={isTestingFazer} className="h-8 rounded-lg text-[9px] font-black uppercase">{isTestingFazer ? <Loader2 className="animate-spin" /> : "Sync"}</Button>
-                                          </div>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </div>
 
-                              {/* SMS Payment Matcher */}
-                              <div className="space-y-6">
-                                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                       <div>
-                                          <h5 className="font-bold text-sm">SMS Auto-Matcher</h5>
-                                          <p className="text-[10px] text-muted-foreground font-medium uppercase">Auto-approve via EVC Plus</p>
-                                       </div>
-                                       <Switch 
-                                          checked={storeSettings.sms_webhook?.enabled || false} 
-                                          onCheckedChange={v => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } })} 
-                                       />
-                                    </div>
-
-                                    <div className="space-y-3">
-                                       <div className="space-y-1">
-                                          <Label className="text-[9px] font-black uppercase text-slate-400">Webhook URL</Label>
-                                          <div className="flex gap-2">
-                                             <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
-                                             <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
-                                          </div>
-                                       </div>
-                                       <div className="space-y-1">
-                                          <Label className="text-[9px] font-black uppercase text-slate-400">Webhook Secret</Label>
-                                          <Input readOnly type="password" value="oskar-secure-secret-2026" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
-                                       </div>
-                                    </div>
-
-                                    <Accordion type="single" collapsible>
-                                       <AccordionItem value="sms-steps" className="border-none">
-                                          <AccordionTrigger className="text-[9px] font-black uppercase py-2">Setup Instructions</AccordionTrigger>
-                                          <AccordionContent className="text-[10px] leading-relaxed text-muted-foreground space-y-2">
-                                             <p>1. Install "SMS Forwarder" from Play Store</p>
-                                             <p>2. Create rule: HTTP POST</p>
-                                             <p>3. URL: Webhook URL above</p>
-                                             <p>4. Header: x-webhook-secret: oskar-secure-secret-2026</p>
-                                             <p>5. Body: {"{\"sms\": \"%body%\"}"}</p>
-                                             <p>6. Filter: sender contains "EVCPLUS"</p>
-                                          </AccordionContent>
-                                       </AccordionItem>
-                                    </Accordion>
-                                 </div>
-
-                                 <div className="space-y-3">
-                                    <h6 className="text-[9px] font-black uppercase text-slate-400 ml-1">Recent SMS Traffic</h6>
-                                    <div className="space-y-2">
-                                       {recentSms.map(sms => (
-                                          <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px]">
-                                             <div className="min-w-0">
-                                                <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
-                                                <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
+                                       <div className="space-y-3">
+                                          <div className="space-y-1">
+                                             <Label className="text-[9px] font-black uppercase text-slate-400">Webhook URL</Label>
+                                             <div className="flex gap-2">
+                                                <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
+                                                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
                                              </div>
-                                             <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
-                                                {sms.matched ? "Matched" : "Unmatched"}
-                                             </Badge>
                                           </div>
-                                       ))}
-                                       {recentSms.length === 0 && <div className="text-center py-4 opacity-20 text-[10px] font-bold uppercase">No data</div>}
+                                       </div>
+                                       <Accordion type="single" collapsible>
+                                          <AccordionItem value="sms-steps" className="border-none">
+                                             <AccordionTrigger className="text-[9px] font-black uppercase py-2">Setup Instructions</AccordionTrigger>
+                                             <AccordionContent className="text-[10px] leading-relaxed text-muted-foreground space-y-2">
+                                                <p>1. Install "SMS Forwarder" from Play Store</p>
+                                                <p>2. Create rule: HTTP POST</p>
+                                                <p>3. URL: Webhook URL above</p>
+                                                <p>4. Header: x-webhook-secret: oskar-secure-secret-2026</p>
+                                                <p>5. Body: {"{\"sms\": \"%body%\"}"}</p>
+                                                <p>6. Filter: sender contains "EVCPLUS"</p>
+                                             </AccordionContent>
+                                          </AccordionItem>
+                                       </Accordion>
+                                    </div>
+                                    <div className="space-y-3">
+                                       <h6 className="text-[9px] font-black uppercase text-slate-400 ml-1">Recent SMS Traffic</h6>
+                                       <div className="space-y-2">
+                                          {recentSms.map(sms => (
+                                             <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px]">
+                                                <div className="min-w-0">
+                                                   <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
+                                                   <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
+                                                </div>
+                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
+                                                   {sms.matched ? "Matched" : "Unmatched"}
+                                                </Badge>
+                                             </div>
+                                          ))}
+                                       </div>
                                     </div>
                                  </div>
-                              </div>
-                           </div>
+                              </TabsContent>
+                           </Tabs>
                         </AccordionContent>
                      </Card>
                   </AccordionItem>
@@ -2839,7 +2914,7 @@ export default function AdminPage() {
                    </div>
                    <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? "text-blue-500" : "text-slate-400")}>
+                        <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? 'Verified' : 'unverified')}>
                           {selectedUser?.isVerified ? 'Verified' : 'unverified'}
                         </span>
                         {selectedUser?.isVerified && <VerifiedBadge className="text-[14px]" />}
@@ -3326,7 +3401,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
   );
 }
 
-function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
+function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopup, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
   if (!order) return null;
   const item = order.items?.[0];
   const buyer = allUsers?.find((u: any) => u.uid === order.userId);
@@ -3453,21 +3528,40 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                   <div className="space-y-1">
                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reseller Status</p>
-                     <p className={cn(
-                       "font-bold text-sm uppercase",
-                       order.autoTopupStatus === 'completed' ? "text-green-500" : 
-                       order.autoTopupStatus === 'failed' ? "text-red-500" : 
-                       order.autoTopupStatus === 'processing' ? "text-amber-500" : "text-slate-400"
-                     )}>
-                        {order.autoTopupStatus?.toUpperCase() || 'NOT TRIGGERED'}
-                     </p>
+                     <div className="flex items-center gap-2">
+                        {order.autoTopupStatus === 'processing' && <Loader2 size={12} className="animate-spin text-amber-500" />}
+                        {order.autoTopupStatus === 'completed' && <CheckCircle2 size={12} className="text-green-500" />}
+                        {order.autoTopupStatus === 'failed' && <XCircle size={12} className="text-red-500" />}
+                        <p className={cn(
+                          "font-bold text-[10px] md:text-xs uppercase",
+                          order.autoTopupStatus === 'completed' ? "text-green-500" : 
+                          order.autoTopupStatus === 'failed' ? "text-red-500" : 
+                          order.autoTopupStatus === 'processing' ? "text-amber-500" : "text-slate-400"
+                        )}>
+                            {order.autoTopupStatus === 'processing' ? "Waiting for FazerCards confirmation" :
+                             order.autoTopupStatus === 'completed' ? "Diamonds delivered" :
+                             order.autoTopupStatus === 'failed' ? "Failed/Refunded — Manual action required" :
+                             "NOT STARTED"}
+                        </p>
+                     </div>
                   </div>
 
                   <div className="space-y-1">
                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Provider Order ID(s)</p>
-                     <p className="font-mono text-[10px] md:text-xs text-slate-600 dark:text-slate-300 break-words">
-                        {order.autoTopupOrderId || '---'}
-                     </p>
+                     <div className="flex items-center gap-2">
+                        <p className="font-mono text-[10px] md:text-xs text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
+                            {order.autoTopupOrderId || '---'}
+                        </p>
+                        {order.autoTopupOrderId && (
+                          <a 
+                            href={`https://reseller.fazercards.com/orders/${order.autoTopupOrderId.split(',')[0].trim()}`} 
+                            target="_blank" 
+                            className="text-primary hover:underline text-[9px] font-black flex items-center gap-1"
+                          >
+                             VIEW <ExternalLink size={10} />
+                          </a>
+                        )}
+                     </div>
                   </div>
 
                   {order.autoTopupError && (
@@ -3496,6 +3590,20 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                      </div>
                   </div>
                </div>
+
+               {order.autoTopupStatus === 'failed' && (
+                 <div className="pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={onRetryTopup} 
+                      disabled={isSaving}
+                      className="w-full rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black uppercase text-[10px] tracking-widest gap-2 h-12"
+                    >
+                       <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Retry FazerCards Order
+                    </Button>
+                 </div>
+               )}
             </div>
           )}
        </Card>
@@ -3637,7 +3745,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                   <Button 
                     onClick={onUpdate} 
                     disabled={isSaving} 
-                    className="w-full h-14 md:h-24 rounded-xl md:rounded-[2rem] font-black text-sm md:text-2xl uppercase tracking-tight md:tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                    className="w-full h-12 md:h-18 rounded-xl md:rounded-[2rem] font-black text-xs md:text-xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                   >
                     {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
                   </Button>
@@ -3647,7 +3755,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                     <Button 
                       onClick={() => onManualSuccess(order.id)} 
                       disabled={isSaving} 
-                      className="w-full h-11 md:h-20 rounded-xl md:rounded-[2rem] font-black text-[9px] sm:text-xs md:text-xl uppercase tracking-tighter sm:tracking-tight md:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
+                      className="w-full h-12 md:h-18 rounded-xl md:rounded-[2rem] font-black text-[9px] sm:text-xs md:text-xl uppercase tracking-tighter sm:tracking-tight md:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
                     >
                       {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Success (Manual)</>}
                     </Button>
