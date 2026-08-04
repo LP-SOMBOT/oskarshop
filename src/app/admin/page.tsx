@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -335,6 +334,12 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
     </div>
   );
 }
+
+// Helper formatting function for labels
+const formatLabel = (name: string) => {
+  let label = name.replace(/_/g, ' ');
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 export default function AdminPage() {
   const { 
@@ -1536,7 +1541,7 @@ export default function AdminPage() {
                                       </button>
                                       <button 
                                         onClick={() => { setDeleteTarget({id:p.id, type:'account'}); setIsDeleteDialogOpen(true); }}
-                                        className="w-10 h-10 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                                        className="w-10 h-10 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
                                       >
                                         <Trash2 size={16} />
                                       </button>
@@ -1823,7 +1828,7 @@ export default function AdminPage() {
                           </div>
 
                           <div className="pt-8">
-                             <Button type="submit" disabled={isUploading} className="w-full h-16 md:h-24 rounded-3xl font-black text-xl md:text-3xl shadow-2xl uppercase tracking-widest bg-primary text-white active:scale-95 transition-all">
+                             <Button type="submit" disabled={isUploading} className="w-full h-14 md:h-20 rounded-3xl font-black text-lg md:text-xl shadow-2xl uppercase tracking-widest bg-primary text-white active:scale-95 transition-all">
                                {isUploading ? <Loader2 className="animate-spin w-10 h-10" /> : "Publish Event"}
                              </Button>
                           </div>
@@ -2200,7 +2205,7 @@ export default function AdminPage() {
                                              <p className="text-[10px] text-muted-foreground font-medium">Show TikTok live banner on home</p>
                                           </div>
                                        </div>
-                                       <Switch checked={brandForm.isLive} onCheckedChange={v => setBrandForm(f => ({ ...f, isLive: v }))} />
+                                       <Switch checked={brandForm.isLive} onCheckedChange={v => setBrandForm(f => ({ ...f, iisLive: v }))} />
                                     </div>
                                  </div>
                               </div>
@@ -2423,6 +2428,7 @@ export default function AdminPage() {
                                  />
                                  <div className="space-y-2">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Admin Chat IDs (Comma Separated)</Label>
+                                    <span className="sr-only">Admin Chat IDs Textarea</span>
                                     <Textarea 
                                       value={telegramForm.telegramAdminChatIds} 
                                       onChange={e => setTelegramForm(f => ({ ...f, telegramAdminChatIds: e.target.value }))} 
@@ -3423,7 +3429,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                 {Object.entries(order.gameDetails.gameFields).map(([key, val]: any) => (
                   <InsightStat 
                     key={key} 
-                    label={key.replace(/_/g, ' ')} 
+                    label={formatLabel(key)} 
                     value={val} 
                     icon={Layers} 
                     isPrimary 
@@ -3631,7 +3637,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                   <Button 
                     onClick={onUpdate} 
                     disabled={isSaving} 
-                    className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                    className="w-full h-14 md:h-24 rounded-xl md:rounded-[2rem] font-black text-sm md:text-2xl uppercase tracking-tight md:tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                   >
                     {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
                   </Button>
@@ -3641,7 +3647,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, set
                     <Button 
                       onClick={() => onManualSuccess(order.id)} 
                       disabled={isSaving} 
-                      className="w-full h-14 md:h-20 rounded-[2rem] font-black text-lg md:text-xl uppercase tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
+                      className="w-full h-11 md:h-20 rounded-xl md:rounded-[2rem] font-black text-[9px] sm:text-xs md:text-xl uppercase tracking-tighter sm:tracking-tight md:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
                     >
                       {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Success (Manual)</>}
                     </Button>
@@ -3765,7 +3771,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                </div>
                <div>
                   <h2 className="text-xl md:text-3xl font-headline font-bold uppercase tracking-tight font-black leading-none">Seller Stalling</h2>
-                  <p className="text-white/80 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">PENALTY ACTION REQUIRED</p>
+                  <p className="text-white/80 text-[10px] md:text-sm font-bold mt-1 uppercase tracking-widest">Action Required Immediately</p>
                </div>
             </div>
             
@@ -3872,63 +3878,97 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </Card>
 
+       {/* Buyer Profile Card */}
        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
           <div className="p-6 md:p-10 space-y-8">
             <div className="flex items-center gap-4 text-primary">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Users size={24} />
+                <User size={24} />
               </div>
-              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Stakeholders</h4>
+              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-              <div className="space-y-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Originating Seller</p>
-                <div className="p-5 md:p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border dark:border-white/5 flex items-center gap-5">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md">
-                    {seller?.photoURL ? <Image src={seller.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={32}/></div>}
+            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center gap-6">
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white">
+                {buyer?.photoURL ? (
+                  <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
+                    <User size={40} />
                   </div>
-                  <div className="min-w-0">
-                     <div className="flex items-center gap-1.5 min-w-0">
-                        <p className="truncate font-bold text-lg md:text-xl text-slate-900 dark:text-white">{seller?.name || "Deleted User"}</p>
-                        {seller?.isVerified && <VerifiedBadge />}
-                     </div>
-                     <div className="flex items-center gap-2 mt-1">
-                        <Smartphone size={12} className="text-primary" />
-                        <span className="text-xs font-black text-slate-500">{seller?.phoneNumber || "N/A"}</span>
-                     </div>
-                     <Badge className="mt-2 bg-amber-500 text-white border-none font-bold text-[8px] uppercase">{seller?.points || 0} Points</Badge>
-                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="truncate font-bold text-lg md:text-3xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
+                  {buyer?.isVerified && <VerifiedBadge />}
+                </div>
+                <div className="flex items-center gap-2 mt-1 md:mt-2">
+                  <Smartphone size={14} className="text-primary" />
+                  <span className="text-xs md:text-xl font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2 md:mt-3">
+                  <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
+                  <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
                 </div>
               </div>
+            </div>
+          </div>
+       </Card>
 
-              <div className="space-y-4">
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-2">Active Claimants ({claimants.length})</p>
-                <div className="space-y-3">
-                  {claimants.length === 0 ? (
-                    <div className="p-10 text-center border-2 border-dashed rounded-3xl opacity-20 italic font-bold uppercase text-[10px]">No active buyer claims</div>
-                  ) : (
-                    claimants.map((c: any) => (
-                      <div key={c.uid} className={cn(
-                        "p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border dark:border-white/5 flex items-center justify-between group transition-all",
-                        c.status === 'accepted' ? "ring-2 ring-green-500/50 bg-green-50 dark:bg-green-500/5" : ""
-                      )}>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl overflow-hidden relative shadow-sm border border-white">
-                            {c.photo ? <Image src={c.photo} alt="" fill className="object-cover" /> : <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={16}/></div>}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold truncate text-slate-900 dark:text-white">{c.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{c.whatsapp}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                           <button onClick={() => window.open(`https://wa.me/${formatWhatsAppNumber(c.whatsapp)}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg active:scale-90 transition-transform shadow-md"><MessageCircle size={14} /></button>
-                           {c.status === 'accepted' && <Badge className="bg-green-500 text-white border-none text-[8px] font-black">ACCEPTED</Badge>}
-                        </div>
+       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+          <div className="p-6 md:p-10 space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 md:gap-4 text-primary">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
+                  <ShieldCheck size={20} className="md:size-6" />
+                </div>
+                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
+              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
+                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                      {order.processedBy?.photoURL ? (
+                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
+                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
+                      {order.approvedBy === 'auto_sms' ? 'Auto-SMS Match' : order.processedBy?.name || "Wali lama furin"}
+                    </h5>
+                    {order.processedAt && (
+                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
+                         <Clock size={12} className="opacity-40" />
+                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
+                            {safeFormatDistanceToNow(order.processedAt)} ago
+                         </p>
                       </div>
-                    ))
-                  )}
+                    )}
+                  </div>
+                </div>
+
+                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
+
+                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
+                  <div className="space-y-0.5">
+                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                     </p>
+                     <p className="text-xs md:text-lg font-bold text-primary">
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                     </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3983,7 +4023,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 <Button 
                    onClick={onUpdate} 
                    disabled={isSaving} 
-                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-tight md:tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
                    {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Listing"}
                 </Button>
