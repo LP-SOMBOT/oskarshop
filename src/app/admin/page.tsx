@@ -159,7 +159,7 @@ import {
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
 import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
-import { ref, onValue, off, get, query, limitToLast } from "firebase/database";
+import { ref, onValue, off, get, query, limitToLast, remove } from "firebase/database";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
 
@@ -1110,6 +1110,18 @@ export default function AdminPage() {
       case 'paymentMethod': return "Are you sure you want to delete this payment method?";
       case 'promoCode': return "Are you sure you want to delete this promo voucher?";
       default: return "Are you sure you want to delete this item? This action cannot be undone.";
+    }
+  };
+
+  const handleAccountStatusUpdate = async () => {
+    if (!selectedAccountId || !pendingAccountStatus) return;
+    setIsSavingStatus(true);
+    try {
+      await updateAccountPostStatus(selectedAccountId, pendingAccountStatus, pendingAccountStatus === 'sold' ? assignBuyerId : undefined);
+      setSelectedAccountId(null);
+      toast({ title: "Listing Updated" });
+    } finally {
+      setIsSavingStatus(false);
     }
   };
 
@@ -3539,7 +3551,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                           order.autoTopupStatus === 'processing' ? "text-amber-500" : "text-slate-400"
                         )}>
                             {order.autoTopupStatus === 'processing' ? "Waiting for FazerCards confirmation" :
-                             order.autoTopupStatus === 'completed' ? "Diamonds delivered" :
+                             order.autoTopupStatus === 'completed' ? "completed" :
                              order.autoTopupStatus === 'failed' ? "Failed/Refunded — Manual action required" :
                              "NOT STARTED"}
                         </p>
@@ -3554,7 +3566,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                         </p>
                         {order.autoTopupOrderId && (
                           <a 
-                            href={`https://reseller.fazercards.com/orders/${order.autoTopupOrderId.split(',')[0].trim()}`} 
+                            href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.split(',')[0].trim()}`} 
                             target="_blank" 
                             className="text-primary hover:underline text-[9px] font-black flex items-center gap-1"
                           >
@@ -3745,7 +3757,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                   <Button 
                     onClick={onUpdate} 
                     disabled={isSaving} 
-                    className="w-full h-12 md:h-18 rounded-xl md:rounded-[2rem] font-black text-xs md:text-xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                    className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl font-black text-[10px] md:text-sm uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
                   >
                     {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
                   </Button>
@@ -3755,7 +3767,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                     <Button 
                       onClick={() => onManualSuccess(order.id)} 
                       disabled={isSaving} 
-                      className="w-full h-12 md:h-18 rounded-xl md:rounded-[2rem] font-black text-[9px] sm:text-xs md:text-xl uppercase tracking-tighter sm:tracking-tight md:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
+                      className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl font-black text-[10px] md:text-sm uppercase tracking-tighter md:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
                     >
                       {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Success (Manual)</>}
                     </Button>
@@ -3986,44 +3998,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
           </div>
        </Card>
 
-       {/* Buyer Profile Card */}
-       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-10 space-y-8">
-            <div className="flex items-center gap-4 text-primary">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <User size={24} />
-              </div>
-              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
-            </div>
-
-            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center gap-6">
-              <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white">
-                {buyer?.photoURL ? (
-                  <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
-                    <User size={40} />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <p className="truncate font-bold text-lg md:text-3xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
-                  {buyer?.isVerified && <VerifiedBadge />}
-                </div>
-                <div className="flex items-center gap-2 mt-1 md:mt-2">
-                  <Smartphone size={14} className="text-primary" />
-                  <span className="text-xs md:text-xl font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-2 md:mt-3">
-                  <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
-                  <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-       </Card>
-
        <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
           <div className="p-6 md:p-10 space-y-8">
             <div className="flex items-center justify-between">
@@ -4041,8 +4015,8 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
                     <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
-                      {order.processedBy?.photoURL ? (
-                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      {post.processedBy?.photoURL ? (
+                        <Image src={post.processedBy.photoURL} alt={post.processedBy.name} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
                       )}
@@ -4052,13 +4026,13 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <div className="min-w-0 space-y-1">
                     <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
                     <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
-                      {order.approvedBy === 'auto_sms' ? 'Auto-SMS Match' : order.processedBy?.name || "Wali lama furin"}
+                      {post.processedBy?.name || "Wali lama furin"}
                     </h5>
-                    {order.processedAt && (
+                    {post.processedAt && (
                       <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
                          <Clock size={12} className="opacity-40" />
                          <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
-                            {safeFormatDistanceToNow(order.processedAt)} ago
+                            {safeFormatDistanceToNow(post.processedAt)} ago
                          </p>
                       </div>
                     )}
@@ -4071,10 +4045,10 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
                   <div className="space-y-0.5">
                      <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
-                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                        {post.completedAt && !isNaN(new Date(post.completedAt).getTime()) ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
                      </p>
                      <p className="text-xs md:text-lg font-bold text-primary">
-                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                        {post.completedAt && !isNaN(new Date(post.completedAt).getTime()) ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
                 </div>
