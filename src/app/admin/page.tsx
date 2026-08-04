@@ -137,7 +137,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/accordion";
 import {
   Tabs,
   TabsContent,
@@ -837,6 +837,17 @@ export default function AdminPage() {
     } finally { setIsSavingStatus(false); }
   };
 
+  const handleManualSuccess = async (orderId: string) => {
+    setIsSavingStatus(true);
+    try {
+      await updateOrderStatus(orderId, 'successful');
+      setSelectedOrderId(null);
+      toast({ title: "Order Confirmed Successfully" });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
   const handleAccountStatusUpdate = async () => {
     if (!selectedAccountId || !pendingAccountStatus) return;
     setIsSavingStatus(true);
@@ -1312,6 +1323,7 @@ export default function AdminPage() {
                    allUsers={allUsers}
                    onBack={() => setSelectedOrderId(null)} 
                    onUpdate={handleStatusUpdate}
+                   onManualSuccess={handleManualSuccess}
                    status={pendingOrderStatus}
                    setStatus={setPendingStatus}
                    reason={cancellationReason}
@@ -3306,7 +3318,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
   );
 }
 
-function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
+function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
   if (!order) return null;
   const item = order.items?.[0];
   const buyer = allUsers?.find((u: any) => u.uid === order.userId);
@@ -3613,13 +3625,26 @@ function OrderDetailView({ order, onBack, onUpdate, status, setStatus, reason, s
                   </div>
                 )}
 
-                <Button 
-                   onClick={onUpdate} 
-                   disabled={isSaving} 
-                   className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
-                >
-                   {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
-                </Button>
+                <div className="flex flex-col gap-4">
+                  <Button 
+                    onClick={onUpdate} 
+                    disabled={isSaving} 
+                    className="w-full h-16 md:h-24 rounded-[2rem] font-black text-xl md:text-2xl uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
+                  >
+                    {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
+                  </Button>
+
+                  {/* MANUAL SUCCESS BUTTON */}
+                  {order.status !== 'successful' && (
+                    <Button 
+                      onClick={() => onManualSuccess(order.id)} 
+                      disabled={isSaving} 
+                      className="w-full h-14 md:h-20 rounded-[2rem] font-black text-lg md:text-xl uppercase tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
+                    >
+                      {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Success (Manual)</>}
+                    </Button>
+                  )}
+                </div>
 
                 <div className="pt-6 space-y-6">
                    <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
