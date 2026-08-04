@@ -1,13 +1,14 @@
+
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * POST: Places a top-up order on FazerCards.
- * Dynamically fetches required fields for each category to ensure compatibility.
+ * Dynamically builds the fields object using keys required by the specific category.
  */
 export async function POST(request: Request) {
   try {
-    const { orderId, category_id, offer_id, playerUid, region, zoneId } = await request.json();
+    const { orderId, category_id, offer_id, fields: providedFields } = await request.json();
 
     if (!orderId || !category_id || !offer_id) {
       return NextResponse.json({ success: false, error: 'Missing order parameters' }, { status: 400 });
@@ -55,19 +56,21 @@ export async function POST(request: Request) {
     });
 
     // STEP 2: Build fields object dynamically
-    const availableData: any = {
-      player_id: playerUid,
-      user_id: playerUid,
-      uid: playerUid,
-      region: region || null,
-      server: region || null,
-      zone_id: zoneId || null,
+    // Use the comprehensive gameFields collected at checkout
+    const sourceData = providedFields || order.gameDetails?.gameFields || {};
+    
+    // Also include top-level identifiers for backward compatibility
+    const fallbackData: any = {
+      player_id: order.ffUid || order.gameDetails?.playerID,
+      user_id: order.ffUid || order.gameDetails?.playerID,
+      uid: order.ffUid || order.gameDetails?.playerID,
     };
 
-    const dynamicFields: any = {};
+    const finalFields: any = {};
     for (const key of requiredFieldKeys) {
-      if (availableData[key] !== null && availableData[key] !== undefined) {
-        dynamicFields[key] = availableData[key].toString();
+      const val = sourceData[key] ?? fallbackData[key];
+      if (val !== null && val !== undefined) {
+        finalFields[key] = val.toString();
       }
     }
 
@@ -88,7 +91,7 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
             'idempotency-key': idempotencyKey
           },
-          body: JSON.stringify({ category_id, offer_id, fields: dynamicFields })
+          body: JSON.stringify({ category_id, offer_id, fields: finalFields })
         });
 
         const data = await res.json();

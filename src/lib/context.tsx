@@ -1208,8 +1208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   orderId,
                   category_id: item.fazercardsCategory_id,
                   offer_id: item.fazercardsOffer_id,
-                  playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
-                  region: orderData.ffRegion || 'MENA'
+                  fields: orderData.gameDetails?.gameFields // PASS DYNAMIC FIELDS
                 })
               });
               const topupResult = await res.json();
@@ -1336,8 +1335,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                  orderId: orderId,
                  category_id: directItem.fazercardsCategory_id,
                  offer_id: directItem.fazercardsOffer_id,
-                 playerUid: newOrder.ffUid || gameDetails.playerID,
-                 region: newOrder.ffRegion || 'MENA'
+                 fields: gameDetails.gameFields // PASS DYNAMIC FIELDS
                })
              }).catch(e => console.error("Initial placement auto-topup trigger failed:", e));
           }

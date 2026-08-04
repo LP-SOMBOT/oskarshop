@@ -56,6 +56,10 @@ function CheckoutContent() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
+  // FazerCards Dynamic Field States
+  const [fazerFields, setFazerFields] = useState<any[]>([]);
+  const [dynamicFields, setDynamicFields] = useState<Record<string, string>>({});
+  
   // FazerCards Auto-Detect States
   const [ffUid, setFfUid] = useState('');
   const [ffPlayerName, setFfPlayerName] = useState('');
@@ -64,10 +68,6 @@ function CheckoutContent() {
   const [verified, setVerified] = useState(false);
   const [lookupError, setLookupError] = useState('');
   const [isValidationUnsupported, setIsValidationUnsupported] = useState(false);
-
-  // Dynamic Fields Support
-  const [fazerRequiredFields, setFazerRequiredFields] = useState<string[]>([]);
-  const [zoneId, setZoneId] = useState("");
 
   const [gameDetails, setGameDetails] = useState({
     playerID: "",
@@ -105,7 +105,7 @@ function CheckoutContent() {
   }, [setGlobalLoading]);
 
   /**
-   * Fetch Required Fields for Category
+   * Dynamic Field Discovery Effect
    */
   useEffect(() => {
     if (item?.fazercardsCategory_id) {
@@ -113,7 +113,11 @@ function CheckoutContent() {
         .then(res => res.json())
         .then(data => {
           if (data.ok && data.fields) {
-            setFazerRequiredFields(data.fields.map((f: any) => f.key));
+            setFazerFields(data.fields);
+            // Initialize dynamic fields object
+            const initial: any = {};
+            data.fields.forEach((f: any) => initial[f.key] = "");
+            setDynamicFields(initial);
           }
         })
         .catch(err => console.error("Error fetching category fields:", err));
@@ -126,7 +130,10 @@ function CheckoutContent() {
   useEffect(() => {
     if (!isAutoDetectEnabled) return;
     
-    if (!ffUid || ffUid.trim().length < 5) {
+    // We treat ffUid as the primary identifier (player_id, user_id, uid)
+    const primaryId = ffUid.trim();
+
+    if (!primaryId || primaryId.length < 5) {
       setFfPlayerName('');
       setVerified(false);
       setLookupError('');
@@ -154,7 +161,7 @@ function CheckoutContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             category_id: categoryId,
-            player_id: ffUid.trim()
+            player_id: primaryId
           })
         });
 
@@ -168,8 +175,16 @@ function CheckoutContent() {
           setGameDetails(prev => ({ 
             ...prev, 
             playerName: data.player_name, 
-            playerID: ffUid.trim() 
+            playerID: primaryId 
           }));
+          
+          // Map to dynamic fields if key matches
+          const idKeys = ['player_id', 'user_id', 'uid'];
+          setDynamicFields(prev => {
+            const next = { ...prev };
+            idKeys.forEach(k => { if (k in next) next[k] = primaryId; });
+            return next;
+          });
         } else {
           const isUnsupported = data.error?.toLowerCase().includes('not available') || data.error?.toLowerCase().includes('unsupported');
           setFfPlayerName('');
@@ -248,6 +263,7 @@ function CheckoutContent() {
 
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     const effectivePlayerName = isAutoDetectEnabled ? ffPlayerName : gameDetails.playerName;
     const effectivePlayerID = isAutoDetectEnabled ? ffUid : gameDetails.playerID;
 
@@ -261,9 +277,12 @@ function CheckoutContent() {
       return;
     }
 
-    if (fazerRequiredFields.includes('zone_id') && zoneId.length < 1) {
-      toast({ title: "Zone ID Required", description: "Fadlan geli Zone ID-gaaga.", variant: "destructive" });
-      return;
+    // Validate Dynamic Fields
+    for (const f of fazerFields) {
+      if (!dynamicFields[f.key]?.trim()) {
+        toast({ title: "Missing Information", description: `Please enter ${f.name}.`, variant: "destructive" });
+        return;
+      }
     }
 
     const cleanWhatsapp = gameDetails.whatsappNumber.replace(/\D/g, '');
@@ -332,17 +351,10 @@ function CheckoutContent() {
       ...gameDetails, 
       playerName: effectivePlayerName,
       playerID: effectivePlayerID,
-      zoneId: zoneId || null,
+      gameFields: dynamicFields,
       gameTitle: game?.title || "Unknown Game", 
       itemTitle: item.title, 
       category: isFreeFire ? "Free Fire" : isBloodStrike ? "Blood Strike" : "General" 
-    };
-
-    // Generic game fields for automation
-    (finalDetails as any).gameFields = {
-      player_id: effectivePlayerID,
-      zone_id: zoneId || null,
-      region: ffRegion || null,
     };
 
     if (isAutoDetectEnabled) {
@@ -385,6 +397,11 @@ function CheckoutContent() {
   const hasAnyDiscount = totalInitialDiscountPct > 0 || promoDiscount > 0;
   
   const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
+
+  // Group Dynamic Fields for rendering
+  const isIdentifier = (k: string) => ['player_id', 'user_id', 'uid'].includes(k);
+  const identifierField = fazerFields.find(f => isIdentifier(f.key));
+  const otherFields = fazerFields.filter(f => !isIdentifier(f.key));
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -475,117 +492,106 @@ function CheckoutContent() {
               </div>
 
               <div className="space-y-3 md:space-y-4">
-                {isAutoDetectEnabled ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1 md:space-y-2">
-                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Game ID (UID)</Label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                            <Gamepad2 size={18} />
-                          </div>
-                          <Input 
-                            placeholder="Tusaale: 1803494801" 
-                            required 
-                            type="tel" 
-                            inputMode="numeric" 
-                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
-                            value={ffUid} 
-                            onChange={(e) => setFfUid(e.target.value.replace(/\D/g, ''))} 
-                          />
-                        </div>
-                      </div>
+                {/* PRIMARY IDENTIFIER FIELD (Support Auto-Detect) */}
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">
+                    {identifierField?.name || (isFreeFire ? "Game UID" : "Game ID")}
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                      <Gamepad2 size={18} />
+                    </div>
+                    <Input 
+                      placeholder="Tusaale: 1803494801" 
+                      required 
+                      type="tel" 
+                      inputMode="numeric" 
+                      className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                      value={isAutoDetectEnabled ? ffUid : gameDetails.playerID} 
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        if (isAutoDetectEnabled) {
+                          setFfUid(val);
+                        } else {
+                          setGameDetails({...gameDetails, playerID: val});
+                          if (identifierField) {
+                            setDynamicFields({...dynamicFields, [identifierField.key]: val});
+                          }
+                        }
+                      }} 
+                    />
+                  </div>
+                </div>
 
-                      {fazerRequiredFields.includes('zone_id') && (
-                        <div className="space-y-1 md:space-y-2">
-                          <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Zone ID</Label>
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                              <Layers size={18} />
-                            </div>
-                            <Input 
-                              placeholder="Tusaale: 2134" 
-                              required 
-                              type="tel" 
-                              inputMode="numeric" 
-                              className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
-                              value={zoneId} 
-                              onChange={(e) => setZoneId(e.target.value.replace(/\D/g, ''))} 
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {!fazerRequiredFields.includes('zone_id') && (
-                        <div className="space-y-1 md:space-y-2">
-                          <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">Region</Label>
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                              <Globe size={18} />
-                            </div>
-                            <Input 
-                              readOnly 
-                              className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-100 dark:bg-slate-800/50 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-black text-xs md:text-base opacity-70" 
-                              value={ffRegion} 
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 z-10 pointer-events-none">
-                          <User size={18} />
-                        </div>
-                        <Input 
-                          placeholder={checking ? "Xaqiijinta ID-ga..." : isValidationUnsupported ? "Geli magacaaga manually" : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
-                          readOnly={!isValidationUnsupported}
-                          className={cn(
-                            "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
-                            checking ? "border-slate-200 animate-pulse bg-slate-100" : 
-                            verified ? "border-green-500 bg-green-50/10 text-green-600" : 
-                            isValidationUnsupported ? "border-amber-300 bg-white dark:bg-slate-800" :
-                            lookupError ? "border-red-500 bg-red-50/10" : "border-transparent bg-slate-100 opacity-70"
-                          )} 
-                          value={ffPlayerName}
-                          onChange={(e) => isValidationUnsupported && setFfPlayerName(e.target.value)}
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
-                           {checking && <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-slate-400" />}
-                           {verified && <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-green-500" />}
-                           {lookupError && !isValidationUnsupported && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
-                           {isValidationUnsupported && <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />}
-                        </div>
+                {/* AUTO-DETECT NAME OVERLAY */}
+                {isAutoDetectEnabled && (
+                  <div className="space-y-1 md:space-y-2">
+                    <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">In-Game Name</Label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 z-10 pointer-events-none">
+                        <User size={18} />
                       </div>
-                      {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Xogta waa sax</p>}
-                      {lookupError && <p className={cn("text-[10px] font-bold ml-1", isValidationUnsupported ? "text-amber-600" : "text-red-500")}>{lookupError}</p>}
-                      {isValidationUnsupported && <p className="text-[9px] font-medium text-slate-400 ml-1 italic">Validation isn't supported for this category, but you can still proceed.</p>}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">in-game name</Label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                          <User size={18} />
-                        </div>
-                        <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
+                      <Input 
+                        placeholder={checking ? "Xaqiijinta ID-ga..." : isValidationUnsupported ? "Geli magacaaga manually" : (language === 'so' ? "Magaca si toos ah ayaa loo keenayaa" : "Auto-detecting...")} 
+                        readOnly={!isValidationUnsupported}
+                        className={cn(
+                          "h-11 md:h-14 rounded-xl md:rounded-2xl transition-all border-2 pl-12 pr-12 md:pl-14 md:pr-14 font-bold text-xs md:text-base",
+                          checking ? "border-slate-200 animate-pulse bg-slate-100" : 
+                          verified ? "border-green-500 bg-green-50/10 text-green-600" : 
+                          isValidationUnsupported ? "border-amber-300 bg-white dark:bg-slate-800" :
+                          lookupError ? "border-red-500 bg-red-50/10" : "border-transparent bg-slate-100 opacity-70"
+                        )} 
+                        value={ffPlayerName}
+                        onChange={(e) => isValidationUnsupported && setFfPlayerName(e.target.value)}
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
+                         {checking && <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin text-slate-400" />}
+                         {verified && <UserCheck className="w-4 h-4 md:w-5 md:h-5 text-green-500" />}
+                         {lookupError && !isValidationUnsupported && <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />}
+                         {isValidationUnsupported && <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />}
                       </div>
                     </div>
-                    <div className="space-y-1 md:space-y-2">
-                      <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">{isFreeFire ? "Game UID" : "Game ID"}</Label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
-                          <Gamepad2 size={18} />
-                        </div>
-                        <Input placeholder={isFreeFire ? "Geli ID-Ga game ka kugu qoran" : "Geli ID game ka kugu qoran"} required type="tel" inputMode="numeric" className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerID} onChange={(e) => setGameDetails({...gameDetails, playerID: e.target.value.replace(/\D/g, '')})} />
-                      </div>
-                    </div>
-                  </>
+                    {verified && <p className="text-[10px] font-bold text-green-500 ml-1">✓ Xogta waa sax</p>}
+                    {lookupError && <p className={cn("text-[10px] font-bold ml-1", isValidationUnsupported ? "text-amber-600" : "text-red-500")}>{lookupError}</p>}
+                  </div>
                 )}
+
+                {/* ADDITIONAL DYNAMIC FIELDS (Zone ID, Server, server_id etc) */}
+                {otherFields.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {otherFields.map(field => (
+                      <div key={field.key} className="space-y-1 md:space-y-2">
+                        <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">{field.name}</Label>
+                        <div className="relative">
+                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                              <Layers size={18} />
+                           </div>
+                           <Input 
+                            placeholder={field.name} 
+                            required 
+                            className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" 
+                            value={dynamicFields[field.key] || ""}
+                            onChange={(e) => setDynamicFields({...dynamicFields, [field.key]: e.target.value})}
+                           />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* MANUAL NAME FIELD (If not auto-detecting) */}
+                {!isAutoDetectEnabled && (
+                  <div className="space-y-1 md:space-y-2">
+                    <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">in-game name</Label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/60 z-10 pointer-events-none">
+                        <User size={18} />
+                      </div>
+                      <Input placeholder="Geli magaca game ka kugu qoran" required className="h-11 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-slate-800 border-none pl-12 pr-4 md:pl-14 md:pr-5 font-bold text-xs md:text-base focus-visible:ring-primary shadow-inner" value={gameDetails.playerName} onChange={(e) => setGameDetails({...gameDetails, playerName: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-1 md:space-y-2">
                   <Label className="text-[10px] md:text-sm font-bold dark:text-slate-200 ml-1">WhatsApp Number</Label>
                   <div className="relative">
@@ -630,12 +636,6 @@ function CheckoutContent() {
                 </div>
                 <p className="text-[8px] md:text-[11px] text-muted-foreground dark:text-slate-500 font-medium italic ml-1">* Number-kan waxaa loo isticmaali doonaa in lagu hubiyo lacag bixintaada.</p>
               </div>
-
-              {lookupError && !verified && !isValidationUnsupported && (
-                <p className="text-[10px] md:text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-200">
-                  ⚠️ {lookupError}
-                </p>
-              )}
 
               <Button 
                 type="button" 
@@ -760,8 +760,13 @@ function CheckoutContent() {
               <div className="flex justify-between font-bold text-sm md:text-xl mb-2.5 md:mb-4 dark:text-white"><span>Wadarta dhabta ah</span><span className="text-primary font-headline text-lg md:text-3xl">${total.toFixed(2)}</span></div>
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Lacag Diraha:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.senderNumber}</span></div>
-                <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Player ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{isAutoDetectEnabled ? ffUid : gameDetails.playerID}</span></div>
-                {zoneId && <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Zone ID:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{zoneId}</span></div>}
+                {/* Display all captured game fields */}
+                {Object.entries(dynamicFields).map(([k, v]) => (
+                  <div key={k} className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2">
+                    <span className="truncate uppercase">{k.replace('_', ' ')}:</span>
+                    <span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{v}</span>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="flex flex-col gap-2.5 md:gap-4">
