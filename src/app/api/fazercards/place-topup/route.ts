@@ -109,8 +109,6 @@ export async function POST(request: Request) {
     }
 
     if (results.length > 0) {
-      const isFullSuccess = results.length === multiplier;
-      
       // DO NOT mark as successful yet. Wait for Webhook or Polling.
       await orderRef.update({
         autoTopupStatus: 'processing',
@@ -129,7 +127,7 @@ export async function POST(request: Request) {
           amount: order.total,
           ffUid: order.ffUid,
           orderId: orderId,
-          message: `⏳ Auto top-up PROCESSING — FazerCards: ${results.join(', ')}. Waiting for delivery confirmation via webhook.`
+          message: `⏳ Auto top-up PROCESSING — FazerCards IDs: ${results.join(', ')}. Monitoring every 1s for delivery.`
         })
       }).catch(() => {});
 
@@ -137,7 +135,7 @@ export async function POST(request: Request) {
         success: true, 
         fazercardsOrderId: results.join(', '),
         status: 'processing',
-        message: 'Order placed. Waiting for delivery confirmation.'
+        message: 'Order placed. Tracking started.'
       });
     } else {
       await orderRef.update({
