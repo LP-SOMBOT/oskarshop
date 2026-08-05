@@ -9,29 +9,49 @@ import { adminDb } from '@/lib/firebaseAdmin';
 export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
-    const body = JSON.parse(rawBody);
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ received: true });
+    }
 
     // 1. Log the raw webhook for debugging
     console.log('FazerCards webhook received:', JSON.stringify(body));
 
-    // Save raw webhook to database for admin visibility
-    const logRef = adminDb.ref('webhook_logs/fazercards').push();
-    await logRef.set({
+    // FazerCards webhook payload — try all known formats
+    // The payload can be nested under data, order, or root level
+    const orderData = body.order || body.data || body;
+    
+    const fazercardsOrderId =
+      orderData.id ||
+      orderData.order_id ||
+      orderData.orderId ||
+      body.id ||
+      body.order_id ||
+      null;
+
+    const newStatus =
+      orderData.status ||
+      body.status ||
+      body.order_status ||
+      null;
+
+    // Save raw log WITH extracted values for debugging
+    await adminDb.ref('webhook_logs/fazercards').push({
       raw: body,
+      extractedId: fazercardsOrderId || 'NOT_FOUND',
+      extractedStatus: newStatus || 'NOT_FOUND',
       receivedAt: Date.now()
     });
 
-    // 2. Extract FazerCards order ID and status
-    const fazercardsOrderId = body.id || body.order_id || body.orderId || body.data?.id;
-    const newStatus = body.status || body.order_status || body.data?.status;
-
     if (!fazercardsOrderId || !newStatus) {
-      console.log('Missing orderId or status in webhook payload');
+      console.log('Could not extract order ID or status in webhook payload');
       return NextResponse.json({ received: true });
     }
 
-    // 3. Find the OskarShop order
-    // FazerCards IDs might be part of a multiplier comma-separated list
+    // 2. Find the matched OskarShop orders
+    // Use the robust query to find any order that includes this ID
     const ordersSnap = await adminDb.ref('orders').get();
     const allOrders = ordersSnap.val() || {};
     
@@ -65,11 +85,11 @@ export async function POST(request: Request) {
             amount: order.total,
             ffUid: order.ffUid,
             orderId: oskarOrderId,
-            message: `✅ Auto top-up COMPLETED! Delivered to ${order.ffPlayerName || order.ffUid}. FazerCards: ${fazercardsOrderId}`
+            message: `✅ Auto top-up COMPLETED via Webhook! FazerCards: ${fazercardsOrderId}`
           })
         }).catch(() => {});
 
-        // CREDIT POINTS ON WEBHOOK SUCCESS (Crucial Fix)
+        // CREDIT POINTS ON WEBHOOK SUCCESS
         const isAccountOrder = 
           order.items?.[0]?.gameId === 'accounts' || 
           order.items?.[0]?.gameId === 'event-accounts' || 
@@ -98,7 +118,7 @@ export async function POST(request: Request) {
             amount: order.total,
             ffUid: order.ffUid,
             orderId: oskarOrderId,
-            message: `❌ Auto top-up REFUNDED/FAILED! FazerCards: ${fazercardsOrderId} — Status: ${newStatus}. Manual action required.`
+            message: `❌ Auto top-up REFUNDED/FAILED via Webhook! FazerCards: ${fazercardsOrderId} — Status: ${newStatus}.`
           })
         }).catch(() => {});
       }

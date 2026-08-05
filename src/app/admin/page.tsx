@@ -453,6 +453,11 @@ export default function AdminPage() {
     rewards: { rank1: "", rank2: "", rank3: "" } as any
   });
 
+  const [emailConfigForm, setEmailConfigForm] = useState({
+    verification: { serviceId: "", templateId: "", publicKey: "" },
+    recovery: { serviceId: "", templateId: "", publicKey: "" }
+  });
+
   // Auto Schedule State
   const [scheduleForm, setScheduleForm] = useState({
     enabled: false,
@@ -541,6 +546,11 @@ export default function AdminPage() {
         openTime: "09:00",
         closeTime: "21:30",
         timezone: "Africa/Mogadishu"
+      });
+
+      setEmailConfigForm({
+        verification: storeSettings.emailjs_verification || { serviceId: "", templateId: "", publicKey: "" },
+        recovery: storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" }
       });
 
       setFazerApiKey(storeSettings.fazercards?.apiKey || "");
@@ -862,6 +872,25 @@ export default function AdminPage() {
     }
   };
 
+  const handleManualSync = async (orderId: string) => {
+    setIsSavingStatus(true);
+    try {
+      const res = await fetch(`/api/fazercards/sync-order?orderId=${orderId}`);
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Status Synced", description: `Provider Status: ${data.status}` });
+        // The selecting logic will refresh via RTDB listener anyway
+        setSelectedOrderId(null);
+      } else {
+        toast({ title: "Sync Failed", description: data.error, variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Sync Error", variant: "destructive" });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
   const handleAdjustPoints = async (type: 'credit' | 'debit') => {
     if (!selectedUser || !pointAdjustment) return;
     const amount = parseInt(pointAdjustment);
@@ -944,6 +973,19 @@ export default function AdminPage() {
       paymentNumber: economyForm.paymentNumber
     });
     toast({ title: "Economy settings updated" });
+  };
+
+  const handleSaveEmailConfig = async () => {
+    setIsSavingStatus(true);
+    try {
+      await updateStoreSettings({
+        emailjs_verification: emailConfigForm.verification,
+        emailjs: emailConfigForm.recovery
+      });
+      toast({ title: "Email Config Synced" });
+    } finally {
+      setIsSavingStatus(false);
+    }
   };
 
   const handleSaveLeaderboard = async () => {
@@ -1377,6 +1419,7 @@ export default function AdminPage() {
                    onBack={() => setSelectedOrderId(null)} 
                    onUpdate={handleStatusUpdate}
                    onManualSuccess={handleManualSuccess}
+                   onManualSync={handleManualSync}
                    onRetryTopup={handleRetryTopup}
                    status={pendingOrderStatus}
                    setStatus={setPendingStatus}
@@ -2349,11 +2392,11 @@ export default function AdminPage() {
                                                 </div>
                                                 <div className="flex flex-col">
                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Fazer ID</span>
-                                                   <span className="font-mono text-primary">{log.raw?.id || log.raw?.order_id || '---'}</span>
+                                                   <span className="font-mono text-primary">{log.extractedId || '---'}</span>
                                                 </div>
                                                 <div className="flex flex-col">
                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Status</span>
-                                                   <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase">{log.raw?.status || '---'}</Badge>
+                                                   <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase">{log.extractedStatus || '---'}</Badge>
                                                 </div>
                                                 <div className="flex justify-end">
                                                    <button onClick={() => { console.log(log.raw); toast({title:"Log details printed to console"}); }} className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Info size={14}/></button>
@@ -2421,6 +2464,53 @@ export default function AdminPage() {
                                  </div>
                               </TabsContent>
                            </Tabs>
+                        </AccordionContent>
+                     </Card>
+                  </AccordionItem>
+
+                  <AccordionItem value="email-otp" className="border-none">
+                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
+                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
+                           <div className="flex items-center gap-4 text-primary">
+                              <Mail className="w-6 h-6" />
+                              <div className="text-left">
+                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Email & OTP Config</h4>
+                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">EmailJS Service & Templates</p>
+                              </div>
+                           </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
+                           <div className="space-y-10">
+                              {/* Verification Config */}
+                              <div className="space-y-4">
+                                 <div className="flex items-center gap-2 text-indigo-500">
+                                    <UserCheck size={18} />
+                                    <h5 className="font-bold text-sm uppercase tracking-widest">Sign-up Verification</h5>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <SettingInput label="Service ID" value={emailConfigForm.verification.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, serviceId: v } }))} placeholder="service_..." />
+                                    <SettingInput label="Template ID" value={emailConfigForm.verification.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, templateId: v } }))} placeholder="template_..." />
+                                    <SettingInput label="Public Key" value={emailConfigForm.verification.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, publicKey: v } }))} placeholder="pk_..." />
+                                 </div>
+                              </div>
+
+                              {/* Recovery Config */}
+                              <div className="space-y-4">
+                                 <div className="flex items-center gap-2 text-amber-500">
+                                    <RefreshCw size={18} />
+                                    <h5 className="font-bold text-sm uppercase tracking-widest">Password Recovery</h5>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <SettingInput label="Service ID" value={emailConfigForm.recovery.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, serviceId: v } }))} placeholder="service_..." />
+                                    <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, templateId: v } }))} placeholder="template_..." />
+                                    <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, publicKey: v } }))} placeholder="pk_..." />
+                                 </div>
+                              </div>
+
+                              <Button onClick={handleSaveEmailConfig} disabled={isSavingStatus} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">
+                                 {isSavingStatus ? <Loader2 className="animate-spin" /> : "Sync Email Config"}
+                              </Button>
+                           </div>
                         </AccordionContent>
                      </Card>
                   </AccordionItem>
@@ -3413,7 +3503,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
   );
 }
 
-function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopup, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
+function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSync, onRetryTopup, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
   if (!order) return null;
   const item = order.items?.[0];
   const buyer = allUsers?.find((u: any) => u.uid === order.userId);
@@ -3550,7 +3640,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                           order.autoTopupStatus === 'failed' ? "text-red-500" : 
                           order.autoTopupStatus === 'processing' ? "text-amber-500" : "text-slate-400"
                         )}>
-                            {order.autoTopupStatus === 'processing' ? "Waiting for FazerCards confirmation" :
+                            {order.autoTopupStatus === 'processing' ? "Processing — Waiting for FazerCards confirmation" :
                              order.autoTopupStatus === 'completed' ? "completed" :
                              order.autoTopupStatus === 'failed' ? "Failed/Refunded — Manual action required" :
                              "NOT STARTED"}
@@ -3566,7 +3656,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                         </p>
                         {order.autoTopupOrderId && (
                           <a 
-                            href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.split(',')[0].trim()}`} 
+                            href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.toString().split(',')[0].trim()}`} 
                             target="_blank" 
                             className="text-primary hover:underline text-[9px] font-black flex items-center gap-1"
                           >
@@ -3603,19 +3693,30 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onRetryTopu
                   </div>
                </div>
 
-               {order.autoTopupStatus === 'failed' && (
-                 <div className="pt-2">
+               <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                 {order.autoTopupStatus === 'failed' && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={onRetryTopup} 
                       disabled={isSaving}
-                      className="w-full rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black uppercase text-[10px] tracking-widest gap-2 h-12"
+                      className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black uppercase text-[10px] tracking-widest gap-2 h-12"
                     >
                        <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Retry FazerCards Order
                     </Button>
-                 </div>
-               )}
+                 )}
+                 {order.autoTopupStatus === 'processing' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => onManualSync(order.id)} 
+                      disabled={isSaving}
+                      className="flex-1 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-black uppercase text-[10px] tracking-widest gap-2 h-12"
+                    >
+                       <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Sync Status
+                    </Button>
+                 )}
+               </div>
             </div>
           )}
        </Card>
