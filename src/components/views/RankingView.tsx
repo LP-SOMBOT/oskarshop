@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -29,8 +30,13 @@ export default function RankingView() {
   }, [storeSettings]);
 
   const sortedUsers = useMemo(() => {
-    return [...allUsers]
-      .sort((a, b) => (b.points || 0) - (a.points || 0))
+    // STRICT FIX: Only users with points > 0 are displayed/ranked.
+    return allUsers
+      .filter(u => (u.points || 0) > 0)
+      .sort((a, b) => 
+        (b.points || 0) - (a.points || 0) || 
+        (a.createdAt || 0) - (b.createdAt || 0)
+      )
       .slice(0, 50);
   }, [allUsers]);
 
@@ -125,6 +131,11 @@ export default function RankingView() {
              {others.map((u, i) => (
                <RankListItem key={u.uid} user={u} rank={i + 4} />
              ))}
+             {sortedUsers.length === 0 && (
+               <div className="py-20 text-center opacity-30 italic font-bold uppercase">
+                  {t('no_participants') || 'No participants with points yet.'}
+               </div>
+             )}
           </div>
         </main>
       </div>
@@ -171,7 +182,7 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
              </Avatar>
           </div>
           <Badge className={cn(
-            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-white dark:border-slate-950 shadow-lg text-[10px] md:text-sm z-20",
+            "absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-6 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black p-0 border-2 md:border-4 border-slate-950 shadow-lg text-[10px] md:text-sm z-20",
             isGold ? "bg-yellow-500 text-white" : isSilver ? "bg-slate-400 text-white" : "bg-amber-700 text-white"
           )}>
             {rank}
@@ -207,7 +218,6 @@ function PodiumCard({ user, rank, color, delay }: { user: any, rank: number, col
 }
 
 function RankListItem({ user, rank }: { user: any, rank: number }) {
-  const { t } = useApp();
   return (
     <Card className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] border-none bg-white dark:bg-slate-900 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
        <div className="flex items-center gap-1 min-w-0 flex-1">

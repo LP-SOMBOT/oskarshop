@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -97,10 +98,17 @@ export default function ProfileView() {
   };
 
   const userRank = useMemo(() => {
-    if (!user || !allUsers.length) return 0;
-    const sorted = [...allUsers].sort((a, b) => (b.points || 0) - (a.points || 0));
+    if (!user || !allUsers.length || (user.points || 0) <= 0) return null;
+    
+    // STRICT FIX: Only rank users with points > 0
+    const qualifiedUsers = allUsers.filter(u => (u.points || 0) > 0);
+    const sorted = qualifiedUsers.sort((a, b) => 
+      (b.points || 0) - (a.points || 0) || 
+      (a.createdAt || 0) - (b.createdAt || 0)
+    );
+    
     const index = sorted.findIndex(u => u.uid === user.uid);
-    return index === -1 ? 0 : index + 1;
+    return index === -1 ? null : index + 1;
   }, [user, allUsers]);
 
   const helpLinks = storeSettings?.helpLinks || {};
@@ -146,7 +154,7 @@ export default function ProfileView() {
               <Star className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 fill-amber-600" /> {user.points || 0} {t('points')}
             </Badge>
             <Badge variant="outline" className="border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-black text-[10px] sm:text-sm lg:text-xl rounded-full px-4 py-1.5 md:px-6 md:py-2.5 uppercase tracking-widest">
-              {t('rank')} #{userRank}
+              {t('rank')} {userRank ? `#${userRank}` : '---'}
             </Badge>
           </div>
         </div>
