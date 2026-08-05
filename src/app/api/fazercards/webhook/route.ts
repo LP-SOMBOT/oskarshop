@@ -16,11 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // 1. Log the raw webhook for debugging
-    console.log('FazerCards webhook received:', JSON.stringify(body));
-
-    // FazerCards webhook payload — try all known formats
-    // The payload can be nested under data, order, or root level
+    // 1. Robust Payload Extraction
     const orderData = body.order || body.data || body;
     
     const fazercardsOrderId =
@@ -37,40 +33,53 @@ export async function POST(request: Request) {
       body.order_status ||
       null;
 
-    // Save raw log WITH extracted values for debugging
-    await adminDb.ref('webhook_logs/fazercards').push({
-      raw: body,
-      extractedId: fazercardsOrderId || 'NOT_FOUND',
-      extractedStatus: newStatus || 'NOT_FOUND',
-      receivedAt: Date.now()
-    });
-
-    if (!fazercardsOrderId || !newStatus) {
-      console.log('Could not extract order ID or status in webhook payload');
+    if (!fazercardsOrderId) {
+      console.log('Could not extract order ID from webhook payload');
       return NextResponse.json({ received: true });
     }
 
-    // 2. Find the matched OskarShop orders
-    // Use the robust query to find any order that includes this ID
-    const ordersSnap = await adminDb.ref('orders').get();
-    const allOrders = ordersSnap.val() || {};
-    
-    const matchedEntries = Object.entries(allOrders).filter(([_, order]: [any, any]) => {
+    // 2. Full Scan Matching Logic (Guaranteed reliability)
+    const allOrdersSnap = await adminDb.ref('orders').get();
+    if (!allOrdersSnap.exists()) {
+      return NextResponse.json({ received: true });
+    }
+
+    const allOrders = allOrdersSnap.val();
+    const matchedEntries = Object.entries(allOrders).filter(([_, order]: [string, any]) => {
+      // Check all possible provider ID fields
+      const searchId = fazercardsOrderId.toString();
       const ids = (order.autoTopupOrderId || "").toString().split(',').map((s: string) => s.trim());
-      return ids.includes(fazercardsOrderId.toString());
+      
+      return (
+        ids.includes(searchId) ||
+        order.fazercardsOrderId === searchId ||
+        order.providerOrderId === searchId
+      );
     });
 
     if (matchedEntries.length === 0) {
-      console.log(`No OskarShop order found for FazerCards ID: ${fazercardsOrderId}`);
+      // Log unmatched webhook (Normal for initial "created" events)
+      await adminDb.ref('webhook_logs/fazercards').push({
+        raw: body,
+        extractedId: fazercardsOrderId,
+        extractedStatus: newStatus || 'NOT_FOUND',
+        matched: false,
+        receivedAt: Date.now()
+      });
       return NextResponse.json({ received: true });
     }
 
+    // 3. Process matched orders
     for (const [oskarOrderId, order] of matchedEntries as any) {
+      const statusLower = (newStatus || '').toLowerCase().trim();
+
       let newAutoTopupStatus = 'processing';
       let newOrderStatus = order.status;
-      const statusLower = newStatus.toLowerCase();
 
-      if (['completed', 'success', 'done', 'delivered'].includes(statusLower)) {
+      const completedStatuses = ['completed', 'complete', 'success', 'done', 'delivered', 'finish', 'finished'];
+      const failedStatuses = ['refund', 'refunded', 'cancelled', 'canceled', 'cancel', 'failed', 'fail', 'failure', 'error'];
+
+      if (completedStatuses.includes(statusLower)) {
         newAutoTopupStatus = 'completed';
         newOrderStatus = 'successful';
 
@@ -89,7 +98,7 @@ export async function POST(request: Request) {
           })
         }).catch(() => {});
 
-        // CREDIT POINTS ON WEBHOOK SUCCESS
+        // Credit point on success
         const isAccountOrder = 
           order.items?.[0]?.gameId === 'accounts' || 
           order.items?.[0]?.gameId === 'event-accounts' || 
@@ -103,7 +112,7 @@ export async function POST(request: Request) {
           });
         }
 
-      } else if (['refund', 'refunded', 'cancelled', 'canceled', 'failed', 'rejected'].includes(statusLower)) {
+      } else if (failedStatuses.includes(statusLower)) {
         newAutoTopupStatus = 'failed';
         newOrderStatus = 'cancelled';
 
@@ -123,13 +132,23 @@ export async function POST(request: Request) {
         }).catch(() => {});
       }
 
-      // Update Order
+      // Update Order State
       await adminDb.ref(`orders/${oskarOrderId}`).update({
         autoTopupStatus: newAutoTopupStatus,
         status: newOrderStatus,
         autoTopupLastWebhook: newStatus,
         autoTopupUpdatedAt: Date.now(),
-        completedAt: newOrderStatus === 'successful' ? Date.now() : order.completedAt
+        completedAt: newOrderStatus === 'successful' ? Date.now() : (order.completedAt || null)
+      });
+
+      // Log successful match
+      await adminDb.ref('webhook_logs/fazercards').push({
+        raw: body,
+        extractedId: fazercardsOrderId,
+        extractedStatus: newStatus,
+        matchedOrderId: oskarOrderId,
+        matched: true,
+        receivedAt: Date.now()
       });
     }
 

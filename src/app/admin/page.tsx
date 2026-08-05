@@ -215,7 +215,7 @@ function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, stat
   if (status === 'sold') return <Badge className="bg-slate-100 text-slate-400 border-none text-[8px] font-black uppercase">SOLD</Badge>;
 
   return (
-    <div className="flex flex-col items-start text-left">
+    <div className="flex col items-start text-left">
       <span className="text-[11px] font-black text-primary uppercase tracking-tight">
         {age}
       </span>
@@ -2386,20 +2386,30 @@ export default function AdminPage() {
                                        ) : (
                                           webhookLogs.map(log => (
                                              <div key={log.id} className="p-4 text-xs font-medium grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                                                <div className="flex flex-col">
-                                                   <span className="text-[8px] font-black text-slate-400 uppercase">Received</span>
-                                                   <span>{safeFormatDistanceToNow(log.receivedAt)} ago</span>
+                                                <div className="flex flex-col gap-1">
+                                                  <div className="flex items-center gap-2">
+                                                     <div className={cn("w-2 h-2 rounded-full", log.matched ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]")} />
+                                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Received</span>
+                                                  </div>
+                                                  <span className="text-[10px] font-bold">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
                                                 </div>
                                                 <div className="flex flex-col">
                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Fazer ID</span>
-                                                   <span className="font-mono text-primary">{log.extractedId || '---'}</span>
+                                                   <span className="font-mono text-primary font-bold text-[10px]">{log.extractedId || '---'}</span>
                                                 </div>
                                                 <div className="flex flex-col">
                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Status</span>
-                                                   <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase">{log.extractedStatus || '---'}</Badge>
+                                                   <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase border-slate-200">{log.extractedStatus || '---'}</Badge>
                                                 </div>
-                                                <div className="flex justify-end">
-                                                   <button onClick={() => { console.log(log.raw); toast({title:"Log details printed to console"}); }} className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"><Info size={14}/></button>
+                                                <div className="flex flex-col justify-center gap-1">
+                                                   {log.matched ? (
+                                                     <div className="flex flex-col">
+                                                        <span className="text-[8px] font-black text-green-500 uppercase">Matched Order</span>
+                                                        <span className="text-[10px] font-bold text-slate-900 dark:text-white">#{log.matchedOrderId?.toUpperCase()}</span>
+                                                     </div>
+                                                   ) : (
+                                                     <span className="text-[8px] font-black text-slate-300 uppercase italic">No order matched yet</span>
+                                                   )}
                                                 </div>
                                              </div>
                                           ))
@@ -3868,7 +3878,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                     <Button 
                       onClick={() => onManualSuccess(order.id)} 
                       disabled={isSaving} 
-                      className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl font-black text-[10px] md:text-sm uppercase tracking-tighter md:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
+                      className="w-full h-12 md:h-13 rounded-xl md:rounded-2xl font-black text-[9px] sm:text-sm uppercase tracking-tighter sm:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
                     >
                       {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Success (Manual)</>}
                     </Button>

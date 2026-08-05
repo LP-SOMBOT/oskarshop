@@ -109,10 +109,13 @@ export async function POST(request: Request) {
     }
 
     if (results.length > 0) {
-      // DO NOT mark as successful yet. Wait for Webhook or Polling.
+      // Store IDs in multiple redundant fields to ensure webhook matching
+      const providerIdStr = results.join(', ');
       await orderRef.update({
         autoTopupStatus: 'processing',
-        autoTopupOrderId: results.join(', '),
+        autoTopupOrderId: providerIdStr,
+        fazercardsOrderId: providerIdStr,
+        providerOrderId: providerIdStr,
         autoTopupError: errors.length > 0 ? errors.join('; ') : null
       });
 
@@ -127,13 +130,13 @@ export async function POST(request: Request) {
           amount: order.total,
           ffUid: order.ffUid,
           orderId: orderId,
-          message: `⏳ Auto top-up PROCESSING — FazerCards IDs: ${results.join(', ')}. Monitoring every 1s for delivery.`
+          message: `⏳ Auto top-up PROCESSING — FazerCards IDs: ${providerIdStr}. Monitoring for delivery.`
         })
       }).catch(() => {});
 
       return NextResponse.json({ 
         success: true, 
-        fazercardsOrderId: results.join(', '),
+        fazercardsOrderId: providerIdStr,
         status: 'processing',
         message: 'Order placed. Tracking started.'
       });
