@@ -25,11 +25,12 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
   const { buyNow, user, t, language } = useApp();
 
   const numPrice = Number(price);
+  // Instruction: Use product.discountedPrice directly for the main blue price display
   const numDiscounted = (discountedPrice && Number(discountedPrice) > 0 && Number(discountedPrice) < numPrice) 
     ? Number(discountedPrice) 
     : numPrice;
 
-  // Calculate store discount percentage from base price
+  // Instruction: Calculate Math.round(((standardPrice - discountedPrice) / standardPrice) * 100) only for the badge tag string
   const storeDiscountPct = numPrice > numDiscounted 
     ? Math.round(((numPrice - numDiscounted) / numPrice) * 100) 
     : 0;
@@ -37,13 +38,11 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
   // Get user rank discount
   const rankDiscount = user?.leaderboardDiscount || 0;
   
-  // Combine discounts (Additive as requested: 7% rank + 2% item = 9% total)
-  const totalDiscountPct = storeDiscountPct + rankDiscount;
-
-  // Final Price Calculation
-  const currentPrice = totalDiscountPct > 0 
-    ? numPrice * (1 - totalDiscountPct / 100)
-    : numPrice;
+  // Feature Maintenance: Apply personal rank rewards to the store's price.
+  // We apply this math to numDiscounted to keep the store portion accurate as requested.
+  const currentPrice = rankDiscount > 0 
+    ? numDiscounted * (1 - rankDiscount / 100)
+    : numDiscounted;
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
 
@@ -52,14 +51,24 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
     buyNow({ id, title, price: currentPrice, gameId, thumbnail, isOneTime });
   };
 
+  const hasDiscount = numPrice > numDiscounted || rankDiscount > 0;
+
   return (
     <Card className="group overflow-hidden bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-[1.5rem] md:rounded-[2rem] flex flex-col h-full relative">
-      {totalDiscountPct > 0 && (
+      {storeDiscountPct > 0 && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
            <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
+             {storeDiscountPct}% {language === 'so' ? 'DISKOONTI' : 'OFF'}
+           </Badge>
+        </div>
+      )}
+
+      {rankDiscount > 0 && storeDiscountPct === 0 && (
+        <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
+           <Badge className="bg-primary text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
              {RankIcon && <span>{RankIcon}</span>}
              <Sparkles size={10} className="md:w-3 md:h-3" />
-             {totalDiscountPct}% {t('rank_reward')}
+             {rankDiscount}% {language === 'so' ? 'REWARD' : 'REWARD'}
            </Badge>
         </div>
       )}
@@ -106,14 +115,14 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
 
         <div className="flex flex-col mt-auto bg-slate-50 dark:bg-slate-800/50 p-2 md:p-4 rounded-xl border border-slate-100 dark:border-white/5 shadow-inner">
           <div className="flex flex-col items-center justify-center">
-             {totalDiscountPct > 0 && (
+             {hasDiscount && (
                <span className="text-[10px] md:text-sm text-muted-foreground line-through opacity-60 mb-0.5">
                  ${numPrice.toFixed(2)}
                </span>
              )}
              <span className={cn(
                "text-xl md:text-3xl font-headline font-bold tracking-tighter",
-               totalDiscountPct > 0 ? "text-primary" : "text-slate-900 dark:text-white"
+               hasDiscount ? "text-primary" : "text-slate-900 dark:text-white"
              )}>
                ${currentPrice.toFixed(2)}
              </span>
