@@ -181,7 +181,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@radix-ui/react-sortable';
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -1757,11 +1757,11 @@ export default function AdminPage() {
 
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border dark:border-white/5 grid grid-cols-2 gap-4">
                                    <div className="space-y-1">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Claims</p>
+                                      <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Claims</p>
                                       <Badge className={cn("border-none text-[8px] font-black px-3", claimantsList.length > 0 ? "bg-red-500 text-white" : "bg-slate-100 text-slate-400")}>{claimantsList.length} Active</Badge>
                                    </div>
                                    <div className="space-y-1">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p>
+                                      <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Wait Time</p>
                                       <WaitTime post={p} />
                                    </div>
                                 </div>
@@ -2608,7 +2608,7 @@ export default function AdminPage() {
                                                    <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
                                                    <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
                                                 </div>
-                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
+                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-50 text-white" : "bg-amber-100 text-amber-700")}>
                                                    {sms.matched ? "Matched" : "Unmatched"}
                                                 </Badge>
                                              </div>
@@ -3936,7 +3936,8 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                              <p className={cn(
                                "text-[10px] font-black uppercase tracking-widest",
                                offData.status === 'completed' ? "text-green-500" :
-                               offData.status === 'failed' ? "text-red-500" : "text-slate-400"
+                               offData.status === 'failed' ? "text-red-500" :
+                               offData.status === 'processing' ? "text-amber-500" : "text-slate-400"
                              )}>
                                 {offData.status}
                              </p>
@@ -4706,7 +4707,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                    </Avatar>
                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <p className="truncate font-semibold text-base md:text-xl max-w-[200px]">{winnerProfile.name}</p>
+                        <p className="truncate font-semibold text-base md:text-xl max-w-[180px]">{winnerProfile.name}</p>
                         {winnerProfile.isVerified && <VerifiedBadge />}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
