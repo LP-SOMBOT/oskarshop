@@ -826,7 +826,7 @@ export default function AdminPage() {
       fazercardsCategory_id: "", 
       fazercardsOffer_id: "", 
       fazercardsMultiQuantity: 1, 
-      requiredFields: [],
+      requiredFields: [], 
       specialPackage: { offers: [], totalProviderCost: 0 }
     });
     
@@ -1269,7 +1269,7 @@ export default function AdminPage() {
       specialPackage: {
         ...productForm.specialPackage,
         offers: updatedOffers,
-        totalProviderCost: 0 // No longer calculating/storing
+        totalProviderCost: 0 
       }
     });
 
@@ -1496,7 +1496,7 @@ export default function AdminPage() {
                   />
                </div>
 
-               {/* PENDING ITEMS & ACCOUNTS GRID */}
+               {/* PENDING ITEMS & USERS GRID */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
                      <div className="flex items-center gap-6">
@@ -1517,8 +1517,8 @@ export default function AdminPage() {
                            <Users size={32} />
                         </div>
                         <div className="space-y-1">
-                           <h3 className="text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.totalAccounts}</h3>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accounts</p>
+                           <h3 className="text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{allUsers.length}</h3>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Users</p>
                         </div>
                      </div>
                      <ChevronRight className="text-slate-200 group-hover:text-primary transition-colors" />
@@ -1564,7 +1564,7 @@ export default function AdminPage() {
                      </div>
                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
                         {dashboardReports.pieData.map((d, i) => (
-                          <div key={d.name} className="flex flex-col items-center gap-1">
+                          <div key={d.name} className="flex items-center gap-1">
                              <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#0EA5E9', '#7B5CE5', '#EC4899', '#10B981'][i % 4] }} />
                                 <span className="text-[10px] font-bold text-slate-500 uppercase truncate max-w-[80px]">{d.name}</span>
@@ -4454,7 +4454,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
     const t = Number(c.timestamp);
     return isNaN(t) ? Infinity : t;
   })) : null;
-  const isStalling = claimTime && claimTime !== Infinity && (now - claimTime) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
+  const isStalling = claimTime && claimTime !== Infinity && (now - claimTime) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
 
   const waitValue = (claimTime && claimTime !== Infinity && !post.sellerReported && !post.sold) 
     ? safeFormatDistanceToNow(claimTime) 
