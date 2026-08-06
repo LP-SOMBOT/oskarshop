@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -1613,9 +1612,6 @@ export default function AdminPage() {
                           </div>
                         ))}
                      </div>
-                     <Button variant="ghost" className="w-full mt-8 rounded-2xl h-12 font-bold text-slate-400 hover:text-primary uppercase text-[10px] tracking-widest gap-2">
-                        View All Activities <ChevronRight size={14} />
-                     </Button>
                   </Card>
                </div>
             </div>
@@ -4688,7 +4684,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                         {post.completedAt && !isNaN(new Date(post.completedAt).getTime()) ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
                      </p>
                      <p className="text-xs md:text-lg font-bold text-primary">
-                        {post.completedAt && !isNaN(new Date(post.completedAt).getTime()) ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
+                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
                 </div>
