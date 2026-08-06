@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
@@ -119,18 +118,18 @@ export async function POST(request: Request) {
       });
     }
 
-    // 6. Trigger Auto Topup (Check if special handling or regular)
+    // 6. Trigger Auto Topup (Special Package or Regular)
     const item = matchOrder.items?.[0];
     const fazercardsConfigSnap = await adminDb.ref('settings/fazercards').get();
     const fazercardsConfig = fazercardsConfigSnap.val();
 
     if (fazercardsConfig?.enabled) {
-      // Fetch full item data to check specialHandling
       const fullItemSnap = await adminDb.ref(`products/${item?.id}`).get();
       const fullItem = fullItemSnap.val();
+      const origin = new URL(request.url).origin;
 
       if (fullItem?.category === 'special_package') {
-        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-special-package`, {
+        fetch(`${origin}/api/fazercards/place-special-package`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -141,7 +140,7 @@ export async function POST(request: Request) {
           })
         }).catch(() => {});
       } else if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
-         fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-topup`, {
+         fetch(`${origin}/api/fazercards/place-topup`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({

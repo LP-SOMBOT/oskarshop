@@ -1212,11 +1212,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (status === 'cancelled' && cancellationReason) updates.cancellationReason = cancellationReason;
     if (status === 'successful') updates.completedAt = Date.now();
 
-    // 1. Update the order status in DB immediately to prevent overwrite by automation
     await update(ref(rtdb, `orders/${orderId}`), updates);
 
-    // 2. Trigger side effects
-    if (status === 'processing') { // Trigger FazerCards automation when set to processing
+    // Automation Trigger Logic
+    if (status === 'processing' || status === 'successful') {
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
       
@@ -1225,8 +1224,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const fullItem = prodSnap.val();
 
       if (storeSettings.fazercards?.enabled && orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
+        const origin = window.location.origin;
+
+        // Trigger Sequential Special Package Delivery
         if (fullItem?.category === 'special_package') {
-          fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-special-package`, {
+          fetch(`${origin}/api/fazercards/place-special-package`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1235,34 +1237,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               playerRegion: orderData.ffRegion || 'MENA',
               gameFields: orderData.gameDetails?.gameFields
             })
-          }).catch(e => console.error("Special Package trigger failed:", e));
-        } else if (item?.autoTopupEnabled) {
-          try {
-            const res = await fetch('/api/fazercards/place-topup', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                orderId,
-                category_id: item.fazercardsCategory_id,
-                offer_id: item.fazercardsOffer_id,
-                fields: orderData.gameDetails?.gameFields
-              })
-            });
-            const topupResult = await res.json();
-            if (topupResult.success) {
-              toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderId}` });
-            } else {
-              toast({ title: "Auto Top-up Failed", description: topupResult.error, variant: "destructive" });
-            }
-          } catch (err) {
-            await update(ref(rtdb, `orders/${orderId}`), {
-              status: 'cancelled',
-              autoTopupStatus: 'failed',
-              autoTopupError: 'Connection failure calling provider API',
-              cancellationReason: 'Automation failure: Could not reach provider.'
-            });
-            toast({ title: "Automation Error", description: "Could not reach provider.", variant: "destructive" });
-          }
+          }).catch(e => console.error("Special Package manual trigger failed:", e));
+        } 
+        // Trigger Regular Top-up Automation
+        else if (item?.autoTopupEnabled) {
+          fetch(`${origin}/api/fazercards/place-topup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              category_id: item.fazercardsCategory_id,
+              offer_id: item.fazercardsOffer_id,
+              fields: orderData.gameDetails?.gameFields
+            })
+          }).catch(e => console.error("Regular top-up manual trigger failed:", e));
         }
       }
     }
@@ -1270,16 +1258,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (status === 'successful') {
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
-      
-      const isAccountOrder = 
-        orderData.items?.[0]?.gameId === 'accounts' || 
-        orderData.items?.[0]?.gameId === 'event-accounts' || 
-        orderData.gameDetails?.postId || 
-        orderData.gameDetails?.isEventWinner;
-
-      if (orderData?.userId && !isAccountOrder) {
-        await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
-      }
+      const isAccountOrder = orderData.items?.[0]?.gameId === 'accounts' || orderData.items?.[0]?.gameId === 'event-accounts' || orderData.gameDetails?.postId || orderData.gameDetails?.isEventWinner;
+      if (orderData?.userId && !isAccountOrder) await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
     }
 
     if (status === 'cancelled') {
@@ -1328,9 +1308,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newOrder.rank = userProfile.leaderboardRank;
       newOrder.rankDiscount = userProfile.leaderboardDiscount;
     }
-    
     if (promoCode) newOrder.promoCode = promoCode;
-    
     if (gameDetails.ffUid) {
       newOrder.ffUid = gameDetails.ffUid;
       newOrder.ffPlayerName = gameDetails.ffPlayerName;
@@ -1370,10 +1348,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
           const prodSnap = await get(ref(rtdb, `products/${directItem.id}`));
           const fullItem = prodSnap.val();
-          
+          const origin = window.location.origin;
+
           if (storeSettings.fazercards?.enabled) {
             if (fullItem?.category === 'special_package') {
-              fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-special-package`, {
+              fetch(`${origin}/api/fazercards/place-special-package`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1382,9 +1361,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   playerRegion: newOrder.ffRegion || 'MENA',
                   gameFields: gameDetails.gameFields
                 })
-              }).catch(e => console.error("Auto SMS Special Package trigger failed:", e));
-            } else if (directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
-               fetch('/api/fazercards/place-topup', {
+              }).catch(e => console.error("Auto SMS Special Package failed:", e));
+            } else if (directItem.autoTopupEnabled) {
+               fetch(`${origin}/api/fazercards/place-topup`, {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({
@@ -1393,11 +1372,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                    offer_id: directItem.fazercardsOffer_id,
                    fields: gameDetails.gameFields
                  })
-               }).catch(e => console.error("Auto SMS placement auto-topup failed:", e));
+               }).catch(e => console.error("Auto SMS standard top-up failed:", e));
             }
           }
         }
-      } catch (err) { console.error("Real-time SMS match scan failed:", err); }
+      } catch (err) { console.error("Real-time SMS match failed:", err); }
     }
     
     await set(ref(rtdb, `orders/${orderId}`), newOrder);
@@ -1426,7 +1405,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ffPlayerName: gameDetails.ffPlayerName || null,
         promoCode: promoCode || null,
         discount: userProfile?.leaderboardDiscount || null,
-        message: wasAutoApproved ? "✅ Auto-approved via real-time SMS match!" : undefined
+        message: wasAutoApproved ? "✅ Auto-approved via SMS match!" : undefined
       }),
     }).catch(() => {});
 
@@ -1434,7 +1413,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId, itemTitle: directItem.title })
-    }).catch(err => console.error("OneSignal admin broadcast failed", err));
+    }).catch(() => {});
 
     await broadcastAdminNotification(wasAutoApproved ? "Order Auto-Approved! ✅" : "New Order Received! 🛍️", `Order #${orderId.toUpperCase()} for ${directItem.title} is ${newOrder.status}.`, true);
     setIsGlobalLoading(false);
@@ -1501,8 +1480,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     onValue(settingsRef, (s) => {
       const data = s.val() || {};
       if (syncStatus.settings) {
-        if (data.isLive && !storeSettings.isLive) showPushNotification("Oskar is LIVE Now! 🔴", "Join us on TikTok for exclusive rewards and diamonds!", "live-ticker-" + Date.now());
-        if (data.appStatus?.offline === false && storeSettings.appStatus?.offline === true) showPushNotification("Oskar Shop is Online! ✅", "We are back! You can now resume your top-ups and purchases.", "online-alert-" + Date.now());
+        if (data.isLive && !storeSettings.isLive) showPushNotification("Oskar is LIVE Now! 🔴", "Join us on TikTok for exclusive rewards!", "live-ticker-" + Date.now());
+        if (data.appStatus?.offline === false && storeSettings.appStatus?.offline === true) showPushNotification("Oskar Shop is Online! ✅", "We are back! You can now resume your purchases.", "online-alert-" + Date.now());
       }
       setStoreSettings(data);
       setCache(SETTINGS_CACHE_KEY, data);
@@ -1661,7 +1640,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updates[`settings/lastResetMonth`] = currentMonth;
     try {
       await update(ref(rtdb), updates);
-      await broadcastAdminNotification("Leaderboard Reset! 🏆", `System points have been reset for the new month (${currentMonth}) by ${enhancedUser.name}.`, true);
+      await broadcastAdminNotification("Leaderboard Reset! 🏆", `Points reset for ${currentMonth} by ${enhancedUser.name}.`, true);
       toast({ title: "Reset Complete" });
     } catch (error) { toast({ title: "Reset Failed", variant: "destructive" }); } finally { setIsGlobalLoading(false); }
   }, [rtdb, enhancedUser, allUsers, broadcastAdminNotification]);
@@ -1672,7 +1651,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const postRef = push(ref(rtdb, 'accountPosts'));
     await set(postRef, { ...data, uid: authUser.uid, authorName: enhancedUser?.name, authorPhone: enhancedUser?.phoneNumber, authorAvatar: enhancedUser?.photoURL, authorIsVerified: enhancedUser?.isVerified || false, status: 'pending', createdAt: Date.now(), views: 0, sold: false });
     fetch('/api/notify-telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, customerName: enhancedUser?.name, customerPhone: enhancedUser?.phoneNumber, itemName: `${data.gameType} Account Listing`, amount: 0 }) }).catch(() => {});
-    fetch('/api/notify-new-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` }) }).catch(err => console.error("OneSignal admin broadcast failed", err));
+    fetch('/api/notify-new-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: postRef.key, itemTitle: `${data.gameType} Account` }) }).catch(() => {});
     await broadcastAdminNotification("New Account Post! 🎮", `${enhancedUser?.name} listed a ${data.gameType} account.`, true);
     setIsGlobalLoading(false);
   }, [rtdb, authUser, enhancedUser, broadcastAdminNotification]);

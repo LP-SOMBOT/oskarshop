@@ -4,6 +4,8 @@ import { adminDb } from '@/lib/firebaseAdmin';
 /**
  * POST: Places a sequential batch of top-up orders for a Special Package.
  * Path: /api/fazercards/place-special-package
+ * 
+ * Fetches API Key directly from DB for security and accuracy.
  */
 export async function POST(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing orderId or playerUid' }, { status: 400 });
     }
 
-    // Fetch config from DB
+    // 1. Fetch Config and API Key from Database
     const settingsSnap = await adminDb.ref('settings/fazercards').get();
     const config = settingsSnap.val();
     const apiKey = config?.apiKey;
@@ -23,13 +25,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'FazerCards automation is disabled or API key missing' }, { status: 403 });
     }
 
+    // 2. Load Order and Item Configuration
     const orderRef = adminDb.ref(`orders/${orderId}`);
     const orderSnap = await orderRef.get();
     const order = orderSnap.val();
 
     if (!order) return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
 
-    // Find the item to get its package definition
     const itemId = order.items?.[0]?.id;
     const itemSnap = await adminDb.ref(`products/${itemId}`).get();
     const item = itemSnap.val();
@@ -42,10 +44,10 @@ export async function POST(request: Request) {
 
     // Prevent double delivery
     if (order.specialPackageDelivery?.overallStatus === 'completed' || order.specialPackageDelivery?.overallStatus === 'processing') {
-      return NextResponse.json({ success: false, error: 'Package already being processed' });
+      return NextResponse.json({ success: false, error: 'Package already being processed', alreadyProcessed: true });
     }
 
-    // Initialize delivery state
+    // 3. Initialize Delivery State for Admin Log
     const deliveryOffers: any = {};
     offers.forEach((offer: any) => {
       deliveryOffers[offer.id] = {
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
 
     await orderRef.update({
       autoTopupStatus: 'processing',
+      autoTopupStartedAt: Date.now(),
       specialPackageDelivery: {
         totalOffers: offers.length,
         completedOffers: 0,
@@ -84,10 +87,10 @@ export async function POST(request: Request) {
     let failedCount = 0;
     const fazercardsOrderIds: string[] = [];
 
-    // Place each offer sequentially
+    // 4. Sequential Placement Loop
     for (const offer of offers) {
       try {
-        // Get required fields for this specific category to ensure correct mapping
+        // Fetch required fields for this specific category
         const offRes = await fetch(`https://api.fzr.cards/api/v2/topups/offers?category_id=${offer.category_id}`, {
           headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' }
         });
@@ -99,7 +102,6 @@ export async function POST(request: Request) {
           if (availableData[key]) fields[key] = availableData[key];
         });
 
-        // Use unique idempotency key per offer in batch
         const idempotencyKey = `oskar-pkg-${orderId}-${offer.id}-${Date.now()}`;
 
         const res = await fetch('https://api.fzr.cards/api/v2/topups/order', {
@@ -109,7 +111,11 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
             'Idempotency-Key': idempotencyKey
           },
-          body: JSON.stringify({ category_id: offer.category_id, offer_id: offer.offer_id, fields })
+          body: JSON.stringify({ 
+            category_id: offer.category_id, 
+            offer_id: offer.offer_id, 
+            fields 
+          })
         });
 
         const data = await res.json();
@@ -130,8 +136,8 @@ export async function POST(request: Request) {
           });
         }
 
-        // Delay to prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Delay to prevent rate limiting (respecting FazerCards limits)
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
       } catch (err: any) {
         failedCount++;
@@ -142,12 +148,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Determine overall status
+    // 5. Finalize Status and Notify
     let overallStatus = 'processing';
     if (failedCount === offers.length) overallStatus = 'failed';
 
     await orderRef.update({
-      autoTopupOrderId: fazercardsOrderIds[0] || null,
+      autoTopupOrderId: fazercardsOrderIds.join(', '),
       autoTopupOrderIds: fazercardsOrderIds,
       fazercardsOrderIds: fazercardsOrderIds,
       'specialPackageDelivery/completedOffers': completedCount,
@@ -155,8 +161,8 @@ export async function POST(request: Request) {
       'specialPackageDelivery/overallStatus': overallStatus
     });
 
-    // Notify Admin via Telegram
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/notify-telegram`, {
+    const origin = new URL(request.url).origin;
+    fetch(`${origin}/api/notify-telegram`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -165,7 +171,7 @@ export async function POST(request: Request) {
         itemName: order.items?.[0]?.title,
         amount: order.total,
         orderId: orderId,
-        message: `📦 Special Package INITIATED: ${completedCount}/${offers.length} offers placed. IDs: ${fazercardsOrderIds.join(', ')}`
+        message: `📦 Special Package INITIATED: ${completedCount}/${offers.length} parts placed. Tracking IDs: ${fazercardsOrderIds.join(', ')}`
       })
     }).catch(() => {});
 
@@ -178,7 +184,7 @@ export async function POST(request: Request) {
     });
 
   } catch (err: any) {
-    console.error('Special Package Placement Error:', err);
+    console.error('Special Package Execution Error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
