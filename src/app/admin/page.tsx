@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -1453,16 +1454,16 @@ export default function AdminPage() {
 
         <main className="flex-1 p-4 sm:p-6 lg:p-10 space-y-10 bg-slate-50 dark:bg-slate-950">
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
-            <div className="space-y-10 animate-in fade-in duration-700">
+            <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700">
                {/* PRIMARY STAT: TOTAL REVENUE */}
-               <Card className="rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative p-8 md:p-12">
+               <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative p-5 md:p-12">
                   <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none -z-10"><DollarSign size={160} /></div>
-                  <div className="flex flex-col items-center text-center space-y-4">
-                     <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                        <Wallet size={36} className="md:size-12" />
+                  <div className="flex flex-col items-center text-center space-y-3 md:space-y-4">
+                     <div className="w-12 h-12 md:w-20 md:h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
+                        <Wallet className="w-8 h-8 md:w-12 md:h-12" />
                      </div>
                      <div className="space-y-1">
-                        <p className="text-4xl md:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">
+                        <p className="text-3xl md:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">
                           ${dashboardReports.totalRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Total Revenue</p>
@@ -1471,7 +1472,7 @@ export default function AdminPage() {
                </Card>
 
                {/* PERIOD REVENUE GRID */}
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                   <DashboardTrendCard 
                     label="This Week" 
                     value={`$${dashboardReports.weekRev.toFixed(2)}`} 
@@ -1497,31 +1498,31 @@ export default function AdminPage() {
                </div>
 
                {/* PENDING ITEMS & USERS GRID */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
-                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-sm shrink-0">
-                           <Clock size={32} className="animate-pulse" />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-5 md:p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
+                     <div className="flex items-center gap-4 md:gap-6">
+                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.25rem] md:rounded-[1.5rem] bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-sm shrink-0">
+                           <Clock size={24} className="md:size-8 animate-pulse" />
                         </div>
-                        <div className="space-y-1">
-                           <h3 className="text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.pendingOrdersCount}</h3>
+                        <div className="space-y-0.5 md:space-y-1">
+                           <h3 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.pendingOrdersCount}</h3>
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Orders</p>
                         </div>
                      </div>
-                     <ChevronRight className="text-slate-200 group-hover:text-primary transition-colors" />
+                     <ChevronRight size={20} className="text-slate-200 group-hover:text-primary transition-colors" />
                   </Card>
 
-                  <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
-                     <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
-                           <Users size={32} />
+                  <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-5 md:p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
+                     <div className="flex items-center gap-4 md:gap-6">
+                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.25rem] md:rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+                           <Users size={24} className="md:size-8" />
                         </div>
-                        <div className="space-y-1">
-                           <h3 className="text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{allUsers.length}</h3>
+                        <div className="space-y-0.5 md:space-y-1">
+                           <h3 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{allUsers.length}</h3>
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Users</p>
                         </div>
                      </div>
-                     <ChevronRight className="text-slate-200 group-hover:text-primary transition-colors" />
+                     <ChevronRight size={20} className="text-slate-200 group-hover:text-primary transition-colors" />
                   </Card>
                </div>
 
@@ -3929,7 +3930,7 @@ export default function AdminPage() {
 
 function DashboardTrendCard({ label, value, icon: Icon, color, trend, isNegative }: { label: string, value: string, icon: any, color: string, trend: string, isNegative?: boolean }) {
    return (
-      <Card className="rounded-[2rem] p-6 sm:p-8 border-none shadow-xl bg-white dark:bg-slate-900 flex flex-col justify-between group hover:shadow-2xl transition-all">
+      <Card className="rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-8 border-none shadow-xl bg-white dark:bg-slate-900 flex flex-col justify-between group hover:shadow-2xl transition-all">
          <div className="flex justify-between items-start">
             <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm", "bg-slate-50 dark:bg-slate-800", color)}>
                <Icon size={24} />
@@ -3941,8 +3942,8 @@ function DashboardTrendCard({ label, value, icon: Icon, color, trend, isNegative
                {isNegative ? <TrendingDown size={10} className="mr-1 inline" /> : <TrendingUp size={10} className="mr-1 inline" />} {trend}
             </Badge>
          </div>
-         <div className="mt-6 space-y-0.5">
-            <p className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{value}</p>
+         <div className="mt-4 sm:mt-6 space-y-0.5">
+            <p className="text-lg md:text-3xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{value}</p>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
          </div>
       </Card>
@@ -4454,7 +4455,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
     const t = Number(c.timestamp);
     return isNaN(t) ? Infinity : t;
   })) : null;
-  const isStalling = claimTime && claimTime !== Infinity && (now - claimTime) >= 3600000 && !p.sellerReported && !p.sold && !p.warningDismissedAt;
+  const isStalling = claimTime && claimTime !== Infinity && (now - claimTime) >= 3600000 && !post.sellerReported && !post.sold && !post.warningDismissedAt;
 
   const waitValue = (claimTime && claimTime !== Infinity && !post.sellerReported && !post.sold) 
     ? safeFormatDistanceToNow(claimTime) 
@@ -4775,13 +4776,13 @@ function SideNavItem({ active, expanded, onClick, icon: Icon, label, className, 
 
 function StatCard({ label, value, icon: Icon, color, bgColor, pulse }: { label: string, value: string, icon: any, color: string, bgColor: string, pulse?: boolean }) {
   return (
-    <Card className="rounded-[2rem] p-6 sm:p-8 border-none shadow-lg bg-white dark:bg-slate-900 group hover:-translate-y-1 transition-all">
-      <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform group-hover:scale-110 relative", bgColor, color)}>
-         <Icon size={28} />
-         {pulse && <div className="absolute inset-0 bg-inherit rounded-2xl animate-ping opacity-20" />}
+    <Card className="rounded-[1.5rem] p-5 border-none shadow-lg bg-white dark:bg-slate-900 group hover:-translate-y-1 transition-all">
+      <div className={cn("w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center mb-4 md:mb-6 shadow-sm transition-transform group-hover:scale-110 relative", bgColor, color)}>
+         <Icon size={24} className="md:size-7" />
+         {pulse && <div className="absolute inset-0 bg-inherit rounded-xl animate-ping opacity-20" />}
       </div>
-      <h3 className="text-3xl font-headline font-bold text-slate-900 dark:text-white mb-1 truncate">{value}</h3>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+      <h3 className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white mb-0.5 md:mb-1 truncate">{value}</h3>
+      <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
     </Card>
   );
 }
