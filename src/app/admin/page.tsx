@@ -181,7 +181,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
+} from '@radix-ui/react-sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -1186,7 +1186,7 @@ export default function AdminPage() {
     }
   };
 
-  const addToPackage = () => {
+  const addToPackage = async () => {
     if (!packageBuilderState.category_id || !packageBuilderState.offer_id) return;
     
     const newOffer = {
@@ -1195,14 +1195,28 @@ export default function AdminPage() {
     };
 
     const updatedOffers = [...productForm.specialPackage.offers, newOffer];
-    const totalCost = updatedOffers.reduce((acc, o) => acc + (parseFloat(o.offerPrice) * o.quantity), 0);
+
+    // Fetch and merge fields to product's requiredFields
+    let newRequiredFields = [...(productForm.requiredFields || [])];
+    try {
+      const res = await fetch(`/api/fazercards/topups/offers?category_id=${packageBuilderState.category_id}`);
+      const data = await res.json();
+      if (data.ok && data.fields) {
+        data.fields.forEach((f: any) => {
+          if (!newRequiredFields.find(rf => rf.key === f.key)) {
+            newRequiredFields.push({ key: f.key, name: f.name || f.key });
+          }
+        });
+      }
+    } catch (e) {}
 
     setProductForm({
       ...productForm,
+      requiredFields: newRequiredFields,
       specialPackage: {
         ...productForm.specialPackage,
         offers: updatedOffers,
-        totalProviderCost: totalCost
+        totalProviderCost: 0 // No longer calculating/storing
       }
     });
 
@@ -1220,13 +1234,12 @@ export default function AdminPage() {
 
   const removeFromPackage = (id: string) => {
     const updatedOffers = productForm.specialPackage.offers.filter(o => o.id !== id);
-    const totalCost = updatedOffers.reduce((acc, o) => acc + (parseFloat(o.offerPrice) * o.quantity), 0);
     setProductForm({
       ...productForm,
       specialPackage: {
         ...productForm.specialPackage,
         offers: updatedOffers,
-        totalProviderCost: totalCost
+        totalProviderCost: 0
       }
     });
   };
@@ -3349,7 +3362,6 @@ export default function AdminPage() {
                                     <div className="min-w-0 flex-1">
                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">{off.categoryName}</p>
                                        <p className="font-bold text-sm truncate">{off.offerName}</p>
-                                       <p className="text-[10px] font-black text-primary">${off.offerPrice}</p>
                                     </div>
                                     <div className="flex items-center gap-3">
                                        <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-lg px-2 h-10">
@@ -3361,8 +3373,7 @@ export default function AdminPage() {
                                             onChange={(e) => {
                                               const newOffers = [...productForm.specialPackage.offers];
                                               newOffers[idx].quantity = parseInt(e.target.value) || 1;
-                                              const cost = newOffers.reduce((acc, o) => acc + (parseFloat(o.offerPrice) * o.quantity), 0);
-                                              setProductForm({...productForm, specialPackage: { ...productForm.specialPackage, offers: newOffers, totalProviderCost: cost }});
+                                              setProductForm({...productForm, specialPackage: { ...productForm.specialPackage, offers: newOffers, totalProviderCost: 0 }});
                                             }}
                                             className="w-10 bg-transparent border-none font-bold text-sm text-center focus:ring-0" 
                                           />
@@ -3408,7 +3419,7 @@ export default function AdminPage() {
                                        <SelectValue placeholder="Offer..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl border-none shadow-2xl z-[220]">
-                                       {fazerOffers.map(o => <SelectItem key={o.id} value={o.id} className="text-xs font-bold">{o.name} — ${o.price}</SelectItem>)}
+                                       {fazerOffers.map(o => <SelectItem key={o.id} value={o.id} className="text-xs font-bold">{o.name}</SelectItem>)}
                                     </SelectContent>
                                  </Select>
                               </div>
@@ -3419,22 +3430,6 @@ export default function AdminPage() {
                               </div>
                            </div>
                          )}
-
-                         <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100 dark:border-white/5">
-                            <div>
-                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Provider Cost (Estimated)</p>
-                               <p className="text-lg font-black text-indigo-500">${productForm.specialPackage.totalProviderCost.toFixed(2)}</p>
-                            </div>
-                            <div className="text-right">
-                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Margin</p>
-                               <p className={cn(
-                                 "text-lg font-black",
-                                 (parseFloat(productForm.price) - productForm.specialPackage.totalProviderCost) >= 0 ? "text-green-500" : "text-red-500"
-                               )}>
-                                 ${(parseFloat(productForm.price || "0") - productForm.specialPackage.totalProviderCost).toFixed(2)}
-                               </p>
-                            </div>
-                         </div>
 
                          <div className="space-y-1.5">
                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Delivery Note (shown to user)</Label>
@@ -3891,9 +3886,9 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                      </div>
                      <Badge className={cn(
                        "rounded-full px-5 py-2 font-black text-[10px] uppercase tracking-widest border-none shadow-sm",
-                       delivery.overallStatus === 'completed' ? "bg-green-500 text-white" :
-                       delivery.overallStatus === 'failed' ? "bg-red-500 text-white" :
-                       delivery.overallStatus === 'partial' ? "bg-orange-500 text-white" : "bg-amber-500 text-white"
+                       delivery.overallStatus === 'completed' ? "bg-green-50 text-white" :
+                       delivery.overallStatus === 'failed' ? "bg-red-50 text-white" :
+                       delivery.overallStatus === 'partial' ? "bg-orange-50 text-white" : "bg-amber-50 text-white"
                      )}>
                         {delivery.overallStatus === 'completed' ? "✅ All Delivered" :
                          delivery.overallStatus === 'processing' ? "⏳ In Progress" :

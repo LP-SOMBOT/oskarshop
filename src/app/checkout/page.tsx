@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -104,11 +105,18 @@ function CheckoutContent() {
 
   /**
    * Initialize dynamic fields object from pre-stored product metadata
+   * SMART DEDUPLICATION: Only show unique fields by key
    */
   useEffect(() => {
     if (item?.requiredFields && item.requiredFields.length > 0) {
       const initial: any = {};
-      item.requiredFields.forEach((f: any) => initial[f.key] = "");
+      const uniqueKeys = new Set();
+      item.requiredFields.forEach((f: any) => {
+        if (!uniqueKeys.has(f.key)) {
+           initial[f.key] = "";
+           uniqueKeys.add(f.key);
+        }
+      });
       setDynamicFields(initial);
     }
   }, [item?.requiredFields]);
@@ -389,10 +397,23 @@ function CheckoutContent() {
   
   const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
 
-  // Group Dynamic Fields for rendering
+  // Group Dynamic Fields for rendering with SMART DEDUPLICATION
   const isIdentifier = (k: string) => ['player_id', 'user_id', 'uid'].includes(k);
-  const identifierField = item?.requiredFields?.find(f => isIdentifier(f.key));
-  const otherFields = item?.requiredFields?.filter(f => !isIdentifier(f.key)) || [];
+  
+  const uniqueFields = useMemo(() => {
+    const list: any[] = [];
+    const keys = new Set();
+    (item?.requiredFields || []).forEach(f => {
+      if (!keys.has(f.key)) {
+        list.push(f);
+        keys.add(f.key);
+      }
+    });
+    return list;
+  }, [item?.requiredFields]);
+
+  const identifierField = uniqueFields.find(f => isIdentifier(f.key));
+  const otherFields = uniqueFields.filter(f => !isIdentifier(f.key));
 
   const formatLabel = (name: string) => {
     let label = name.replace(/_/g, ' ');
@@ -758,7 +779,7 @@ function CheckoutContent() {
               <div className="flex justify-between font-bold text-sm md:text-xl mb-2.5 md:mb-4 dark:text-white"><span>Wadarta dhabta ah</span><span className="text-primary font-headline text-lg md:text-3xl">${total.toFixed(2)}</span></div>
               <div className="space-y-1.5 md:space-y-3 pt-3 md:pt-5 border-t border-primary/10 dark:border-white/5 mt-2">
                 <div className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2"><span className="truncate">Lacag Diraha:</span><span className="font-mono font-bold text-foreground dark:text-slate-200 shrink-0">{gameDetails.senderNumber}</span></div>
-                {/* Display all captured game fields */}
+                {/* Display all captured unique game fields */}
                 {Object.entries(dynamicFields).map(([k, v]) => (
                   <div key={k} className="text-[10px] md:text-[13px] text-muted-foreground dark:text-slate-500 flex justify-between items-center gap-2">
                     <span className="truncate uppercase">{k.replace(/_/g, ' ')}:</span>
