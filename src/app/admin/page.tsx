@@ -3757,7 +3757,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
           />
           <Button 
             onClick={onSave} 
-            className="h-10 sm:h-12 md:h-16 px-4 sm:px-6 md:px-10 rounded-lg sm:rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform text-[10px] sm:text-xs md:text-sm"
+            className="h-10 sm:h-12 md:h-16 px-4 sm:px-6 md:px-10 rounded-lg sm:rounded-xl md:rounded-2xl font-black uppercase tracking-widest gap-2 bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform text-[10px] sm:text-xs md:sm"
           >
              <Save size={16} className="sm:size-5" /> <span className="hidden lg:inline">Save</span>
           </Button>
@@ -3865,17 +3865,17 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
           {/* Special Package Delivery Status UI */}
           {delivery && (
             <div className="mt-12 space-y-8 animate-in fade-in duration-500">
-               <div className="p-6 md:p-10 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] border dark:border-white/5 space-y-6">
-                  <div className="flex items-center justify-between">
+               <div className="p-4 sm:p-6 md:p-10 bg-slate-50 dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border dark:border-white/5 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                      <div className="flex items-center gap-3 text-primary">
                         <ShoppingBag size={24} />
                         <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight">Package Delivery Status</h4>
                      </div>
                      <Badge className={cn(
-                       "rounded-full px-5 py-2 font-black text-[10px] uppercase tracking-widest border-none shadow-sm",
-                       delivery.overallStatus === 'completed' ? "bg-green-50 text-white" :
-                       delivery.overallStatus === 'failed' ? "bg-red-50 text-white" :
-                       delivery.overallStatus === 'partial' ? "bg-orange-50 text-white" : "bg-amber-50 text-white"
+                       "rounded-full px-5 py-2 font-black text-[10px] uppercase tracking-widest border-none shadow-sm w-fit",
+                       delivery.overallStatus === 'completed' ? "bg-green-600 text-white" :
+                       delivery.overallStatus === 'failed' ? "bg-red-600 text-white" :
+                       delivery.overallStatus === 'partial' ? "bg-orange-500 text-white" : "bg-amber-500 text-white"
                      )}>
                         {delivery.overallStatus === 'completed' ? "✅ All Delivered" :
                          delivery.overallStatus === 'processing' ? "⏳ In Progress" :
@@ -3894,7 +3894,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
 
                   <div className="space-y-3 pt-4">
                      {Object.entries(delivery.offers).map(([offId, offData]: [string, any]) => (
-                       <div key={offId} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 group shadow-sm transition-all hover:bg-slate-50">
+                       <div key={offId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 group shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 gap-4">
                           <div className="flex items-center gap-4 min-w-0">
                              <div className={cn(
                                "w-2.5 h-2.5 rounded-full shrink-0",
@@ -3903,32 +3903,32 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                                offData.status === 'processing' ? "bg-amber-500 animate-pulse" : "bg-slate-300"
                              )} />
                              <div className="min-w-0">
-                                <p className="font-bold text-sm truncate">{offData.offerName}</p>
+                                <p className="font-bold text-sm truncate dark:text-white">{offData.offerName}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
                                    {offData.fazercardsOrderId ? (
                                      <a 
                                        href={`https://reseller.fazercards.com/panel/orders/${offData.fazercardsOrderId}`} 
                                        target="_blank" 
-                                       className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1"
+                                       className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1 truncate max-w-[150px] sm:max-w-none"
                                      >
-                                        #{offData.fazercardsOrderId} <ExternalLink size={10} />
+                                        #{offData.fazercardsOrderId} <ExternalLink size={10} className="shrink-0" />
                                      </a>
                                    ) : (
-                                     <span className="text-[10px] font-black text-slate-300 uppercase italic">Pending...</span>
+                                     <span className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase italic">Pending...</span>
                                    )}
                                 </div>
                              </div>
                           </div>
-                          <div className="text-right shrink-0 ml-4">
+                          <div className="text-left sm:text-right shrink-0">
                              <p className={cn(
                                "text-[10px] font-black uppercase tracking-widest",
                                offData.status === 'completed' ? "text-green-500" :
                                offData.status === 'failed' ? "text-red-500" :
-                               offData.status === 'processing' ? "text-amber-500" : "text-slate-400"
+                               offData.status === 'processing' ? "text-amber-500" : "text-slate-400 dark:text-slate-600"
                              )}>
                                 {offData.status}
                              </p>
-                             {offData.error && <p className="text-[8px] text-red-500 mt-0.5 max-w-[150px] truncate">{offData.error}</p>}
+                             {offData.error && <p className="text-[9px] text-red-500 mt-0.5 max-w-[200px] truncate" title={offData.error}>{offData.error}</p>}
                           </div>
                        </div>
                      ))}
@@ -4909,4 +4909,3 @@ export {
   EventAccountAdminCard,
   EventAccountParticipantsView
 }
-
