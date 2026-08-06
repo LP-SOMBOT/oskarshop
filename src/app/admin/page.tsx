@@ -144,6 +144,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 import Image from "next/image";
@@ -319,6 +320,7 @@ function SortableProductItem({ p, onEdit, onDelete }: { p: any, onEdit: () => vo
             <p className="font-bold text-sm md:text-lg text-slate-900 dark:text-white leading-tight truncate">{p.title}</p>
             {p.isOneTime && <Badge className="bg-red-500 text-white text-[7px] uppercase font-black px-1.5 h-4">One Time</Badge>}
             {p.autoTopupEnabled && <Badge className="bg-green-500 text-white text-[7px] uppercase font-black px-1.5 h-4">Auto</Badge>}
+            {p.category === 'special_package' && <Badge className="bg-indigo-500 text-white text-[7px] uppercase font-black px-1.5 h-4">Special Pkg</Badge>}
           </div>
           <p className="text-[10px] md:sm font-black text-primary mt-0.5">${p.price}</p>
         </div>
@@ -435,7 +437,27 @@ export default function AdminPage() {
   const [endEarlyTargetId, setEndEarlyTargetId] = useState<string | null>(null);
 
   const [gameForm, setGameForm] = useState({ title: "", icon: "", category: "top-up", autoDetectName: false, active: true });
-  const [productForm, setProductForm] = useState({ title: "", gameId: "", category: "top-up" as any, description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1, requiredFields: [] as any[] });
+  const [productForm, setProductForm] = useState({ 
+    title: "", 
+    gameId: "", 
+    category: "top-up" as any, 
+    description: "", 
+    price: "", 
+    discountedPrice: "", 
+    thumbnail: "", 
+    whatsappNumber: "", 
+    isOneTime: false, 
+    autoTopupEnabled: false, 
+    fazercardsCategory_id: "", 
+    fazercardsOffer_id: "", 
+    fazercardsMultiQuantity: 1, 
+    requiredFields: [] as any[],
+    specialPackage: {
+      offers: [] as any[],
+      totalProviderCost: 0,
+      deliveryNote: ""
+    }
+  });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", linkTo: "" });
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
@@ -476,6 +498,17 @@ export default function AdminPage() {
   const [fazerApiKey, setFazerApiKey] = useState("");
   const [recentSms, setRecentSms] = useState<any[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+
+  // Package Builder Selectors
+  const [isOfferSelectorOpen, setIsOfferSelectorOpen] = useState(false);
+  const [packageBuilderState, setPackageBuilderState] = useState({
+    category_id: "",
+    categoryName: "",
+    offer_id: "",
+    offerName: "",
+    offerPrice: "",
+    quantity: 1
+  });
 
   const [pointAdjustment, setPointAdjustment] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -715,7 +748,34 @@ export default function AdminPage() {
 
   const handleOpenProductDialog = async (p?: any, gameId?: string) => {
     setEditingProduct(p || null);
-    setProductForm(p ? { ...p, price: p.price.toString(), discountedPrice: p.discountedPrice?.toString() || "", isOneTime: !!p.isOneTime, autoTopupEnabled: !!p.autoTopupEnabled, fazercardsCategory_id: p.fazercardsCategory_id || "", fazercardsOffer_id: p.fazercardsOffer_id || "", fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1, requiredFields: p.requiredFields || [] } : { title: "", gameId: gameId || "", category: "top-up", description: "", price: "", discountedPrice: "", thumbnail: "", whatsappNumber: "", isOneTime: false, autoTopupEnabled: false, fazercardsCategory_id: "", fazercardsOffer_id: "", fazercardsMultiQuantity: 1, requiredFields: [] });
+    setProductForm(p ? { 
+      ...p, 
+      price: p.price.toString(), 
+      discountedPrice: p.discountedPrice?.toString() || "", 
+      isOneTime: !!p.isOneTime, 
+      autoTopupEnabled: !!p.autoTopupEnabled, 
+      fazercardsCategory_id: p.fazercardsCategory_id || "", 
+      fazercardsOffer_id: p.fazercardsOffer_id || "", 
+      fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1, 
+      requiredFields: p.requiredFields || [],
+      specialPackage: p.specialPackage || { offers: [], totalProviderCost: 0, deliveryNote: "" }
+    } : { 
+      title: "", 
+      gameId: gameId || "", 
+      category: "top-up", 
+      description: "", 
+      price: "", 
+      discountedPrice: "", 
+      thumbnail: "", 
+      whatsappNumber: "", 
+      isOneTime: false, 
+      autoTopupEnabled: false, 
+      fazercardsCategory_id: "", 
+      fazercardsOffer_id: "", 
+      fazercardsMultiQuantity: 1, 
+      requiredFields: [],
+      specialPackage: { offers: [], totalProviderCost: 0, deliveryNote: "" }
+    });
     
     setFazerRequiredFields([]);
 
@@ -796,6 +856,12 @@ export default function AdminPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (productForm.category === 'special_package' && productForm.specialPackage.offers.length === 0) {
+      toast({ title: "Error", description: "Please add at least one offer to the package", variant: "destructive" });
+      return;
+    }
+
     setIsUploading(true);
     try { 
       await saveProduct({ 
@@ -1098,6 +1164,71 @@ export default function AdminPage() {
     if (newPeriod === 'AM' && h >= 12) h -= 12;
     if (newPeriod === 'PM' && h < 12) h += 12;
     return `${h.toString().padStart(2, '0')}:${m}`;
+  };
+
+  // Package Builder Helpers
+  const handlePackageCategoryChange = async (cid: string, name: string) => {
+    setPackageBuilderState({ ...packageBuilderState, category_id: cid, categoryName: name, offer_id: "", offerName: "", offerPrice: "" });
+    setFazerOffers([]);
+    try {
+      const res = await fetch(`/api/fazercards/topups/offers?category_id=${cid}`);
+      const data = await res.json();
+      if (data.ok) {
+        const mapped = (data.items || data.offers || []).map((o: any) => ({
+          id: o.offer_id || o.id,
+          name: o.name,
+          price: o.price
+        }));
+        setFazerOffers(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch package offers", err);
+    }
+  };
+
+  const addToPackage = () => {
+    if (!packageBuilderState.category_id || !packageBuilderState.offer_id) return;
+    
+    const newOffer = {
+      id: `pkg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...packageBuilderState
+    };
+
+    const updatedOffers = [...productForm.specialPackage.offers, newOffer];
+    const totalCost = updatedOffers.reduce((acc, o) => acc + (parseFloat(o.offerPrice) * o.quantity), 0);
+
+    setProductForm({
+      ...productForm,
+      specialPackage: {
+        ...productForm.specialPackage,
+        offers: updatedOffers,
+        totalProviderCost: totalCost
+      }
+    });
+
+    // Reset selector
+    setPackageBuilderState({
+      category_id: "",
+      categoryName: "",
+      offer_id: "",
+      offerName: "",
+      offerPrice: "",
+      quantity: 1
+    });
+    setIsOfferSelectorOpen(false);
+  };
+
+  const removeFromPackage = (id: string) => {
+    const updatedOffers = productForm.specialPackage.offers.filter(o => o.id !== id);
+    const totalCost = updatedOffers.reduce((acc, o) => acc + (parseFloat(o.offerPrice) * o.quantity), 0);
+    setProductForm({
+      ...productForm,
+      specialPackage: {
+        ...productForm.specialPackage,
+        offers: updatedOffers,
+        totalProviderCost: totalCost
+      }
+    });
   };
 
   if (loading || isInitialLoading) {
@@ -3177,70 +3308,210 @@ export default function AdminPage() {
                        <Cpu className="text-primary w-5 h-5" />
                        <h5 className="font-bold text-sm">Reseller Automation</h5>
                     </div>
-                    <Switch 
-                      checked={productForm.autoTopupEnabled} 
-                      onCheckedChange={v => setProductForm({ ...productForm, autoTopupEnabled: v })} 
-                    />
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[10px] font-black uppercase text-slate-400">Handling Type</Label>
+                      <Select value={productForm.category} onValueChange={v => {
+                        const handling = v as any;
+                        setProductForm({ ...productForm, category: handling, specialHandling: handling });
+                      }}>
+                        <SelectTrigger className="h-8 rounded-lg bg-white dark:bg-slate-900 border-none px-3 font-bold shadow-sm w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-none shadow-2xl z-[210]">
+                          <SelectItem value="top-up" className="text-xs font-bold">Regular Top-up</SelectItem>
+                          <SelectItem value="booyah-pass" className="text-xs font-bold">Booyah Pass</SelectItem>
+                          <SelectItem value="special_package" className="text-xs font-bold">Special Package</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                  </div>
-                 
-                 {productForm.autoTopupEnabled && (
-                   <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-                      <div className="space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase text-slate-400">FazerCards Category</Label>
-                         <Select value={productForm.fazercardsCategory_id} onValueChange={handleFazerCategoryChange}>
-                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
-                               <SelectValue placeholder="Select category..." />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                               {(fazerCategories || []).map(cat => <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold">{cat.name}</SelectItem>)}
-                            </SelectContent>
-                         </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase text-slate-400">FazerCards Offer</Label>
-                         <Select value={productForm.fazercardsOffer_id} onValueChange={v => setProductForm({ ...productForm, fazercardsOffer_id: v })}>
-                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
-                               <SelectValue placeholder="Select offer..." />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                               {(fazerOffers || []).map(off => <SelectItem key={off.id} value={off.id} className="text-xs font-bold">{off.name} - ${off.price}</SelectItem>)}
-                            </SelectContent>
-                         </Select>
-                      </div>
 
-                      {fazerRequiredFields.length > 0 && (
-                        <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-2 text-primary text-[10px] font-bold">
-                           <span className="shrink-0 mt-0.5"><Info size={14} /></span>
-                           <p>Required fields for this category: {fazerRequiredFields.map(f => f.replace('_', ' ')).join(', ')}</p>
-                        </div>
-                      )}
+                 {productForm.category === 'special_package' && (
+                   <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-4">
+                         <div className="flex items-center justify-between px-1">
+                            <div className="flex items-center gap-2">
+                               <Layers className="text-primary w-4 h-4" />
+                               <h6 className="text-[11px] font-black uppercase tracking-tight">Package Builder</h6>
+                            </div>
+                            <Button type="button" size="sm" onClick={() => setIsOfferSelectorOpen(true)} className="rounded-lg font-black uppercase text-[9px] h-8 gap-2">
+                               <Plus size={14} /> Add Offer
+                            </Button>
+                         </div>
 
-                      <div className="space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase text-slate-400">Order multiplier</Label>
-                         <Select value={productForm.fazercardsMultiQuantity?.toString() || "1"} onValueChange={v => setProductForm({ ...productForm, fazercardsMultiQuantity: parseInt(v) })}>
-                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
-                               <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                               {[1, 2, 3, 4, 5].map(m => <SelectItem key={m} value={m.toString()} className="text-xs font-bold">{m}x Order</SelectItem>)}
-                            </SelectContent>
-                         </Select>
-                         <p className="text-[8px] text-muted-foreground italic ml-1">Labo ama sedex laab item ka</p>
+                         {/* Offers List */}
+                         <div className="space-y-3">
+                            {productForm.specialPackage.offers.length === 0 ? (
+                               <div className="py-8 text-center border-2 border-dashed rounded-2xl opacity-20 italic text-xs font-bold uppercase">Package is empty</div>
+                            ) : (
+                               productForm.specialPackage.offers.map((off, idx) => (
+                                 <div key={off.id} className="p-3 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 flex items-center justify-between gap-4 shadow-sm group">
+                                    <div className="min-w-0 flex-1">
+                                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">{off.categoryName}</p>
+                                       <p className="font-bold text-sm truncate">{off.offerName}</p>
+                                       <p className="text-[10px] font-black text-primary">${off.offerPrice}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                       <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-lg px-2 h-10">
+                                          <Label className="text-[8px] font-black uppercase text-slate-400 mr-2">Qty</Label>
+                                          <input 
+                                            type="number" 
+                                            min="1" max="10" 
+                                            value={off.quantity} 
+                                            onChange={(e) => {
+                                              const newOffers = [...productForm.specialPackage.offers];
+                                              newOffers[idx].quantity = parseInt(e.target.value) || 1;
+                                              const cost = newOffers.reduce((acc, o) => acc + (parseFloat(o.offerPrice) * o.quantity), 0);
+                                              setProductForm({...productForm, specialPackage: { ...productForm.specialPackage, offers: newOffers, totalProviderCost: cost }});
+                                            }}
+                                            className="w-10 bg-transparent border-none font-bold text-sm text-center focus:ring-0" 
+                                          />
+                                       </div>
+                                       <button type="button" onClick={() => removeFromPackage(off.id)} className="p-2 text-slate-300 hover:text-red-500 group-hover:bg-red-50 rounded-xl transition-all">
+                                          <X size={16} />
+                                       </button>
+                                    </div>
+                                 </div>
+                               ))
+                            )}
+                         </div>
+
+                         {/* Multi-Offer Selector Panel */}
+                         {isOfferSelectorOpen && (
+                           <div className="p-5 bg-slate-100 dark:bg-slate-800/80 rounded-[2rem] border-2 border-primary/20 space-y-4 animate-in zoom-in-95">
+                              <div className="space-y-1.5">
+                                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">1. Select Game / Service</Label>
+                                 <Select value={packageBuilderState.category_id} onValueChange={(val) => {
+                                   const cat = fazerCategories.find(c => c.id === val);
+                                   handlePackageCategoryChange(val, cat?.name || "Game");
+                                 }}>
+                                    <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                                       <SelectValue placeholder="Category..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[220]">
+                                       {fazerCategories.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.name}</SelectItem>)}
+                                    </SelectContent>
+                                 </Select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                 <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">2. Select Offer</Label>
+                                 <Select 
+                                   disabled={!packageBuilderState.category_id} 
+                                   value={packageBuilderState.offer_id} 
+                                   onValueChange={(val) => {
+                                     const off = fazerOffers.find(o => o.id === val);
+                                     setPackageBuilderState({ ...packageBuilderState, offer_id: val, offerName: off?.name || "Offer", offerPrice: off?.price || "0" });
+                                   }}
+                                 >
+                                    <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                                       <SelectValue placeholder="Offer..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[220]">
+                                       {fazerOffers.map(o => <SelectItem key={o.id} value={o.id} className="text-xs font-bold">{o.name} — ${o.price}</SelectItem>)}
+                                    </SelectContent>
+                                 </Select>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                 <Button type="button" onClick={addToPackage} disabled={!packageBuilderState.offer_id} className="flex-1 rounded-xl h-10 bg-primary font-black uppercase text-[10px]">Add to Package</Button>
+                                 <Button type="button" variant="ghost" onClick={() => setIsOfferSelectorOpen(false)} className="rounded-xl h-10 font-bold uppercase text-[10px]">Cancel</Button>
+                              </div>
+                           </div>
+                         )}
+
+                         <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-between shadow-sm border border-slate-100 dark:border-white/5">
+                            <div>
+                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Provider Cost (Estimated)</p>
+                               <p className="text-lg font-black text-indigo-500">${productForm.specialPackage.totalProviderCost.toFixed(2)}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Margin</p>
+                               <p className={cn(
+                                 "text-lg font-black",
+                                 (parseFloat(productForm.price) - productForm.specialPackage.totalProviderCost) >= 0 ? "text-green-500" : "text-red-500"
+                               )}>
+                                 ${(parseFloat(productForm.price || "0") - productForm.specialPackage.totalProviderCost).toFixed(2)}
+                               </p>
+                            </div>
+                         </div>
+
+                         <div className="space-y-1.5">
+                            <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Delivery Note (shown to user)</Label>
+                            <Textarea 
+                              maxLength={200}
+                              value={productForm.specialPackage.deliveryNote}
+                              onChange={e => setProductForm({ ...productForm, specialPackage: { ...productForm.specialPackage, deliveryNote: e.target.value } })}
+                              placeholder="e.g. All items delivered within 5 minutes"
+                              className="rounded-xl bg-white dark:bg-slate-900 border-none p-4 font-medium shadow-sm min-h-[80px]"
+                            />
+                         </div>
                       </div>
                    </div>
                  )}
+
+                 {productForm.category !== 'special_package' && (
+                   <>
+                     <div className="flex items-center justify-between border-t dark:border-white/5 pt-6">
+                        <div className="flex items-center gap-3">
+                           <Activity className="text-primary w-5 h-5" />
+                           <h5 className="font-bold text-sm">Auto-Topup</h5>
+                        </div>
+                        <Switch 
+                          checked={productForm.autoTopupEnabled} 
+                          onCheckedChange={v => setProductForm({ ...productForm, autoTopupEnabled: v })} 
+                        />
+                     </div>
+                     
+                     {productForm.autoTopupEnabled && (
+                       <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">FazerCards Category</Label>
+                             <Select value={productForm.fazercardsCategory_id} onValueChange={handleFazerCategoryChange}>
+                                <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                                   <SelectValue placeholder="Select category..." />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                                   {(fazerCategories || []).map(cat => <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold">{cat.name}</SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">FazerCards Offer</Label>
+                             <Select value={productForm.fazercardsOffer_id} onValueChange={v => setProductForm({ ...productForm, fazercardsOffer_id: v })}>
+                                <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                                   <SelectValue placeholder="Select offer..." />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                                   {(fazerOffers || []).map(off => <SelectItem key={off.id} value={off.id} className="text-xs font-bold">{off.name} - ${off.price}</SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                          </div>
+
+                          {fazerRequiredFields.length > 0 && (
+                            <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-2 text-primary text-[10px] font-bold">
+                               <span className="shrink-0 mt-0.5"><Info size={14} /></span>
+                               <p>Required fields: {fazerRequiredFields.map(f => f.replace('_', ' ')).join(', ')}</p>
+                            </div>
+                          )}
+
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Order multiplier</Label>
+                             <Select value={productForm.fazercardsMultiQuantity?.toString() || "1"} onValueChange={v => setProductForm({ ...productForm, fazercardsMultiQuantity: parseInt(v) })}>
+                                <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none px-4 font-bold shadow-sm">
+                                   <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
+                                   {[1, 2, 3, 4, 5].map(m => <SelectItem key={m} value={m.toString()} className="text-xs font-bold">{m}x Order</SelectItem>)}
+                                </SelectContent>
+                             </Select>
+                          </div>
+                       </div>
+                     )}
+                   </>
+                 )}
               </div>
 
-              <div className="space-y-2">
-                 <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Special Handling</Label>
-                 <Select value={productForm.category} onValueChange={v => setProductForm({ ...productForm, category: v as any })}>
-                    <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-[2.5rem] bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                       <SelectItem value="top-up" className="p-3 font-bold text-xs">Standard Delivery</SelectItem>
-                       <SelectItem value="booyah-pass" className="p-3 font-bold text-xs">Booyah Pass (Direct WhatsApp)</SelectItem>
-                    </SelectContent>
-                 </Select>
-              </div>
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5">
                  <div className="flex items-center gap-3">
                     <ShieldAlert className="text-red-500 w-5 h-5" />
@@ -3517,6 +3788,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
   if (!order) return null;
   const item = order.items?.[0];
   const buyer = allUsers?.find((u: any) => u.uid === order.userId);
+  const delivery = order.specialPackageDelivery;
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(order.id.toUpperCase());
@@ -3608,26 +3880,82 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
              {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
           </div>
 
-          {/* Additional Dynamic Fields Display */}
-          {order.gameDetails?.gameFields && Object.keys(order.gameDetails.gameFields).length > 0 && (
-            <div className="mt-10 pt-10 border-t dark:border-white/5">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6">Additional Player Identifiers</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-                {Object.entries(order.gameDetails.gameFields).map(([key, val]: any) => (
-                  <InsightStat 
-                    key={key} 
-                    label={formatLabel(key)} 
-                    value={val} 
-                    icon={Layers} 
-                    isPrimary 
-                  />
-                ))}
-              </div>
+          {/* Special Package Delivery Status UI */}
+          {delivery && (
+            <div className="mt-12 space-y-8 animate-in fade-in duration-500">
+               <div className="p-6 md:p-10 bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] border dark:border-white/5 space-y-6">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3 text-primary">
+                        <ShoppingBag size={24} />
+                        <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight">Package Delivery Status</h4>
+                     </div>
+                     <Badge className={cn(
+                       "rounded-full px-5 py-2 font-black text-[10px] uppercase tracking-widest border-none shadow-sm",
+                       delivery.overallStatus === 'completed' ? "bg-green-500 text-white" :
+                       delivery.overallStatus === 'failed' ? "bg-red-500 text-white" :
+                       delivery.overallStatus === 'partial' ? "bg-orange-500 text-white" : "bg-amber-500 text-white"
+                     )}>
+                        {delivery.overallStatus === 'completed' ? "✅ All Delivered" :
+                         delivery.overallStatus === 'processing' ? "⏳ In Progress" :
+                         delivery.overallStatus === 'partial' ? "⚠️ Partially Delivered" :
+                         delivery.overallStatus === 'failed' ? "❌ Failed" : "🕐 Pending"}
+                     </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                     <div className="flex justify-between items-end mb-1">
+                        <p className="text-[10px] font-black uppercase text-slate-400">{delivery.completedOffers} / {delivery.totalOffers} items delivered</p>
+                        <p className="text-xs font-black text-primary">{Math.round((delivery.completedOffers / delivery.totalOffers) * 100)}%</p>
+                     </div>
+                     <Progress value={(delivery.completedOffers / delivery.totalOffers) * 100} className="h-3 rounded-full bg-slate-200 dark:bg-slate-700" />
+                  </div>
+
+                  <div className="space-y-3 pt-4">
+                     {Object.entries(delivery.offers).map(([offId, offData]: [string, any]) => (
+                       <div key={offId} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 group shadow-sm transition-all hover:bg-slate-50">
+                          <div className="flex items-center gap-4 min-w-0">
+                             <div className={cn(
+                               "w-2.5 h-2.5 rounded-full shrink-0",
+                               offData.status === 'completed' ? "bg-green-500" :
+                               offData.status === 'failed' ? "bg-red-500" :
+                               offData.status === 'processing' ? "bg-amber-500 animate-pulse" : "bg-slate-300"
+                             )} />
+                             <div className="min-w-0">
+                                <p className="font-bold text-sm truncate">{offData.offerName}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                   {offData.fazercardsOrderId ? (
+                                     <a 
+                                       href={`https://reseller.fazercards.com/panel/orders/${offData.fazercardsOrderId}`} 
+                                       target="_blank" 
+                                       className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1"
+                                     >
+                                        #{offData.fazercardsOrderId} <ExternalLink size={10} />
+                                     </a>
+                                   ) : (
+                                     <span className="text-[10px] font-black text-slate-300 uppercase italic">Pending...</span>
+                                   )}
+                                </div>
+                             </div>
+                          </div>
+                          <div className="text-right shrink-0 ml-4">
+                             <p className={cn(
+                               "text-[10px] font-black uppercase tracking-widest",
+                               offData.status === 'completed' ? "text-green-500" :
+                               offData.status === 'failed' ? "text-red-500" : "text-slate-400"
+                             )}>
+                                {offData.status}
+                             </p>
+                             {offData.error && <p className="text-[8px] text-red-500 mt-0.5 max-w-[150px] truncate">{offData.error}</p>}
+                          </div>
+                       </div>
+                     ))}
+                  </div>
+               </div>
             </div>
           )}
 
-          {/* Automation Insight */}
-          {(order.autoTopupStatus || order.smsMatchedId) && (
+          {/* Automation Insight for Regular Orders */}
+          {!delivery && (order.autoTopupStatus || order.smsMatchedId) && (
             <div className="mt-12 p-6 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border dark:border-white/5 space-y-6">
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-indigo-500">

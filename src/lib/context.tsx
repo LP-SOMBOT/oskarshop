@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -93,12 +92,28 @@ type Order = {
   ffVerified?: boolean;
   ffRegion?: string;
   // Automation Fields
-  autoTopupStatus?: 'pending' | 'processing' | 'completed' | 'failed' | null;
+  autoTopupStatus?: 'pending' | 'processing' | 'completed' | 'failed' | 'partial' | null;
   autoTopupOrderId?: string;
   autoTopupError?: string;
   paymentMatchedAt?: number;
   smsMatchedId?: string;
   approvedBy?: string;
+  specialPackageDelivery?: {
+    totalOffers: number;
+    completedOffers: number;
+    failedOffers: number;
+    overallStatus: 'pending' | 'processing' | 'partial' | 'completed' | 'failed';
+    offers: Record<string, {
+      category_id: string;
+      offer_id: string;
+      offerName: string;
+      fazercardsOrderId: string | null;
+      status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+      placedAt: number | null;
+      completedAt: number | null;
+      error: string | null;
+    }>;
+  };
 };
 
 type AccountPost = {
@@ -1205,38 +1220,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
       
-      // TRIGGER AUTO TOP-UP ON PROCESSING
       const item = orderData?.items?.[0];
-      if (storeSettings.fazercards?.enabled && item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
-          if (orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
-            try {
-              const res = await fetch('/api/fazercards/place-topup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  orderId,
-                  category_id: item.fazercardsCategory_id,
-                  offer_id: item.fazercardsOffer_id,
-                  fields: orderData.gameDetails?.gameFields // PASS DYNAMIC FIELDS
-                })
-              });
-              const topupResult = await res.json();
-              if (topupResult.success) {
-                toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderIds}` });
-              } else {
-                toast({ title: "Auto Top-up Failed", description: topupResult.error, variant: "destructive" });
-              }
-            } catch (err) {
-              // Network/API failure - force cancellation
-              await update(ref(rtdb, `orders/${orderId}`), {
-                status: 'cancelled',
-                autoTopupStatus: 'failed',
-                autoTopupError: 'Connection failure calling provider API',
-                cancellationReason: 'Automation failure: Could not reach provider.'
-              });
-              toast({ title: "Automation Error", description: "Could not reach provider.", variant: "destructive" });
+      const prodSnap = await get(ref(rtdb, `products/${item?.id}`));
+      const fullItem = prodSnap.val();
+
+      if (storeSettings.fazercards?.enabled && orderData.autoTopupStatus !== 'completed' && orderData.autoTopupStatus !== 'processing') {
+        if (fullItem?.category === 'special_package') {
+          fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-special-package`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: orderId,
+              playerUid: orderData.ffUid || orderData.gameDetails?.playerID,
+              playerRegion: orderData.ffRegion || 'MENA',
+              gameFields: orderData.gameDetails?.gameFields
+            })
+          }).catch(e => console.error("Special Package trigger failed:", e));
+        } else if (item?.autoTopupEnabled) {
+          try {
+            const res = await fetch('/api/fazercards/place-topup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId,
+                category_id: item.fazercardsCategory_id,
+                offer_id: item.fazercardsOffer_id,
+                fields: orderData.gameDetails?.gameFields
+              })
+            });
+            const topupResult = await res.json();
+            if (topupResult.success) {
+              toast({ title: "Auto Top-up Complete!", description: `Provider ID: ${topupResult.fazercardsOrderId}` });
+            } else {
+              toast({ title: "Auto Top-up Failed", description: topupResult.error, variant: "destructive" });
             }
+          } catch (err) {
+            await update(ref(rtdb, `orders/${orderId}`), {
+              status: 'cancelled',
+              autoTopupStatus: 'failed',
+              autoTopupError: 'Connection failure calling provider API',
+              cancellationReason: 'Automation failure: Could not reach provider.'
+            });
+            toast({ title: "Automation Error", description: "Could not reach provider.", variant: "destructive" });
           }
+        }
       }
     }
 
@@ -1244,15 +1271,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const orderSnap = await get(ref(rtdb, `orders/${orderId}`));
       const orderData = orderSnap.val() as Order;
       
-      // Determine if this is a standard item order (Top-up)
-      // Exclude marketplace accounts, auction events, and items in the 'accounts' category
       const isAccountOrder = 
         orderData.items?.[0]?.gameId === 'accounts' || 
         orderData.items?.[0]?.gameId === 'event-accounts' || 
         orderData.gameDetails?.postId || 
         orderData.gameDetails?.isEventWinner;
 
-      // Add ranking point if successful item order
       if (orderData?.userId && !isAccountOrder) {
         await update(ref(rtdb, `users/${orderData.userId}`), { points: increment(1) });
       }
@@ -1314,7 +1338,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       newOrder.ffRegion = gameDetails.ffRegion || 'MENA';
     }
 
-    // REAL-TIME SMS MATCHING
     let wasAutoApproved = false;
     if (storeSettings.sms_webhook?.enabled) {
       try {
@@ -1341,20 +1364,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           newOrder.paymentMatchedAt = now;
           newOrder.smsMatchedId = smsId;
           newOrder.approvedBy = 'auto_sms';
+          newOrder.completedAt = now;
           wasAutoApproved = true;
           await update(ref(rtdb, `sms_payments/${smsId}`), { matched: true, matchedOrderId: orderId });
+
+          const prodSnap = await get(ref(rtdb, `products/${directItem.id}`));
+          const fullItem = prodSnap.val();
           
-          if (storeSettings.fazercards?.enabled && directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
-             fetch('/api/fazercards/place-topup', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({
-                 orderId: orderId,
-                 category_id: directItem.fazercardsCategory_id,
-                 offer_id: directItem.fazercardsOffer_id,
-                 fields: gameDetails.gameFields // PASS DYNAMIC FIELDS
-               })
-             }).catch(e => console.error("Initial placement auto-topup trigger failed:", e));
+          if (storeSettings.fazercards?.enabled) {
+            if (fullItem?.category === 'special_package') {
+              fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-special-package`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  orderId: orderId,
+                  playerUid: newOrder.ffUid || gameDetails.playerID,
+                  playerRegion: newOrder.ffRegion || 'MENA',
+                  gameFields: gameDetails.gameFields
+                })
+              }).catch(e => console.error("Auto SMS Special Package trigger failed:", e));
+            } else if (directItem.autoTopupEnabled && directItem.fazercardsCategory_id && directItem.fazercardsOffer_id) {
+               fetch('/api/fazercards/place-topup', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                   orderId: orderId,
+                   category_id: directItem.fazercardsCategory_id,
+                   offer_id: directItem.fazercardsOffer_id,
+                   fields: gameDetails.gameFields
+                 })
+               }).catch(e => console.error("Auto SMS placement auto-topup failed:", e));
+            }
           }
         }
       } catch (err) { console.error("Real-time SMS match scan failed:", err); }

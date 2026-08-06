@@ -119,24 +119,39 @@ export async function POST(request: Request) {
       });
     }
 
-    // 6. Trigger Auto Topup if enabled on item AND global reseller settings
+    // 6. Trigger Auto Topup (Check if special handling or regular)
     const item = matchOrder.items?.[0];
     const fazercardsConfigSnap = await adminDb.ref('settings/fazercards').get();
     const fazercardsConfig = fazercardsConfigSnap.val();
 
-    if (fazercardsConfig?.enabled && item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
-       // Fire and forget
-       fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-topup`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           orderId: matchId,
-           category_id: item.fazercardsCategory_id,
-           offer_id: item.fazercardsOffer_id,
-           playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID,
-           region: matchOrder.ffRegion || 'MENA'
-         })
-       }).catch(() => {});
+    if (fazercardsConfig?.enabled) {
+      // Fetch full item data to check specialHandling
+      const fullItemSnap = await adminDb.ref(`products/${item?.id}`).get();
+      const fullItem = fullItemSnap.val();
+
+      if (fullItem?.category === 'special_package') {
+        fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-special-package`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: matchId,
+            playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID,
+            playerRegion: matchOrder.ffRegion || 'MENA',
+            gameFields: matchOrder.gameDetails?.gameFields
+          })
+        }).catch(() => {});
+      } else if (item?.autoTopupEnabled && item?.fazercardsCategory_id && item?.fazercardsOffer_id) {
+         fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/fazercards/place-topup`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             orderId: matchId,
+             category_id: item.fazercardsCategory_id,
+             offer_id: item.fazercardsOffer_id,
+             fields: matchOrder.gameDetails?.gameFields
+           })
+         }).catch(() => {});
+      }
     }
 
     return NextResponse.json({ success: true, message: `Matched order ${matchId}` });

@@ -6,7 +6,7 @@
 export type GamePackage = {
   id: string;
   gameId: string;
-  category: 'top-up' | 'accounts' | 'booyah-pass';
+  category: 'top-up' | 'accounts' | 'booyah-pass' | 'special_package';
   title: string;
   description: string;
   price: number;
@@ -18,6 +18,20 @@ export type GamePackage = {
   orderIndex?: number;
   isOneTime?: boolean;
   autoTopupEnabled?: boolean;
+  specialHandling?: 'top-up' | 'booyah-pass' | 'special_package';
+  specialPackage?: {
+    offers: {
+      id: string;
+      category_id: string;
+      categoryName: string;
+      offer_id: string;
+      offerName: string;
+      offerPrice: string;
+      quantity: number;
+    }[];
+    totalProviderCost: number;
+    deliveryNote?: string;
+  };
   fazercardsCategory_id?: string;
   fazercardsOffer_id?: string;
   fazercardsMultiQuantity?: number;
