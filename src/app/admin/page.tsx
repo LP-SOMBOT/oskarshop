@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -454,8 +453,7 @@ export default function AdminPage() {
     requiredFields: [] as any[],
     specialPackage: {
       offers: [] as any[],
-      totalProviderCost: 0,
-      deliveryNote: ""
+      totalProviderCost: 0
     }
   });
   const [eventForm, setEventForm] = useState({ title: "", shortDescription: "", content: "", thumbnailUrl: "", type: "freefire_event" as any, active: true, duration: "", durationUnit: "days", redirectRoute: "", buttonText: "" });
@@ -758,7 +756,7 @@ export default function AdminPage() {
       fazercardsOffer_id: p.fazercardsOffer_id || "", 
       fazercardsMultiQuantity: p.fazercardsMultiQuantity || 1, 
       requiredFields: p.requiredFields || [],
-      specialPackage: p.specialPackage || { offers: [], totalProviderCost: 0, deliveryNote: "" }
+      specialPackage: p.specialPackage || { offers: [], totalProviderCost: 0 }
     } : { 
       title: "", 
       gameId: gameId || "", 
@@ -774,7 +772,7 @@ export default function AdminPage() {
       fazercardsOffer_id: "", 
       fazercardsMultiQuantity: 1, 
       requiredFields: [],
-      specialPackage: { offers: [], totalProviderCost: 0, deliveryNote: "" }
+      specialPackage: { offers: [], totalProviderCost: 0 }
     });
     
     setFazerRequiredFields([]);
@@ -2657,7 +2655,7 @@ export default function AdminPage() {
                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <SettingInput label="Service ID" value={emailConfigForm.recovery.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, serviceId: v } }))} placeholder="service_..." />
                                     <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, templateId: v } }))} placeholder="template_..." />
-                                    <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, publicKey: v } }))} placeholder="pk_..." />
+                                    <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.verification, publicKey: v } }))} placeholder="pk_..." />
                                  </div>
                               </div>
 
@@ -3169,7 +3167,7 @@ export default function AdminPage() {
                       <Label className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">Verification status</Label>
                    </div>
                    <div className="h-10 md:h-12 rounded-lg md:rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between px-3 border dark:border-white/5 shadow-inner">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5 min-0">
                         <span className={cn("truncate text-[10px] font-bold uppercase", selectedUser?.isVerified ? 'Verified' : 'unverified')}>
                           {selectedUser?.isVerified ? 'Verified' : 'unverified'}
                         </span>
@@ -3430,17 +3428,6 @@ export default function AdminPage() {
                               </div>
                            </div>
                          )}
-
-                         <div className="space-y-1.5">
-                            <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Delivery Note (shown to user)</Label>
-                            <Textarea 
-                              maxLength={200}
-                              value={productForm.specialPackage.deliveryNote}
-                              onChange={e => setProductForm({ ...productForm, specialPackage: { ...productForm.specialPackage, deliveryNote: e.target.value } })}
-                              placeholder="e.g. All items delivered within 5 minutes"
-                              className="rounded-xl bg-white dark:bg-slate-900 border-none p-4 font-medium shadow-sm min-h-[80px]"
-                            />
-                         </div>
                       </div>
                    </div>
                  )}
@@ -4349,7 +4336,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                 onClick={() => suspendSeller(post.uid, 3)} 
                 className="bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] h-12 rounded-xl shadow-lg"
                >
-                  Suspend Seller (3D)
+                  Suspension (3D)
                </Button>
 
                <Button 
@@ -4922,3 +4909,4 @@ export {
   EventAccountAdminCard,
   EventAccountParticipantsView
 }
+
