@@ -139,7 +139,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/accordion";
 import {
   Tabs,
   TabsContent,
@@ -3511,7 +3511,7 @@ export default function AdminPage() {
 
               {/* Automation Section */}
               <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl border dark:border-white/5 space-y-6">
-                 <div className="flex items-center justify-between">
+                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                        <Cpu className="text-primary w-5 h-5" />
                        <h5 className="font-bold text-sm">Reseller Automation</h5>
