@@ -87,7 +87,10 @@ import {
   Activity,
   Cpu,
   Unlink,
-  ExternalLink as LinkExternal
+  ExternalLink as LinkExternal,
+  TrendingUp,
+  TrendingDown,
+  PieChart as ChartIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -155,10 +158,13 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
 import { uploadToImgbb } from "@/lib/imgbb";
-import { format, formatDistanceToNow, subDays, startOfDay, isSameDay } from "date-fns";
+import { format, formatDistanceToNow, subDays, startOfDay, isSameDay, startOfMonth, endOfMonth, isWithinInterval, subMonths } from "date-fns";
 import { ref, onValue, off, get, query, limitToLast, remove } from "firebase/database";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -172,7 +178,6 @@ import {
   TouchSensor,
   useSensors,
   useSensor,
-  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -215,7 +220,7 @@ function MarketplaceExpiration({ createdAt, status }: { createdAt?: number, stat
   if (status === 'sold') return <Badge className="bg-slate-100 text-slate-400 border-none text-[8px] font-black uppercase">SOLD</Badge>;
 
   return (
-    <div className="flex col items-start text-left">
+    <div className="flex flex-col items-start text-left">
       <span className="text-[11px] font-black text-primary uppercase tracking-tight">
         {age}
       </span>
@@ -621,28 +626,78 @@ export default function AdminPage() {
     }
   }, [activeView, rtdb]);
 
-  const chartData = useMemo(() => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = subDays(new Date(), 6 - i);
-      return {
-        date: d,
-        label: format(d, 'EEE'),
-        v: 0
-      };
+  const dashboardReports = useMemo(() => {
+    const successfulOrders = allOrders.filter(o => o.status === 'successful');
+    const now = Date.now();
+    
+    // Revenue Calcs
+    const totalRev = successfulOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+    
+    const weekStart = subDays(startOfDay(new Date()), 7).getTime();
+    const weekRev = successfulOrders
+      .filter(o => o.createdAt >= weekStart)
+      .reduce((acc, o) => acc + (o.total || 0), 0);
+      
+    const monthStart = startOfMonth(new Date()).getTime();
+    const monthRev = successfulOrders
+      .filter(o => o.createdAt >= monthStart)
+      .reduce((acc, o) => acc + (o.total || 0), 0);
+      
+    const lastMonthStart = startOfMonth(subMonths(new Date(), 1)).getTime();
+    const lastMonthEnd = endOfMonth(subMonths(new Date(), 1)).getTime();
+    const lastMonthRev = successfulOrders
+      .filter(o => o.createdAt >= lastMonthStart && o.createdAt <= lastMonthEnd)
+      .reduce((acc, o) => acc + (o.total || 0), 0);
+
+    // Pending Logic
+    const pendingOrdersCount = allOrders.filter(o => o.status === 'pending').length;
+    const pendingAccountsCount = accountPosts.filter(p => p.status === 'pending').length;
+
+    // Chart Data (Pie)
+    const categoryDataMap: Record<string, number> = {};
+    successfulOrders.forEach(o => {
+      const cat = o.gameDetails?.category || "Top-up";
+      categoryDataMap[cat] = (categoryDataMap[cat] || 0) + (o.total || 0);
     });
+    const pieData = Object.entries(categoryDataMap).map(([name, value]) => ({ name, value }));
 
-    allOrders
-      .filter(order => order.status === 'successful')
-      .forEach(order => {
-        const orderDate = new Date(order.createdAt);
-        const dayMatch = last7Days.find(d => isSameDay(d.date, orderDate));
-        if (dayMatch) {
-          dayMatch.v += order.total;
-        }
-      });
+    // Recent System Updates (Timeline)
+    const updates = [
+      ...allOrders.slice(0, 5).map(o => ({ 
+        id: `ord-${o.id}`, 
+        title: `New Order #${o.id.toUpperCase()}`, 
+        time: o.createdAt, 
+        type: 'order', 
+        status: o.status === 'successful' ? 'Success' : 'Pending' 
+      })),
+      ...allUsers.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 3).map(u => ({
+        id: `usr-${u.uid}`,
+        title: `New User: ${u.name || 'Gamer'}`,
+        time: u.createdAt || Date.now(),
+        type: 'user',
+        status: 'Info'
+      })),
+      ...adminNotifications.slice(0, 3).map(n => ({
+        id: `not-${n.id}`,
+        title: n.title,
+        time: n.createdAt,
+        type: 'system',
+        status: 'Update'
+      }))
+    ].sort((a, b) => b.time - a.time).slice(0, 4);
 
-    return last7Days.map(d => ({ day: d.label, v: d.v }));
-  }, [allOrders]);
+    return {
+      totalRev,
+      weekRev,
+      monthRev,
+      lastMonthRev,
+      pendingOrdersCount,
+      pendingAccountsCount,
+      pieData,
+      updates,
+      totalAccounts: accountPosts.length
+    };
+  }, [allOrders, accountPosts, allUsers, adminNotifications]);
 
   const scheduleAlert = useMemo(() => {
     if (!scheduleForm.enabled || !mogadishuTime) return null;
@@ -965,7 +1020,7 @@ export default function AdminPage() {
     toast({ title: "Balance Updated" });
   };
 
-  const handleDragEnd = (event: DragEndEvent, gameId: string) => {
+  const handleDragEnd = (event: any, gameId: string) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -1399,23 +1454,169 @@ export default function AdminPage() {
         <main className="flex-1 p-4 sm:p-6 lg:p-10 space-y-10 bg-slate-50 dark:bg-slate-950">
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-10 animate-in fade-in duration-700">
-               <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                  <StatCard label="Total Revenue" value={`$${allOrders.filter(order => order.status === 'successful').reduce((acc, order) => acc + order.total, 0).toFixed(2)}`} icon={DollarSign} color="text-blue-500" bgColor="bg-blue-50 dark:bg-blue-500/10" />
-                  <StatCard label="Pending Items" value={(allOrders.filter(order => order.status === 'pending').length + accountPosts.filter(p => p.status === 'pending').length).toString()} icon={Clock} color="text-amber-500" bgColor="bg-amber-50 dark:bg-amber-500/10" pulse />
-                  <StatCard label="Active Users" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
-                  <StatCard label="Market Supply" value={accountPosts.filter(p => p.status === 'approved' && !p.sold).length.toString()} icon={ShieldCheck} color="text-emerald-500" bgColor="bg-emerald-50 dark:bg-emerald-500/10" />
-               </div>
-               <Card className="rounded-[2.5rem] p-4 sm:p-8 md:p-10 border-none shadow-xl bg-white dark:bg-slate-900 h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                     <AreaChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                        <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize:10, fontWeight:'bold'}} />
-                        <YAxis hide />
-                        <Tooltip contentStyle={{borderRadius: '16px', border:'none', boxShadow:'0 10px 40px rgba(0,0,0,0.1)'}} />
-                        <Area type="monotone" dataKey="v" stroke="#7B5CE5" fillOpacity={0.1} fill="#7B5CE5" strokeWidth={4} />
-                     </AreaChart>
-                  </ResponsiveContainer>
+               {/* PRIMARY STAT: TOTAL REVENUE */}
+               <Card className="rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative p-8 md:p-12">
+                  <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none -z-10"><DollarSign size={160} /></div>
+                  <div className="flex flex-col items-center text-center space-y-4">
+                     <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
+                        <Wallet size={36} className="md:size-12" />
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-4xl md:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">
+                          ${dashboardReports.totalRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Total Revenue</p>
+                     </div>
+                  </div>
                </Card>
+
+               {/* PERIOD REVENUE GRID */}
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <DashboardTrendCard 
+                    label="This Week" 
+                    value={`$${dashboardReports.weekRev.toFixed(2)}`} 
+                    icon={TrendingUp} 
+                    color="text-indigo-500" 
+                    trend="+12%" 
+                  />
+                  <DashboardTrendCard 
+                    label="This Month" 
+                    value={`$${dashboardReports.monthRev.toFixed(2)}`} 
+                    icon={CalendarIcon} 
+                    color="text-emerald-500" 
+                    trend="+5%" 
+                  />
+                  <DashboardTrendCard 
+                    label="Last Month" 
+                    value={`$${dashboardReports.lastMonthRev.toFixed(2)}`} 
+                    icon={History} 
+                    color="text-rose-500" 
+                    trend="-3%" 
+                    isNegative
+                  />
+               </div>
+
+               {/* PENDING ITEMS & ACCOUNTS GRID */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
+                     <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-sm shrink-0">
+                           <Clock size={32} className="animate-pulse" />
+                        </div>
+                        <div className="space-y-1">
+                           <h3 className="text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.pendingOrdersCount}</h3>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Orders</p>
+                        </div>
+                     </div>
+                     <ChevronRight className="text-slate-200 group-hover:text-primary transition-colors" />
+                  </Card>
+
+                  <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
+                     <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+                           <Users size={32} />
+                        </div>
+                        <div className="space-y-1">
+                           <h3 className="text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.totalAccounts}</h3>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Accounts</p>
+                        </div>
+                     </div>
+                     <ChevronRight className="text-slate-200 group-hover:text-primary transition-colors" />
+                  </Card>
+               </div>
+
+               {/* REVENUE BREAKDOWN & RECENT UPDATES */}
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Revenue Breakdown (60%) */}
+                  <Card className="lg:col-span-7 rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-10 flex flex-col">
+                     <div className="flex items-center gap-3 mb-8">
+                        <ChartIcon className="text-primary w-6 h-6" />
+                        <h4 className="font-headline font-bold text-xl uppercase tracking-tight text-slate-900 dark:text-white">Store Breakdown</h4>
+                     </div>
+                     <div className="flex-1 min-h-[300px] w-full flex items-center justify-center relative">
+                        <ResponsiveContainer width="100%" height={300}>
+                           <PieChart>
+                              <Pie
+                                data={dashboardReports.pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={80}
+                                outerRadius={110}
+                                paddingAngle={8}
+                                dataKey="value"
+                              >
+                                 {dashboardReports.pieData.map((entry, index) => (
+                                   <Cell key={`cell-${index}`} fill={['#0EA5E9', '#7B5CE5', '#EC4899', '#10B981'][index % 4]} stroke="none" />
+                                 ))}
+                              </Pie>
+                              <Tooltip 
+                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                                itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                              />
+                           </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                           <p className="text-3xl font-headline font-bold text-slate-900 dark:text-white leading-none">
+                             {dashboardReports.totalRev.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                           </p>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Total</p>
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+                        {dashboardReports.pieData.map((d, i) => (
+                          <div key={d.name} className="flex flex-col items-center gap-1">
+                             <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#0EA5E9', '#7B5CE5', '#EC4899', '#10B981'][i % 4] }} />
+                                <span className="text-[10px] font-bold text-slate-500 uppercase truncate max-w-[80px]">{d.name}</span>
+                             </div>
+                             <p className="text-xs font-black text-slate-900 dark:text-white">${d.value.toFixed(0)}</p>
+                          </div>
+                        ))}
+                     </div>
+                  </Card>
+
+                  {/* Recent System Updates (40%) */}
+                  <Card className="lg:col-span-5 rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 p-8 md:p-10 flex flex-col">
+                     <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                           <Activity className="text-primary w-6 h-6" />
+                           <h4 className="font-headline font-bold text-xl uppercase tracking-tight text-slate-900 dark:text-white">Recent Updates</h4>
+                        </div>
+                        <Badge variant="outline" className="rounded-full px-4 text-[10px] font-black uppercase border-slate-100 dark:border-white/5">Realtime</Badge>
+                     </div>
+                     <div className="space-y-6 flex-1">
+                        {dashboardReports.updates.map((up) => (
+                          <div key={up.id} className="flex items-center justify-between group">
+                             <div className="flex items-center gap-4 min-w-0">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+                                  up.type === 'order' ? 'bg-blue-50 text-blue-500 dark:bg-blue-500/10' : 
+                                  up.type === 'user' ? 'bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10' : 
+                                  'bg-purple-50 text-purple-500 dark:bg-purple-500/10'
+                                )}>
+                                   {up.type === 'order' ? <ShoppingBag size={18} /> : up.type === 'user' ? <UserCheck size={18} /> : <SettingsIcon size={18} />}
+                                </div>
+                                <div className="min-w-0">
+                                   <p className="text-sm font-bold text-slate-900 dark:text-white truncate pr-2 leading-tight">{up.title}</p>
+                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{format(new Date(up.time), 'h:mm a')}</p>
+                                </div>
+                             </div>
+                             <Badge className={cn(
+                               "rounded-full px-3 py-0.5 text-[9px] font-black uppercase border-none tracking-widest shrink-0",
+                               up.status === 'Success' ? 'bg-green-100 text-green-700 dark:bg-green-500/20' : 
+                               up.status === 'Pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20' : 
+                               'bg-blue-50 text-blue-600 dark:bg-blue-500/20'
+                             )}>
+                                {up.status}
+                             </Badge>
+                          </div>
+                        ))}
+                     </div>
+                     <Button variant="ghost" className="w-full mt-8 rounded-2xl h-12 font-bold text-slate-400 hover:text-primary uppercase text-[10px] tracking-widest gap-2">
+                        View All Activities <ChevronRight size={14} />
+                     </Button>
+                  </Card>
+               </div>
             </div>
           )}
 
@@ -1968,7 +2169,6 @@ export default function AdminPage() {
                                    <div className="py-8 text-center opacity-30 italic text-xs uppercase font-bold">No items added yet</div>
                                  ) : (
                                    <DndContext
-                                     sensors={sensors}
                                      collisionDetection={closestCenter}
                                      onDragEnd={(e) => handleDragEnd(e, g.id)}
                                      modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
@@ -2655,7 +2855,7 @@ export default function AdminPage() {
                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <SettingInput label="Service ID" value={emailConfigForm.recovery.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, serviceId: v } }))} placeholder="service_..." />
                                     <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, templateId: v } }))} placeholder="template_..." />
-                                    <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.verification, publicKey: v } }))} placeholder="pk_..." />
+                                    <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, publicKey: v } }))} placeholder="pk_..." />
                                  </div>
                               </div>
 
@@ -3727,6 +3927,28 @@ export default function AdminPage() {
   );
 }
 
+function DashboardTrendCard({ label, value, icon: Icon, color, trend, isNegative }: { label: string, value: string, icon: any, color: string, trend: string, isNegative?: boolean }) {
+   return (
+      <Card className="rounded-[2rem] p-6 sm:p-8 border-none shadow-xl bg-white dark:bg-slate-900 flex flex-col justify-between group hover:shadow-2xl transition-all">
+         <div className="flex justify-between items-start">
+            <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm", "bg-slate-50 dark:bg-slate-800", color)}>
+               <Icon size={24} />
+            </div>
+            <Badge className={cn(
+               "rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border-none",
+               isNegative ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+            )}>
+               {isNegative ? <TrendingDown size={10} className="mr-1 inline" /> : <TrendingUp size={10} className="mr-1 inline" />} {trend}
+            </Badge>
+         </div>
+         <div className="mt-6 space-y-0.5">
+            <p className="text-xl md:text-3xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{value}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+         </div>
+      </Card>
+   );
+}
+
 function RewardControl({ rank, value, onChange, onSave }: { rank: number, value: string, onChange: (v: string) => void, onSave: () => void }) {
   const icon = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
   const label = rank === 1 ? "Top 1 Reward (%)" : rank === 2 ? "Top 2 Reward (%)" : "Top 3 Reward (%)";
@@ -4241,11 +4463,6 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
   const handleForceSold = (uid: string) => {
     updateAccountPostStatus(post.id, 'sold', uid);
     toast({ title: "Account assigned to buyer!" });
-  };
-
-  const handleWhatsApp = (num: string) => {
-    const formatted = formatWhatsAppNumber(num);
-    window.open(`https://wa.me/${formatted}`, '_blank');
   };
 
   const finalBuyer = useMemo(() => {
