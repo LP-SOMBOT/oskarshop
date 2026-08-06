@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, Suspense } from "react";
@@ -202,29 +201,38 @@ function CheckoutContent() {
     return () => clearTimeout(timer);
   }, [ffUid, isAutoDetectEnabled, item?.fazercardsCategory_id]);
 
-  const basePrice = useMemo(() => Number(item?.price || 0), [item]);
-  const storeDiscountedPrice = useMemo(() => Number(item?.discountedPrice || 0), [item]);
+  const basePrice = useMemo(() => Number(item?.price || 0), [item]); // Standard Price
   
+  // Checkout rule: Start with the store's discounted price as the actual base value
+  const storeDiscountedPrice = useMemo(() => {
+    const d = Number(item?.discountedPrice || 0);
+    return (d > 0 && d < basePrice) ? d : basePrice;
+  }, [basePrice, item?.discountedPrice]);
+  
+  // Calculate display percentage (Additive part 1)
   const storeDiscountPct = useMemo(() => {
-    if (storeDiscountedPrice > 0 && storeDiscountedPrice < basePrice) {
+    if (storeDiscountedPrice < basePrice) {
       return Math.round(((basePrice - storeDiscountedPrice) / basePrice) * 100);
     }
     return 0;
   }, [basePrice, storeDiscountedPrice]);
 
   const rankDiscount = user?.leaderboardDiscount || 0;
-  const totalInitialDiscountPct = storeDiscountPct + rankDiscount;
+  
+  // Display rule: Add discounts together for the label
+  const combinedDisplayDiscountPct = storeDiscountPct + rankDiscount;
 
-  const priceAfterInitialDiscounts = useMemo(() => {
-    return basePrice * (1 - totalInitialDiscountPct / 100);
-  }, [basePrice, totalInitialDiscountPct]);
+  // Checkout rule: Only Leaderboard and Promo discounts are calculated relative to the discounted price
+  const priceAfterRankDiscount = useMemo(() => {
+    return storeDiscountedPrice * (1 - rankDiscount / 100);
+  }, [storeDiscountedPrice, rankDiscount]);
 
   const total = useMemo(() => {
     if (appliedPromoCode && promoDiscount > 0) {
-      return priceAfterInitialDiscounts * (1 - promoDiscount / 100);
+      return priceAfterRankDiscount * (1 - promoDiscount / 100);
     }
-    return priceAfterInitialDiscounts;
-  }, [priceAfterInitialDiscounts, appliedPromoCode, promoDiscount]);
+    return priceAfterRankDiscount;
+  }, [priceAfterRankDiscount, appliedPromoCode, promoDiscount]);
   
   const gameTitle = game?.title?.toLowerCase() || "";
   const isFreeFire = gameTitle.includes("free fire");
@@ -393,9 +401,7 @@ function CheckoutContent() {
   }
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
-  const hasAnyDiscount = totalInitialDiscountPct > 0 || promoDiscount > 0;
-  
-  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
+  const hasAnyDiscount = combinedDisplayDiscountPct > 0;
 
   // Group Dynamic Fields for rendering with SMART DEDUPLICATION
   const isIdentifier = (k: string) => ['player_id', 'user_id', 'uid'].includes(k);
@@ -419,6 +425,8 @@ function CheckoutContent() {
     let label = name.replace(/_/g, ' ');
     return label.charAt(0).toUpperCase() + label.slice(1);
   };
+
+  const isSubmitDisabled = checking || (ffUid.length > 0 && !verified && !isValidationUnsupported);
 
   return (
     <div className="relative min-h-[500px] px-1 sm:px-4 md:px-0">
@@ -619,7 +627,7 @@ function CheckoutContent() {
                     </div>
                     <Input 
                       type="tel" 
-                      placeholder="613982172"
+                      placeholder="613982172" 
                       required 
                       className="h-10 md:h-12 rounded-xl bg-gray-50 dark:bg-slate-800 border-none pl-16 md:pl-20 pr-4 md:pr-5 font-bold text-xs md:text-sm focus-visible:ring-primary shadow-inner" 
                       value={gameDetails.whatsappNumber} 
@@ -719,13 +727,13 @@ function CheckoutContent() {
                   </div>
                 )}
                 
-                {totalInitialDiscountPct > 0 && (
+                {combinedDisplayDiscountPct > 0 && (
                   <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2 text-primary">
                      <div className="flex items-center gap-2">
                         <span className="text-lg">{RankIcon}</span>
-                        <span className="font-bold uppercase tracking-tight">{language === 'so' ? 'Diskoonti' : 'Discount'} (-{totalInitialDiscountPct}%):</span>
+                        <span className="font-bold uppercase tracking-tight">{language === 'so' ? 'Diskoonti' : 'Discount'} (-{combinedDisplayDiscountPct}%):</span>
                      </div>
-                     <span className="font-black">-${(basePrice * totalInitialDiscountPct / 100).toFixed(2)}</span>
+                     <span className="font-black">-${(basePrice - priceAfterRankDiscount).toFixed(2)}</span>
                   </div>
                 )}
 
@@ -735,7 +743,7 @@ function CheckoutContent() {
                         <Ticket size={16} />
                         <span className="font-bold uppercase tracking-tight">Promo ({appliedPromoCode}) (-{promoDiscount}%):</span>
                      </div>
-                     <span className="font-black">-${(priceAfterInitialDiscounts * promoDiscount / 100).toFixed(2)}</span>
+                     <span className="font-black">-${(priceAfterRankDiscount * promoDiscount / 100).toFixed(2)}</span>
                   </div>
                 )}
 

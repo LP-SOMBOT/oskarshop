@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from "next/image";
@@ -25,24 +24,19 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
   const { buyNow, user, t, language } = useApp();
 
   const numPrice = Number(price);
-  // Instruction: Use product.discountedPrice directly for the main blue price display
   const numDiscounted = (discountedPrice && Number(discountedPrice) > 0 && Number(discountedPrice) < numPrice) 
     ? Number(discountedPrice) 
     : numPrice;
 
-  // Instruction: Calculate Math.round(((standardPrice - discountedPrice) / standardPrice) * 100) only for the badge tag string
   const storeDiscountPct = numPrice > numDiscounted 
     ? Math.round(((numPrice - numDiscounted) / numPrice) * 100) 
     : 0;
 
-  // Get user rank discount
   const rankDiscount = user?.leaderboardDiscount || 0;
+  const combinedDiscount = storeDiscountPct + rankDiscount;
   
-  // Feature Maintenance: Apply personal rank rewards to the store's price.
-  // We apply this math to numDiscounted to keep the store portion accurate as requested.
-  const currentPrice = rankDiscount > 0 
-    ? numDiscounted * (1 - rankDiscount / 100)
-    : numDiscounted;
+  // Checkout math: start with the store's discounted price, then apply rank reward
+  const currentPrice = numDiscounted * (1 - rankDiscount / 100);
 
   const RankIcon = user?.leaderboardRank === 1 ? "🥇" : user?.leaderboardRank === 2 ? "🥈" : user?.leaderboardRank === 3 ? "🥉" : null;
 
@@ -51,24 +45,18 @@ export default function GameCard({ id, title, description, thumbnail, price, dis
     buyNow({ id, title, price: currentPrice, gameId, thumbnail, isOneTime });
   };
 
-  const hasDiscount = numPrice > numDiscounted || rankDiscount > 0;
+  const hasDiscount = combinedDiscount > 0;
 
   return (
     <Card className="group overflow-hidden bg-white dark:bg-slate-900 border-gray-100 dark:border-white/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 rounded-[1.5rem] md:rounded-[2rem] flex flex-col h-full relative">
-      {storeDiscountPct > 0 && (
+      {combinedDiscount > 0 && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
-           <Badge className="bg-red-500 text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
-             {storeDiscountPct}% {language === 'so' ? 'DISKOONTI' : 'OFF'}
-           </Badge>
-        </div>
-      )}
-
-      {rankDiscount > 0 && storeDiscountPct === 0 && (
-        <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10 animate-in fade-in slide-in-from-left-2 duration-500">
-           <Badge className="bg-primary text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5">
-             {RankIcon && <span>{RankIcon}</span>}
-             <Sparkles size={10} className="md:w-3 md:h-3" />
-             {rankDiscount}% {language === 'so' ? 'REWARD' : 'REWARD'}
+           <Badge className={cn(
+             "text-white font-black px-2 py-1 md:px-3 md:py-1.5 rounded-xl shadow-xl border-2 border-white dark:border-slate-800 uppercase text-[8px] md:text-[10px] tracking-widest flex items-center gap-1.5",
+             storeDiscountPct > 0 ? "bg-red-500" : "bg-primary"
+           )}>
+             {rankDiscount > 0 && RankIcon && <span>{RankIcon}</span>}
+             {combinedDiscount}% {language === 'so' ? 'DISKOONTI' : 'OFF'}
            </Badge>
         </div>
       )}
