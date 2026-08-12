@@ -2785,7 +2785,7 @@ export default function AdminPage() {
                                           </div>
 
                                           <div className="space-y-1.5">
-                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 Webhook-URL">Webhook URL</Label>
+                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook URL</Label>
                                              <div className="flex gap-2">
                                                 <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
                                                 <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
@@ -2967,7 +2967,6 @@ export default function AdminPage() {
                                  />
                                  <div className="space-y-2">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Admin Chat IDs (Comma Separated)</Label>
-                                    <span className="sr-only">Admin Chat IDs Textarea</span>
                                     <Textarea 
                                       value={telegramForm.telegramAdminChatIds} 
                                       onChange={e => setTelegramForm(f => ({ ...f, telegramAdminChatIds: e.target.value }))} 
@@ -3044,12 +3043,10 @@ export default function AdminPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
-                                    <span className="sr-only">English Terms Textarea</span>
                                     <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
                                  </div>
                                  <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Somali Terms (Shuruudaha)</Label>
-                                    <span className="sr-only">Somali Terms Textarea</span>
                                     <Textarea value={termsForm.so} onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Geli shuruudaha afka Soomaaliga..." />
                                  </div>
                               </div>
@@ -3103,7 +3100,6 @@ export default function AdminPage() {
                                     <SettingInput label="Maintenance Title" value={appStatusForm.offlineTitle} onChange={v => setAppStatusForm(f => ({ ...f, offlineTitle: v }))} placeholder="Under Maintenance" />
                                     <div className="space-y-3">
                                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Maintenance Description</Label>
-                                       <span className="sr-only">Maintenance Description Textarea</span>
                                        <Textarea value={appStatusForm.offlineBody} onChange={e => setAppStatusForm(f => ({ ...f, offlineBody: e.target.value }))} className="min-h-[150px] rounded-3xl bg-slate-50 dark:bg-slate-800 border-none p-6 font-medium shadow-inner" placeholder="Describe the downtime..." />
                                     </div>
                                  </div>
@@ -4432,7 +4428,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                 <div className="pt-6 space-y-6">
                    <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
                    <div className="grid grid-cols-2 gap-4">
-                      <Button variant="outline" handleCopyId={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                      <Button variant="outline" onClick={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
                          <Copy size={16} /> Copy ID
                       </Button>
                       <Button variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">

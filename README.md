@@ -1,4 +1,4 @@
-eaitlea
+heaitlea
 # Oskar Shop - Game Top-Up & Accounts
 
 A modern, high-performance PWA for gaming top-ups and account trading, built with Next.js 15, Firebase Realtime Database.
