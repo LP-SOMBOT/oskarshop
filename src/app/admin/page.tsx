@@ -501,6 +501,7 @@ export default function AdminPage() {
   const [fazerApiKey, setFazerApiKey] = useState("");
   const [recentSms, setRecentSms] = useState<any[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+  const [smsMatcherSecret, setSmsMatcherSecret] = useState("");
 
   // Package Builder Selectors
   const [isOfferSelectorOpen, setIsOfferSelectorOpen] = useState(false);
@@ -590,6 +591,7 @@ export default function AdminPage() {
       });
 
       setFazerApiKey(storeSettings.fazercards?.apiKey || "");
+      setSmsMatcherSecret(storeSettings.sms_webhook?.secret || "oskarshop22");
 
       const lb = storeSettings.leaderboard || {
         rewardsActive: true,
@@ -628,7 +630,6 @@ export default function AdminPage() {
 
   const dashboardReports = useMemo(() => {
     const successfulOrders = allOrders.filter(o => o.status === 'successful');
-    const now = Date.now();
     
     // Revenue Calcs
     const totalRev = successfulOrders.reduce((acc, o) => acc + (o.total || 0), 0);
@@ -651,7 +652,6 @@ export default function AdminPage() {
 
     // Pending Logic
     const pendingOrdersCount = allOrders.filter(o => o.status === 'pending').length;
-    const pendingAccountsCount = accountPosts.filter(p => p.status === 'pending').length;
 
     // Chart Data (Pie)
     const categoryDataMap: Record<string, number> = {};
@@ -692,12 +692,10 @@ export default function AdminPage() {
       monthRev,
       lastMonthRev,
       pendingOrdersCount,
-      pendingAccountsCount,
       pieData,
-      updates,
-      totalAccounts: accountPosts.length
+      updates
     };
-  }, [allOrders, accountPosts, allUsers, adminNotifications]);
+  }, [allOrders, allUsers, adminNotifications]);
 
   const scheduleAlert = useMemo(() => {
     if (!scheduleForm.enabled || !mogadishuTime) return null;
@@ -2771,15 +2769,29 @@ export default function AdminPage() {
                                           />
                                        </div>
 
-                                       <div className="space-y-3">
-                                          <div className="space-y-1">
-                                             <Label className="text-[9px] font-black uppercase text-slate-400">Webhook URL</Label>
+                                       <div className="space-y-4">
+                                          <div className="space-y-1.5">
+                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook Secret Key</Label>
+                                             <div className="flex gap-2">
+                                                <Input 
+                                                  value={smsMatcherSecret} 
+                                                  onChange={e => setSmsMatcherSecret(e.target.value)} 
+                                                  className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-bold" 
+                                                  placeholder="e.g. oskarshop22" 
+                                                />
+                                                <Button size="sm" onClick={() => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, secret: smsMatcherSecret } }).then(()=>toast({title:"Secret Updated"}))} className="rounded-xl px-4 font-black uppercase text-[10px]">Update</Button>
+                                             </div>
+                                          </div>
+
+                                          <div className="space-y-1.5">
+                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook URL</Label>
                                              <div className="flex gap-2">
                                                 <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
                                                 <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
                                              </div>
                                           </div>
                                        </div>
+
                                        <Accordion type="single" collapsible>
                                           <AccordionItem value="sms-steps" className="border-none">
                                              <AccordionTrigger className="text-[9px] font-black uppercase py-2">Setup Instructions</AccordionTrigger>
@@ -2787,7 +2799,7 @@ export default function AdminPage() {
                                                 <p>1. Install "SMS Forwarder" from Play Store</p>
                                                 <p>2. Create rule: HTTP POST</p>
                                                 <p>3. URL: Webhook URL above</p>
-                                                <p>4. Header: x-webhook-secret: oskar-secure-secret-2026</p>
+                                                <p>4. Header: x-webhook-secret: <span className="font-bold text-primary">{smsMatcherSecret}</span></p>
                                                 <p>5. Body: {"{\"sms\": \"%body%\"}"}</p>
                                                 <p>6. Filter: sender contains "EVCPLUS"</p>
                                              </AccordionContent>
@@ -3450,13 +3462,13 @@ export default function AdminPage() {
               <div className="flex justify-center mb-4">
                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
                     {gameForm.icon ? <Image src={gameForm.icon} alt={gameForm.title} fill className="object-cover" /> : <ImageIcon className="text-slate-300" />}
-                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'game')} />
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'game')} />
                  </div>
               </div>
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
-                 <Select value={gameForm.category} onValueChange={v => setLanguage(v as any)}>
+                 <Select value={gameForm.category} onValueChange={v => setGameForm({...gameForm, category: v as any})}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs uppercase">Top-Up Items</SelectItem>
@@ -3496,7 +3508,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                  <SettingInput label="Package Title" value={productForm.title} onChange={v => setProductForm({ ...productForm, title: v })} placeholder="110 Diamonds" />
                  <div className="space-y-2">
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Parent Game</Label>
                     <Select value={productForm.gameId} onValueChange={v => setProductForm({ ...productForm, gameId: v })}>
                        <SelectTrigger className="h-12 md:h-16 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 md:px-6 font-bold shadow-inner"><SelectValue placeholder="Select Game" /></SelectTrigger>
                        <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
@@ -4685,7 +4697,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                         {post.completedAt && !isNaN(new Date(post.completedAt).getTime()) ? format(new Date(post.completedAt), "MMM d, yyyy") : "---"}
                      </p>
                      <p className="text-xs md:text-lg font-bold text-primary">
-                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                        {post.completedAt && !isNaN(new Date(post.completedAt).getTime()) ? format(new Date(post.completedAt), "HH:mm") : "PENDING..."}
                      </p>
                   </div>
                 </div>

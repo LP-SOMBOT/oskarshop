@@ -3,24 +3,23 @@ import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * Robust helper to extract EVC Plus payment data from raw SMS.
- * Supports various Somali EVC Plus formats.
+ * Template: [-EVCPLUS-] waxaad $3.50 ka heshay 0613982172, Tar: 09/08/26 17:58:02...
  */
 function extractEVCPayment(smsText: string) {
   try {
-    // Clean string: remove newlines and extra spaces
     const cleanText = smsText.replace(/\s+/g, ' ').trim();
 
-    // 1. Amount Extraction (Support both "ka heshay" and "soo xawilay" formats)
+    // 1. Amount Extraction (e.g. $3.50)
     const amountMatch = cleanText.match(/\$([0-9]+\.?[0-9]*)/);
     if (!amountMatch) return null;
     const amount = parseFloat(amountMatch[1]);
 
-    // 2. Phone Extraction (Look for 9-digit Somali number starting with 6)
-    // Matches 061..., 25261..., 61...
-    const phoneMatch = cleanText.match(/(?:0|252)?(6[0-9]{8})/);
+    // 2. Phone Extraction (e.g. 0613982172)
+    // Looking for Somali formats: 061..., 61..., 25261...
+    const phoneMatch = cleanText.match(/(?:0|252)?(61[0-9]{7})/);
     if (!phoneMatch) return null;
     
-    // Normalize: return just the 9-digit local part (e.g., 615484693)
+    // Normalize to 9-digit local format (e.g. 613982172)
     const phone = phoneMatch[1];
 
     return { amount, phone };
@@ -38,15 +37,17 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
 
   try {
-    // 1. Security Check
-    const secret = request.headers.get('x-webhook-secret');
-    const configSecret = process.env.SMS_WEBHOOK_SECRET || 'oskar-secure-secret-2026';
+    // 1. Fetch Dynamic Secret Key from Database
+    const settingsSnap = await adminDb.ref('settings/sms_webhook').get();
+    const dbSecret = settingsSnap.val()?.secret || 'oskarshop22';
+    
+    const incomingSecret = request.headers.get('x-webhook-secret');
 
-    if (secret !== configSecret) {
+    if (incomingSecret !== dbSecret) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Unauthorized access', 
-        message: 'The x-webhook-secret header is missing or incorrect.' 
+        error: 'Unauthorized', 
+        message: 'Invalid x-webhook-secret header.' 
       }, { status: 401 });
     }
 
@@ -54,29 +55,25 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const smsText = body.sms || body.text || body.message || '';
 
+    // Always return 200 once authenticated to acknowledge receipt to the forwarder
     if (!smsText) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'No content', 
-        message: 'Payload must contain an "sms" field.' 
-      }, { status: 400 });
+      return NextResponse.json({ success: true, message: 'Received empty payload.' });
     }
 
     // 3. Extraction
     const extracted = extractEVCPayment(smsText);
     if (!extracted) {
-      // Still log the attempt for debugging
       await adminDb.ref('sms_payments_failed').push({
         raw: smsText,
         receivedAt: now,
-        reason: 'Regex failed to extract amount or phone'
+        reason: 'Regex failed to extract data from message.'
       });
 
       return NextResponse.json({ 
-        success: false, 
-        error: 'Parsing failed', 
-        message: 'Could not extract amount or phone from SMS. Ensure it is an EVC Plus message.',
-        raw_text: smsText
+        success: true, 
+        matched: false,
+        message: 'Could not parse amount or sender from this SMS template.',
+        received: smsText
       });
     }
 
@@ -86,47 +83,45 @@ export async function POST(request: Request) {
     const ordersSnap = await adminDb.ref('orders').orderByChild('status').equalTo('pending').get();
     const orders = ordersSnap.val() || {};
 
-    const twoHours = 2 * 60 * 60 * 1000;
-    const matchingOrders = Object.entries(orders)
+    const windowMs = 2 * 60 * 60 * 1000; // 2 hour window
+    const matchingEntries = Object.entries(orders)
       .filter(([id, order]: [string, any]) => {
-        // Skip already matched or processed
-        if (order.smsMatchedId || order.status !== 'pending') return false;
+        if (order.smsMatchedId) return false;
 
-        // Clean order phone for comparison
         const orderPhone = (order.gameDetails?.senderNumber || order.userPhone || '')
           .toString().replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '');
 
         const phoneMatch = orderPhone === phone;
         const amountMatch = Math.abs(parseFloat(order.total) - amount) < 0.01;
-        const withinWindow = Math.abs(now - (order.createdAt || 0)) <= twoHours;
+        const withinWindow = Math.abs(now - (order.createdAt || 0)) <= windowMs;
 
         return phoneMatch && amountMatch && withinWindow;
       })
-      .sort((a, b) => (a[1].createdAt - b[1].createdAt)); // Oldest first
+      .sort((a, b) => (a[1].createdAt - b[1].createdAt));
 
-    // 5. Always Log the SMS (Success or Failure)
+    // 5. Log the SMS
     const smsRef = adminDb.ref('sms_payments').push();
-    const smsLogData = {
+    await smsRef.set({
       raw: smsText,
       senderPhone: phone,
       amount,
       receivedAt: now,
-      matched: matchingOrders.length > 0,
-      matchedOrderId: matchingOrders.length > 0 ? matchingOrders[0][0] : null
-    };
-    await smsRef.set(smsLogData);
+      matched: matchingEntries.length > 0,
+      matchedOrderId: matchingEntries.length > 0 ? matchingEntries[0][0] : null
+    });
 
-    if (matchingOrders.length === 0) {
+    if (matchingEntries.length === 0) {
       return NextResponse.json({ 
         success: true, 
-        message: 'SMS Logged, but no matching pending order found.',
-        data: { amount, phone, time: new Date(now).toISOString() }
+        matched: false,
+        message: 'SMS received and parsed, but no matching pending order found in the 2h window.',
+        data: { amount, phone }
       });
     }
 
-    const [matchId, matchOrder] = matchingOrders[0] as [string, any];
+    const [matchId, matchOrder] = matchingEntries[0] as [string, any];
 
-    // 6. Execute Matching (DB Updates)
+    // 6. Execute Approval
     await adminDb.ref(`orders/${matchId}`).update({
       status: 'successful',
       paymentMatchedAt: now,
@@ -137,17 +132,10 @@ export async function POST(request: Request) {
 
     // 7. Reward Points
     if (matchOrder.userId) {
-      const isAccountOrder = 
-        matchOrder.items?.[0]?.gameId === 'accounts' || 
-        matchOrder.items?.[0]?.gameId === 'event-accounts' || 
-        matchOrder.gameDetails?.postId || 
-        matchOrder.gameDetails?.isEventWinner;
-
+      const isAccountOrder = matchOrder.items?.[0]?.gameId === 'accounts' || matchOrder.gameDetails?.postId;
       if (!isAccountOrder) {
         const { ServerValue } = await import('firebase-admin/database');
-        await adminDb.ref(`users/${matchOrder.userId}`).update({
-          points: ServerValue.increment(1)
-        });
+        await adminDb.ref(`users/${matchOrder.userId}`).update({ points: ServerValue.increment(1) });
       }
     }
 
@@ -164,43 +152,26 @@ export async function POST(request: Request) {
         fetch(`${origin}/api/fazercards/place-special-package`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: matchId,
-            playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID,
-            playerRegion: matchOrder.ffRegion || 'MENA',
-            gameFields: matchOrder.gameDetails?.gameFields
-          })
+          body: JSON.stringify({ orderId: matchId, playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID, playerRegion: matchOrder.ffRegion || 'MENA' })
         }).catch(() => {});
       } else if (item?.autoTopupEnabled) {
          fetch(`${origin}/api/fazercards/place-topup`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             orderId: matchId,
-             category_id: item.fazercardsCategory_id,
-             offer_id: item.fazercardsOffer_id,
-             fields: matchOrder.gameDetails?.gameFields
-           })
+           body: JSON.stringify({ orderId: matchId, category_id: item.fazercardsCategory_id, offer_id: item.fazercardsOffer_id })
          }).catch(() => {});
       }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: `Successfully matched and approved Order #${matchId.toUpperCase()}`,
-      data: {
-        orderId: matchId,
-        amount,
-        sender: phone
-      }
+      matched: true,
+      message: `Matched Order #${matchId.toUpperCase()}`,
+      data: { amount, sender: phone }
     });
 
   } catch (err: any) {
     console.error('SMS Webhook Error:', err);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal Server Error', 
-      detail: err.message 
-    }, { status: 500 });
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
