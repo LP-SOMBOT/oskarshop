@@ -1616,7 +1616,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'leaderboard' && (
-            <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700">
+            <div className="space-y-8 md:space-y-12 leaderboard-view animate-in fade-in duration-700">
                <Card className="rounded-[2rem] sm:rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
                   <div className="relative p-4 sm:p-8 md:p-12 space-y-12 md:space-y-12">
                      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none -z-10" />
@@ -1710,7 +1710,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'account-events' && (
-            <div className="space-y-12 animate-in fade-in duration-700">
+            <div className="space-y-12 account-events-view animate-in fade-in duration-700">
                <div className="pt-2">
                   <Button 
                     onClick={() => router.push('/admin/event-accounts/edit')} 
@@ -1749,7 +1749,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'orders' && (
-            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-6 orders-view animate-in slide-in-from-bottom-4 duration-500">
                {selectedOrderId ? (
                  <OrderDetailView 
                    order={selectedOrder} 
@@ -1891,7 +1891,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'account-posts' && (
-            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-8 account-posts-view animate-in slide-in-from-bottom-4 duration-500">
                {selectedAccountId ? (
                  <AccountDetailView 
                    post={selectedAccount} 
@@ -2091,7 +2091,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'inventory' && (
-            <div className="space-y-12 animate-in fade-in duration-700">
+            <div className="space-y-12 inventory-view animate-in fade-in duration-700">
                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                   <Button 
                     onClick={() => handleOpenGameDialog()} 
@@ -2196,7 +2196,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'events' && (
-            <div className="space-y-12 animate-in fade-in duration-700">
+            <div className="space-y-12 events-view animate-in fade-in duration-700">
                {isEditingEvent ? (
                  <div className="space-y-10 animate-in slide-in-from-right-4 duration-500 max-w-4xl mx-auto pb-32">
                     <div className="flex items-center gap-6">
@@ -2339,7 +2339,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'promo-codes' && (
-            <div className="space-y-12 animate-in fade-in duration-700">
+            <div className="space-y-12 promo-codes-view animate-in fade-in duration-700">
                <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
                   <Button 
                     onClick={() => setIsPromoDialogOpen(true)}
@@ -2431,7 +2431,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'users' && (
-            <div className="space-y-8 fade-in duration-700">
+            <div className="space-y-8 users-view animate-in fade-in duration-700">
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <StatCard label="Total Registered" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
                   <StatCard label="Online Now" value={onlineUsersCount.toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" pulse={onlineUsersCount > 0} />
@@ -2600,7 +2600,7 @@ export default function AdminPage() {
           )}
 
           {activeView === 'settings' && (
-            <div className="max-w-5xl mx-auto space-y-6 sm:space-y-12 pb-20 sm:pb-24">
+            <div className="max-w-5xl mx-auto settings-view space-y-6 sm:space-y-12 pb-20 sm:pb-24">
                <Accordion type="single" collapsible className="space-y-4 sm:space-y-6">
                   <AccordionItem value="branding" className="border-none">
                      <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
@@ -2784,7 +2784,7 @@ export default function AdminPage() {
                                           </div>
 
                                           <div className="space-y-1.5">
-                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook URL</Label>
+                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1 Webhook-URL">Webhook URL</Label>
                                              <div className="flex gap-2">
                                                 <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
                                                 <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
@@ -4431,7 +4431,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                 <div className="pt-6 space-y-6">
                    <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
                    <div className="grid grid-cols-2 gap-4">
-                      <Button variant="outline" onClick={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
+                      <Button variant="outline" handleCopyId={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
                          <Copy size={16} /> Copy ID
                       </Button>
                       <Button variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">

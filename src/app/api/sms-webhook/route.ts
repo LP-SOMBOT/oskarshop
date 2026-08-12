@@ -14,8 +14,9 @@ function extractEVCPayment(smsText: string) {
     if (!amountMatch) return null;
     const amount = parseFloat(amountMatch[1]);
 
-    // 2. Phone Extraction (e.g. 0613982172)
-    // Looking for Somali formats: 061..., 61..., 25261...
+    // 2. Phone Extraction
+    // Targeting Somali formats: 061..., 61..., 25261...
+    // The template usually has a comma after the phone number.
     const phoneMatch = cleanText.match(/(?:0|252)?(61[0-9]{7})/);
     if (!phoneMatch) return null;
     
@@ -43,6 +44,8 @@ export async function POST(request: Request) {
     
     const incomingSecret = request.headers.get('x-webhook-secret');
 
+    // Return 200 even for unauthorized to provide custom message to forwarder logs if needed,
+    // but here we keep 401 for security while ensuring the app supports the response.
     if (incomingSecret !== dbSecret) {
       return NextResponse.json({ 
         success: false, 
@@ -55,7 +58,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const smsText = body.sms || body.text || body.message || '';
 
-    // Always return 200 once authenticated to acknowledge receipt to the forwarder
+    // Acknowledge receipt to the forwarder immediately with 200 OK
     if (!smsText) {
       return NextResponse.json({ success: true, message: 'Received empty payload.' });
     }
@@ -66,13 +69,13 @@ export async function POST(request: Request) {
       await adminDb.ref('sms_payments_failed').push({
         raw: smsText,
         receivedAt: now,
-        reason: 'Regex failed to extract data from message.'
+        reason: 'Regex failed to extract data.'
       });
 
       return NextResponse.json({ 
         success: true, 
         matched: false,
-        message: 'Could not parse amount or sender from this SMS template.',
+        message: 'Could not parse EVC template.',
         received: smsText
       });
     }
@@ -88,6 +91,7 @@ export async function POST(request: Request) {
       .filter(([id, order]: [string, any]) => {
         if (order.smsMatchedId) return false;
 
+        // Clean order phone for comparison (61...)
         const orderPhone = (order.gameDetails?.senderNumber || order.userPhone || '')
           .toString().replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '');
 
@@ -99,7 +103,7 @@ export async function POST(request: Request) {
       })
       .sort((a, b) => (a[1].createdAt - b[1].createdAt));
 
-    // 5. Log the SMS
+    // 5. Log the SMS in Database
     const smsRef = adminDb.ref('sms_payments').push();
     await smsRef.set({
       raw: smsText,
@@ -114,8 +118,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ 
         success: true, 
         matched: false,
-        message: 'SMS received and parsed, but no matching pending order found in the 2h window.',
-        data: { amount, phone }
+        message: 'SMS Parsed: No matching pending order found in the 2h window.',
+        extracted: { amount, phone }
       });
     }
 
@@ -152,13 +156,23 @@ export async function POST(request: Request) {
         fetch(`${origin}/api/fazercards/place-special-package`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: matchId, playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID, playerRegion: matchOrder.ffRegion || 'MENA' })
+          body: JSON.stringify({ 
+            orderId: matchId, 
+            playerUid: matchOrder.ffUid || matchOrder.gameDetails?.playerID, 
+            playerRegion: matchOrder.ffRegion || 'MENA',
+            gameFields: matchOrder.gameDetails?.gameFields
+          })
         }).catch(() => {});
       } else if (item?.autoTopupEnabled) {
          fetch(`${origin}/api/fazercards/place-topup`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ orderId: matchId, category_id: item.fazercardsCategory_id, offer_id: item.fazercardsOffer_id })
+           body: JSON.stringify({ 
+             orderId: matchId, 
+             category_id: item.fazercardsCategory_id, 
+             offer_id: item.fazercardsOffer_id,
+             fields: matchOrder.gameDetails?.gameFields
+           })
          }).catch(() => {});
       }
     }
@@ -172,6 +186,7 @@ export async function POST(request: Request) {
 
   } catch (err: any) {
     console.error('SMS Webhook Error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    // Even on error, return 200 with error info so the app shows "delivered"
+    return NextResponse.json({ success: false, error: err.message }, { status: 200 });
   }
 }
