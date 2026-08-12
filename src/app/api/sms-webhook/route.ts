@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
@@ -10,18 +9,20 @@ function extractEVCPayment(smsText: string) {
   try {
     const cleanText = smsText.replace(/\s+/g, ' ').trim();
 
-    // 1. Amount Extraction (e.g. $3.50)
-    const amountMatch = cleanText.match(/\$([0-9]+\.?[0-9]*)/);
+    // 1. Extract amount: number after $ before " ka heshay"
+    const amountMatch = cleanText.match(/\$([0-9]+\.?[0-9]*)\s+ka\s+heshay/);
     if (!amountMatch) return null;
     const amount = parseFloat(amountMatch[1]);
 
-    // 2. Phone Extraction
-    // Targeting Somali formats: 061..., 61..., 25261...
-    const phoneMatch = cleanText.match(/(?:0|252)?(61[0-9]{7})/);
+    // 2. Extract sender phone: number after "ka heshay "
+    const phoneMatch = cleanText.match(/ka\s+heshay\s+(0?6[0-9]{8})/);
     if (!phoneMatch) return null;
     
-    // Normalize to 9-digit local format (e.g. 613982172)
-    const phone = phoneMatch[1];
+    // Normalize to 9-digit format (strip leading 0 or country code)
+    let phone = phoneMatch[1].replace(/^0/, '').replace(/^252/, '');
+
+    // Validate: must be 9 digits starting with 6
+    if (!/^6[0-9]{8}$/.test(phone)) return null;
 
     return { amount, phone };
   } catch {
@@ -32,36 +33,30 @@ function extractEVCPayment(smsText: string) {
 /**
  * POST: Receives forwarded SMS and auto-approves matched orders.
  * Path: /api/sms-webhook
- * 
- * Always returns 200 OK for authorized requests to keep forwarder connected.
  */
 export async function POST(request: Request) {
   const now = Date.now();
   const origin = new URL(request.url).origin;
 
   try {
-    // 1. Secret Key Validation (Env Priority)
-    const envSecret = process.env.SMS_WEBHOOK_SECRET || 'oskarshop22';
-    const incomingSecret = request.headers.get('x-webhook-secret');
-
-    if (incomingSecret !== envSecret) {
-      console.warn('SMS Webhook: Unauthorized access attempt.');
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Unauthorized', 
-        message: 'Invalid x-webhook-secret header.' 
-      }, { status: 401 });
+    // 1. Verify webhook secret
+    const secret = request.headers.get('x-webhook-secret');
+    if (secret !== process.env.SMS_WEBHOOK_SECRET) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Payload Parsing
     const body = await request.json().catch(() => ({}));
-    const smsText = body.sms || body.text || body.message || body.body || '';
+    const smsText = body.sms || body.text || body.message || '';
 
     if (!smsText) {
       return NextResponse.json({ success: true, message: 'Received empty payload.' });
     }
 
-    // 3. Extraction
+    // Only process EVC Plus SMS
+    if (!smsText.includes('EVCPLUS') && !smsText.includes('EVC')) {
+      return NextResponse.json({ success: true, message: 'Not an EVC Plus SMS — ignored' });
+    }
+
     const extracted = extractEVCPayment(smsText);
     if (!extracted) {
       await adminDb.ref('sms_payments_failed').push({
@@ -69,69 +64,74 @@ export async function POST(request: Request) {
         receivedAt: now,
         reason: 'Pattern mismatch for EVC Plus template.'
       });
-
-      return NextResponse.json({ 
-        success: true, 
-        matched: false,
-        message: 'Parsed: Content does not match EVC Plus template.',
-        received: smsText
-      });
+      return NextResponse.json({ success: true, message: 'Could not extract payment details' });
     }
 
     const { amount, phone } = extracted;
 
-    // 4. Order Matching Logic (Pending orders only)
-    const ordersSnap = await adminDb.ref('orders').orderByChild('status').equalTo('pending').get();
-    const orders = ordersSnap.val() || {};
-
-    const windowMs = 2 * 60 * 60 * 1000; // 2 hour window
-    const matchingEntries = Object.entries(orders)
-      .filter(([id, order]: [string, any]) => {
-        if (order.smsMatchedId) return false;
-
-        const orderPhone = (order.gameDetails?.senderNumber || order.userPhone || '')
-          .toString().replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '');
-
-        const phoneMatch = orderPhone === phone;
-        const amountMatch = Math.abs(parseFloat(order.total) - amount) < 0.01;
-        const withinWindow = Math.abs(now - (order.createdAt || 0)) <= windowMs;
-
-        return phoneMatch && amountMatch && withinWindow;
-      })
-      .sort((a, b) => (a[1].createdAt - b[1].createdAt));
-
-    // 5. Log the Transaction
+    // 2. Save SMS to database
     const smsRef = adminDb.ref('sms_payments').push();
     await smsRef.set({
       raw: smsText,
       senderPhone: phone,
       amount,
       receivedAt: now,
-      matched: matchingEntries.length > 0,
-      matchedOrderId: matchingEntries.length > 0 ? matchingEntries[0][0] : null
+      matched: false,
+      matchedOrderId: null,
+      expired: false
     });
+    const smsId = smsRef.key;
+
+    // 3. Find matching pending orders
+    const ordersSnap = await adminDb.ref('orders').orderByChild('status').equalTo('pending').get();
+    const orders = ordersSnap.val() || {};
+
+    const twoHours = 2 * 60 * 60 * 1000;
+    const matchingEntries = Object.entries(orders)
+      .filter(([id, order]: [string, any]) => {
+        if (order.smsMatchedId) return false;
+
+        // Normalize order phone (strip 0, 252, +252)
+        const orderPhone = (order.gameDetails?.senderNumber || order.userPhone || '')
+          .toString().replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '');
+
+        const phoneMatch = orderPhone === phone;
+        const amountMatch = Math.abs(parseFloat(order.total) - amount) < 0.01;
+        
+        const orderTime = order.createdAt || 0;
+        const withinWindow = Math.abs(now - orderTime) <= twoHours;
+
+        return phoneMatch && amountMatch && withinWindow;
+      })
+      .sort((a, b) => (a[1].createdAt - b[1].createdAt)); // FIRST ORDER PRIORITY
 
     if (matchingEntries.length === 0) {
       return NextResponse.json({ 
         success: true, 
-        matched: false,
-        message: 'SMS Parsed: No matching pending order found.',
+        smsId,
+        matched: false, 
+        message: 'SMS saved. No matching pending order found.',
         extracted: { amount, phone }
       });
     }
 
     const [matchId, matchOrder] = matchingEntries[0] as [string, any];
 
-    // 6. Execute Approval
+    // 4. Execute Approval
     await adminDb.ref(`orders/${matchId}`).update({
       status: 'successful',
       paymentMatchedAt: now,
-      smsMatchedId: smsRef.key,
+      smsMatchedId: smsId,
       approvedBy: 'auto_sms',
       completedAt: now
     });
 
-    // 7. Reward Points
+    await adminDb.ref(`sms_payments/${smsId}`).update({
+      matched: true,
+      matchedOrderId: matchId
+    });
+
+    // 5. Reward Points
     if (matchOrder.userId) {
       const isAccountOrder = matchOrder.items?.[0]?.gameId === 'accounts' || matchOrder.gameDetails?.postId;
       if (!isAccountOrder) {
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 8. Trigger Reseller Automation
+    // 6. Trigger Reseller Automation
     const item = matchOrder.items?.[0];
     const fazercardsConfigSnap = await adminDb.ref('settings/fazercards').get();
     const fazercardsConfig = fazercardsConfigSnap.val();
@@ -174,6 +174,20 @@ export async function POST(request: Request) {
       }
     }
 
+    // 7. Notify Telegram
+    fetch(`${origin}/api/notify-telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: matchOrder.gameDetails?.playerName || matchOrder.userPhone,
+        customerPhone: matchOrder.gameDetails?.whatsappNumber,
+        itemName: matchOrder.items?.[0]?.title,
+        amount: matchOrder.total,
+        orderId: matchId,
+        message: `💳 Auto-approved via SMS! Phone: ${phone}, Amount: $${amount}`
+      })
+    }).catch(() => {});
+
     return NextResponse.json({ 
       success: true, 
       matched: true,
@@ -183,9 +197,6 @@ export async function POST(request: Request) {
 
   } catch (err: any) {
     console.error('SMS Webhook Error:', err);
-    return NextResponse.json({ 
-      success: false, 
-      error: err.message 
-    }, { status: 200 }); // Always 200 to help forwarder logs
+    return NextResponse.json({ success: false, error: err.message }, { status: 200 }); 
   }
 }
