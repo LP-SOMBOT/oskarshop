@@ -3,6 +3,25 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
+ * GET: Verification endpoint for browser tests.
+ * Prevents 405 errors and confirms the endpoint is alive.
+ */
+export async function GET() {
+  return new NextResponse(
+    JSON.stringify({ 
+      status: "READY AND ACTIVE", 
+      message: "OskarShop SMS Webhook is online. Send a POST request with 'x-webhook-secret' header to use it.",
+      usage: "POST /api/sms-webhook",
+      powered_by: "OskarShop Automation"
+    }), 
+    { 
+      status: 200, 
+      headers: { 'Content-Type': 'application/json' } 
+    }
+  );
+}
+
+/**
  * Robust helper to extract EVC Plus payment data from raw SMS.
  * Template: [-EVCPLUS-] waxaad $3.50 ka heshay 0613982172, Tar: 09/08/26 17:58:02...
  */
@@ -16,11 +35,11 @@ function extractEVCPayment(smsText: string) {
     const amount = parseFloat(amountMatch[1]);
 
     // 2. Extract sender phone: number after "ka heshay "
-    const phoneMatch = cleanText.match(/ka\s+heshay\s+(0?6[0-9]{8})/);
+    const phoneMatch = cleanText.match(/ka\s+heshay\s+([0-9]+)/);
     if (!phoneMatch) return null;
     
     // Normalize to 9-digit format (strip leading 0 or country code)
-    let phone = phoneMatch[1].replace(/^0/, '').replace(/^252/, '').replace(/^\+252/, '');
+    let phone = phoneMatch[1].replace(/\D/g, '').replace(/^0/, '').replace(/^252/, '').replace(/^\+252/, '');
 
     // Validate: must be 9 digits starting with 6
     if (!/^6[0-9]{8}$/.test(phone)) return null;
@@ -36,7 +55,7 @@ function extractEVCPayment(smsText: string) {
  * Path: /api/sms-webhook
  * 
  * Optimized for clear response feedback that SMS Forwarder apps support.
- * Returns 200 OK for all authenticated requests to ensure app log success.
+ * Returns 200 OK for all requests to ensure app log success.
  */
 export async function POST(request: Request) {
   const now = Date.now();
@@ -77,11 +96,6 @@ export async function POST(request: Request) {
 
     const extracted = extractEVCPayment(smsText);
     if (!extracted) {
-      await adminDb.ref('sms_payments_failed').push({
-        raw: smsText,
-        receivedAt: now,
-        reason: 'Regex failed to extract amount/phone from template.'
-      });
       return NextResponse.json({ 
         success: false, 
         error: 'Template mismatch. Could not parse amount or phone.',
@@ -133,7 +147,7 @@ export async function POST(request: Request) {
         success: true, 
         smsId,
         matched: false, 
-        message: 'SMS received and stored. No matching pending order found in the 2h window.',
+        message: 'SMS received. No matching pending order found in the 2h window.',
         extracted: { amount, sender: phone },
         powered_by: 'OskarShop Automation'
       }, { status: 200 });
