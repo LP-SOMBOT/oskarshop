@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -1734,7 +1735,7 @@ export default function AdminPage() {
                         key={event.id}
                         event={event}
                         onEdit={() => router.push(`/admin/event-accounts/edit?id=${event.id}`)}
-                        onDelete={() => { setDeleteTarget({id: event.id, type: 'eventAccount'}); setIsDeleteDialogOpen(true); }}
+                        onDelete={() => { setDeleteTarget({id: event.id, type:'eventAccount'}); setIsDeleteDialogOpen(true); }}
                         onViewParticipants={() => setSelectedEventId(event.id)}
                         onEndEarly={() => { setEndEarlyTargetId(event.id); setIsEndEarlyDialogOpen(true); }}
                         onAssignWinner={() => setSelectedEventId(event.id)}
