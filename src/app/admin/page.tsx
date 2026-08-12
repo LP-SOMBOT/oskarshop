@@ -3090,6 +3090,7 @@ export default function AdminPage() {
                                     <SettingInput label="Maintenance Title" value={appStatusForm.offlineTitle} onChange={v => setAppStatusForm(f => ({ ...f, offlineTitle: v }))} placeholder="Under Maintenance" />
                                     <div className="space-y-3">
                                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Maintenance Description</Label>
+                                       <span className="sr-only">Maintenance Description Textarea</span>
                                        <Textarea value={appStatusForm.offlineBody} onChange={e => setAppStatusForm(f => ({ ...f, offlineBody: e.target.value }))} className="min-h-[150px] rounded-3xl bg-slate-50 dark:bg-slate-800 border-none p-6 font-medium shadow-inner" placeholder="Describe the downtime..." />
                                     </div>
                                  </div>
@@ -3312,7 +3313,7 @@ export default function AdminPage() {
                  </div>
                  <Badge className={cn(
                    "rounded-full uppercase text-[7px] font-black tracking-widest px-2 py-0.5 border-none shadow-sm shrink-0",
-                   selectedUser?.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
+                   selectedUser?.banned ? "bg-red-500 text-white" : "bg-green-100 text-green-700"
                  )}>
                     {selectedUser?.banned ? 'Banned' : 'Active'}
                  </Badge>
@@ -5017,13 +5018,11 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4">
-       <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={24}/></button>
-             <div>
-                <h3 className="font-headline font-bold text-2xl uppercase tracking-tight">{eventAccount?.title}</h3>
-                <p className="text-[10px] font-black text-muted-foreground uppercase">Real-time Participants List</p>
-             </div>
+       <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={24}/></button>
+          <div>
+             <h3 className="font-headline font-bold text-2xl uppercase tracking-tight">{eventAccount?.title}</h3>
+             <p className="text-[10px] font-black text-muted-foreground uppercase">Real-time Participants List</p>
           </div>
        </div>
 
