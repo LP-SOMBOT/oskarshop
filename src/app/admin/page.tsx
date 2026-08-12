@@ -139,7 +139,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/accordion";
+} from "@/components/ui/accordion";
 import {
   Tabs,
   TabsContent,
@@ -171,21 +171,21 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 
 // DND Kit Imports
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensors,
-  useSensor,
-} from '@dnd-kit/core';
-import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
+import {
+  closestCenter,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensors,
+  useSensor,
+  DndContext,
+} from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
@@ -1455,17 +1455,17 @@ export default function AdminPage() {
           {activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId && (
             <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700">
                {/* PRIMARY STAT: TOTAL REVENUE */}
-               <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative p-5 md:p-12">
+               <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden relative p-4 md:p-12">
                   <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none -z-10"><DollarSign size={160} /></div>
-                  <div className="flex flex-col items-center text-center space-y-3 md:space-y-4">
-                     <div className="w-12 h-12 md:w-20 md:h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                        <Wallet className="w-8 h-8 md:w-12 md:h-12" />
+                  <div className="flex flex-col items-center text-center space-y-2 md:space-y-4">
+                     <div className="w-10 h-10 md:w-20 md:h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shadow-inner">
+                        <Wallet className="w-6 h-6 md:w-12 md:h-12" />
                      </div>
                      <div className="space-y-1">
-                        <p className="text-3xl md:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">
+                        <p className="text-2xl md:text-7xl font-headline font-bold text-slate-900 dark:text-white tracking-tighter">
                           ${dashboardReports.totalRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </p>
-                        <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Total Revenue</p>
+                        <p className="text-[8px] md:text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Total Revenue</p>
                      </div>
                   </div>
                </Card>
@@ -1498,30 +1498,30 @@ export default function AdminPage() {
 
                {/* PENDING ITEMS & USERS GRID */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                  <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-5 md:p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
+                  <Card className="rounded-[1.25rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-4 md:p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
                      <div className="flex items-center gap-4 md:gap-6">
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.25rem] md:rounded-[1.5rem] bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-sm shrink-0">
-                           <Clock size={24} className="md:size-8 animate-pulse" />
+                        <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-[1.5rem] bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-sm shrink-0">
+                           <Clock size={20} className="md:size-8 animate-pulse" />
                         </div>
                         <div className="space-y-0.5 md:space-y-1">
-                           <h3 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.pendingOrdersCount}</h3>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Orders</p>
+                           <h3 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{dashboardReports.pendingOrdersCount}</h3>
+                           <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending Orders</p>
                         </div>
                      </div>
-                     <ChevronRight size={20} className="text-slate-200 group-hover:text-primary transition-colors" />
+                     <ChevronRight size={18} className="text-slate-200 group-hover:text-primary transition-colors" />
                   </Card>
 
-                  <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-5 md:p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
+                  <Card className="rounded-[1.25rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 p-4 md:p-8 flex items-center justify-between group hover:shadow-primary/5 transition-all">
                      <div className="flex items-center gap-4 md:gap-6">
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-[1.25rem] md:rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
-                           <Users size={24} className="md:size-8" />
+                        <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-[1.5rem] bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm shrink-0">
+                           <Users size={20} className="md:size-8" />
                         </div>
                         <div className="space-y-0.5 md:space-y-1">
-                           <h3 className="text-2xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{allUsers.length}</h3>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Users</p>
+                           <h3 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white tracking-tight">{allUsers.length}</h3>
+                           <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Users</p>
                         </div>
                      </div>
-                     <ChevronRight size={20} className="text-slate-200 group-hover:text-primary transition-colors" />
+                     <ChevronRight size={18} className="text-slate-200 group-hover:text-primary transition-colors" />
                   </Card>
                </div>
 
@@ -2851,7 +2851,7 @@ export default function AdminPage() {
                                  </div>
                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <SettingInput label="Service ID" value={emailConfigForm.recovery.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, serviceId: v } }))} placeholder="service_..." />
-                                    <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, templateId: v } }))} placeholder="template_..." />
+                                    <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.verification, templateId: v } }))} placeholder="template_..." />
                                     <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, publicKey: v } }))} placeholder="pk_..." />
                                  </div>
                               </div>
@@ -3455,7 +3455,7 @@ export default function AdminPage() {
               <SettingInput label="Title" value={gameForm.title} onChange={v => setGameForm({ ...gameForm, title: v })} placeholder="e.g. Free Fire" />
               <div className="space-y-2">
                  <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 ml-1">Category</Label>
-                 <Select value={gameForm.category} onValueChange={v => setGameForm({ ...gameForm, category: v as any })}>
+                 <Select value={gameForm.category} onValueChange={v => setLanguage(v as any)}>
                     <SelectTrigger className="h-12 rounded-xl dark:bg-slate-800 border-none px-4"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-2xl border-none shadow-2xl">
                        <SelectItem value="top-up" className="p-3 font-bold text-xs uppercase">Top-Up Items</SelectItem>
@@ -4094,7 +4094,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                        "rounded-full px-5 py-2 font-black text-[10px] uppercase tracking-widest border-none shadow-sm w-fit",
                        delivery.overallStatus === 'completed' ? "bg-green-600 text-white" :
                        delivery.overallStatus === 'failed' ? "bg-red-600 text-white" :
-                       delivery.overallStatus === 'partial' ? "bg-orange-500 text-white" : "bg-amber-500 text-white"
+                       delivery.overallStatus === 'partial' ? "bg-orange-500 text-white" : "bg-amber-50 text-amber-700"
                      )}>
                         {delivery.overallStatus === 'completed' ? "✅ All Delivered" :
                          delivery.overallStatus === 'processing' ? "⏳ In Progress" :
