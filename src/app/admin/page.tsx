@@ -501,6 +501,7 @@ export default function AdminPage() {
   const [isTestingFazer, setIsTestingFazer] = useState(false);
   const [fazerApiKey, setFazerApiKey] = useState("");
   const [recentSms, setRecentSms] = useState<any[]>([]);
+  const [rawSmsLogs, setRawSmsLogs] = useState<any[]>([]);
   const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
   const [smsMatcherSecret, setSmsMatcherSecret] = useState("");
 
@@ -610,7 +611,7 @@ export default function AdminPage() {
     }
   }, [storeSettings]);
 
-  // Fetch SMS History & Webhook Logs
+  // Fetch SMS History, Webhook Logs, and Raw Logs
   useEffect(() => {
     if (activeView === 'settings' && rtdb) {
       const smsRef = query(ref(rtdb, 'sms_payments'), limitToLast(10));
@@ -619,13 +620,19 @@ export default function AdminPage() {
         if (val) setRecentSms(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.receivedAt - a.receivedAt));
       });
 
+      const rawRef = query(ref(rtdb, 'sms_raw_log'), limitToLast(10));
+      const rawUnsub = onValue(rawRef, (snap) => {
+        const val = snap.val();
+        if (val) setRawSmsLogs(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.receivedAt - a.receivedAt));
+      });
+
       const webhookRef = query(ref(rtdb, 'webhook_logs/fazercards'), limitToLast(20));
       const webhookUnsub = onValue(webhookRef, (snap) => {
         const val = snap.val();
         if (val) setWebhookLogs(Object.entries(val).map(([id, v]: any) => ({ ...v, id })).sort((a,b) => b.receivedAt - a.receivedAt));
       });
 
-      return () => { off(smsRef); off(webhookRef); };
+      return () => { off(smsRef); off(rawRef); off(webhookRef); };
     }
   }, [activeView, rtdb]);
 
@@ -1198,6 +1205,17 @@ export default function AdminPage() {
       await remove(ref(rtdb, 'webhook_logs/fazercards'));
       setWebhookLogs([]);
       toast({ title: "Logs Cleared" });
+    } catch (e) {
+      toast({ title: "Failed to clear logs", variant: "destructive" });
+    }
+  };
+
+  const handleClearRawLogs = async () => {
+    if (!rtdb) return;
+    try {
+      await remove(ref(rtdb, 'sms_raw_log'));
+      setRawSmsLogs([]);
+      toast({ title: "Raw Logs Cleared" });
     } catch (e) {
       toast({ title: "Failed to clear logs", variant: "destructive" });
     }
@@ -1871,7 +1889,12 @@ export default function AdminPage() {
                                             <Eye size={18} />
                                           </button>
                                           <button 
-                                            onClick={() => { setDeleteTarget({id:order.id, type:'order'}); setIsDeleteDialogOpen(true); }}
+                                            onClick={async () => {
+                                              if (confirm("Are you sure?")) {
+                                                await deleteOrder(order.id);
+                                                toast({ title: "Order Deleted" });
+                                              }
+                                            }}
                                             className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
                                           >
                                             <Trash2 size={18} />
@@ -2658,10 +2681,11 @@ export default function AdminPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
                            <Tabs defaultValue="config">
-                              <TabsList className="bg-slate-50 dark:bg-slate-800 mb-6">
+                              <TabsList className="bg-slate-50 dark:bg-slate-800 mb-6 overflow-x-auto">
                                  <TabsTrigger value="config">Settings</TabsTrigger>
                                  <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
                                  <TabsTrigger value="sms">SMS Matcher</TabsTrigger>
+                                 <TabsTrigger value="raw-sms">Raw Debug Log</TabsTrigger>
                               </TabsList>
 
                               <TabsContent value="config">
@@ -2793,22 +2817,36 @@ export default function AdminPage() {
                                           </div>
                                        </div>
 
-                                       <Accordion type="single" collapsible>
-                                          <AccordionItem value="sms-steps" className="border-none">
-                                             <AccordionTrigger className="text-[9px] font-black uppercase py-2">Setup Instructions</AccordionTrigger>
-                                             <AccordionContent className="text-[10px] leading-relaxed text-muted-foreground space-y-2">
-                                                <p>1. Install "SMS Forwarder" from Play Store</p>
-                                                <p>2. Create rule: HTTP POST</p>
-                                                <p>3. URL: Webhook URL above</p>
-                                                <p>4. Header: x-webhook-secret: <span className="font-bold text-primary">{smsMatcherSecret}</span></p>
-                                                <p>5. Body: {"{\"sms\": \"%body%\"}"}</p>
-                                                <p>6. Filter: sender contains "EVCPLUS"</p>
-                                             </AccordionContent>
-                                          </AccordionItem>
-                                       </Accordion>
+                                       <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                                          <h6 className="text-[11px] font-black uppercase mb-3 text-primary">SETUP INSTRUCTIONS</h6>
+                                          <div className="space-y-3 text-[10px] leading-relaxed text-muted-foreground font-medium">
+                                             <div className="space-y-1">
+                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 1 — Message Template:</p>
+                                                <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">%mb%</p>
+                                             </div>
+                                             <div className="space-y-1">
+                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 2 — URL Settings:</p>
+                                                <p>Request Type: <span className="font-bold text-primary">POST</span></p>
+                                                <p>URL: <span className="font-bold text-primary">https://oskarshop.so/api/sms-webhook</span></p>
+                                             </div>
+                                             <div className="space-y-1">
+                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 3 — Headers:</p>
+                                                <p><span className="font-bold">x-webhook-secret:</span> {smsMatcherSecret || 'oskarshop22'}</p>
+                                                <p><span className="font-bold">Content-Type:</span> application/json</p>
+                                             </div>
+                                             <div className="space-y-1">
+                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 4 — Body (JSON):</p>
+                                                <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">{"{\"sms\":\"{msg}\",\"from\":\"{sender}\"}"}</p>
+                                             </div>
+                                             <div className="space-y-1">
+                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 5 — Filter Rule:</p>
+                                                <p>Contains: <span className="font-bold text-primary">"ka heshay"</span></p>
+                                             </div>
+                                          </div>
+                                       </div>
                                     </div>
                                     <div className="space-y-3">
-                                       <h6 className="text-[9px] font-black uppercase text-slate-400 ml-1">Recent SMS Traffic</h6>
+                                       <h6 className="text-[9px] font-black uppercase text-slate-400 ml-1">Processed Payments</h6>
                                        <div className="space-y-2">
                                           {recentSms.map(sms => (
                                              <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px]">
@@ -2816,12 +2854,56 @@ export default function AdminPage() {
                                                    <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
                                                    <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
                                                 </div>
-                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-50 text-white" : "bg-amber-100 text-amber-700")}>
-                                                   {sms.matched ? "Matched" : "Unmatched"}
+                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
+                                                   {sms.matched ? "Approved" : "Unmatched"}
                                                 </Badge>
                                              </div>
                                           ))}
+                                          {recentSms.length === 0 && <div className="py-8 text-center opacity-20 italic font-bold">No payments found</div>}
                                        </div>
+                                    </div>
+                                 </div>
+                              </TabsContent>
+
+                              <TabsContent value="raw-sms">
+                                 <div className="space-y-4">
+                                    <div className="flex justify-between items-center px-1">
+                                       <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Raw Incoming DEBUG Log</h6>
+                                       <Button variant="ghost" size="sm" onClick={handleClearRawLogs} className="h-8 text-red-500 font-bold uppercase text-[9px]">Clear Debug Log</Button>
+                                    </div>
+                                    <div className="border rounded-2xl overflow-hidden bg-white dark:bg-slate-900 divide-y dark:divide-white/5">
+                                       {rawSmsLogs.length === 0 ? (
+                                          <div className="p-12 text-center opacity-20 italic font-bold uppercase text-xs">No raw requests received yet</div>
+                                       ) : (
+                                          rawSmsLogs.map(log => (
+                                             <div key={log.id} className="p-4 space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                   <div className="flex items-center gap-2">
+                                                      <Clock size={12} className="text-slate-400" />
+                                                      <span className="text-[10px] font-bold">{format(log.receivedAt, 'MMM d, HH:mm:ss')}</span>
+                                                      <span className="text-[8px] font-black text-slate-300 ml-2">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
+                                                   </div>
+                                                   <Badge variant="outline" className="text-[8px] font-black uppercase">POST Received</Badge>
+                                                </div>
+                                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border dark:border-white/5">
+                                                   <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Cleaned SMS:</p>
+                                                   <p className="text-[11px] font-medium leading-relaxed font-mono break-all">{log.cleaned}</p>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                   <div className="flex flex-col">
+                                                      <span className="text-[8px] font-black text-slate-400 uppercase">Body Sender</span>
+                                                      <span className="text-[10px] font-bold">{log.sender || 'Unknown'}</span>
+                                                   </div>
+                                                   <div className="flex flex-col">
+                                                      <span className="text-[8px] font-black text-slate-400 uppercase">Extraction Status</span>
+                                                      <span className={cn("text-[10px] font-black", log.cleaned?.includes('ka heshay') ? 'text-green-500' : 'text-amber-500')}>
+                                                         {log.cleaned?.includes('ka heshay') ? 'EVC MATCH' : 'NOT EVC'}
+                                                      </span>
+                                                   </div>
+                                                </div>
+                                             </div>
+                                          ))
+                                       )}
                                     </div>
                                  </div>
                               </TabsContent>
