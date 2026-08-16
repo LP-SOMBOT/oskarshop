@@ -32,52 +32,43 @@ export async function OPTIONS() {
  */
 export async function POST(request: Request) {
   try {
-    // 1. SECRET KEY VERIFICATION
-    const headerSecret = request.headers.get('x-webhook-secret');
-    const url = new URL(request.url);
-    const querySecret = url.searchParams.get('secret');
-    const providedSecret = headerSecret || querySecret;
-    const expectedSecret = process.env.SMS_WEBHOOK_SECRET || 'oskarshop22';
-
-    if (providedSecret !== expectedSecret) {
-      await adminDb.ref('/webhook_logs/sms_failed').push({
-        reason: 'Invalid secret',
-        provided: providedSecret,
-        receivedAt: Date.now()
-      });
-      return NextResponse.json(
-        { error: 'Unauthorized', hint: 'Check your x-webhook-secret header' },
-        { status: 401 }
-      );
-    }
-
-    // 2. PARSE BODY
     let rawSms = '';
     let senderRaw = '';
     const contentType = request.headers.get('content-type') || '';
 
-    if (contentType.includes('application/json')) {
-      const body = await request.json().catch(() => ({}));
-      rawSms = body.sms || body.msg || body.message || body.text || body.body || body.Message || '';
-      senderRaw = body.from || body.sender || body.From || body.number || body.phone || '';
-    } else {
-      const text = await request.text().catch(() => '');
-      const params = new URLSearchParams(text);
-      rawSms = params.get('sms') || params.get('msg') || params.get('message') || params.get('text') || text;
-      senderRaw = params.get('from') || params.get('sender') || '';
+    try {
+      if (contentType.includes('application/json')) {
+        const body = await request.json().catch(() => ({}));
+        rawSms = body.sms || body.msg || body.message ||
+                 body.text || body.body || body.data ||
+                 JSON.stringify(body);
+        senderRaw = body.from || body.sender || '';
+      } else {
+        const rawText = await request.text().catch(() => '');
+        const params = new URLSearchParams(rawText);
+        rawSms = params.get('sms') || params.get('msg') ||
+                 params.get('message') || params.get('text') ||
+                 rawText;
+        senderRaw = params.get('from') || params.get('sender') || '';
+      }
+    } catch {
+      try {
+        rawSms = await request.text().catch(() => '');
+      } catch {
+        rawSms = '';
+      }
     }
+
+    rawSms = rawSms
+      .replace(/^From\s*:\s*[^\n]*\n?/im, '')
+      .trim();
 
     if (!rawSms) {
       return NextResponse.json({ success: false, message: 'No SMS text found' }, { status: 400 });
     }
 
-    // 3. CLEAN SMS TEXT
-    let cleanSms = rawSms
-      .replace(/^From\s*:\s*[^\s]*\([^)]*\)\s*/i, '')
-      .replace(/^From\s*:\s*\S+\s*/i, '')
-      .trim();
-
-    if (cleanSms.length < 10) cleanSms = rawSms;
+    // CLEAN SMS TEXT - use rawSms as cleaned source
+    let cleanSms = rawSms;
 
     // 4. LOG RAW SMS
     await adminDb.ref('/sms_raw_log').push({
