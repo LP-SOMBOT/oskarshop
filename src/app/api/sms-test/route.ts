@@ -1,15 +1,7 @@
-
 import { NextResponse } from 'next/server';
 
 /**
- * GET: Simple health check for the test endpoint.
- */
-export async function GET() {
-  return NextResponse.json({ status: 'test endpoint ok' });
-}
-
-/**
- * POST: Echo back whatever is received to verify POST connectivity.
+ * Simple POST test route to verify connectivity.
  */
 export async function POST(request: Request) {
   try {
@@ -22,4 +14,8 @@ export async function POST(request: Request) {
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ status: 'test endpoint ok' });
 }

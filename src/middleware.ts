@@ -1,35 +1,41 @@
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
  * Next.js Middleware
  * 
- * CRITICAL: This file ensures that internal API routes used for automation
- * (webhooks, crons, telegram notifications) are never intercepted by 
- * authentication guards or redirects.
+ * Ensures public API routes are never intercepted by redirects.
  */
+
+const PUBLIC_API_ROUTES = [
+  '/api/sms-webhook',
+  '/api/sms-test',
+  '/api/fazercards/webhook',
+  '/api/notify-telegram',
+  '/api/cron',
+  '/api/check-ff-player',
+  '/api/generate-otp',
+  '/api/verify-otp',
+];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // EXCLUSION LIST: These routes must always be accessible via POST/GET 
-  // without any redirection or auth interference.
-  if (
-    pathname.startsWith('/api/sms-webhook') ||
-    pathname.startsWith('/api/fazercards/webhook') ||
-    pathname.startsWith('/api/notify-telegram') ||
-    pathname.startsWith('/api/cron') ||
-    pathname.startsWith('/api/sms-test')
-  ) {
+  // Allow all API webhook and public routes through without any check
+  const isPublicApi = PUBLIC_API_ROUTES.some(
+    route => pathname.startsWith(route)
+  );
+  
+  if (isPublicApi) {
     return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
-// Ensure the middleware only runs for relevant paths
+// matcher pattern excludes ALL /api/ routes from middleware processing entirely
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/|_next/static|_next/image|favicon.ico).*)',
   ],
 };
