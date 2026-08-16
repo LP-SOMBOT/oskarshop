@@ -1929,7 +1929,7 @@ export default function AdminPage() {
                    isSaving={isSavingStatus}
                    onDelete={() => { setDeleteTarget({id:selectedAccountId, type:'account'}); setIsDeleteDialogOpen(true); }}
                    onEnforce={() => setIsEnforceDialogOpen(true)}
-                   enforceAccountAction={enforceAccountAction}
+                   enforceAccountAction={enforceAction}
                    suspendSeller={suspendSeller}
                    dismissAccountWarning={dismissAccountWarning}
                  />
@@ -2854,7 +2854,7 @@ export default function AdminPage() {
                                                    <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
                                                    <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
                                                 </div>
-                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-500 text-white" : "bg-amber-100 text-amber-700")}>
+                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-50 text-white" : "bg-amber-100 text-amber-700")}>
                                                    {sms.matched ? "Approved" : "Unmatched"}
                                                 </Badge>
                                              </div>
@@ -2887,7 +2887,7 @@ export default function AdminPage() {
                                                 </div>
                                                 <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border dark:border-white/5">
                                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Cleaned SMS:</p>
-                                                   <p className="text-[11px] font-medium leading-relaxed font-mono break-all">{log.cleaned}</p>
+                                                   <p className="text-[11px] font-medium leading-relaxed font-mono break-all">{log.raw}</p>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                    <div className="flex flex-col">
@@ -2896,8 +2896,8 @@ export default function AdminPage() {
                                                    </div>
                                                    <div className="flex flex-col">
                                                       <span className="text-[8px] font-black text-slate-400 uppercase">Extraction Status</span>
-                                                      <span className={cn("text-[10px] font-black", log.cleaned?.includes('ka heshay') ? 'text-green-500' : 'text-amber-500')}>
-                                                         {log.cleaned?.includes('ka heshay') ? 'EVC MATCH' : 'NOT EVC'}
+                                                      <span className={cn("text-[10px] font-black", log.raw?.includes('ka heshay') ? 'text-green-500' : 'text-amber-500')}>
+                                                         {log.raw?.includes('ka heshay') ? 'EVC MATCH' : 'NOT EVC'}
                                                       </span>
                                                    </div>
                                                 </div>
@@ -4754,7 +4754,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                   <div className="min-w-0 space-y-1">
                     <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
                     <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
-                      {post.processedBy?.name || "Wali lama furin"}
+                      {post.approvedBy === 'auto_sms' ? 'Auto-SMS Match' : post.processedBy?.name || "Wali lama furin"}
                     </h5>
                     {post.processedAt && (
                       <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
@@ -5038,7 +5038,7 @@ function EventAccountAdminCard({ event, onEdit, onDelete, onViewParticipants, on
                onClick={onEdit}
                className="rounded-2xl h-12 md:h-16 px-4 md:px-6 border-2 font-bold gap-2 text-xs md:sm active:scale-95 transition-all flex items-center justify-center bg-transparent border-slate-200 dark:border-white/10"
              >
-                <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                <Edit className="w-4 h-4 md:w-5 md:h-5 text-blue-50" />
                 <span>Edit</span>
              </button>
              
