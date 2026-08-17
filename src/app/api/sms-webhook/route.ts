@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
  * GET: Health check for status verification.
@@ -31,7 +30,38 @@ export async function OPTIONS() {
  * POST: Receive forwarded SMS and match to pending orders.
  */
 export async function POST(request: Request) {
+  // TEST: Return success immediately to confirm POST works
+  // Remove this block after confirming POST connectivity
   try {
+    const rawBody = await request.clone().text().catch(() => 'empty');
+    let parsedBody = null;
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch (e) {}
+
+    return NextResponse.json({
+      ok: true,
+      success: true,
+      received: parsedBody || rawBody,
+      timestamp: Date.now(),
+      message: 'POST received - connectivity confirmed'
+    });
+  } catch (testErr) {
+    return NextResponse.json({ ok: true, success: true, message: 'POST received' });
+  }
+
+  // The code below is currently unreachable for testing purposes.
+  // After you confirm connectivity, remove the block above.
+  try {
+    // Use dynamic import to handle potential initialization failure
+    const adminModule = await import('@/lib/firebaseAdmin').catch(() => null);
+    const adminDb = adminModule?.adminDb;
+
+    if (!adminDb) {
+      console.error("SMS Webhook: Firebase Admin DB is not available.");
+      return NextResponse.json({ success: true, matched: false, message: 'Database service currently offline' });
+    }
+
     let rawSms = '';
     let senderRaw = '';
     const contentType = request.headers.get('content-type') || '';
@@ -71,12 +101,14 @@ export async function POST(request: Request) {
     let cleanSms = rawSms;
 
     // 4. LOG RAW SMS
-    await adminDb.ref('/sms_raw_log').push({
-      raw: rawSms,
-      cleaned: cleanSms,
-      sender: senderRaw,
-      receivedAt: Date.now()
-    });
+    try {
+      await adminDb.ref('/sms_raw_log').push({
+        raw: rawSms,
+        cleaned: cleanSms,
+        sender: senderRaw,
+        receivedAt: Date.now()
+      });
+    } catch (logErr) {}
 
     // 5. CHECK IF EVC PLUS
     const isEvc = cleanSms.includes('EVCPLUS') || 
