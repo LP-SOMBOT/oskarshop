@@ -4082,6 +4082,7 @@ function RewardControl({ rank, value, onChange, onSave }: { rank: number, value:
 }
 
 function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSync, onRetryTopup, status, setStatus, reason, setReason, isSaving, onDelete, allUsers }: any) {
+  const router = useRouter();
   if (!order) return null;
   const item = order.items?.[0];
   const buyer = allUsers?.find((u: any) => u.uid === order.userId);
@@ -4424,7 +4425,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
               <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
             </div>
 
-            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 sm:gap-6 min-w-0">
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white shrink-0">
                   {buyer?.photoURL ? (
@@ -4452,15 +4453,14 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
               </div>
 
               {(buyer?.uid || order.userId) && (
-                <Button
-                  onClick={() => {
-                    setGlobalLoading(true);
-                    router.push(`/admin/users/${buyer?.uid || order.userId}`);
-                  }}
-                  className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wider shadow-md gap-2 shrink-0 self-start sm:self-auto"
+                <button
+                  type="button"
+                  onClick={() => router.push(`/admin/users/${buyer?.uid || order.userId}`)}
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10 text-slate-500 hover:text-primary transition-all flex items-center justify-center shadow-xs active:scale-95 shrink-0"
+                  title="View Customer Info"
                 >
-                  <Eye size={16} /> Customer Info
-                </Button>
+                  <Eye size={20} />
+                </button>
               )}
             </div>
           </div>
