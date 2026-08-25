@@ -4238,7 +4238,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                              )}>
                                 {offData.status}
                              </p>
-                             {offData.error && <p className="text-[9px] text-red-500 mt-0.5 max-w-[200px] truncate" title={offData.error}>{offData.error}</p>}
+{offData.error && <p className="text-[9px] text-red-500 mt-0.5 max-w-[200px] truncate" title={offData.error}>{offData.error}</p>}
                           </div>
                        </div>
                      ))}
@@ -4249,107 +4249,175 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
 
           {/* Automation Insight for Regular Orders */}
           {!delivery && (order.autoTopupStatus || order.smsMatchedId) && (
-            <div className="mt-12 p-6 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border dark:border-white/5 space-y-6">
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-indigo-500">
-                     <Cpu size={20} />
-                     <h5 className="font-headline font-bold text-[10px] md:text-sm uppercase tracking-tight">Automation System Log</h5>
+            <div className="mt-8 sm:mt-12 p-5 sm:p-7 md:p-8 bg-slate-50/90 dark:bg-slate-800/60 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200/80 dark:border-white/10 space-y-6 shadow-sm">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 dark:border-white/5 pb-4">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-sm">
+                        <Cpu size={20} />
+                     </div>
+                     <div>
+                        <h5 className="font-headline font-bold text-sm sm:text-base uppercase tracking-tight text-slate-900 dark:text-white">Automation System Log</h5>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live provider status & SMS pipeline</p>
+                     </div>
                   </div>
-                  {order.autoTopupStatus === 'completed' && <Badge className="bg-green-100 text-green-700 dark:bg-green-500/20 border-none text-[8px] font-black uppercase px-3">Sync Active</Badge>}
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                     {order.autoTopupStatus === 'completed' && (
+                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
+                           ✅ Delivered & Synced
+                        </Badge>
+                     )}
+                     {order.autoTopupStatus === 'processing' && (
+                        <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
+                           <Loader2 size={10} className="animate-spin" /> Processing Order
+                        </Badge>
+                     )}
+                     {order.autoTopupStatus === 'failed' && (
+                        <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
+                           ⚠️ Action Needed
+                        </Badge>
+                     )}
+                     {!order.autoTopupStatus && (
+                        <Badge variant="outline" className="text-[9px] font-black uppercase px-3 py-1 rounded-full text-slate-400 border-slate-200 dark:border-white/10">
+                           Pending Match
+                        </Badge>
+                     )}
+                  </div>
                </div>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                  <div className="space-y-1">
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Reseller Status</p>
-                     <div className="flex items-center gap-2">
-                        {order.autoTopupStatus === 'processing' && <Loader2 size={12} className="animate-spin text-amber-500" />}
-                        {order.autoTopupStatus === 'completed' && <CheckCircle2 size={12} className="text-green-500" />}
-                        {order.autoTopupStatus === 'failed' && <XCircle size={12} className="text-red-500" />}
-                        <p className={cn(
-                          "font-bold text-[10px] md:text-xs uppercase",
-                          order.autoTopupStatus === 'completed' ? "text-green-500" : 
-                          order.autoTopupStatus === 'failed' ? "text-red-500" : 
-                          order.autoTopupStatus === 'processing' ? "text-amber-500" : "text-slate-400"
-                        )}>
-                            {order.autoTopupStatus === 'processing' ? "Processing — Waiting for FazerCards confirmation" :
-                             order.autoTopupStatus === 'completed' ? "completed" :
-                             order.autoTopupStatus === 'failed' ? "Failed/Refunded — Manual action required" :
-                             "NOT STARTED"}
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+                  {/* Card 1: Reseller Status */}
+                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-xs space-y-3 flex flex-col justify-between">
+                     <div className="flex items-center justify-between text-slate-400">
+                        <span className="text-[9px] font-black uppercase tracking-widest">Reseller Status</span>
+                        <Activity size={14} className="opacity-50" />
+                     </div>
+                     <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                           {order.autoTopupStatus === 'completed' && (
+                              <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                                 <CheckCircle2 size={12} className="text-emerald-500" /> Completed
+                              </Badge>
+                           )}
+                           {order.autoTopupStatus === 'processing' && (
+                              <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                                 <Loader2 size={12} className="animate-spin text-amber-500" /> Processing
+                              </Badge>
+                           )}
+                           {order.autoTopupStatus === 'failed' && (
+                              <Badge className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                                 <XCircle size={12} className="text-rose-500" /> Failed / Rejected
+                              </Badge>
+                           )}
+                           {!order.autoTopupStatus && (
+                              <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl">
+                                 Not Started
+                              </Badge>
+                           )}
+                        </div>
+                        <p className="text-[10px] font-medium text-muted-foreground leading-tight">
+                           {order.autoTopupStatus === 'processing' ? 'Waiting for FazerCards API delivery confirmation' :
+                            order.autoTopupStatus === 'completed' ? 'Successfully top-up delivered to player' :
+                            order.autoTopupStatus === 'failed' ? 'Provider rejected or delivery failed' :
+                            'Awaiting reseller dispatch'}
                         </p>
                      </div>
                   </div>
 
-                  <div className="space-y-1">
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Provider Order ID(s)</p>
-                     <div className="flex items-center gap-2">
-                        <p className="font-mono text-[10px] md:text-xs text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
-                            {order.autoTopupOrderId || '---'}
-                        </p>
-                        {order.autoTopupOrderId && (
-                          <a 
-                            href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.toString().split(',')[0].trim()}`} 
-                            target="_blank" 
-                            className="text-primary hover:underline text-[9px] font-black flex items-center gap-1"
-                          >
-                             VIEW <ExternalLink size={10} />
-                          </a>
-                        )}
+                  {/* Card 2: Provider Order ID */}
+                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-xs space-y-3 flex flex-col justify-between">
+                     <div className="flex items-center justify-between text-slate-400">
+                        <span className="text-[9px] font-black uppercase tracking-widest">Provider Order Reference</span>
+                        <Hash size={14} className="opacity-50" />
                      </div>
-                  </div>
-
-                  {order.autoTopupError && (
-                    <div className="col-span-full space-y-1 p-4 bg-red-50 dark:bg-red-500/5 rounded-xl border border-red-100 dark:border-red-900/20">
-                       <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Provider Error Message</p>
-                       <p className="text-xs font-medium text-red-600 dark:text-red-400">
-                          {order.autoTopupError}
-                       </p>
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Payment Validation</p>
-                     <div className="flex items-center gap-2">
-                        {order.smsMatchedId ? (
-                           <>
-                             <div className="w-2 h-2 rounded-full bg-green-500" />
-                             <span className="text-xs font-bold text-green-600">Auto-Matched via SMS</span>
-                           </>
+                     <div className="space-y-2">
+                        {order.autoTopupOrderId ? (
+                           <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg truncate max-w-[180px]">
+                                 #{order.autoTopupOrderId}
+                              </span>
+                              <a 
+                                 href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.toString().split(',')[0].trim()}`} 
+                                 target="_blank" 
+                                 className="inline-flex items-center gap-1 text-[10px] font-black text-primary hover:underline bg-primary/10 px-2.5 py-1 rounded-lg transition-all"
+                              >
+                                 VIEW <ExternalLink size={10} />
+                              </a>
+                           </div>
                         ) : (
-                           <>
-                             <div className="w-2 h-2 rounded-full bg-slate-300" />
-                             <span className="text-xs font-bold text-slate-400">Manual verification</span>
-                           </>
+                           <p className="text-xs font-bold text-slate-400 italic">No provider ID assigned</p>
                         )}
+                        <p className="text-[10px] font-medium text-muted-foreground leading-tight">
+                           {order.autoTopupOrderId ? 'Click view to inspect on FazerCards panel' : 'Dispatched when automation starts'}
+                        </p>
                      </div>
                   </div>
+
+                  {/* Card 3: Payment Validation */}
+                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-xs space-y-3 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
+                     <div className="flex items-center justify-between text-slate-400">
+                        <span className="text-[9px] font-black uppercase tracking-widest">Payment Validation</span>
+                        <Smartphone size={14} className="opacity-50" />
+                     </div>
+                     <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                           {order.smsMatchedId ? (
+                              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-xl w-fit">
+                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Auto-Matched via SMS</span>
+                              </div>
+                           ) : (
+                              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl w-fit">
+                                 <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Manual Verification</span>
+                              </div>
+                           )}
+                        </div>
+                        <p className="text-[10px] font-medium text-muted-foreground leading-tight">
+                           {order.smsMatchedId ? `Matched to SMS Record: #${order.smsMatchedId.slice(-8)}` : 'Manual transaction check by admin'}
+                        </p>
+                     </div>
+                  </div>
+
+                  {/* Error Alert Box (if present) */}
+                  {order.autoTopupError && (
+                     <div className="col-span-full p-4 sm:p-5 bg-rose-50 dark:bg-rose-950/30 rounded-2xl border border-rose-200/80 dark:border-rose-900/30 flex items-start gap-3 text-rose-700 dark:text-rose-300">
+                        <AlertTriangle size={18} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                           <p className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Provider Error Message</p>
+                           <p className="text-xs sm:text-sm font-medium mt-1 leading-relaxed break-words">
+                              {order.autoTopupError}
+                           </p>
+                        </div>
+                     </div>
+                  )}
                </div>
 
-               <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                 {order.autoTopupStatus === 'failed' && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={onRetryTopup} 
-                      disabled={isSaving}
-                      className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black uppercase text-[10px] tracking-widest gap-2 h-12"
-                    >
-                       <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Retry FazerCards Order
-                    </Button>
-                 )}
-                 {order.autoTopupStatus === 'processing' && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => onManualSync(order.id)} 
-                      disabled={isSaving}
-                      className="flex-1 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-black uppercase text-[10px] tracking-widest gap-2 h-12"
-                    >
-                       <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Sync Status
-                    </Button>
-                 )}
-               </div>
+               {/* Action Buttons */}
+               {(order.autoTopupStatus === 'failed' || order.autoTopupStatus === 'processing') && (
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                     {order.autoTopupStatus === 'failed' && (
+                        <Button 
+                           onClick={onRetryTopup} 
+                           disabled={isSaving} 
+                           className="flex-1 sm:flex-none h-11 sm:h-12 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-[10px] tracking-widest shadow-md shadow-rose-600/20 gap-2 active:scale-[0.98] transition-all"
+                        >
+                           <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Retry FazerCards Order
+                        </Button>
+                     )}
+                     {order.autoTopupStatus === 'processing' && (
+                        <Button 
+                           onClick={() => onManualSync(order.id)} 
+                           disabled={isSaving} 
+                           className="flex-1 sm:flex-none h-11 sm:h-12 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase text-[10px] tracking-widest shadow-md shadow-amber-500/20 gap-2 active:scale-[0.98] transition-all"
+                        >
+                           <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Sync Status
+                        </Button>
+                     )}
+                  </div>
+               )}
             </div>
           )}
+
        </Card>
 
        {/* Buyer Profile Card */}
