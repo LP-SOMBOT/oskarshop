@@ -1808,12 +1808,31 @@ export default function AdminPage() {
                                    </p>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
-                                   <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100">
-                                      {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14}/></div>}
+                                   <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100 dark:border-white/10 flex items-center justify-center">
+                                      {order.processedBy?.photoURL ? (
+                                         <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
+                                      ) : order.processedBy?.name ? (
+                                         <span className="text-xs font-black text-primary">{order.processedBy.name.charAt(0).toUpperCase()}</span>
+                                      ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
+                                         <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                            <Smartphone size={14} />
+                                         </div>
+                                      ) : (
+                                         <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                            <User size={14}/>
+                                         </div>
+                                      )}
                                    </div>
                                    <div className="min-w-0">
                                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
-                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{order.processedBy?.name || "Wali lama furin"}</p>
+                                      <p className={cn(
+                                         "text-xs font-bold truncate",
+                                         order.processedBy?.name ? "text-slate-700 dark:text-slate-300" :
+                                         (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? "text-emerald-600 dark:text-emerald-400 font-black" :
+                                         "text-slate-400 italic"
+                                      )}>
+                                         {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS' : "Wali lama furin")}
+                                      </p>
                                    </div>
                                 </div>
                                 <div className="flex gap-2 pt-2 border-t dark:border-white/5">
@@ -1869,15 +1888,32 @@ export default function AdminPage() {
                                        </div>
                                     </TableCell>
                                     <TableCell>
-                                       <div className="flex items-center gap-3">
-                                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                             {order.processedBy?.photoURL ? <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={14} /></div>}
-                                          </div>
-                                          <span className={cn("text-xs font-bold", order.processedBy ? "text-slate-500" : "text-slate-300 italic")}>
-                                            {order.processedBy?.name || "Wali lama furin"}
-                                          </span>
-                                       </div>
-                                    </TableCell>
+                                        <div className="flex items-center gap-3">
+                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-white/10 shadow-sm shrink-0 flex items-center justify-center">
+                                              {order.processedBy?.photoURL ? (
+                                                 <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
+                                              ) : order.processedBy?.name ? (
+                                                 <span className="text-xs font-black text-primary">{order.processedBy.name.charAt(0).toUpperCase()}</span>
+                                              ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
+                                                 <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                                    <Smartphone size={14} />
+                                                 </div>
+                                              ) : (
+                                                 <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                    <User size={14} />
+                                                 </div>
+                                              )}
+                                           </div>
+                                           <span className={cn(
+                                              "text-xs font-bold",
+                                              order.processedBy?.name ? "text-slate-700 dark:text-slate-300" :
+                                              (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? "text-emerald-600 dark:text-emerald-400 font-black" :
+                                              "text-slate-400 italic"
+                                           )}>
+                                             {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS' : "Wali lama furin")}
+                                           </span>
+                                        </div>
+                                     </TableCell>
                                     <TableCell><StatusBadge status={order.status} /></TableCell>
                                     <TableCell className="text-right px-6 lg:px-10">
                                        <div className="flex justify-end items-center gap-3">
@@ -4474,11 +4510,21 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
               <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
                 <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
                   <div className="relative shrink-0">
-                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white">
+                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white flex items-center justify-center">
                       {order.processedBy?.photoURL ? (
                         <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
+                      ) : order.processedBy?.name ? (
+                        <div className="w-full h-full bg-primary/10 flex items-center justify-center font-bold text-primary text-3xl md:text-5xl">
+                          {order.processedBy.name.charAt(0).toUpperCase()}
+                        </div>
+                      ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
+                        <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                          <Smartphone className="size-8 md:size-16" />
+                        </div>
                       ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center font-bold text-slate-300 text-3xl md:text-5xl">O</div>
+                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-300 dark:text-slate-600 text-3xl md:text-5xl">
+                          <User className="size-8 md:size-16" />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -4486,7 +4532,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                   <div className="min-w-0 space-y-1">
                     <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
                     <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
-                      {order.approvedBy === 'auto_sms' ? 'Auto-SMS Match' : order.processedBy?.name || "Wali lama furin"}
+                      {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS Match' : "Wali lama furin")}
                     </h5>
                     {order.processedAt && (
                       <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
