@@ -266,6 +266,33 @@ function CheckoutContent() {
     }
   };
 
+  // Smart auto-apply promo code when typing becomes valid
+  useEffect(() => {
+    const code = promoCodeInput.trim().toUpperCase();
+    if (!code) {
+      if (appliedPromoCode) {
+        setAppliedPromoCode(null);
+        setPromoDiscount(0);
+      }
+      return;
+    }
+    if (code === appliedPromoCode) return;
+
+    if (code.length >= 3) {
+      const timer = setTimeout(async () => {
+        try {
+          const discount = await checkPromoCode(code);
+          setAppliedPromoCode(code);
+          setPromoDiscount(discount);
+          toast({ title: "Promo Applied!", description: `You saved ${discount}% extra!` });
+        } catch {
+          // Keep typing without noisy destructive toasts
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [promoCodeInput, appliedPromoCode, checkPromoCode]);
+
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -650,7 +677,7 @@ function CheckoutContent() {
                   <Input 
                     id="sender" 
                     type="tel" 
-                    placeholder="geli number ka lacagta"
+                    placeholder="Geli number ka lacagta"
                     required 
                     className="h-11 md:h-14 rounded-xl bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-100 dark:border-blue-500/20 focus-visible:ring-primary font-headline font-bold text-sm md:text-lg dark:text-white pl-20 md:pl-28 pr-4 md:pr-6" 
                     value={gameDetails.senderNumber} 
@@ -679,58 +706,112 @@ function CheckoutContent() {
       </div>
 
       <div className={cn("transition-all duration-300 transform", step === 2 ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute inset-0")}>
-        <Card className="rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl border-none p-0.5 md:p-2 bg-white dark:bg-slate-900">
-          <CardHeader className="p-4 md:p-8">
+        <Card className="rounded-[1.5rem] md:rounded-[2.5rem] shadow-xl border-none p-2 sm:p-4 md:p-6 bg-white dark:bg-slate-900">
+          <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
             <CardTitle className="font-headline font-bold text-lg md:text-2xl text-slate-900 dark:text-white">Lacag Bixinta</CardTitle>
-            <CardDescription className="text-[10px] md:text-sm font-medium">Dooro qaabka aad u bixinayso</CardDescription>
+            <CardDescription className="text-xs md:text-sm font-medium">Dooro qaabka aad u bixinayso</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 md:p-8 pt-0 md:pt-0">
+          <CardContent className="p-4 sm:p-6 pt-0">
             {paymentMethods.length === 0 ? (
               <div className="py-10 md:py-12 text-center opacity-40">
                 <Smartphone className="mx-auto w-10 h-10 md:w-12 md:h-12 mb-3 md:mb-4" />
                 <p className="text-xs md:text-sm font-bold">No payment methods configured.</p>
               </div>
             ) : (
-              <RadioGroup value={selectedMethodId} onValueChange={setSelectedMethodId} className="space-y-2 md:space-y-4 mb-6 md:mb-8">
-                {paymentMethods.map((method) => (
-                  <div key={method.id} onClick={() => setSelectedMethodId(method.id)} className={cn("flex items-center justify-between p-3 md:p-5 border-2 rounded-xl md:rounded-[2rem] cursor-pointer transition-all active:scale-[0.98]", selectedMethodId === method.id ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-slate-800/50')}>
-                    <Label htmlFor={method.id} className="flex items-center gap-3 md:gap-4 cursor-pointer w-full">
-                      <div className={cn("w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-2xl flex items-center justify-center transition-colors relative overflow-hidden shrink-0", selectedMethodId === method.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400")}>
-                        {method.icon ? <Image src={method.icon} alt={method.name} fill className="object-cover" unoptimized /> : <Smartphone className="w-4 h-4 md:w-6 md:h-6" />}
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 mb-6">
+                {paymentMethods.map((method) => {
+                  const isSelected = selectedMethodId === method.id;
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => setSelectedMethodId(method.id)}
+                      className={cn(
+                        "relative flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl border-2 transition-all text-left active:scale-[0.98]",
+                        isSelected 
+                          ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm ring-1 ring-primary/30" 
+                          : "border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/70"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden shrink-0 border border-slate-200/50 dark:border-white/5 bg-white dark:bg-slate-800 shadow-xs",
+                        isSelected && "border-primary/30"
+                      )}>
+                        {method.icon ? (
+                          <Image src={method.icon} alt={method.name} fill className="object-contain p-1" unoptimized />
+                        ) : (
+                          <Smartphone className="w-5 h-5 text-primary" />
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm md:text-lg dark:text-white truncate">{method.name}</p>
-                        <p className="text-[8px] md:text-xs text-muted-foreground dark:text-slate-500 font-medium">Fast mobile payment</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">{method.name}</p>
+                        <p className="text-[9px] text-muted-foreground truncate">Fast mobile</p>
                       </div>
-                      <RadioGroupItem value={method.id} id={method.id} className="dark:border-white/20 h-4 w-4 md:h-5 md:w-5" />
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+                      <div className={cn(
+                        "w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors",
+                        isSelected ? "border-primary bg-primary text-white" : "border-slate-300 dark:border-slate-600"
+                      )}>
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             )}
 
-            <div className="mb-6 md:mb-8 space-y-3">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2"><Ticket size={12} /> {t('promo_code_prompt')}</Label>
+            <div className="mb-6 space-y-2">
+              <div className="flex items-center justify-between ml-1">
+                <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5">
+                  <Ticket size={12} /> {t('promo_code_prompt')}
+                </Label>
+                {appliedPromoCode && (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    ✓ Applied (-{promoDiscount}%)
+                  </span>
+                )}
+              </div>
               <div className="flex gap-2">
-                 <Input placeholder="Geli code-ka..." value={promoCodeInput} onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} className="h-12 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner" />
-                 <Button onClick={handleApplyPromo} disabled={!promoCodeInput || isValidatingPromo} className="h-12 md:h-14 px-6 md:px-10 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg active:scale-95 transition-all">{isValidatingPromo ? <Loader2 className="animate-spin" /> : "Apply"}</Button>
+                 <div className="relative flex-1">
+                   <Input 
+                     placeholder="Geli code-ka..." 
+                     value={promoCodeInput} 
+                     onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())} 
+                     className="h-11 sm:h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold uppercase tracking-wider text-xs sm:text-sm shadow-inner" 
+                   />
+                   {appliedPromoCode && (
+                     <button 
+                       type="button" 
+                       onClick={() => { setPromoCodeInput(""); setAppliedPromoCode(null); setPromoDiscount(0); }} 
+                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                     >
+                       ✕
+                     </button>
+                   )}
+                 </div>
+                 <Button 
+                   onClick={handleApplyPromo} 
+                   disabled={!promoCodeInput || isValidatingPromo || appliedPromoCode === promoCodeInput.trim().toUpperCase()} 
+                   className="h-11 sm:h-12 px-5 sm:px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-md active:scale-95 transition-all"
+                 >
+                   {isValidatingPromo ? <Loader2 className="animate-spin size-4" /> : appliedPromoCode ? "Applied" : "Apply"}
+                 </Button>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-slate-800/40 p-4 md:p-8 rounded-2xl md:rounded-[2rem] mb-6 md:mb-8 border border-gray-100 dark:border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-6 md:p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Lock size={40} className="md:size-[60px]" /></div>
-              <div className="flex flex-col gap-3 relative z-10">
+            <div className="bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl md:rounded-[2rem] mb-6 border border-slate-100 dark:border-white/5 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><Lock size={40} className="md:size-[50px]" /></div>
+              <div className="flex flex-col gap-2.5 relative z-10">
                 {hasAnyDiscount && (
-                  <div className="flex justify-between items-center text-sm md:text-lg">
+                  <div className="flex justify-between items-center text-xs sm:text-sm">
                     <span className="text-muted-foreground dark:text-slate-400 font-medium">{language === 'so' ? 'Qiimaha hore' : 'Original Price:'}</span>
                     <span className={cn("font-bold text-slate-900 dark:text-white", hasAnyDiscount && "line-through opacity-40")}>${(basePrice || 0).toFixed(2)}</span>
                   </div>
                 )}
                 
                 {combinedDisplayDiscountPct > 0 && (
-                  <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-right-2 text-primary">
-                     <div className="flex items-center gap-2">
-                        <span className="text-lg">{RankIcon}</span>
+                  <div className="flex justify-between items-center text-xs sm:text-sm animate-in slide-in-from-right-2 text-primary">
+                     <div className="flex items-center gap-1.5">
+                        <span className="text-base">{RankIcon}</span>
                         <span className="font-bold uppercase tracking-tight">{language === 'so' ? 'Diskoonti' : 'Discount'} (-{combinedDisplayDiscountPct}%):</span>
                      </div>
                      <span className="font-black">-${(basePrice - priceAfterRankDiscount).toFixed(2)}</span>
@@ -738,37 +819,37 @@ function CheckoutContent() {
                 )}
 
                 {appliedPromoCode && (
-                  <div className="flex justify-between items-center text-sm md:text-lg animate-in slide-in-from-left-2 text-indigo-500">
-                     <div className="flex items-center gap-2">
-                        <Ticket size={16} />
+                  <div className="flex justify-between items-center text-xs sm:text-sm animate-in slide-in-from-left-2 text-emerald-600 dark:text-emerald-400">
+                     <div className="flex items-center gap-1.5">
+                        <Ticket size={14} />
                         <span className="font-bold uppercase tracking-tight">Promo ({appliedPromoCode}) (-{promoDiscount}%):</span>
                      </div>
                      <span className="font-black">-${(priceAfterRankDiscount * promoDiscount / 100).toFixed(2)}</span>
                   </div>
                 )}
 
-                <div className="h-px bg-slate-200 dark:bg-white/5 my-1" />
+                <div className="h-px bg-slate-200/80 dark:bg-white/5 my-1" />
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2"><span className="text-xs md:base text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">{t('final_total')}</span></div>
+                  <div className="flex items-center gap-2"><span className="text-xs md:text-sm text-muted-foreground dark:text-slate-400 font-black uppercase tracking-widest">{t('final_total')}</span></div>
                   <div className="text-right">
-                    <span className="text-2xl md:text-5xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-headline font-bold text-primary tracking-tighter">${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Button 
                 variant="ghost" 
                 onClick={() => setStep(1)} 
-                className="order-2 sm:order-1 w-full sm:w-auto flex-1 h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] gap-2 font-bold dark:text-slate-300 text-xs md:text-xl transition-all active:scale-95"
+                className="order-2 sm:order-1 w-full sm:w-auto flex-1 h-12 sm:h-14 md:h-16 rounded-xl md:rounded-2xl gap-2 font-bold dark:text-slate-300 text-xs sm:text-sm transition-all active:scale-95"
               >
-                <ArrowLeft className="w-3.5 h-3.5 md:w-5 md:h-5" /> {language === 'so' ? 'Dib U noqo' : 'Back'}
+                <ArrowLeft className="w-4 h-4" /> {language === 'so' ? 'Dib U noqo' : 'Back'}
               </Button>
               <Button 
                 onClick={handlePaymentInitiation} 
                 disabled={paymentMethods.length === 0} 
-                className="order-1 sm:order-2 w-full flex-[2] h-14 sm:h-16 md:h-20 rounded-xl md:rounded-[2rem] text-base xs:text-lg md:text-2xl font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest"
+                className="order-1 sm:order-2 w-full flex-[2] h-12 sm:h-14 md:h-16 rounded-xl md:rounded-2xl text-sm sm:text-base font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white uppercase tracking-widest"
               >
                 Ku bixi {paymentMethods.find(m => m.id === selectedMethodId)?.name || 'lacagta'}
               </Button>

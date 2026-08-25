@@ -1220,6 +1220,18 @@ export default function AdminPage() {
     }
   };
 
+  const handleClearSmsPayments = async () => {
+    if (!rtdb) return;
+    if (!confirm("Are you sure you want to clear all received SMS payments?")) return;
+    try {
+      await remove(ref(rtdb, 'sms_payments'));
+      setRecentSms([]);
+      toast({ title: "SMS Payments Cleared" });
+    } catch (e) {
+      toast({ title: "Failed to clear SMS payments", variant: "destructive" });
+    }
+  };
+
   // Helper functions for 12h time switching
   const getPeriod = (time24: string) => {
     const [h] = (time24 || "00:00").split(':').map(Number);
@@ -2715,234 +2727,191 @@ export default function AdminPage() {
                            </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <Tabs defaultValue="config">
-                              <TabsList className="bg-slate-50 dark:bg-slate-800 mb-6 overflow-x-auto">
-                                 <TabsTrigger value="config">Settings</TabsTrigger>
-                                 <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
-                                 <TabsTrigger value="sms">SMS Matcher</TabsTrigger>
-                                 <TabsTrigger value="raw-sms">Raw Debug Log</TabsTrigger>
-                              </TabsList>
+                            <Tabs defaultValue="config">
+                               <TabsList className="bg-slate-50 dark:bg-slate-800 mb-6 overflow-x-auto">
+                                  <TabsTrigger value="config">Settings</TabsTrigger>
+                                  <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
+                                  <TabsTrigger value="sms">SMS Matcher</TabsTrigger>
+                               </TabsList>
 
-                              <TabsContent value="config">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                  {/* FazerCards Config */}
-                                  <div className="space-y-6">
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                          <div>
-                                              <h5 className="font-bold text-sm">FazerCards Reseller</h5>
-                                              <p className="text-[10px] text-muted-foreground font-medium uppercase">fazercards.com API</p>
-                                          </div>
-                                          <Switch 
-                                              checked={storeSettings.fazercards?.enabled || false} 
-                                              onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } })} 
-                                          />
-                                        </div>
-                                        
-                                        <SettingInput 
-                                          label="FazerCards API Key" 
-                                          type="password"
-                                          value={fazerApiKey} 
-                                          onChange={v => setFazerApiKey(v)} 
-                                          placeholder="Enter API Key" 
-                                        />
-                                        <Button size="sm" onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(()=>toast({title:"API Key Saved"}))} className="w-full h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Keydi / Save</Button>
-
-                                        <div className="pt-4 border-t dark:border-white/5 space-y-4">
-                                          <div className="flex items-center justify-between">
-                                              <p className="text-xs font-bold">Auto Top-Up</p>
-                                              <Switch 
-                                                checked={storeSettings.fazercards?.autoTopupEnabled || false} 
-                                                onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } })} 
-                                              />
-                                          </div>
-                                          <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 shadow-sm">
-                                              <div className="flex flex-col">
-                                                <span className="text-[10px] font-black uppercase text-slate-400">API Balance</span>
-                                                <span className="text-sm font-bold text-primary">{storeSettings.fazercards?.balance || "---"}</span>
-                                              </div>
-                                              <div className="flex gap-2">
-                                                <Button variant="ghost" size="sm" onClick={handleTestFazerConnection} disabled={isTestingFazer} className="h-8 rounded-lg text-[9px] font-black uppercase">{isTestingFazer ? <Loader2 className="animate-spin" /> : "Sync"}</Button>
-                                              </div>
-                                          </div>
-                                        </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </TabsContent>
-
-                              <TabsContent value="webhooks">
-                                 <div className="space-y-4">
-                                    <div className="flex justify-between items-center px-1">
-                                       <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Incoming FazerCards Hooks</h6>
-                                       <Button variant="ghost" size="sm" onClick={handleClearWebhookLogs} className="h-8 text-red-500 font-bold uppercase text-[9px]">Clear Logs</Button>
-                                    </div>
-                                    <div className="border rounded-2xl overflow-hidden bg-white dark:bg-slate-900 divide-y dark:divide-white/5">
-                                       {webhookLogs.length === 0 ? (
-                                          <div className="p-12 text-center opacity-20 italic font-bold uppercase text-xs">No logs found</div>
-                                       ) : (
-                                          webhookLogs.map(log => (
-                                             <div key={log.id} className="p-4 text-xs font-medium grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                                                <div className="flex flex-col gap-1">
-                                                  <div className="flex items-center gap-2">
-                                                     <div className={cn("w-2 h-2 rounded-full", log.matched ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]")} />
-                                                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Received</span>
-                                                  </div>
-                                                  <span className="text-[10px] font-bold">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                   <span className="text-[8px] font-black text-slate-400 uppercase">Fazer ID</span>
-                                                   <span className="font-mono text-primary font-bold text-[10px]">{log.extractedId || '---'}</span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                   <span className="text-[8px] font-black text-slate-400 uppercase">Status</span>
-                                                   <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase border-slate-200">{log.extractedStatus || '---'}</Badge>
-                                                </div>
-                                                <div className="flex flex-col justify-center gap-1">
-                                                   {log.matched ? (
-                                                     <div className="flex flex-col">
-                                                        <span className="text-[8px] font-black text-green-500 uppercase">Matched Order</span>
-                                                        <span className="text-[10px] font-bold text-slate-900 dark:text-white">#{log.matchedOrderId?.toUpperCase()}</span>
-                                                     </div>
-                                                   ) : (
-                                                     <span className="text-[8px] font-black text-slate-300 uppercase italic">No order matched yet</span>
-                                                   )}
-                                                </div>
-                                             </div>
-                                          ))
-                                       )}
-                                    </div>
-                                 </div>
-                              </TabsContent>
-
-                              <TabsContent value="sms">
+                               <TabsContent value="config">
                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
-                                       <div className="flex items-center justify-between">
-                                          <div>
-                                             <h5 className="font-bold text-sm">SMS Auto-Matcher</h5>
-                                             <p className="text-[10px] text-muted-foreground font-medium uppercase">Auto-approve via EVC Plus</p>
-                                          </div>
-                                          <Switch 
-                                             checked={storeSettings.sms_webhook?.enabled || false} 
-                                             onCheckedChange={v => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } })} 
-                                          />
-                                       </div>
+                                   {/* FazerCards Config */}
+                                   <div className="space-y-6">
+                                     <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
+                                         <div className="flex items-center justify-between">
+                                           <div>
+                                               <h5 className="font-bold text-sm">FazerCards Reseller</h5>
+                                               <p className="text-[10px] text-muted-foreground font-medium uppercase">fazercards.com API</p>
+                                           </div>
+                                           <Switch 
+                                               checked={storeSettings.fazercards?.enabled || false} 
+                                               onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } })} 
+                                           />
+                                         </div>
+                                         
+                                         <SettingInput 
+                                           label="FazerCards API Key" 
+                                           type="password"
+                                           value={fazerApiKey} 
+                                           onChange={v => setFazerApiKey(v)} 
+                                           placeholder="Enter API Key" 
+                                         />
+                                         <Button size="sm" onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(()=>toast({title:"API Key Saved"}))} className="w-full h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Keydi / Save</Button>
 
-                                       <div className="space-y-4">
-                                          <div className="space-y-1.5">
-                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook Secret Key</Label>
-                                             <div className="flex gap-2">
-                                                <Input 
-                                                  value={smsMatcherSecret} 
-                                                  onChange={e => setSmsMatcherSecret(e.target.value)} 
-                                                  className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-bold" 
-                                                  placeholder="e.g. oskarshop22" 
-                                                />
-                                                <Button size="sm" onClick={() => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, secret: smsMatcherSecret } }).then(()=>toast({title:"Secret Updated"}))} className="rounded-xl px-4 font-black uppercase text-[10px]">Update</Button>
-                                             </div>
-                                          </div>
-
-                                          <div className="space-y-1.5">
-                                             <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook URL</Label>
-                                             <div className="flex gap-2">
-                                                <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
-                                                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
-                                             </div>
-                                          </div>
-                                       </div>
-
-                                       <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                                          <h6 className="text-[11px] font-black uppercase mb-3 text-primary">SETUP INSTRUCTIONS</h6>
-                                          <div className="space-y-3 text-[10px] leading-relaxed text-muted-foreground font-medium">
-                                             <div className="space-y-1">
-                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 1 — Message Template:</p>
-                                                <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">%mb%</p>
-                                             </div>
-                                             <div className="space-y-1">
-                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 2 — URL Settings:</p>
-                                                <p>Request Type: <span className="font-bold text-primary">POST</span></p>
-                                                <p>URL: <span className="font-bold text-primary">https://oskarshop.so/api/sms-webhook</span></p>
-                                             </div>
-                                             <div className="space-y-1">
-                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 3 — Headers:</p>
-                                                <p><span className="font-bold">x-webhook-secret:</span> {smsMatcherSecret || 'oskarshop22'}</p>
-                                                <p><span className="font-bold">Content-Type:</span> application/json</p>
-                                             </div>
-                                             <div className="space-y-1">
-                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 4 — Body (JSON):</p>
-                                                <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">{"{\"sms\":\"{msg}\",\"from\":\"{sender}\"}"}</p>
-                                             </div>
-                                             <div className="space-y-1">
-                                                <p className="font-bold text-slate-600 dark:text-slate-300">STEP 5 — Filter Rule:</p>
-                                                <p>Contains: <span className="font-bold text-primary">"ka heshay"</span></p>
-                                             </div>
-                                          </div>
-                                       </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                       <h6 className="text-[9px] font-black uppercase text-slate-400 ml-1">Processed Payments</h6>
-                                       <div className="space-y-2">
-                                          {recentSms.map(sms => (
-                                             <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px]">
-                                                <div className="min-w-0">
-                                                   <p className="font-bold">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
-                                                   <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
-                                                </div>
-                                                <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-green-50 text-white" : "bg-amber-100 text-amber-700")}>
-                                                   {sms.matched ? "Approved" : "Unmatched"}
-                                                </Badge>
-                                             </div>
-                                          ))}
-                                          {recentSms.length === 0 && <div className="py-8 text-center opacity-20 italic font-bold">No payments found</div>}
-                                       </div>
-                                    </div>
+                                         <div className="pt-4 border-t dark:border-white/5 space-y-4">
+                                           <div className="flex items-center justify-between">
+                                               <p className="text-xs font-bold">Auto Top-Up</p>
+                                               <Switch 
+                                                 checked={storeSettings.fazercards?.autoTopupEnabled || false} 
+                                                 onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } })} 
+                                               />
+                                           </div>
+                                           <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 shadow-sm">
+                                               <div className="flex flex-col">
+                                                 <span className="text-[10px] font-black uppercase text-slate-400">API Balance</span>
+                                                 <span className="text-sm font-bold text-primary">{storeSettings.fazercards?.balance || "---"}</span>
+                                               </div>
+                                               <div className="flex gap-2">
+                                                 <Button variant="ghost" size="sm" onClick={handleTestFazerConnection} disabled={isTestingFazer} className="h-8 rounded-lg text-[9px] font-black uppercase">{isTestingFazer ? <Loader2 className="animate-spin" /> : "Sync"}</Button>
+                                               </div>
+                                           </div>
+                                         </div>
+                                     </div>
+                                   </div>
                                  </div>
-                              </TabsContent>
+                               </TabsContent>
 
-                              <TabsContent value="raw-sms">
-                                 <div className="space-y-4">
-                                    <div className="flex justify-between items-center px-1">
-                                       <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Raw Incoming DEBUG Log</h6>
-                                       <Button variant="ghost" size="sm" onClick={handleClearRawLogs} className="h-8 text-red-500 font-bold uppercase text-[9px]">Clear Debug Log</Button>
-                                    </div>
-                                    <div className="border rounded-2xl overflow-hidden bg-white dark:bg-slate-900 divide-y dark:divide-white/5">
-                                       {rawSmsLogs.length === 0 ? (
-                                          <div className="p-12 text-center opacity-20 italic font-bold uppercase text-xs">No raw requests received yet</div>
-                                       ) : (
-                                          rawSmsLogs.map(log => (
-                                             <div key={log.id} className="p-4 space-y-3">
-                                                <div className="flex justify-between items-center">
+                               <TabsContent value="webhooks">
+                                  <div className="space-y-4">
+                                     <div className="flex justify-between items-center px-1">
+                                        <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Incoming FazerCards Hooks</h6>
+                                        <Button variant="ghost" size="sm" onClick={handleClearWebhookLogs} className="h-8 text-red-500 font-bold uppercase text-[9px]">Clear Logs</Button>
+                                     </div>
+                                     <div className="border rounded-2xl overflow-hidden bg-white dark:bg-slate-900 divide-y dark:divide-white/5">
+                                        {webhookLogs.length === 0 ? (
+                                           <div className="p-12 text-center opacity-20 italic font-bold uppercase text-xs">No logs found</div>
+                                        ) : (
+                                           webhookLogs.map(log => (
+                                              <div key={log.id} className="p-4 text-xs font-medium grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                                                 <div className="flex flex-col gap-1">
                                                    <div className="flex items-center gap-2">
-                                                      <Clock size={12} className="text-slate-400" />
-                                                      <span className="text-[10px] font-bold">{format(log.receivedAt, 'MMM d, HH:mm:ss')}</span>
-                                                      <span className="text-[8px] font-black text-slate-300 ml-2">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
+                                                      <div className={cn("w-2 h-2 rounded-full", log.matched ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]")} />
+                                                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Received</span>
                                                    </div>
-                                                   <Badge variant="outline" className="text-[8px] font-black uppercase">POST Received</Badge>
-                                                </div>
-                                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border dark:border-white/5">
-                                                   <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Cleaned SMS:</p>
-                                                   <p className="text-[11px] font-medium leading-relaxed font-mono break-all">{log.raw}</p>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                   <div className="flex flex-col">
-                                                      <span className="text-[8px] font-black text-slate-400 uppercase">Body Sender</span>
-                                                      <span className="text-[10px] font-bold">{log.sender || 'Unknown'}</span>
-                                                   </div>
-                                                   <div className="flex flex-col">
-                                                      <span className="text-[8px] font-black text-slate-400 uppercase">Extraction Status</span>
-                                                      <span className={cn("text-[10px] font-black", log.raw?.includes('ka heshay') ? 'text-green-500' : 'text-amber-500')}>
-                                                         {log.raw?.includes('ka heshay') ? 'EVC MATCH' : 'NOT EVC'}
-                                                      </span>
-                                                   </div>
-                                                </div>
-                                             </div>
-                                          ))
-                                       )}
-                                    </div>
-                                 </div>
-                              </TabsContent>
-                           </Tabs>
+                                                   <span className="text-[10px] font-bold">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
+                                                 </div>
+                                                 <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Fazer ID</span>
+                                                    <span className="font-mono text-primary font-bold text-[10px]">{log.extractedId || '---'}</span>
+                                                 </div>
+                                                 <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Status</span>
+                                                    <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase border-slate-200">{log.extractedStatus || '---'}</Badge>
+                                                 </div>
+                                                 <div className="flex flex-col justify-center gap-1">
+                                                    {log.matched ? (
+                                                      <div className="flex flex-col">
+                                                         <span className="text-[8px] font-black text-green-500 uppercase">Matched Order</span>
+                                                         <span className="text-[10px] font-bold text-slate-900 dark:text-white">#{log.matchedOrderId?.toUpperCase()}</span>
+                                                      </div>
+                                                    ) : (
+                                                      <span className="text-[8px] font-black text-slate-300 uppercase italic">No order matched yet</span>
+                                                    )}
+                                                 </div>
+                                              </div>
+                                           ))
+                                        )}
+                                     </div>
+                                  </div>
+                               </TabsContent>
+
+                               <TabsContent value="sms">
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                     <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                           <div>
+                                              <h5 className="font-bold text-sm">SMS Auto-Matcher</h5>
+                                              <p className="text-[10px] text-muted-foreground font-medium uppercase">Auto-approve via EVC Plus</p>
+                                           </div>
+                                           <Switch 
+                                              checked={storeSettings.sms_webhook?.enabled || false} 
+                                              onCheckedChange={v => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } })} 
+                                           />
+                                        </div>
+
+                                        <div className="space-y-4">
+                                           <div className="space-y-1.5">
+                                              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook URL</Label>
+                                              <div className="flex gap-2">
+                                                 <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
+                                                 <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
+                                              </div>
+                                           </div>
+                                        </div>
+
+                                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                                           <h6 className="text-[11px] font-black uppercase mb-3 text-primary">SETUP INSTRUCTIONS</h6>
+                                           <div className="space-y-3 text-[10px] leading-relaxed text-muted-foreground font-medium">
+                                              <div className="space-y-1">
+                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 1 — Message Template:</p>
+                                                 <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">%mb%</p>
+                                              </div>
+                                              <div className="space-y-1">
+                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 2 — URL Settings:</p>
+                                                 <p>Request Type: <span className="font-bold text-primary">POST</span></p>
+                                                 <p>URL: <span className="font-bold text-primary">https://oskarshop.so/api/sms-webhook</span></p>
+                                              </div>
+                                              <div className="space-y-1">
+                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 3 — Headers:</p>
+                                                 <p><span className="font-bold">Content-Type:</span> application/json</p>
+                                              </div>
+                                              <div className="space-y-1">
+                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 4 — Body (JSON):</p>
+                                                 <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">{"{\"sms\":\"{msg}\",\"from\":\"{sender}\"}"}</p>
+                                              </div>
+                                              <div className="space-y-1">
+                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 5 — Filter Rule:</p>
+                                                 <p>Contains: <span className="font-bold text-primary">"ka heshay"</span></p>
+                                              </div>
+                                           </div>
+                                        </div>
+                                     </div>
+                                     <div className="space-y-3">
+                                        <div className="flex items-center justify-between ml-1">
+                                           <div className="flex items-center gap-2">
+                                              <h6 className="text-[9px] font-black uppercase text-slate-400">Processed Payments</h6>
+                                              <Badge variant="outline" className="text-[9px] font-bold px-2 py-0">{recentSms.length} Total</Badge>
+                                           </div>
+                                           {recentSms.length > 0 && (
+                                              <Button 
+                                                 variant="ghost" 
+                                                 size="sm" 
+                                                 onClick={handleClearSmsPayments} 
+                                                 className="h-6 px-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 font-bold uppercase text-[8px] tracking-wider"
+                                              >
+                                                 Clear
+                                              </Button>
+                                           )}
+                                        </div>
+                                        <div className="space-y-2">
+                                           {recentSms.slice(0, 3).map(sms => (
+                                              <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px] shadow-xs">
+                                                 <div className="min-w-0">
+                                                    <p className="font-bold text-slate-900 dark:text-white">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
+                                                    <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
+                                                 </div>
+                                                 <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400")}>
+                                                    {sms.matched ? "Approved" : "Unmatched"}
+                                                 </Badge>
+                                              </div>
+                                           ))}
+                                           {recentSms.length === 0 && <div className="py-8 text-center opacity-20 italic font-bold">No payments found</div>}
+                                        </div>
+                                     </div>
+                                  </div>
+                               </TabsContent>
+                            </Tabs>
                         </AccordionContent>
                      </Card>
                   </AccordionItem>
@@ -4157,76 +4126,76 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
        </div>
 
        <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
              <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                    <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
-                      {item?.title?.replace("Auction Winner", "Guuleystaha") || "ACCOUNT: UNKNOWN"}
+                      {item?.title?.replace("Auction Winner", "Guuleystaha")?.replace(/💎/g, '') || "ACCOUNT: UNKNOWN"}
                    </h2>
-                   {item?.isOneTime && <Badge className="bg-red-500 text-white border-none font-bold text-[8px] md:text-[12px] px-2 py-0.5 uppercase ml-2">ONE TIME</Badge>}
+                   {item?.isOneTime && <Badge className="bg-rose-500 text-white border-none font-bold text-[8px] md:text-[11px] px-2.5 py-0.5 uppercase">ONE TIME</Badge>}
                 </div>
-                <div className="flex items-center gap-4">
-                   <Badge variant="outline" className="rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-3 flex-wrap">
+                   <Badge variant="outline" className="rounded-full px-3.5 py-1 text-[9px] font-black uppercase tracking-widest border-slate-200 dark:border-white/10">
                       {order.paymentMethod || "WHATSAPP DIRECT"}
                    </Badge>
-                   <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
+                   <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">
                       ABOUT {safeFormatDistanceToNow(order.createdAt)} AGO
                    </span>
                 </div>
              </div>
-             <div className="text-right">
-                <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
+             <div className="text-left md:text-right">
+                <p className="text-3xl sm:text-5xl md:text-6xl font-headline font-bold text-primary tracking-tighter">
                    ${order.total.toFixed(2)}
                 </p>
              </div>
           </div>
 
-          <div className="h-px bg-slate-50 dark:bg-white/5 w-full mb-12" />
+          <div className="h-px bg-slate-100 dark:bg-white/5 w-full mb-10" />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-8">
-             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"> <Copy size={14} /> </button> : null} />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 sm:gap-y-10 gap-x-6 sm:gap-x-8">
+             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Copy Player ID"> <Copy size={14} /> </button> : null} />
              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                    <User size={14} className="opacity-40" />
                    <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
                 </div>
                 <div className="flex items-center gap-1.5 min-w-0">
-                   <p className="text-sm md:text-xl font-semibold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
+                   <p className="text-sm md:text-lg font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
                    {order.ffVerified ? (
                      <VerifiedBadge />
                    ) : order.ffUid ? (
-                     <Badge className="bg-amber-100 text-amber-700 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
+                     <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
                    ) : null}
                 </div>
              </div>
              <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
-             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-all"> <MessageCircle size={14} /> </button> : null} />
+             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-all" title="Open WhatsApp"> <MessageCircle size={14} /> </button> : null} />
              <InsightStat label="Order Date" value={order.createdAt && !isNaN(new Date(order.createdAt).getTime()) ? format(new Date(order.createdAt), "MMM d, h:mm a") : "---"} icon={Clock} />
              <InsightStat label="Order Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
              {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
              {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
-             {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`${order.rank === 1 ? '🥇' : order.rank === 2 ? '🥈' : '🥉'} -${order.rankDiscount}%`} icon={Trophy} isPrimary />}
+             {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`Rank ${order.rank || 1} (-${order.rankDiscount}%)`} icon={Trophy} isPrimary />}
           </div>
 
           {/* Special Package Delivery Status UI */}
           {delivery && (
-            <div className="mt-12 space-y-8 animate-in fade-in duration-500">
-               <div className="p-4 sm:p-6 md:p-10 bg-slate-50 dark:bg-slate-800 rounded-[2rem] md:rounded-[2.5rem] border dark:border-white/5 space-y-6">
+            <div className="mt-10 space-y-6 animate-in fade-in duration-500">
+               <div className="p-4 sm:p-6 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border dark:border-white/5 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                      <div className="flex items-center gap-3 text-primary">
-                        <ShoppingBag size={24} />
-                        <h4 className="font-headline font-bold text-lg md:text-2xl uppercase tracking-tight">Package Delivery Status</h4>
+                        <ShoppingBag size={22} />
+                        <h4 className="font-headline font-bold text-base md:text-xl uppercase tracking-tight">Package Delivery Status</h4>
                      </div>
                      <Badge className={cn(
-                       "rounded-full px-5 py-2 font-black text-[10px] uppercase tracking-widest border-none shadow-sm w-fit",
-                       delivery.overallStatus === 'completed' ? "bg-green-600 text-white" :
-                       delivery.overallStatus === 'failed' ? "bg-red-600 text-white" :
-                       delivery.overallStatus === 'partial' ? "bg-orange-500 text-white" : "bg-amber-50 text-amber-700"
+                       "rounded-full px-4 py-1.5 font-black text-[9px] uppercase tracking-widest border-none shadow-xs w-fit",
+                       delivery.overallStatus === 'completed' ? "bg-emerald-600 text-white" :
+                       delivery.overallStatus === 'failed' ? "bg-rose-600 text-white" :
+                       delivery.overallStatus === 'partial' ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
                      )}>
-                        {delivery.overallStatus === 'completed' ? "✅ All Delivered" :
-                         delivery.overallStatus === 'processing' ? "⏳ In Progress" :
-                         delivery.overallStatus === 'partial' ? "⚠️ Partially Delivered" :
-                         delivery.overallStatus === 'failed' ? "❌ Failed" : "🕐 Pending"}
+                        {delivery.overallStatus === 'completed' ? "Delivered" :
+                         delivery.overallStatus === 'processing' ? "In Progress" :
+                         delivery.overallStatus === 'partial' ? "Partially Delivered" :
+                         delivery.overallStatus === 'failed' ? "Failed" : "Pending"}
                      </Badge>
                   </div>
 
@@ -4235,21 +4204,21 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                         <p className="text-[10px] font-black uppercase text-slate-400">{delivery.completedOffers} / {delivery.totalOffers} items delivered</p>
                         <p className="text-xs font-black text-primary">{Math.round((delivery.completedOffers / delivery.totalOffers) * 100)}%</p>
                      </div>
-                     <Progress value={(delivery.completedOffers / delivery.totalOffers) * 100} className="h-3 rounded-full bg-slate-200 dark:bg-slate-700" />
+                     <Progress value={(delivery.completedOffers / delivery.totalOffers) * 100} className="h-2.5 rounded-full bg-slate-200 dark:bg-slate-700" />
                   </div>
 
-                  <div className="space-y-3 pt-4">
+                  <div className="space-y-3 pt-2">
                      {Object.entries(delivery.offers).map(([offId, offData]: [string, any]) => (
-                       <div key={offId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 group shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 gap-4">
-                          <div className="flex items-center gap-4 min-w-0">
+                       <div key={offId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 group shadow-xs transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                              <div className={cn(
                                "w-2.5 h-2.5 rounded-full shrink-0",
-                               offData.status === 'completed' ? "bg-green-500" :
-                               offData.status === 'failed' ? "bg-red-500" :
+                               offData.status === 'completed' ? "bg-emerald-500" :
+                               offData.status === 'failed' ? "bg-rose-500" :
                                offData.status === 'processing' ? "bg-amber-500 animate-pulse" : "bg-slate-300"
                              )} />
                              <div className="min-w-0">
-                                <p className="font-bold text-sm truncate dark:text-white">{offData.offerName}</p>
+                                <p className="font-bold text-xs sm:text-sm truncate dark:text-white">{offData.offerName}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
                                    {offData.fazercardsOrderId ? (
                                      <a 
@@ -4268,13 +4237,13 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                           <div className="text-left sm:text-right shrink-0">
                              <p className={cn(
                                "text-[10px] font-black uppercase tracking-widest",
-                               offData.status === 'completed' ? "text-green-500" :
-                               offData.status === 'failed' ? "text-red-500" :
-                               offData.status === 'processing' ? "text-amber-500" : "text-slate-400 dark:text-slate-600"
+                               offData.status === 'completed' ? "text-emerald-600 dark:text-emerald-400" :
+                               offData.status === 'failed' ? "text-rose-600 dark:text-rose-400" :
+                               offData.status === 'processing' ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-600"
                              )}>
                                 {offData.status}
                              </p>
-{offData.error && <p className="text-[9px] text-red-500 mt-0.5 max-w-[200px] truncate" title={offData.error}>{offData.error}</p>}
+                             {offData.error && <p className="text-[9px] text-rose-500 mt-0.5 max-w-[200px] truncate" title={offData.error}>{offData.error}</p>}
                           </div>
                        </div>
                      ))}
@@ -4285,7 +4254,7 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
 
           {/* Automation Insight for Regular Orders */}
           {!delivery && (order.autoTopupStatus || order.smsMatchedId) && (
-            <div className="mt-8 sm:mt-12 p-5 sm:p-7 md:p-8 bg-slate-50/90 dark:bg-slate-800/60 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200/80 dark:border-white/10 space-y-6 shadow-sm">
+            <div className="mt-8 sm:mt-10 p-5 sm:p-7 md:p-8 bg-slate-50/90 dark:bg-slate-800/60 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200/80 dark:border-white/10 space-y-6 shadow-sm">
                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 dark:border-white/5 pb-4">
                   <div className="flex items-center gap-3">
                      <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-sm">
@@ -4293,28 +4262,17 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
                      </div>
                      <div>
                         <h5 className="font-headline font-bold text-sm sm:text-base uppercase tracking-tight text-slate-900 dark:text-white">Automation System Log</h5>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live provider status & SMS pipeline</p>
                      </div>
                   </div>
                   <div className="flex items-center gap-2 self-start sm:self-auto">
                      {order.autoTopupStatus === 'completed' && (
                         <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
-                           ✅ Delivered & Synced
+                           Delivered & Synced
                         </Badge>
                      )}
                      {order.autoTopupStatus === 'processing' && (
                         <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
                            <Loader2 size={10} className="animate-spin" /> Processing Order
-                        </Badge>
-                     )}
-                     {order.autoTopupStatus === 'failed' && (
-                        <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
-                           ⚠️ Action Needed
-                        </Badge>
-                     )}
-                     {!order.autoTopupStatus && (
-                        <Badge variant="outline" className="text-[9px] font-black uppercase px-3 py-1 rounded-full text-slate-400 border-slate-200 dark:border-white/10">
-                           Pending Match
                         </Badge>
                      )}
                   </div>
@@ -4466,30 +4424,44 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
               <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
             </div>
 
-            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center gap-6">
-              <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white">
-                {buyer?.photoURL ? (
-                  <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
-                    <User size={40} />
+            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white shrink-0">
+                  {buyer?.photoURL ? (
+                    <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
+                      <User size={32} />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="truncate font-bold text-lg md:text-2xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
+                    {buyer?.isVerified && <VerifiedBadge />}
                   </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <p className="truncate font-bold text-lg md:text-3xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
-                  {buyer?.isVerified && <VerifiedBadge />}
-                </div>
-                <div className="flex items-center gap-2 mt-1 md:mt-2">
-                  <Smartphone size={14} className="text-primary" />
-                  <span className="text-xs md:text-xl font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-2 md:mt-3">
-                  <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
-                  <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
+                  <div className="flex items-center gap-2 mt-1 md:mt-2">
+                    <Smartphone size={14} className="text-primary" />
+                    <span className="text-xs md:text-sm font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 md:mt-3">
+                    <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
+                    <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
+                  </div>
                 </div>
               </div>
+
+              {(buyer?.uid || order.userId) && (
+                <Button
+                  onClick={() => {
+                    setGlobalLoading(true);
+                    router.push(`/admin/users/${buyer?.uid || order.userId}`);
+                  }}
+                  className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wider shadow-md gap-2 shrink-0 self-start sm:self-auto"
+                >
+                  <Eye size={16} /> Customer Info
+                </Button>
+              )}
             </div>
           </div>
        </Card>
