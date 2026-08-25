@@ -80,8 +80,10 @@ export async function POST(request: Request) {
         }
       }
     } else if (fazercardsStatus === 'failed' || fazercardsStatus === 'rejected') {
+      updates.status = 'cancelled';
       updates.autoTopupStatus = 'failed';
       updates.autoTopupError = error || 'FazerCards failed delivery';
+      updates.cancellationReason = error || 'FazerCards failed delivery';
     } else if (fazercardsStatus === 'processing') {
       updates.autoTopupStatus = 'processing';
     }

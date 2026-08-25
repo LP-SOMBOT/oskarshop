@@ -1,4 +1,5 @@
 import { adminDb } from '@/lib/firebaseAdmin'
+import { processOrderFazerTopup } from '@/lib/fazercards'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,7 +75,8 @@ export async function POST(request: Request) {
   }
 
   // Extract amount
-  const amountMatch = smsText.match(/\$\s*([0-9]+\.?[0-9]*)/)
+  const amountMatch = smsText.match(/\$\s*([0-9]+(?:\.[0-9]+)?)/) ||
+                      smsText.match(/([0-9]+(?:\.[0-9]+)?)\s*\$/)
   const amount = amountMatch ? parseFloat(amountMatch[1]) : null
 
   // Extract phone after "ka heshay"
@@ -88,7 +90,7 @@ export async function POST(request: Request) {
       .replace(/[^0-9]/g, '')
   }
   if (!phone || phone.length < 8) {
-    const fallback = smsText.match(/\b(6[0-9]{8})\b/)
+    const fallback = smsText.match(/\b(?:252|0)?(6[0-9]{8})\b/) || smsText.match(/\b(6[0-9]{7,8})\b/)
     if (fallback) phone = fallback[1]
   }
 
@@ -183,7 +185,7 @@ export async function POST(request: Request) {
     })
   }
 
-  // Approve first matching order
+  // Match first pending order
   const [matchedOrderId, matchedOrder] = matches[0]
 
   await adminDb.ref(`/sms_payments/${smsId}`).update({
@@ -191,54 +193,30 @@ export async function POST(request: Request) {
     matchedOrderId
   })
 
+  // Set order status to processing (standard lifecycle: pending -> processing -> successful/cancelled)
   await adminDb.ref(`/orders/${matchedOrderId}`).update({
-    status: 'approved',
+    status: 'processing',
     paymentMatchedAt: now,
     smsMatchedId: smsId,
     approvedBy: 'auto_sms',
+    processedAt: now,
     approvedAt: now
   })
 
-  // Trigger auto top-up (fire and forget)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
-                 'https://oskarshop.so'
-  const itemId = matchedOrder.itemId ||
-                 matchedOrder.productId ||
-                 matchedOrder.items?.[0]?.id
-
-  if (itemId) {
-    adminDb.ref(`/items/${itemId}`).get()
-      .then(snap => {
-        const item = snap.val()
-        if (!item) return
-        if (!item.autoTopupEnabled &&
-            !item.resellerAutomation?.enabled) return
-        const isSpecial =
-          item.specialHandling === 'special_package'
-        const endpoint = isSpecial
-          ? `${appUrl}/api/fazercards/place-special-package`
-          : `${appUrl}/api/fazercards/place-topup`
-        fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: matchedOrderId,
-            category_id: item.fazercardsCategory_id ||
-              item.resellerAutomation?.category_id,
-            offer_id: item.fazercardsOffer_id ||
-              item.resellerAutomation?.offer_id,
-            playerUid: matchedOrder.ffUid ||
-              matchedOrder.gameDetails?.playerID ||
-              matchedOrder.gameId,
-            playerRegion: matchedOrder.ffRegion || 'ME',
-            gameFields: matchedOrder.gameFields ||
-              matchedOrder.gameDetails?.gameFields || {}
-          })
-        }).catch(() => {})
-      }).catch(() => {})
+  // Check if Reseller Automation FazerCards is enabled in admin settings
+  let resellerResult: any = null
+  try {
+    const settingsSnap = await adminDb.ref('settings/fazercards').get()
+    const fazerConfig = settingsSnap.val()
+    if (fazerConfig?.enabled) {
+      resellerResult = await processOrderFazerTopup(matchedOrderId)
+    }
+  } catch (err: any) {
+    console.error('Error invoking FazerCards for matched order:', err)
   }
 
-  // Telegram notification (fire and forget)
+  // Telegram notification
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://oskarshop.so'
   fetch(`${appUrl}/api/notify-telegram`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -252,7 +230,7 @@ export async function POST(request: Request) {
       amount: matchedOrder.amount ||
         matchedOrder.total || amount,
       orderId: matchedOrderId,
-      message: `💳 Auto-matched! Phone: ${phone} Amount: $${amount}`
+      message: `💳 Auto-matched via SMS! Status: PROCESSING. Phone: ${phone} Amount: $${amount}`
     })
   }).catch(() => {})
 
@@ -264,6 +242,8 @@ export async function POST(request: Request) {
     amount,
     matched: true,
     matchedOrderId,
-    message: `Order ${matchedOrderId} approved automatically.`
+    status: 'processing',
+    resellerResult,
+    message: `Order ${matchedOrderId} matched and set to processing.`
   })
 }

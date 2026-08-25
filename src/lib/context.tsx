@@ -1338,11 +1338,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         if (matchingSms) {
           const [smsId] = matchingSms;
-          newOrder.status = 'successful';
+          newOrder.status = 'processing';
           newOrder.paymentMatchedAt = now;
           newOrder.smsMatchedId = smsId;
           newOrder.approvedBy = 'auto_sms';
-          newOrder.completedAt = now;
+          newOrder.processedAt = now;
           wasAutoApproved = true;
           await update(ref(rtdb, `sms_payments/${smsId}`), { matched: true, matchedOrderId: orderId });
 
@@ -1351,7 +1351,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const origin = window.location.origin;
 
           if (storeSettings.fazercards?.enabled) {
-            if (fullItem?.category === 'special_package') {
+            if (fullItem?.category === 'special_package' || fullItem?.specialHandling === 'special_package') {
               fetch(`${origin}/api/fazercards/place-special-package`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1362,14 +1362,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   gameFields: gameDetails.gameFields
                 })
               }).catch(e => console.error("Auto SMS Special Package failed:", e));
-            } else if (directItem.autoTopupEnabled) {
+            } else if (directItem.autoTopupEnabled || fullItem?.autoTopupEnabled || (directItem.fazercardsCategory_id && directItem.fazercardsOffer_id)) {
                fetch(`${origin}/api/fazercards/place-topup`, {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({
                    orderId: orderId,
-                   category_id: directItem.fazercardsCategory_id,
-                   offer_id: directItem.fazercardsOffer_id,
+                   category_id: directItem.fazercardsCategory_id || fullItem?.fazercardsCategory_id,
+                   offer_id: directItem.fazercardsOffer_id || fullItem?.fazercardsOffer_id,
                    fields: gameDetails.gameFields
                  })
                }).catch(e => console.error("Auto SMS standard top-up failed:", e));
@@ -1689,7 +1689,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const markAdminNotificationsAsRead = useCallback(async (nid?: string) => {
     if (!rtdb || !enhancedUser?.isAdmin) return;
-    if (nid) await update(ref(rtdb, `adminNotifications/${nid}/readBy/${enhancedUser.uid}`), true);
+    if (nid) await set(ref(rtdb, `adminNotifications/${nid}/readBy/${enhancedUser.uid}`), true);
     else { const updates: any = {}; adminNotifications.forEach(n => updates[`adminNotifications/${n.id}/readBy/${enhancedUser.uid}`] = true); await update(ref(rtdb), updates); }
   }, [rtdb, enhancedUser, adminNotifications]);
 
