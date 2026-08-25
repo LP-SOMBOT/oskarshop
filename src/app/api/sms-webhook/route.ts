@@ -1,229 +1,269 @@
-import { NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebaseAdmin'
 
-/**
- * GET: Health check for status verification.
- */
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
-  return NextResponse.json({
+  return Response.json({
     status: 'READY AND ACTIVE',
-    message: 'OskarShop SMS Webhook is online. Send a POST request with x-webhook-secret header to use it.',
-    usage: 'POST /api/sms-webhook',
-    powered_by: 'OskarShop Automation'
-  });
+    message: 'OskarShop SMS Webhook online',
+    usage: 'POST /api/sms-webhook'
+  })
 }
 
-/**
- * OPTIONS: CORS preflight.
- */
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': '*',
-    }
-  });
-}
-
-/**
- * POST: Receive forwarded SMS and match to pending orders.
- */
 export async function POST(request: Request) {
-  // TEST: Return success immediately to confirm POST works
-  // Remove this block after confirming POST connectivity
-  try {
-    const rawBody = await request.clone().text().catch(() => 'empty');
-    let parsedBody = null;
-    try {
-      parsedBody = JSON.parse(rawBody);
-    } catch (e) {}
+  const now = Date.now()
 
-    return NextResponse.json({
+  // Read raw body as text - accept everything
+  const rawBody = await request.text().catch(() => '')
+
+  // Parse SMS text from body
+  let smsText = rawBody
+  const ct = request.headers.get('content-type') || ''
+
+  if (ct.includes('json') && rawBody) {
+    try {
+      const j = JSON.parse(rawBody)
+      smsText = j.sms || j.msg || j.message ||
+                j.text || j.body || j.data || rawBody
+    } catch { smsText = rawBody }
+  } else if (ct.includes('form') && rawBody) {
+    try {
+      const p = new URLSearchParams(rawBody)
+      smsText = p.get('sms') || p.get('msg') ||
+                p.get('message') || p.get('text') || rawBody
+    } catch { smsText = rawBody }
+  }
+
+  // Strip forwarder prefix "From : 192() message"
+  smsText = smsText
+    .replace(/^From\s*:\s*[^\n]*\n?/im, '')
+    .trim()
+  if (!smsText) smsText = rawBody
+
+  // Always log to Firebase - even empty bodies
+  try {
+    await adminDb.ref('/sms_raw_log').push({
+      rawBody: rawBody.substring(0, 500),
+      smsText: smsText.substring(0, 500),
+      contentType: ct,
+      receivedAt: now
+    })
+  } catch (e: any) {
+    // If Firebase fails, still return 200
+    return Response.json({
       ok: true,
-      success: true,
-      received: parsedBody || rawBody,
-      timestamp: Date.now(),
-      message: 'POST received - connectivity confirmed'
-    });
-  } catch (testErr) {
-    return NextResponse.json({ ok: true, success: true, message: 'POST received' });
+      received: true,
+      firebaseError: e.message,
+      smsText: smsText.substring(0, 100)
+    })
   }
 
-  // The code below is currently unreachable for testing purposes.
-  // After you confirm connectivity, remove the block above.
-  try {
-    // Use dynamic import to handle potential initialization failure
-    const adminModule = await import('@/lib/firebaseAdmin').catch(() => null);
-    const adminDb = adminModule?.adminDb;
+  // Check if EVC Plus
+  const isEvc = smsText.includes('EVCPLUS') ||
+                smsText.includes('EVC') ||
+                smsText.includes('ka heshay') ||
+                smsText.includes('waxaad')
 
-    if (!adminDb) {
-      console.error("SMS Webhook: Firebase Admin DB is not available.");
-      return NextResponse.json({ success: true, matched: false, message: 'Database service currently offline' });
-    }
-
-    let rawSms = '';
-    let senderRaw = '';
-    const contentType = request.headers.get('content-type') || '';
-
-    try {
-      if (contentType.includes('application/json')) {
-        const body = await request.json().catch(() => ({}));
-        rawSms = body.sms || body.msg || body.message ||
-                 body.text || body.body || body.data ||
-                 JSON.stringify(body);
-        senderRaw = body.from || body.sender || '';
-      } else {
-        const rawText = await request.text().catch(() => '');
-        const params = new URLSearchParams(rawText);
-        rawSms = params.get('sms') || params.get('msg') ||
-                 params.get('message') || params.get('text') ||
-                 rawText;
-        senderRaw = params.get('from') || params.get('sender') || '';
-      }
-    } catch {
-      try {
-        rawSms = await request.text().catch(() => '');
-      } catch {
-        rawSms = '';
-      }
-    }
-
-    rawSms = rawSms
-      .replace(/^From\s*:\s*[^\n]*\n?/im, '')
-      .trim();
-
-    if (!rawSms) {
-      return NextResponse.json({ success: false, message: 'No SMS text found' }, { status: 400 });
-    }
-
-    // CLEAN SMS TEXT - use rawSms as cleaned source
-    let cleanSms = rawSms;
-
-    // 4. LOG RAW SMS
-    try {
-      await adminDb.ref('/sms_raw_log').push({
-        raw: rawSms,
-        cleaned: cleanSms,
-        sender: senderRaw,
-        receivedAt: Date.now()
-      });
-    } catch (logErr) {}
-
-    // 5. CHECK IF EVC PLUS
-    const isEvc = cleanSms.includes('EVCPLUS') || 
-                  cleanSms.includes('EVC') || 
-                  cleanSms.includes('waxaad') || 
-                  cleanSms.includes('ka heshay');
-
-    if (!isEvc) {
-      return NextResponse.json({ success: true, matched: false, message: 'Non-EVC SMS ignored' });
-    }
-
-    // 6. EXTRACT PAYMENT DETAILS
-    const amountMatch = cleanSms.match(/\$\s*([0-9]+\.?[0-9]*)\s+ka\s+heshay/i);
-    if (!amountMatch) {
-      return NextResponse.json({ success: false, message: 'Could not extract amount' });
-    }
-    const amount = parseFloat(amountMatch[1]);
-
-    const phoneMatch = cleanSms.match(/ka\s+heshay\s+([\+0-9]+)/i);
-    let phone = "";
-    if (phoneMatch) {
-      phone = phoneMatch[1].replace(/^\+252/, '').replace(/^252/, '').replace(/^0/, '').replace(/\s/g, '');
-    }
-
-    if (!/^6[0-9]{8}$/.test(phone)) {
-      const altMatch = cleanSms.match(/\b(6[0-9]{8})\b/);
-      if (altMatch) phone = altMatch[1];
-      else return NextResponse.json({ success: false, message: 'Invalid phone format' });
-    }
-
-    const now = Date.now();
-    const smsRef = adminDb.ref('/sms_payments').push();
-    await smsRef.set({ raw: cleanSms, senderPhone: phone, amount, receivedAt: now, matched: false, expired: false });
-    const smsId = smsRef.key;
-
-    // 7. MATCH PENDING ORDERS
-    const ordersSnap = await adminDb.ref('/orders').get();
-    if (!ordersSnap.exists()) return NextResponse.json({ success: true, smsId, matched: false, message: 'SMS saved, no orders' });
-
-    const allOrders = ordersSnap.val();
-    const twoHours = 2 * 60 * 60 * 1000;
-    const pendingStatuses = ['pending', 'waiting', 'waiting_payment', 'unpaid', 'new', 'created'];
-
-    const matches = Object.entries(allOrders)
-      .filter(([id, order]: [string, any]) => {
-        const status = (order.status || '').toLowerCase();
-        if (!pendingStatuses.includes(status) || order.smsMatchedId) return false;
-
-        const rawOrderPhone = (order.senderPhone || order.customerPhone || order.phone || '').toString();
-        const normOrderPhone = rawOrderPhone.replace(/^\+252/, '').replace(/^252/, '').replace(/^0/, '').replace(/[^0-9]/g, '').slice(-9);
-
-        const phoneOk = normOrderPhone === phone.slice(-9);
-        const amountOk = Math.abs(parseFloat(order.total || order.amount || 0) - amount) < 0.02;
-        const timeOk = Math.abs(now - (order.createdAt || order.placedAt || 0)) <= twoHours;
-
-        return phoneOk && amountOk && timeOk;
-      })
-      .sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0));
-
-    if (matches.length === 0) {
-      return NextResponse.json({ success: true, smsId, matched: false, phone, amount, message: 'SMS saved, no match found' });
-    }
-
-    // 8. APPROVE ORDER
-    const [matchedOrderId, matchedOrder]: [string, any] = matches[0];
-    await adminDb.ref(`/sms_payments/${smsId}`).update({ matched: true, matchedOrderId });
-    await adminDb.ref(`/orders/${matchedOrderId}`).update({
-      status: 'approved',
-      paymentMatchedAt: now,
-      smsMatchedId: smsId,
-      approvedBy: 'auto_sms',
-      approvedAt: now
-    });
-
-    // 9. TRIGGER AUTOMATION
-    const itemId = matchedOrder.items?.[0]?.id || matchedOrder.itemId;
-    if (itemId) {
-      adminDb.ref(`/products/${itemId}`).get().then(snap => {
-        const item = snap.val();
-        if (item?.autoTopupEnabled || item?.category === 'special_package') {
-          const endpoint = item.category === 'special_package' ? '/api/fazercards/place-special-package' : '/api/fazercards/place-topup';
-          fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://oskarshop.so'}${endpoint}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId: matchedOrderId,
-              category_id: item.fazercardsCategory_id,
-              offer_id: item.fazercardsOffer_id,
-              playerUid: matchedOrder.ffUid || matchedOrder.gameDetails?.playerID,
-              playerRegion: matchedOrder.ffRegion || 'MENA',
-              gameFields: matchedOrder.gameDetails?.gameFields || {}
-            })
-          }).catch(() => {});
-        }
-      });
-    }
-
-    // 10. NOTIFY
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://oskarshop.so'}/api/notify-telegram`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        customerName: matchedOrder.gameDetails?.playerName || 'User',
-        customerPhone: matchedOrder.gameDetails?.whatsappNumber || phone,
-        itemName: matchedOrder.items?.[0]?.title || 'Item',
-        amount: matchedOrder.total || amount,
-        orderId: matchedOrderId,
-        message: `💳 Auto-matched! Phone: ${phone} Amount: $${amount}`
-      })
-    }).catch(() => {});
-
-    return NextResponse.json({ success: true, smsId, matched: true, matchedOrderId, message: `Approved #${matchedOrderId}` });
-
-  } catch (err: any) {
-    console.error('SMS Webhook Error:', err);
-    return NextResponse.json({ success: true, error: err.message });
+  if (!isEvc) {
+    return Response.json({
+      ok: true,
+      received: true,
+      isEvc: false,
+      message: 'Non-EVC SMS logged and ignored'
+    })
   }
+
+  // Extract amount
+  const amountMatch = smsText.match(/\$\s*([0-9]+\.?[0-9]*)/)
+  const amount = amountMatch ? parseFloat(amountMatch[1]) : null
+
+  // Extract phone after "ka heshay"
+  let phone: string | null = null
+  const phoneMatch = smsText.match(/ka\s+heshay\s+([\+0-9]+)/i)
+  if (phoneMatch) {
+    phone = phoneMatch[1]
+      .replace(/^\+252/, '')
+      .replace(/^252/, '')
+      .replace(/^0/, '')
+      .replace(/[^0-9]/g, '')
+  }
+  if (!phone || phone.length < 8) {
+    const fallback = smsText.match(/\b(6[0-9]{8})\b/)
+    if (fallback) phone = fallback[1]
+  }
+
+  if (!phone || !amount) {
+    return Response.json({
+      ok: true,
+      received: true,
+      isEvc: true,
+      phone,
+      amount,
+      message: 'EVC SMS logged. Could not extract phone or amount.'
+    })
+  }
+
+  // Save SMS payment record
+  const smsRef = adminDb.ref('/sms_payments').push()
+  await smsRef.set({
+    raw: smsText,
+    senderPhone: phone,
+    amount,
+    receivedAt: now,
+    matched: false,
+    matchedOrderId: null,
+    expired: false
+  })
+  const smsId = smsRef.key
+
+  // Find matching pending order
+  const ordersSnap = await adminDb.ref('/orders').get()
+  if (!ordersSnap.exists()) {
+    return Response.json({
+      ok: true,
+      received: true,
+      smsId,
+      phone,
+      amount,
+      matched: false,
+      message: 'SMS saved. No orders in database.'
+    })
+  }
+
+  const allOrders = ordersSnap.val() as Record<string, any>
+  const twoHours = 2 * 60 * 60 * 1000
+  const pendingStatuses = [
+    'pending', 'waiting', 'waiting_payment',
+    'unpaid', 'new', 'created'
+  ]
+
+  const matches = Object.entries(allOrders)
+    .filter(([, order]) => {
+      if (!order || order.smsMatchedId) return false
+      const status = (order.status || '').toLowerCase()
+      if (!pendingStatuses.includes(status)) return false
+
+      const rawPhone = String(
+        order.senderPhone ||
+        order.customerPhone ||
+        order.phone ||
+        order.paymentPhone ||
+        order.gameDetails?.senderNumber ||
+        order.gameDetails?.whatsappNumber ||
+        order.userPhone || ''
+      )
+      const normPhone = rawPhone
+        .replace(/^\+252/, '')
+        .replace(/^252/, '')
+        .replace(/^0/, '')
+        .replace(/[^0-9]/g, '')
+        .slice(-9)
+
+      const phoneOk = normPhone === phone!.slice(-9)
+      const orderAmount = parseFloat(
+        order.amount || order.total || order.price || '0'
+      )
+      const amountOk = Math.abs(orderAmount - amount!) < 0.02
+      const orderTime = order.createdAt || order.placedAt || 0
+      const timeOk = Math.abs(now - orderTime) <= twoHours
+
+      return phoneOk && amountOk && timeOk
+    })
+    .sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0))
+
+  if (matches.length === 0) {
+    return Response.json({
+      ok: true,
+      received: true,
+      smsId,
+      phone,
+      amount,
+      matched: false,
+      message: 'SMS saved. No matching orders found.'
+    })
+  }
+
+  // Approve first matching order
+  const [matchedOrderId, matchedOrder] = matches[0]
+
+  await adminDb.ref(`/sms_payments/${smsId}`).update({
+    matched: true,
+    matchedOrderId
+  })
+
+  await adminDb.ref(`/orders/${matchedOrderId}`).update({
+    status: 'approved',
+    paymentMatchedAt: now,
+    smsMatchedId: smsId,
+    approvedBy: 'auto_sms',
+    approvedAt: now
+  })
+
+  // Trigger auto top-up (fire and forget)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
+                 'https://oskarshop.so'
+  const itemId = matchedOrder.itemId ||
+                 matchedOrder.productId ||
+                 matchedOrder.items?.[0]?.id
+
+  if (itemId) {
+    adminDb.ref(`/items/${itemId}`).get()
+      .then(snap => {
+        const item = snap.val()
+        if (!item) return
+        if (!item.autoTopupEnabled &&
+            !item.resellerAutomation?.enabled) return
+        const isSpecial =
+          item.specialHandling === 'special_package'
+        const endpoint = isSpecial
+          ? `${appUrl}/api/fazercards/place-special-package`
+          : `${appUrl}/api/fazercards/place-topup`
+        fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: matchedOrderId,
+            category_id: item.fazercardsCategory_id ||
+              item.resellerAutomation?.category_id,
+            offer_id: item.fazercardsOffer_id ||
+              item.resellerAutomation?.offer_id,
+            playerUid: matchedOrder.ffUid ||
+              matchedOrder.gameDetails?.playerID ||
+              matchedOrder.gameId,
+            playerRegion: matchedOrder.ffRegion || 'ME',
+            gameFields: matchedOrder.gameFields ||
+              matchedOrder.gameDetails?.gameFields || {}
+          })
+        }).catch(() => {})
+      }).catch(() => {})
+  }
+
+  // Telegram notification (fire and forget)
+  fetch(`${appUrl}/api/notify-telegram`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customerName: matchedOrder.customerName ||
+        matchedOrder.gameDetails?.playerName || 'User',
+      customerPhone: matchedOrder.customerPhone ||
+        matchedOrder.gameDetails?.whatsappNumber || phone,
+      itemName: matchedOrder.itemName ||
+        matchedOrder.items?.[0]?.title || 'Item',
+      amount: matchedOrder.amount ||
+        matchedOrder.total || amount,
+      orderId: matchedOrderId,
+      message: `💳 Auto-matched! Phone: ${phone} Amount: $${amount}`
+    })
+  }).catch(() => {})
+
+  return Response.json({
+    ok: true,
+    received: true,
+    smsId,
+    phone,
+    amount,
+    matched: true,
+    matchedOrderId,
+    message: `Order ${matchedOrderId} approved automatically.`
+  })
 }
