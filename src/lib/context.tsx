@@ -498,6 +498,7 @@ const PRODUCTS_CACHE_KEY = 'oskar_products_cache';
 const GAMES_CACHE_KEY = 'oskar_games_cache';
 const EVENTS_CACHE_KEY = 'oskar_events_cache';
 const BANNERS_CACHE_KEY = 'oskar_banners_cache';
+const PROMO_CODES_CACHE_KEY = 'oskarshop_promo_codes';
 const THEME_CACHE_KEY = 'oskar_theme_cache';
 const LANG_CACHE_KEY = 'oskar_lang_cache';
 
@@ -897,7 +898,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<GamePackage[]>(() => getCache(PRODUCTS_CACHE_KEY, []));
   const [accountPosts, setAccountPosts] = useState<AccountPost[]>([]);
   const [eventAccounts, setEventAccounts] = useState<EventAccount[]>([]);
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(() => getCache(PROMO_CODES_CACHE_KEY, []));
   const [events, setEvents] = useState<GameEvent[]>(() => getCache(EVENTS_CACHE_KEY, []));
   const [banners, setBanners] = useState<Banner[]>(() => getCache(BANNERS_CACHE_KEY, []));
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -1518,6 +1519,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     onValue(promoCodesRef, (s) => {
       const data = s.val() ? Object.entries(s.val()).map(([id, v]: any) => ({ ...v, id })) : [];
       setPromoCodes(data);
+      setCache(PROMO_CODES_CACHE_KEY, data);
       setSyncStatus(prev => ({ ...prev, promoCodes: true }));
     });
 
@@ -1865,11 +1867,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (durationUnit === 'minutes') exp = Date.now() + (val * 60 * 1000);
       else if (durationUnit === 'hours') exp = Date.now() + (val * 60 * 60 * 1000);
       else if (durationUnit === 'days') exp = Date.now() + (val * 24 * 60 * 60 * 1000);
+      else if (durationUnit === 'months') exp = Date.now() + (val * 30 * 24 * 60 * 60 * 1000);
+      else if (durationUnit === 'years') exp = Date.now() + (val * 365 * 24 * 60 * 60 * 1000);
     }
     await set(ref(rtdb, `promo_codes/${promo.code.trim().toUpperCase()}`), { ...rest, code: promo.code.trim().toUpperCase(), discount: parseFloat(discount) || 0, expiresAt: exp, createdAt: Date.now(), claimed: false, usedBy: null, expired: false });
+    if (typeof window !== 'undefined') localStorage.removeItem(PROMO_CODES_CACHE_KEY);
     setIsGlobalLoading(false);
   }, [rtdb]);
-  const deletePromoCode = useCallback(async (id: string) => { if (!rtdb) return; setIsGlobalLoading(true); await remove(ref(rtdb, `promo_codes/${id}`)); setIsGlobalLoading(false); }, [rtdb]);
+  const deletePromoCode = useCallback(async (id: string) => { 
+    if (!rtdb) return; 
+    setIsGlobalLoading(true); 
+    await remove(ref(rtdb, `promo_codes/${id}`)); 
+    if (typeof window !== 'undefined') localStorage.removeItem(PROMO_CODES_CACHE_KEY);
+    setIsGlobalLoading(false); 
+  }, [rtdb]);
   const checkPromoCode = useCallback(async (code: string): Promise<number> => {
     if (!rtdb || !authUser) throw new Error("Connection error");
     setIsGlobalLoading(true);

@@ -414,7 +414,11 @@ export default function AdminPage() {
 
   const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
-  const [userSearch, setSearchQuery] = useState("");
+  const [adminSearchQuery, setAdminSearchQuery] = useState("");
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'successful' | 'cancelled'>('all');
+  const [userFilterTab, setUserFilterTab] = useState<'all' | 'admins' | 'online' | 'verified'>('all');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -893,21 +897,76 @@ export default function AdminPage() {
 
   const topUpOrders = useMemo(() => allOrders.filter(o => !o.gameDetails?.postId), [allOrders]);
 
-  const filteredUsers = useMemo(() => {
-    const filtered = allUsers.filter(u => 
-      u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.uid?.toLowerCase().includes(userSearch.toLowerCase())
-    );
+  const filteredOrders = useMemo(() => {
+    let list = topUpOrders;
+    if (orderStatusFilter !== 'all') {
+      list = list.filter(o => o.status === orderStatusFilter);
+    }
+    if (adminSearchQuery.trim()) {
+      const q = adminSearchQuery.toLowerCase().trim();
+      list = list.filter(o => {
+        const idMatch = o.id?.toLowerCase().includes(q);
+        const phoneMatch = o.userPhone?.toLowerCase().includes(q) || o.gameDetails?.phoneNumber?.toLowerCase().includes(q);
+        const nameMatch = o.gameDetails?.playerName?.toLowerCase().includes(q) || o.gameDetails?.name?.toLowerCase().includes(q) || o.gameDetails?.eventTitle?.toLowerCase().includes(q);
+        const itemMatch = o.items?.some(i => i.title?.toLowerCase().includes(q));
+        const playerIDMatch = o.gameDetails?.playerID?.toString().toLowerCase().includes(q) || o.ffUid?.toLowerCase().includes(q);
+        return idMatch || phoneMatch || nameMatch || itemMatch || playerIDMatch;
+      });
+    }
+    return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }, [topUpOrders, orderStatusFilter, adminSearchQuery]);
 
-    return filtered.sort((a, b) => {
+  const filteredUsers = useMemo(() => {
+    let list = allUsers;
+    if (userFilterTab === 'admins') {
+      list = list.filter(u => u.role === 'admin');
+    } else if (userFilterTab === 'online') {
+      list = list.filter(u => {
+        const lastActive = Number(u.lastActive);
+        return !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
+      });
+    } else if (userFilterTab === 'verified') {
+      list = list.filter(u => !!u.isVerified);
+    }
+
+    if (adminSearchQuery.trim()) {
+      const q = adminSearchQuery.toLowerCase().trim();
+      list = list.filter(u => 
+        u.name?.toLowerCase().includes(q) ||
+        u.phoneNumber?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.uid?.toLowerCase().includes(q)
+      );
+    }
+
+    return list.sort((a, b) => {
       const aIsAdmin = a.role === 'admin';
       const bIsAdmin = b.role === 'admin';
       if (aIsAdmin && !bIsAdmin) return -1;
       if (!aIsAdmin && bIsAdmin) return 1;
       return 0;
     });
-  }, [allUsers, userSearch]);
+  }, [allUsers, userFilterTab, adminSearchQuery]);
+
+  const filteredAccountPosts = useMemo(() => {
+    if (!adminSearchQuery.trim()) return accountPosts;
+    const q = adminSearchQuery.toLowerCase().trim();
+    return accountPosts.filter(p => 
+      p.authorName?.toLowerCase().includes(q) || 
+      p.gameType?.toLowerCase().includes(q) ||
+      p.title?.toLowerCase().includes(q) ||
+      p.id?.toLowerCase().includes(q)
+    );
+  }, [accountPosts, adminSearchQuery]);
+
+  const filteredGames = useMemo(() => {
+    if (!adminSearchQuery.trim()) return games;
+    const q = adminSearchQuery.toLowerCase().trim();
+    return games.filter(g => 
+      g.title?.toLowerCase().includes(q) || 
+      g.category?.toLowerCase().includes(q)
+    );
+  }, [games, adminSearchQuery]);
 
   const onlineUsersCount = useMemo(() => {
     return allUsers.filter(u => {
@@ -1545,7 +1604,60 @@ export default function AdminPage() {
                {selectedOrderId ? "Order Insight" : selectedAccountId ? "Listing Hub" : selectedEventId ? "Auction Manager" : activeView === 'dashboard' ? "Overview" : activeView.toUpperCase().replace('-', ' ')}
              </h2>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+             {/* Animated Global Header Search */}
+             {['orders', 'users', 'inventory', 'account-posts', 'account-events'].includes(activeView) && !selectedOrderId && !selectedAccountId && !selectedEventId && (
+               <div className="flex items-center">
+                 <div className={cn(
+                   "flex items-center transition-all duration-300 ease-in-out overflow-hidden",
+                   isSearchExpanded ? "w-44 sm:w-64 md:w-80 opacity-100 mr-2" : "w-0 opacity-0 pointer-events-none"
+                 )}>
+                   <div className="relative w-full">
+                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                     <input
+                       ref={searchInputRef}
+                       type="text"
+                       placeholder={
+                         activeView === 'orders' ? "Search orders..." :
+                         activeView === 'users' ? "Search users..." :
+                         activeView === 'inventory' ? "Search products..." :
+                         activeView === 'account-posts' ? "Search listings..." :
+                         activeView === 'account-events' ? "Search events..." : "Search..."
+                       }
+                       value={adminSearchQuery}
+                       onChange={(e) => setAdminSearchQuery(e.target.value)}
+                       className="w-full h-9 sm:h-10 pl-9 pr-7 rounded-full bg-slate-100 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400"
+                     />
+                     {adminSearchQuery && (
+                       <button 
+                         onClick={() => setAdminSearchQuery("")}
+                         className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                       >
+                         <X size={13} />
+                       </button>
+                     )}
+                   </div>
+                 </div>
+                 <button
+                   onClick={() => {
+                     setIsSearchExpanded(!isSearchExpanded);
+                     if (!isSearchExpanded) {
+                       setTimeout(() => searchInputRef.current?.focus(), 150);
+                     }
+                   }}
+                   className={cn(
+                     "p-2.5 rounded-full transition-all active:scale-90",
+                     isSearchExpanded || adminSearchQuery
+                       ? "bg-primary text-white shadow-md shadow-primary/20" 
+                       : "bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary"
+                   )}
+                   title="Search"
+                 >
+                   <Search size={18} className="sm:size-5" />
+                 </button>
+               </div>
+             )}
+
              <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-500/10 px-4 py-1.5 rounded-full text-green-600 font-bold text-[10px] uppercase tracking-widest border border-green-100 dark:border-green-500/20">
                 <RefreshCw size={12} className="animate-spin" /> Live
              </div>
@@ -1934,165 +2046,343 @@ export default function AdminPage() {
                    onDelete={() => { setDeleteTarget({id: selectedOrderId, type:'order'}); setIsDeleteDialogOpen(true); }}
                  />
                ) : (
-                 <div className="space-y-8">
-                    <div className="grid grid-cols-1 gap-4 md:hidden">
-                       {topUpOrders.length === 0 ? (
-                         <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No orders found.</div>
+                 <div className="space-y-6">
+                    {/* Status Tabs */}
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                       <button 
+                         onClick={() => setOrderStatusFilter('all')}
+                         className={cn(
+                           "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
+                           orderStatusFilter === 'all'
+                             ? "bg-[#6a1edb] text-white shadow-md"
+                             : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                         )}
+                       >
+                         All Orders ({topUpOrders.length})
+                       </button>
+                       <button 
+                         onClick={() => setOrderStatusFilter('pending')}
+                         className={cn(
+                           "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
+                           orderStatusFilter === 'pending'
+                             ? "bg-[#6a1edb] text-white shadow-md"
+                             : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                         )}
+                       >
+                         Processing ({topUpOrders.filter(o => o.status === 'pending').length})
+                       </button>
+                       <button 
+                         onClick={() => setOrderStatusFilter('successful')}
+                         className={cn(
+                           "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
+                           orderStatusFilter === 'successful'
+                             ? "bg-[#6a1edb] text-white shadow-md"
+                             : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                         )}
+                       >
+                         Completed ({topUpOrders.filter(o => o.status === 'successful').length})
+                       </button>
+                       <button 
+                         onClick={() => setOrderStatusFilter('cancelled')}
+                         className={cn(
+                           "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
+                           orderStatusFilter === 'cancelled'
+                             ? "bg-[#6a1edb] text-white shadow-md"
+                             : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                         )}
+                       >
+                         Failed ({topUpOrders.filter(o => o.status === 'cancelled').length})
+                       </button>
+                    </div>
+
+                    {/* Mobile Orders List */}
+                    <div className="flex flex-col gap-3.5 md:hidden">
+                       {filteredOrders.length === 0 ? (
+                         <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase border-2 border-dashed rounded-3xl">
+                           No orders found.
+                         </div>
                        ) : (
-                         topUpOrders.map(order => {
+                         filteredOrders.map(order => {
                            const item = order.items?.[0];
                            const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
+                           const itemTitle = isEventWinnerOrder ? 'Guuleystaha' : (item?.title || "Top-up");
+                           const customerName = order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest");
+                           
+                           const isPending = order.status === 'pending' || order.status === 'processing';
+                           const isSuccess = order.status === 'successful';
+
+                           const leftBarClass = isPending
+                             ? "bg-gradient-to-b from-primary to-[#6a1edb] shadow-[0_0_10px_rgba(106,30,219,0.4)]"
+                             : isSuccess
+                             ? "bg-gradient-to-b from-[#10B981] to-[#34D399]"
+                             : "bg-gradient-to-b from-rose-500 to-red-600";
+
                            return (
-                             <Card key={order.id} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
-                                <div className="flex items-center justify-between">
-                                   <p className="font-headline font-bold text-sm text-primary uppercase tracking-tight">#{order.id.toUpperCase()}</p>
-                                   <StatusBadge status={order.status} />
-                                </div>
-                                <div className="space-y-1">
-                                   <p className="font-bold text-base text-slate-900 dark:text-white truncate">
-                                     {order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest")}
-                                   </p>
-                                   <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
-                                     {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
-                                   </p>
-                                </div>
-                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5 flex items-center gap-3">
-                                   <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 overflow-hidden relative shrink-0 shadow-sm border border-gray-100 dark:border-white/10 flex items-center justify-center">
-                                      {order.processedBy?.photoURL ? (
-                                         <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
-                                      ) : order.processedBy?.name ? (
-                                         <span className="text-xs font-black text-primary">{order.processedBy.name.charAt(0).toUpperCase()}</span>
-                                      ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
-                                         <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                            <Smartphone size={14} />
-                                         </div>
-                                      ) : (
-                                         <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                            <User size={14}/>
-                                         </div>
-                                      )}
-                                   </div>
-                                   <div className="min-w-0">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Handling Admin</p>
-                                      <p className={cn(
-                                         "text-xs font-bold truncate",
-                                         order.processedBy?.name ? "text-slate-700 dark:text-slate-300" :
-                                         (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? "text-emerald-600 dark:text-emerald-400 font-black" :
-                                         "text-slate-400 italic"
-                                      )}>
-                                         {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS' : "Wali lama furin")}
+                             <div 
+                               key={order.id}
+                               className="relative p-4 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border border-slate-200/70 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group"
+                             >
+                                {/* Left Accent Bar */}
+                                <div className={cn("absolute top-0 left-0 w-1 h-full", leftBarClass)} />
+
+                                {/* Card Header */}
+                                <div className="flex justify-between items-start mb-2.5 pl-1">
+                                   <div>
+                                      <div className="flex items-center gap-1.5 font-bold text-sm text-slate-900 dark:text-white">
+                                         <span>#{order.id.toUpperCase().slice(-9)}</span>
+                                         <button 
+                                           onClick={() => {
+                                             navigator.clipboard.writeText(order.id);
+                                             toast({ title: "Order ID Copied!", description: `#${order.id} is in clipboard.` });
+                                           }}
+                                           className="text-slate-400 hover:text-[#6a1edb] transition-colors p-0.5"
+                                           title="Copy Order ID"
+                                         >
+                                           <Copy size={13} />
+                                         </button>
+                                      </div>
+                                      <p className="text-[11px] text-slate-400 mt-0.5">
+                                        {safeFormatDistanceToNow(order.createdAt, { addSuffix: true })}
                                       </p>
                                    </div>
+
+                                   {/* Status Badge */}
+                                   {isPending ? (
+                                     <div className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center gap-1.5 animate-pulse border border-blue-200/40">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                        Processing
+                                     </div>
+                                   ) : isSuccess ? (
+                                     <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 border border-emerald-200/40">
+                                        <CheckCircle2 size={13} />
+                                        Successfully
+                                     </div>
+                                   ) : (
+                                     <div className="px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 border border-rose-200/40">
+                                        <XCircle size={13} />
+                                        Cancelled
+                                     </div>
+                                   )}
                                 </div>
-                                <div className="flex gap-2 pt-2 border-t dark:border-white/5">
-                                   <button 
-                                     onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
-                                     className="flex-1 h-12 bg-primary text-white rounded-xl flex items-center justify-center font-bold text-xs gap-2 active:scale-95 transition-transform"
-                                   >
-                                     <Eye size={16} /> View
-                                   </button>
-                                   <button 
-                                     onClick={() => { setDeleteTarget({id:order.id, type:'order'}); setIsDeleteDialogOpen(true); }}
-                                     className="w-12 h-12 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center active:scale-95 transition-transform"
-                                   >
-                                     <Trash2 size={16} />
-                                   </button>
+
+                                {/* Item Preview Box */}
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 mb-2.5 pl-3">
+                                   <div className="flex items-center gap-3 min-w-0">
+                                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#6a1edb] to-primary p-[1px] shrink-0">
+                                         <div className="w-full h-full rounded-lg bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                                            {item?.thumbnail ? (
+                                              <Image src={item.thumbnail} alt="" width={40} height={40} className="object-cover" />
+                                            ) : (
+                                              <span className="text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#6a1edb] to-primary">
+                                                {itemTitle.slice(0, 2).toUpperCase()}
+                                              </span>
+                                            )}
+                                         </div>
+                                      </div>
+                                      <div className="min-w-0">
+                                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Item</p>
+                                         <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">{itemTitle}</p>
+                                         {customerName && <p className="text-[10px] text-slate-400 truncate">{customerName}</p>}
+                                      </div>
+                                   </div>
+                                   <div className="text-right shrink-0">
+                                      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Price</p>
+                                      <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">${order.total}</p>
+                                   </div>
                                 </div>
-                             </Card>
+
+                                {/* Footer: Handling Admin & Actions */}
+                                <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-white/5 pl-1">
+                                   <div className="flex items-center gap-2 min-w-0">
+                                      {order.processedBy?.photoURL ? (
+                                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white dark:border-slate-700 shrink-0">
+                                          <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
+                                        </div>
+                                      ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
+                                        <div className="relative w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+                                          <MessageCircle size={16} />
+                                          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center">
+                                             <Zap size={10} className="text-[#6a1edb] fill-[#6a1edb]" />
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                                          <User size={16} />
+                                        </div>
+                                      )}
+                                      <div className="min-w-0">
+                                         <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Handling Admin</p>
+                                         <div className="flex items-center gap-1">
+                                            <p className="font-semibold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                              {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto SMS' : 'Unassigned')}
+                                            </p>
+                                            {order.processedBy?.name && <VerifiedBadge />}
+                                            {(order.approvedBy === 'auto_sms' || order.smsMatchedId) && (
+                                              <Zap size={12} className="text-primary fill-primary shrink-0" />
+                                            )}
+                                         </div>
+                                      </div>
+                                   </div>
+
+                                   <div className="flex items-center gap-2 shrink-0">
+                                      <button 
+                                        onClick={() => { setDeleteTarget({ id: order.id, type: 'order' }); setIsDeleteDialogOpen(true); }}
+                                        className="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                                        title="Delete Order"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                      <button 
+                                        onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
+                                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-[#6a1edb] hover:bg-[#5a16be] text-white font-medium text-xs shadow-sm transition-all active:scale-95"
+                                      >
+                                        <span>View</span>
+                                        <ChevronRight size={14} />
+                                      </button>
+                                   </div>
+                                </div>
+                             </div>
                            );
                          })
                        )}
                     </div>
 
-                    <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+                    {/* Desktop Orders View (Table) */}
+                    <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
                        <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
-                             <TableRow className="border-none h-16">
-                                <TableHead className="px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Reference</TableHead>
-                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Player & Item</TableHead>
-                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Admin Handling</TableHead>
-                                <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Status</TableHead>
-                                <TableHead className="text-right px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
-                             </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                             {topUpOrders.length === 0 ? (
-                               <TableRow><TableCell colSpan={5} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No orders found.</TableCell></TableRow>
-                             ) : (
-                               topUpOrders.map(order => {
-                                 const item = order.items?.[0];
-                                 const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
-                                 return (
-                                 <TableRow key={order.id} className="border-slate-50 dark:border-white/5 h-24 hover:bg-slate-50/30 transition-colors">
-                                    <TableCell className="px-6 lg:px-10 font-headline font-bold text-sm text-primary">#{order.id.toUpperCase()}</TableCell>
-                                    <TableCell>
-                                       <div className="flex flex-col">
-                                          <span className="font-bold text-base text-slate-900 dark:text-white">
-                                            {order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest")}
-                                          </span>
-                                          <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">
-                                            {isEventWinnerOrder ? 'Guuleystaha' : item?.title || "Unknown Item"}
-                                          </span>
-                                       </div>
+                          <Table>
+                             <TableHeader className="bg-slate-50/50 dark:bg-slate-800/30">
+                                <TableRow className="border-none h-14">
+                                   <TableHead className="px-6 font-bold text-xs uppercase tracking-wider text-slate-400">Order Ref</TableHead>
+                                   <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Item & Customer</TableHead>
+                                   <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Total Price</TableHead>
+                                   <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Handling Admin</TableHead>
+                                   <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Status</TableHead>
+                                   <TableHead className="text-right px-6 font-bold text-xs uppercase tracking-wider text-slate-400">Actions</TableHead>
+                                </TableRow>
+                             </TableHeader>
+                             <TableBody>
+                                {filteredOrders.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell colSpan={6} className="h-48 text-center text-slate-300 italic uppercase font-bold text-xs">
+                                      No orders found.
                                     </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-white/10 shadow-sm shrink-0 flex items-center justify-center">
-                                              {order.processedBy?.photoURL ? (
-                                                 <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
-                                              ) : order.processedBy?.name ? (
-                                                 <span className="text-xs font-black text-primary">{order.processedBy.name.charAt(0).toUpperCase()}</span>
-                                              ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
-                                                 <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                                    <Smartphone size={14} />
+                                  </TableRow>
+                                ) : (
+                                  filteredOrders.map(order => {
+                                    const item = order.items?.[0];
+                                    const isEventWinnerOrder = !!order.gameDetails?.isEventWinner;
+                                    const itemTitle = isEventWinnerOrder ? 'Guuleystaha' : (item?.title || "Top-up");
+                                    const customerName = order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest");
+                                    
+                                    const isPending = order.status === 'pending' || order.status === 'processing';
+                                    const isSuccess = order.status === 'successful';
+
+                                    return (
+                                      <TableRow key={order.id} className="border-slate-100 dark:border-white/5 h-20 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                         <TableCell className="px-6 font-bold text-xs">
+                                            <div className="flex items-center gap-1.5 text-slate-900 dark:text-white">
+                                               <span>#{order.id.toUpperCase().slice(-8)}</span>
+                                               <button 
+                                                 onClick={() => {
+                                                   navigator.clipboard.writeText(order.id);
+                                                   toast({ title: "Order ID Copied!" });
+                                                 }}
+                                                 className="text-slate-400 hover:text-primary transition-colors p-1"
+                                                 title="Copy ID"
+                                               >
+                                                 <Copy size={13} />
+                                               </button>
+                                            </div>
+                                            <span className="text-[10px] text-slate-400">
+                                              {safeFormatDistanceToNow(order.createdAt, { addSuffix: true })}
+                                            </span>
+                                         </TableCell>
+                                         <TableCell>
+                                            <div className="flex items-center gap-3">
+                                               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#6a1edb] to-primary p-[1px] shrink-0">
+                                                  <div className="w-full h-full rounded-lg bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                                                     {item?.thumbnail ? (
+                                                       <Image src={item.thumbnail} alt="" width={36} height={36} className="object-cover" />
+                                                     ) : (
+                                                       <span className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#6a1edb] to-primary">
+                                                         {itemTitle.slice(0, 2).toUpperCase()}
+                                                       </span>
+                                                     )}
+                                                  </div>
+                                               </div>
+                                               <div className="min-w-0">
+                                                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">{itemTitle}</p>
+                                                  <p className="text-[11px] text-slate-400 truncate">{customerName}</p>
+                                               </div>
+                                            </div>
+                                         </TableCell>
+                                         <TableCell>
+                                            <span className="font-bold text-sm text-slate-900 dark:text-white">${order.total}</span>
+                                         </TableCell>
+                                         <TableCell>
+                                            <div className="flex items-center gap-2">
+                                               {order.processedBy?.photoURL ? (
+                                                 <div className="w-7 h-7 rounded-full overflow-hidden border border-white dark:border-slate-700 shrink-0 relative">
+                                                    <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
                                                  </div>
-                                              ) : (
-                                                 <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                                    <User size={14} />
+                                               ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
+                                                 <div className="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                                    <Smartphone size={13} />
                                                  </div>
-                                              )}
-                                           </div>
-                                           <span className={cn(
-                                              "text-xs font-bold",
-                                              order.processedBy?.name ? "text-slate-700 dark:text-slate-300" :
-                                              (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? "text-emerald-600 dark:text-emerald-400 font-black" :
-                                              "text-slate-400 italic"
-                                           )}>
-                                             {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS' : "Wali lama furin")}
-                                           </span>
-                                        </div>
-                                     </TableCell>
-                                    <TableCell><StatusBadge status={order.status} /></TableCell>
-                                    <TableCell className="text-right px-6 lg:px-10">
-                                       <div className="flex justify-end items-center gap-3">
-                                          <button 
-                                            onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
-                                            className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
-                                          >
-                                            <Eye size={18} />
-                                          </button>
-                                          <button 
-                                            onClick={async () => {
-                                              if (confirm("Are you sure?")) {
-                                                await deleteOrder(order.id);
-                                                toast({ title: "Order Deleted" });
-                                              }
-                                            }}
-                                            className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
-                                          >
-                                            <Trash2 size={18} />
-                                          </button>
-                                       </div>
-                                    </TableCell>
-                                 </TableRow>
-                               );
-                               })
-                             )}
-                          </TableBody>
-                        </Table>
+                                               ) : (
+                                                 <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 shrink-0">
+                                                    <User size={13} />
+                                                 </div>
+                                               )}
+                                               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                                                 {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto SMS' : 'Unassigned')}
+                                               </span>
+                                            </div>
+                                         </TableCell>
+                                         <TableCell>
+                                            {isPending ? (
+                                              <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-semibold inline-flex items-center gap-1.5 border border-blue-200/40">
+                                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                                                 Processing
+                                              </span>
+                                            ) : isSuccess ? (
+                                              <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-semibold inline-flex items-center gap-1.5 border border-emerald-200/40">
+                                                 <CheckCircle2 size={13} />
+                                                 Completed
+                                              </span>
+                                            ) : (
+                                              <span className="px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold inline-flex items-center gap-1.5 border border-rose-200/40">
+                                                 <XCircle size={13} />
+                                                 Cancelled
+                                              </span>
+                                            )}
+                                         </TableCell>
+                                         <TableCell className="text-right px-6">
+                                            <div className="flex justify-end items-center gap-2">
+                                               <button 
+                                                 onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
+                                                 className="px-3.5 py-1.5 bg-[#6a1edb] hover:bg-[#5a16be] text-white rounded-lg font-medium text-xs shadow-sm transition-all active:scale-95"
+                                               >
+                                                 View
+                                               </button>
+                                               <button 
+                                                 onClick={() => { setDeleteTarget({ id: order.id, type: 'order' }); setIsDeleteDialogOpen(true); }}
+                                                 className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                                                 title="Delete"
+                                               >
+                                                 <Trash2 size={16} />
+                                               </button>
+                                            </div>
+                                         </TableCell>
+                                      </TableRow>
+                                    );
+                                  })
+                                )}
+                             </TableBody>
+                          </Table>
                        </div>
-                    </Card>
+                    </div>
                  </div>
                )}
             </div>
@@ -2120,10 +2410,10 @@ export default function AdminPage() {
                ) : (
                  <div className="space-y-10">
                     <div className="grid grid-cols-1 gap-4 md:hidden">
-                       {accountPosts.length === 0 ? (
+                       {filteredAccountPosts.length === 0 ? (
                          <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No account listings found.</div>
                        ) : (
-                         accountPosts.map(p => {
+                         filteredAccountPosts.map(p => {
                            const claimantsList = Object.values(p.claimants || {});
                            return (
                              <Card 
@@ -2207,10 +2497,10 @@ export default function AdminPage() {
                              </TableRow>
                           </TableHeader>
                           <TableBody>
-                             {accountPosts.length === 0 ? (
+                             {filteredAccountPosts.length === 0 ? (
                                <TableRow><TableCell colSpan={8} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No account listings found.</TableCell></TableRow>
                              ) : (
-                               accountPosts.map(p => {
+                               filteredAccountPosts.map(p => {
                                  const claimantsList = Object.values(p.claimants || {});
                                  const earliestClaim = claimantsList.length > 0 ? Math.min(...claimantsList.map((c: any) => {
                                    const t = Number(c.timestamp);
@@ -2310,7 +2600,12 @@ export default function AdminPage() {
                </div>
 
                <div className="grid grid-cols-1 gap-6 max-w-4xl">
-                  {games.map(g => {
+                  {filteredGames.length === 0 ? (
+                    <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase border-2 border-dashed rounded-3xl">
+                      No games or packages found.
+                    </div>
+                  ) : (
+                    filteredGames.map(g => {
                     const isExpanded = expandedGameId === g.id;
                     const gameItems = products.filter(p => p.gameId === g.id).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
                     
@@ -2398,7 +2693,7 @@ export default function AdminPage() {
                          )}
                       </Card>
                     );
-                  })}
+                  }))}
                </div>
             </div>
           )}
@@ -2547,90 +2842,158 @@ export default function AdminPage() {
           )}
 
           {activeView === 'promo-codes' && (
-            <div className="space-y-12 promo-codes-view animate-in fade-in duration-700">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-6">
+            <div className="space-y-6 promo-codes-view animate-in fade-in duration-500">
+               {/* Header Action Bar */}
+               <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      Promotions
+                    </h2>
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                      Create and manage discount codes and voucher campaigns
+                    </p>
+                  </div>
                   <Button 
                     onClick={() => setIsPromoDialogOpen(true)}
-                    className="rounded-2xl h-14 md:h-16 px-10 gap-3 font-black shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 text-white uppercase tracking-widest active:scale-95 w-full sm:w-auto"
+                    className="bg-primary hover:bg-primary/90 text-white rounded-full px-5 py-2.5 font-medium text-xs md:text-sm flex items-center gap-1.5 shadow-sm transition-all active:scale-95 shrink-0"
                   >
-                    <PlusCircle size={20} /> New Promo Code
+                    <Plus size={18} />
+                    <span>Add Code</span>
                   </Button>
                </div>
 
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+               {/* Cards Grid */}
+               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
                   {promoCodes.length === 0 ? (
-                    <div className="col-span-full py-24 text-center opacity-30 italic text-xs font-bold uppercase border-2 border-dashed rounded-[3rem]">No promo codes active</div>
+                    <div className="col-span-full flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                      <div className="w-20 h-20 mb-4 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                        <Ticket size={36} />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-1">No Promos Yet</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-xs">
+                        Create your first discount code to boost sales and reward users.
+                      </p>
+                      <Button 
+                        onClick={() => setIsPromoDialogOpen(true)}
+                        className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-full font-semibold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95"
+                      >
+                        <Plus size={18} /> Create Promo
+                      </Button>
+                    </div>
                   ) : (
                     promoCodes.map(promo => {
                       const expiryTime = Number(promo.expiresAt) || 0;
                       const isExpired = expiryTime ? expiryTime < Date.now() : false;
                       const isMulti = promo.type === 'multi_use';
                       const usageCount = isMulti ? Object.keys(promo.usedByUsers || {}).length : (promo.claimed ? 1 : 0);
-                      const status = promo.claimed && !isMulti ? 'Claimed' : isExpired ? 'Expired' : 'Active';
-                      const badgeColor = promo.claimed && !isMulti ? 'bg-purple-100 text-purple-700' : isExpired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+                      const isClaimed = promo.claimed && !isMulti;
+                      
+                      // Status & Badge configuration
+                      let statusText = 'Active';
+                      let barColor = 'bg-[#6a1edb] dark:bg-[#8b5cf6]';
+                      let badgeClasses = 'bg-purple-50 dark:bg-purple-950/40 text-[#6a1edb] dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/30';
+                      let dotColor = 'bg-[#6a1edb] dark:bg-[#8b5cf6]';
+
+                      if (isExpired) {
+                        statusText = 'Expired';
+                        barColor = 'bg-slate-400 dark:bg-slate-600';
+                        badgeClasses = 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/30';
+                        dotColor = 'bg-slate-400 dark:bg-slate-500';
+                      } else if (isClaimed) {
+                        statusText = 'Claimed';
+                        barColor = 'bg-teal-500 dark:bg-teal-400';
+                        badgeClasses = 'bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/50 dark:border-teal-800/30';
+                        dotColor = 'bg-teal-500 dark:bg-teal-400';
+                      }
+
+                      // Find claimant name if single use & claimed
+                      const claimant = isClaimed ? allUsers.find(u => u.uid === promo.usedBy) : null;
+                      const claimantName = claimant?.name || (promo.usedBy ? `user_${promo.usedBy.slice(0, 6)}` : null);
 
                       return (
-                        <Card key={promo.id} className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden group">
-                           <div className="p-6 md:p-8 space-y-6">
-                              <div className="flex items-center justify-between">
-                                 <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shadow-inner">
-                                    <Ticket size={20} />
-                                 </div>
-                                 <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", badgeColor)}>
-                                    {status}
-                                 </Badge>
-                              </div>
+                        <div 
+                          key={promo.id || promo.code} 
+                          className={cn(
+                            "bg-white dark:bg-slate-900 rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)] relative overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 border border-slate-100 dark:border-slate-800",
+                            isExpired && "opacity-75"
+                          )}
+                        >
+                          {/* Left Accent Stripe */}
+                          <div className={cn("absolute top-0 left-0 w-1.5 h-full", barColor)} />
 
-                              <div className="space-y-1">
-                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Promo Code</p>
-                                    <Badge variant="outline" className="text-[7px] font-bold uppercase py-0">{isMulti ? 'Multi-Use' : 'Single-Use'}</Badge>
-                                 </div>
-                                 <div className="flex items-center gap-2">
-                                    <h4 className="text-xl md:text-2xl font-headline font-bold text-slate-900 dark:text-white truncate">{promo.code}</h4>
-                                    <button 
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(promo.code);
-                                        toast({ title: "Code Copied!", description: `${promo.code} is now in your clipboard.` });
-                                      }}
-                                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all active:scale-90"
-                                    >
-                                      <Copy size={16} />
-                                    </button>
-                                 </div>
+                          {/* Top Section */}
+                          <div className="flex justify-between items-start gap-2 pl-1">
+                            <div className="flex flex-col gap-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "text-lg md:text-xl font-bold font-mono uppercase tracking-wide truncate",
+                                  isExpired ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-white"
+                                )}>
+                                  {promo.code}
+                                </span>
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(promo.code);
+                                    toast({ title: "Code Copied!", description: `${promo.code} is now in your clipboard.` });
+                                  }}
+                                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors shrink-0"
+                                  title="Copy Code"
+                                >
+                                  <Copy size={14} />
+                                </button>
                               </div>
+                              <p className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 truncate">
+                                {promo.discount}% Off {promo.note ? `• ${promo.note}` : (isMulti ? '• Multi-use' : '• One-time')}
+                              </p>
+                            </div>
 
-                              <div className="grid grid-cols-2 gap-4">
-                                 <div className="space-y-1">
-                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Discount</p>
-                                    <p className="font-bold text-lg text-primary">{promo.discount}% OFF</p>
-                                 </div>
-                                 <div className="space-y-1 text-right">
-                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Usage</p>
-                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                                      {usageCount} Used
-                                    </p>
-                                 </div>
-                              </div>
+                            {/* Status Badge */}
+                            <div className={cn("px-3 py-1 rounded-full flex items-center gap-1.5 shrink-0", badgeClasses)}>
+                              <div className={cn("w-1.5 h-1.5 rounded-full", dotColor)} />
+                              <span className="text-xs font-semibold">{statusText}</span>
+                            </div>
+                          </div>
 
-                              <div className="pt-4 border-t dark:border-white/5 space-y-2">
-                                 <Button 
-                                   variant="outline" 
-                                   onClick={() => { setSelectedPromo(promo); setIsPromoUsageOpen(true); }}
-                                   className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest h-10 border-2"
-                                 >
-                                    <Users size={14} className="mr-2" /> View Usage
-                                 </Button>
-                                 <Button 
-                                   variant="ghost" 
-                                   onClick={() => { setDeleteTarget({id: promo.id, type:'promoCode'}); setIsDeleteDialogOpen(true); }}
-                                   className="w-full text-red-500 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-[10px] tracking-widest h-10"
-                                 >
-                                    <Trash2 size={14} className="mr-2" /> Delete Voucher
-                                 </Button>
-                              </div>
-                           </div>
-                        </Card>
+                          {/* Bottom Section */}
+                          <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 dark:border-slate-800/80 pl-1">
+                            {/* Left usage info */}
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs md:text-sm font-medium min-w-0">
+                              {isMulti ? (
+                                <>
+                                  <Users size={16} className="shrink-0 text-slate-400" />
+                                  <span className="truncate">Used by {usageCount.toLocaleString()} {usageCount === 1 ? 'user' : 'users'}</span>
+                                </>
+                              ) : isClaimed ? (
+                                <>
+                                  <User size={16} className="shrink-0 text-teal-500" />
+                                  <span className="truncate">Claimed by {claimantName}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <User size={16} className="shrink-0 text-slate-400" />
+                                  <span className="truncate">One-time (Not claimed)</span>
+                                </>
+                              )}
+                            </div>
+
+                            {/* Right action buttons */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button 
+                                onClick={() => { setSelectedPromo(promo); setIsPromoUsageOpen(true); }}
+                                className="px-3 py-1.5 rounded-lg text-primary font-semibold text-xs md:text-sm hover:bg-primary/10 transition-colors"
+                              >
+                                View
+                              </button>
+                              <button 
+                                onClick={() => { setDeleteTarget({ id: promo.id || promo.code, type: 'promoCode' }); setIsDeleteDialogOpen(true); }}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                                title="Delete Code"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       );
                     })
                   )}
@@ -2639,171 +3002,291 @@ export default function AdminPage() {
           )}
 
           {activeView === 'users' && (
-            <div className="space-y-8 users-view animate-in fade-in duration-700">
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <StatCard label="Total Registered" value={allUsers.length.toString()} icon={Users} color="text-indigo-500" bgColor="bg-indigo-50 dark:bg-indigo-500/10" />
-                  <StatCard label="Online Now" value={onlineUsersCount.toString()} icon={Activity} color="text-green-500" bgColor="bg-green-50 dark:bg-green-500/10" pulse={onlineUsersCount > 0} />
-                  <div className="flex flex-col justify-center gap-4">
-                     <div className="relative w-full">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                        <Input 
-                          placeholder="Search users..." 
-                          className="pl-12 h-14 rounded-2xl bg-white dark:bg-slate-900 border-none shadow-sm font-bold"
-                          value={userSearch}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+            <div className="space-y-6 users-view animate-in fade-in duration-500">
+               {/* Stats Section */}
+               <div className="grid grid-cols-2 gap-4">
+                  {/* Total Users */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
+                     <div className="flex items-center gap-2 mb-2 text-slate-500 dark:text-slate-400">
+                        <Users size={20} className="text-primary" />
+                        <span className="text-xs sm:text-sm font-semibold">Total Users</span>
                      </div>
+                     <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                        {allUsers.length.toLocaleString()}
+                     </div>
+                     <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-colors pointer-events-none" />
+                  </div>
+
+                  {/* Online Now */}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
+                     <div className="flex items-center gap-2 mb-2 text-slate-500 dark:text-slate-400">
+                        <Activity size={20} className="text-[#10B981]" />
+                        <span className="text-xs sm:text-sm font-semibold">Online Now</span>
+                     </div>
+                     <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>{onlineUsersCount.toLocaleString()}</span>
+                        {onlineUsersCount > 0 && <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />}
+                     </div>
+                     <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-[#10B981]/5 rounded-full blur-xl group-hover:bg-[#10B981]/10 transition-colors pointer-events-none" />
                   </div>
                </div>
 
-               <div className="grid grid-cols-1 gap-4 md:hidden">
+               {/* Filter Pills */}
+               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  <button 
+                    onClick={() => setUserFilterTab('all')}
+                    className={cn(
+                      "h-8 px-4 rounded-full font-medium text-xs whitespace-nowrap transition-all active:scale-95 flex items-center justify-center",
+                      userFilterTab === 'all'
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    All Users
+                  </button>
+                  <button 
+                    onClick={() => setUserFilterTab('admins')}
+                    className={cn(
+                      "h-8 px-4 rounded-full font-medium text-xs whitespace-nowrap transition-all active:scale-95 flex items-center justify-center",
+                      userFilterTab === 'admins'
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    Admins
+                  </button>
+                  <button 
+                    onClick={() => setUserFilterTab('online')}
+                    className={cn(
+                      "h-8 px-4 rounded-full font-medium text-xs whitespace-nowrap transition-all active:scale-95 flex items-center justify-center",
+                      userFilterTab === 'online'
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    Online
+                  </button>
+                  <button 
+                    onClick={() => setUserFilterTab('verified')}
+                    className={cn(
+                      "h-8 px-4 rounded-full font-medium text-xs whitespace-nowrap transition-all active:scale-95 flex items-center justify-center",
+                      userFilterTab === 'verified'
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    Verified
+                  </button>
+               </div>
+
+               {/* Mobile Users Cards List */}
+               <div className="flex flex-col gap-3 md:hidden">
                   {filteredUsers.length === 0 ? (
-                    <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase">No users found</div>
+                    <div className="py-20 text-center opacity-30 italic text-xs font-bold uppercase border-2 border-dashed rounded-3xl">
+                      No users found
+                    </div>
                   ) : (
                     filteredUsers.map(u => {
                       const lastActive = Number(u.lastActive);
                       const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
+                      const isAdmin = u.role === 'admin';
+                      const leftStripeColor = isAdmin 
+                        ? "bg-primary" 
+                        : isOnline 
+                        ? "bg-[#10B981]" 
+                        : u.isVerified 
+                        ? "bg-[#6a1edb]" 
+                        : "bg-slate-300 dark:bg-slate-700";
+
                       return (
-                        <Card key={u.uid} className="p-5 rounded-[2rem] border-none shadow-lg bg-white dark:bg-slate-900 space-y-4">
-                           <div className="flex items-center gap-4">
-                              <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                 {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={24} /></div>}
+                        <div 
+                          key={u.uid}
+                          className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-white/5 flex items-start gap-3.5 hover:shadow-md transition-all relative overflow-hidden group"
+                        >
+                           {/* Left Accent Stripe */}
+                           <div className={cn("absolute left-0 top-0 bottom-0 w-1 rounded-l-xl", leftStripeColor)} />
+
+                           {/* Avatar with Status Dot */}
+                           <div className="relative shrink-0 pl-1">
+                              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-slate-800 shadow-sm flex items-center justify-center">
+                                 {u.photoURL ? (
+                                   <Image src={u.photoURL} alt={u.name || ""} fill className="object-cover" />
+                                 ) : (
+                                   <User size={22} className="text-slate-400" />
+                                 )}
                               </div>
-                              <div className="min-w-0">
-                                 <div className="flex items-center gap-1.5 min-w-0">
-                                   <p className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[150px]">{u.name || "Legendary Gamer"}</p>
-                                   {u.isVerified && <VerifiedBadge />}
-                                 </div>
-                                 <p className="text-[10px] text-muted-foreground truncate">{u.phoneNumber}</p>
+                              <div className={cn(
+                                "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900",
+                                isOnline ? "bg-[#10B981]" : "bg-slate-300 dark:bg-slate-600"
+                              )} />
+                           </div>
+
+                           {/* Details */}
+                           <div className="flex flex-col min-w-0 flex-1">
+                              <div className="flex items-center gap-1">
+                                 <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[140px]">
+                                   {u.name || "Legendary Gamer"}
+                                 </h3>
+                                 {u.isVerified && <VerifiedBadge />}
+                              </div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                {u.phoneNumber || u.email || "No phone"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                 <span className={cn(
+                                   "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold",
+                                   isAdmin ? "bg-primary/10 text-primary" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                 )}>
+                                   {isAdmin ? 'Admin' : 'User'}
+                                 </span>
+                                 <span className={cn(
+                                   "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold",
+                                   isOnline ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                                 )}>
+                                   {isOnline ? 'Online' : 'Offline'}
+                                 </span>
+                                 {u.points ? (
+                                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500">
+                                      <Star size={11} className="fill-amber-500" />
+                                      {u.points}
+                                   </span>
+                                 ) : null}
                               </div>
                            </div>
-                           <div className="grid grid-cols-2 gap-3">
-                              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5">
-                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance</p>
-                                 <div className="flex items-center gap-1.5">
-                                    <Star size={12} className="text-amber-500 fill-amber-500" />
-                                    <span className="font-bold text-sm">{u.points || 0}</span>
-                                 </div>
-                              </div>
-                              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border dark:border-white/5">
-                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Role</p>
-                                 <Badge className="text-[8px] font-black h-5 py-0 px-2 uppercase tracking-tighter">{u.role || 'user'}</Badge>
-                              </div>
+
+                           {/* Actions */}
+                           <div className="flex flex-col items-end gap-1.5 shrink-0">
+                              <button 
+                                onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-colors active:scale-90"
+                                title="Edit User"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button 
+                                onClick={() => { setDeleteTarget({ id: u.uid, type: 'user' }); setIsDeleteDialogOpen(true); }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-500 transition-colors active:scale-90"
+                                title="Delete User"
+                              >
+                                <Trash2 size={16} />
+                              </button>
                            </div>
-                           <div className="flex items-center justify-between pt-2 border-t dark:border-white/5">
-                              <div className="flex items-center gap-2">
-                                 <div className={cn("w-2 h-2 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
-                                 <span className="text-[10px] font-black uppercase text-slate-400">{isOnline ? 'Online' : 'Offline'}</span>
-                              </div>
-                              <div className="flex gap-2">
-                                 <button onClick={() => { setSelectedUser(u); setIsUserManageOpen(true); }} className="w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Edit size={16}/></button>
-                                 <button onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }} className="w-9 h-9 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl flex items-center justify-center"><Trash2 size={16}/></button>
-                              </div>
-                           </div>
-                        </Card>
-                      )
+                        </div>
+                      );
                     })
                   )}
                </div>
 
-               <Card className="hidden md:block rounded-[3rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
+               {/* Desktop Users Table */}
+               <div className="hidden md:block bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
                   <div className="overflow-x-auto scrollbar-hide">
-                    <Table className="min-w-[1000px]">
-                      <TableHeader className="bg-slate-50/50 dark:bg-slate-800/20">
-                          <TableRow className="border-none h-20">
-                            <TableHead className="px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">User Identity</TableHead>
-                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Contact & Role</TableHead>
-                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400 text-center">Reward Balance</TableHead>
-                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-slate-400">Presence</TableHead>
-                            <TableHead className="font-bold uppercase text-[11px] tracking-widest text-center">Status</TableHead>
-                            <TableHead className="text-right px-6 lg:px-10 font-bold uppercase text-[11px] tracking-widest text-slate-400">Actions</TableHead>
-                          </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                          {filteredUsers.length === 0 ? (
-                            <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 italic uppercase font-bold text-xs">No users found.</TableCell></TableRow>
-                          ) : (
-                            filteredUsers.map(u => {
-                              const lastActive = Number(u.lastActive);
-                              const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
-                              return (
-                                <TableRow key={u.uid} className="border-slate-50 dark:border-white/5 h-28 hover:bg-slate-50/30 transition-colors">
-                                  <TableCell className="px-6 lg:px-10">
-                                      <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                                            {u.photoURL ? <Image src={u.photoURL} alt={u.name} fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900"><User size={20} /></div>}
-                                        </div>
-                                        <div className="flex flex-col min-w-0">
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                              <span className="truncate font-semibold text-sm md:text-lg text-slate-900 dark:text-white max-w-[200px]">{u.name || "Legendary Gamer"}</span>
-                                              {u.isVerified && <VerifiedBadge />}
-                                            </div>
-                                            <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-tight truncate">{u.phoneNumber || "No Number"}</span>
-                                        </div>
-                                      </div>
-                                  </TableCell>
-                                  <TableCell>
-                                      <div className="flex flex-col gap-1">
-                                        <span className="text-xs md:sm font-bold text-slate-700 dark:text-slate-300">{u.phoneNumber || "---"}</span>
-                                        <Badge className={cn(
-                                          "w-fit rounded-full px-2 py-0 text-[8px] font-black uppercase tracking-widest border-none",
-                                          u.role === 'admin' ? "bg-primary text-white" : "bg-cyan-100 text-cyan-700"
-                                        )}>
-                                          {u.role || "USER"}
-                                        </Badge>
-                                      </div>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                      <div className="flex items-center justify-center gap-2">
-                                        <Star size={14} className="text-amber-500 fill-amber-500" />
-                                        <span className="font-headline font-bold text-lg md:text-2xl text-slate-900 dark:text-white">{u.points || 0}</span>
-                                      </div>
-                                  </TableCell>
-                                  <TableCell>
-                                      <div className="flex flex-col">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", isOnline ? "bg-green-500 animate-pulse" : "bg-slate-300")} />
-                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", isOnline ? "text-green-600" : "text-slate-400")}>
-                                              {isOnline ? "Online" : "Offline"}
-                                            </span>
-                                        </div>
-                                        <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
-                                            {!isNaN(lastActive) ? safeFormatDistanceToNow(lastActive).toUpperCase() + " AGO" : "NEVER"}
-                                        </span>
-                                      </div>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                      <Badge className={cn(
-                                        "rounded-full px-4 py-1 text-[8px] font-black uppercase tracking-widest border-none",
-                                        u.banned ? "bg-red-50 text-white" : "bg-green-100 text-green-700"
-                                      )}>
-                                        {u.banned ? "Banned" : "Active"}
-                                      </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-right px-6 lg:px-10">
-                                      <div className="flex justify-end items-center gap-3">
-                                        <button 
-                                          onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
-                                          className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 active:scale-90 transition-transform"
-                                        >
-                                          <Edit size={18} />
-                                        </button>
-                                        <button 
-                                          onClick={() => { setDeleteTarget({id:u.uid, type:'user'}); setIsDeleteDialogOpen(true); }}
-                                          className="w-10 h-10 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl flex items-center justify-center transition-colors"
+                     <Table className="min-w-[900px]">
+                        <TableHeader className="bg-slate-50/50 dark:bg-slate-800/30">
+                           <TableRow className="border-none h-14">
+                              <TableHead className="px-6 font-bold text-xs uppercase tracking-wider text-slate-400">User Identity</TableHead>
+                              <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Contact</TableHead>
+                              <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Role</TableHead>
+                              <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Balance</TableHead>
+                              <TableHead className="font-bold text-xs uppercase tracking-wider text-slate-400">Presence</TableHead>
+                              <TableHead className="text-right px-6 font-bold text-xs uppercase tracking-wider text-slate-400">Actions</TableHead>
+                           </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                           {filteredUsers.length === 0 ? (
+                             <TableRow>
+                               <TableCell colSpan={6} className="h-48 text-center text-slate-300 italic uppercase font-bold text-xs">
+                                 No users found.
+                               </TableCell>
+                             </TableRow>
+                           ) : (
+                             filteredUsers.map(u => {
+                               const lastActive = Number(u.lastActive);
+                               const isOnline = !isNaN(lastActive) && (Date.now() - lastActive) < 300000;
+                               const isAdmin = u.role === 'admin';
+
+                               return (
+                                 <TableRow key={u.uid} className="border-slate-100 dark:border-white/5 h-20 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <TableCell className="px-6">
+                                       <div className="flex items-center gap-3">
+                                          <div className="relative shrink-0">
+                                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-slate-800 shadow-sm flex items-center justify-center">
+                                                {u.photoURL ? (
+                                                  <Image src={u.photoURL} alt={u.name || ""} fill className="object-cover" />
+                                                ) : (
+                                                  <User size={18} className="text-slate-400" />
+                                                )}
+                                             </div>
+                                             <div className={cn(
+                                               "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900",
+                                               isOnline ? "bg-[#10B981]" : "bg-slate-300 dark:bg-slate-600"
+                                             )} />
+                                          </div>
+                                          <div className="min-w-0">
+                                             <div className="flex items-center gap-1.5">
+                                                <p className="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[160px]">
+                                                  {u.name || "Legendary Gamer"}
+                                                </p>
+                                                {u.isVerified && <VerifiedBadge />}
+                                             </div>
+                                             <p className="text-[11px] text-slate-400 font-mono truncate">
+                                               ID: {u.uid.slice(0, 10)}...
+                                             </p>
+                                          </div>
+                                       </div>
+                                    </TableCell>
+                                    <TableCell>
+                                       <span className="font-semibold text-xs text-slate-700 dark:text-slate-300">
+                                         {u.phoneNumber || u.email || "---"}
+                                       </span>
+                                    </TableCell>
+                                    <TableCell>
+                                       <Badge className={cn(
+                                         "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border-none",
+                                         isAdmin ? "bg-primary/10 text-primary" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                       )}>
+                                         {u.role || 'user'}
+                                       </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                       <div className="flex items-center gap-1 font-bold text-xs text-amber-500">
+                                          <Star size={13} className="fill-amber-500" />
+                                          <span>{u.points || 0}</span>
+                                       </div>
+                                    </TableCell>
+                                    <TableCell>
+                                       <div className="flex items-center gap-1.5">
+                                          <span className={cn("w-2 h-2 rounded-full", isOnline ? "bg-[#10B981] animate-pulse" : "bg-slate-300 dark:bg-slate-600")} />
+                                          <span className={cn("text-xs font-semibold", isOnline ? "text-[#10B981]" : "text-slate-400")}>
+                                            {isOnline ? 'Online' : 'Offline'}
+                                          </span>
+                                       </div>
+                                    </TableCell>
+                                    <TableCell className="text-right px-6">
+                                       <div className="flex justify-end items-center gap-2">
+                                          <button 
+                                            onClick={() => { setSelectedUser(u); setPointAdjustment(""); setIsUserManageOpen(true); }}
+                                            className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                            title="Manage User"
                                           >
-                                          <Trash2 size={18} />
-                                        </button>
-                                      </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })
-                          )}
-                      </TableBody>
-                    </Table>
+                                            <Edit size={16} />
+                                          </button>
+                                          <button 
+                                            onClick={() => { setDeleteTarget({ id: u.uid, type: 'user' }); setIsDeleteDialogOpen(true); }}
+                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                                            title="Delete User"
+                                          >
+                                            <Trash2 size={16} />
+                                          </button>
+                                       </div>
+                                    </TableCell>
+                                 </TableRow>
+                               );
+                             })
+                           )}
+                        </TableBody>
+                     </Table>
                   </div>
-               </Card>
+               </div>
             </div>
           )}
 
@@ -3958,119 +4441,262 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Add New Promo Code Modal */}
       <Dialog open={isPromoDialogOpen} onOpenChange={setIsPromoDialogOpen}>
-        <DialogContent className="max-md w-[95%] rounded-[2rem] p-6 md:p-8 border-none shadow-2xl bg-white dark:bg-slate-900">
-           <DialogHeader>
-              <DialogTitle className="text-xl md:text-2xl font-headline font-bold uppercase tracking-tight">Create Promo Voucher</DialogTitle>
-              <DialogDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">Generate a unique code with custom discount</DialogDescription>
-           </DialogHeader>
-           <form onSubmit={handleSavePromo} className="space-y-6 mt-6">
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Code</Label>
-                 <input 
-                   placeholder="e.g. DEVL26%OFF" 
-                   value={promoCodeForm.code} 
-                   onChange={e => setPromoCodeInput({...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '')})} 
-                   className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus-ring-primary transition-all uppercase w-full" 
-                 />
+        <DialogContent className="w-[95%] max-w-md rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
+           <div className="p-6 flex flex-col gap-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+                   Add new promo code
+                 </DialogTitle>
               </div>
 
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Voucher Type</Label>
-                 <div className="flex items-center space-x-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border dark:border-white/5">
-                   <Checkbox 
-                     id="multi-use-toggle"
-                     checked={promoCodeForm.type === 'multi_use'} 
-                     onCheckedChange={(checked) => setPromoCodeInput({...promoCodeForm, type: checked ? 'multi_use' : 'single_use'})}
-                     className="h-5 w-5"
-                   />
-                   <div className="grid gap-1.5 leading-none">
-                     <label
-                       htmlFor="multi-use-toggle"
-                       className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase"
-                     >
-                       dad badan
-                     </label>
-                     <p className="text-[10px] text-muted-foreground">
-                       macamiil badan ayaa isticmaali karto. ka qaad tick ta si hal qof u isticmaalo.
-                     </p>
-                   </div>
+              {/* Form */}
+              <form onSubmit={handleSavePromo} className="flex flex-col gap-4">
+                 {/* Promo Code Input */}
+                 <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Promo code
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. SUMMER24"
+                      value={promoCodeForm.code}
+                      onChange={e => setPromoCodeInput({ ...promoCodeForm, code: e.target.value.toUpperCase().replace(/\s/g, '') })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono uppercase text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      required
+                    />
                  </div>
-              </div>
 
-              <SettingInput label="Discount Percentage (%)" value={promoCodeForm.discount} type="number" onChange={v => setPromoCodeInput({...promoCodeForm, discount: v})} placeholder="e.g. 15" />
-              
-              <div className="grid grid-cols-2 gap-4">
-                 <SettingInput label="Duration Value" value={promoCodeForm.duration} type="number" onChange={v => setPromoCodeInput({...promoCodeForm, duration: v})} placeholder="e.g. 7" />
-                 <div className="space-y-2">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Time Unit</Label>
-                    <Select value={promoCodeForm.durationUnit} onValueChange={v => setPromoCodeInput({...promoCodeForm, durationUnit: v})}>
-                       <SelectTrigger className="h-12 md:h-16 rounded-xl bg-slate-50 dark:bg-slate-800 border-none px-4 font-bold shadow-inner"><SelectValue /></SelectTrigger>
-                       <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                          <SelectItem value="minutes" className="p-3 font-bold uppercase text-[10px]">Minutes</SelectItem>
-                          <SelectItem value="hours" className="p-3 font-bold uppercase text-[10px]">Hours</SelectItem>
-                          <SelectItem value="days" className="p-3 font-bold uppercase text-[10px]">Days</SelectItem>
-                          <SelectItem value="months" className="p-3 font-bold uppercase text-[10px]">Months</SelectItem>
-                          <SelectItem value="years" className="p-3 font-bold uppercase text-[10px]">Years</SelectItem>
-                       </SelectContent>
-                    </Select>
+                 {/* Promo Code Type */}
+                 <div className="flex flex-col gap-2">
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Promo code type
+                    </label>
+                    <div className="flex items-center gap-6">
+                       <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800 dark:text-slate-200">
+                          <input 
+                            type="radio" 
+                            name="promoType" 
+                            value="single_use"
+                            checked={promoCodeForm.type === 'single_use'}
+                            onChange={() => setPromoCodeInput({ ...promoCodeForm, type: 'single_use' })}
+                            className="w-4 h-4 text-primary accent-primary"
+                          />
+                          <span>One time</span>
+                       </label>
+                       <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-800 dark:text-slate-200">
+                          <input 
+                            type="radio" 
+                            name="promoType" 
+                            value="multi_use"
+                            checked={promoCodeForm.type === 'multi_use'}
+                            onChange={() => setPromoCodeInput({ ...promoCodeForm, type: 'multi_use' })}
+                            className="w-4 h-4 text-primary accent-primary"
+                          />
+                          <span>Multi use</span>
+                       </label>
+                    </div>
                  </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">
-                  Internal Note
-                </Label>
-                <Textarea 
-                  placeholder="Internal note..."
-                  value={promoCodeForm.note}
-                  onChange={e => setPromoCodeInput({...promoCodeForm, note: e.target.value})}
-                  className="rounded-xl bg-slate-50 dark:bg-slate-800 border-none min-h-[80px] p-4 font-medium shadow-inner"
-                />
-              </div>
+                 {/* Discount Percentage */}
+                 <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Discount percentage %
+                    </label>
+                    <input 
+                      type="number" 
+                      min="1" 
+                      max="100"
+                      placeholder="10"
+                      value={promoCodeForm.discount}
+                      onChange={e => setPromoCodeInput({ ...promoCodeForm, discount: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      required
+                    />
+                 </div>
 
-              <Button type="submit" disabled={isSavingStatus} className="w-full h-14 md:h-16 rounded-2xl bg-primary text-white font-black uppercase tracking-[0.1em] shadow-xl active:scale-[0.98]">
-                 {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save"}
-              </Button>
-           </form>
+                 {/* Duration (Responsive row for mobiles) */}
+                 <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Duration
+                    </label>
+                    <div className="flex gap-2 w-full">
+                       <input 
+                         type="number" 
+                         min="1" 
+                         placeholder="Value"
+                         value={promoCodeForm.duration}
+                         onChange={e => setPromoCodeInput({ ...promoCodeForm, duration: e.target.value })}
+                         className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                         required
+                       />
+                       <select 
+                         value={promoCodeForm.durationUnit}
+                         onChange={e => setPromoCodeInput({ ...promoCodeForm, durationUnit: e.target.value })}
+                         className="w-32 sm:w-36 shrink-0 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                       >
+                          <option value="days">Days</option>
+                          <option value="months">Months</option>
+                          <option value="hours">Hours</option>
+                          <option value="minutes">Minutes</option>
+                          <option value="years">Years</option>
+                       </select>
+                    </div>
+                 </div>
+
+                 {/* Note */}
+                 <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Note
+                    </label>
+                    <textarea 
+                      placeholder="Add a description..."
+                      value={promoCodeForm.note}
+                      onChange={e => setPromoCodeInput({ ...promoCodeForm, note: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all min-h-[85px] resize-none"
+                    />
+                 </div>
+
+                 {/* Action Buttons */}
+                 <div className="flex gap-3 pt-3">
+                    <Button 
+                      type="submit" 
+                      disabled={isSavingStatus}
+                      className="flex-1 h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium text-sm shadow-sm transition-all active:scale-[0.98]"
+                    >
+                      {isSavingStatus ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                      Save Code
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsPromoDialogOpen(false)}
+                      className="flex-1 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-none font-medium text-sm transition-all"
+                    >
+                      Cancel
+                    </Button>
+                 </div>
+              </form>
+           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Redesigned View Promo Usage Modal */}
       <Dialog open={isPromoUsageOpen} onOpenChange={setIsPromoUsageOpen}>
-         <DialogContent className="max-md w-[95%] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
-            <div className="bg-primary p-6 text-white"><DialogTitle className="text-xl font-headline font-bold uppercase tracking-tight">Isticmaalayaasha Code ka ({selectedPromo?.code})</DialogTitle></div>
+         <DialogContent className="w-[95%] max-w-lg rounded-2xl p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900">
+            {/* Modal Header */}
+            <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+               <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                     <Ticket size={20} />
+                  </div>
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-2">
+                        <DialogTitle className="text-lg font-bold font-mono text-slate-900 dark:text-white uppercase truncate">
+                          {selectedPromo?.code || "Promo"}
+                        </DialogTitle>
+                        <Badge className="bg-primary/10 text-primary hover:bg-primary/15 text-[10px] font-bold border-none px-2 py-0.5">
+                          {selectedPromo?.discount}% OFF
+                        </Badge>
+                     </div>
+                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                       {selectedPromo?.type === 'multi_use' ? 'Multi-Use Campaign Usage' : 'Single-Use Voucher Claim'}
+                     </p>
+                  </div>
+               </div>
+            </div>
+
+            {/* Modal Content - Users List */}
             <div className="p-6 max-h-[60vh] overflow-y-auto scrollbar-hide space-y-3">
-               {selectedPromo && (selectedPromo.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo.claimed ? [{ uid: selectedPromo.usedBy, timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).length === 0 ? (
-                 <div className="py-12 text-center opacity-30 italic font-bold uppercase text-xs">No users have used this code yet.</div>
-               ) : (
-                 (selectedPromo?.type === 'multi_use' ? Object.values(selectedPromo.usedByUsers || {}) : (selectedPromo?.claimed ? [{ uid: selectedPromo.usedBy, name: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.name || 'User', whatsapp: allUsers.find(u=>u.uid === selectedPromo.usedBy)?.phoneNumber || 'N/A', timestamp: selectedPromo.claimedAt || selectedPromo.createdAt }] : [])).map((usage: any) => {
-                    const profile = allUsers.find(u => u.uid === usage.uid);
+               {(() => {
+                  const usageList = selectedPromo ? (
+                    selectedPromo.type === 'multi_use'
+                      ? Object.values(selectedPromo.usedByUsers || {})
+                      : (selectedPromo.claimed && selectedPromo.usedBy
+                          ? [{ 
+                              uid: selectedPromo.usedBy, 
+                              name: allUsers.find(u => u.uid === selectedPromo.usedBy)?.name || 'Gamer', 
+                              whatsapp: allUsers.find(u => u.uid === selectedPromo.usedBy)?.phoneNumber || 'N/A', 
+                              timestamp: selectedPromo.claimedAt || selectedPromo.createdAt 
+                            }]
+                          : []
+                        )
+                  ) : [];
+
+                  if (usageList.length === 0) {
                     return (
-                      <div key={usage.uid} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-white/5 flex items-center justify-between">
-                         <div className="flex items-center gap-3 min-w-0">
-                            <Avatar className="w-10 h-10 rounded-xl border-2 border-white shadow-sm shrink-0">
-                               <AvatarImage src={profile?.photoURL} />
-                               <AvatarFallback className="bg-primary/10 text-primary"><User size={20}/></AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                               <div className="flex items-center gap-1.5 min-w-0">
-                                 <p className="truncate font-semibold text-sm max-w-[120px]">{usage.name || profile?.name || 'Gamer'}</p>
-                                 {profile?.isVerified && <VerifiedBadge />}
-                               </div>
-                               <p className="text-[10px] font-medium text-muted-foreground">{usage.whatsapp || profile?.phoneNumber || 'N/A'}</p>
-                            </div>
+                      <div className="py-12 flex flex-col items-center justify-center text-center">
+                         <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-3">
+                            <Users size={24} />
                          </div>
-                         <div className="text-right shrink-0">
-                            <p className="text-[10px] font-black text-primary uppercase">{safeFormatDistanceToNow(usage.timestamp, { addSuffix: true })}</p>
-                            <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{usage.timestamp && !isNaN(new Date(usage.timestamp).getTime()) ? format(usage.timestamp, 'MMM d, HH:mm') : '---'}</p>
-                         </div>
+                         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No redemptions yet</p>
+                         <p className="text-xs text-slate-400 max-w-[200px] mt-1">This promo code hasn&apos;t been claimed or used by any users yet.</p>
                       </div>
                     );
-                 })
-               )}
+                  }
+
+                  return (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1">
+                         <span className="font-semibold uppercase tracking-wider text-[10px]">Redemption History</span>
+                         <span className="font-bold">{usageList.length} {usageList.length === 1 ? 'user' : 'users'}</span>
+                      </div>
+                      {usageList.map((usage: any, idx: number) => {
+                        const profile = allUsers.find(u => u.uid === usage.uid);
+                        const displayName = usage.name || profile?.name || 'Gamer';
+                        const displayPhone = usage.whatsapp || profile?.phoneNumber || 'N/A';
+                        const time = usage.timestamp || selectedPromo?.createdAt;
+
+                        return (
+                          <div 
+                            key={usage.uid || idx} 
+                            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800 transition-colors"
+                          >
+                             <div className="flex items-center gap-3 min-w-0">
+                                <Avatar className="w-10 h-10 rounded-xl border border-white dark:border-slate-700 shadow-sm shrink-0">
+                                   <AvatarImage src={profile?.photoURL} />
+                                   <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                     {displayName.slice(0, 2).toUpperCase()}
+                                   </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                   <div className="flex items-center gap-1.5">
+                                      <p className="truncate font-semibold text-sm text-slate-900 dark:text-white max-w-[140px] sm:max-w-[180px]">
+                                        {displayName}
+                                      </p>
+                                      {profile?.isVerified && <VerifiedBadge />}
+                                   </div>
+                                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                     {displayPhone}
+                                   </p>
+                                </div>
+                             </div>
+                             <div className="text-right shrink-0">
+                                <p className="text-xs font-semibold text-primary">
+                                  {safeFormatDistanceToNow(time, { addSuffix: true })}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                  {time && !isNaN(new Date(time).getTime()) ? format(time, 'MMM d, yyyy HH:mm') : '---'}
+                                </p>
+                             </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  );
+               })()}
             </div>
-            <div className="p-6 pt-0">
-               <Button onClick={() => setIsPromoUsageOpen(false)} className="w-full rounded-xl">Close</Button>
+
+            {/* Modal Footer */}
+            <div className="p-6 pt-2 border-t border-slate-100 dark:border-slate-800">
+               <Button 
+                 onClick={() => setIsPromoUsageOpen(false)} 
+                 className="w-full h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white border-none font-medium text-sm transition-all"
+               >
+                 Close
+               </Button>
             </div>
          </DialogContent>
       </Dialog>
