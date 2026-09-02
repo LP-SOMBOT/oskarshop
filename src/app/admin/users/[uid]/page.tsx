@@ -42,7 +42,6 @@ import Image from "next/image";
 import { cn, formatWhatsAppNumber } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { StatusBadge } from "@/app/admin/page";
 
 const LOGS_PER_PAGE = 8;
 
@@ -397,4 +396,17 @@ function AnalyticsCard({ label, value, icon: Icon, color, bgColor }: { label: st
        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
     </Card>
   );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-700",
+    processing: "bg-blue-100 text-blue-700",
+    successful: "bg-green-100 text-green-700",
+    holding: "bg-indigo-100 text-indigo-700",
+    cancelled: "bg-red-100 text-red-700",
+    rejected: "bg-red-100 text-red-700",
+    sold: "bg-slate-900 text-white"
+  };
+  return <Badge className={cn("rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest border-none", colors[status] || colors.pending)}>{status}</Badge>;
 }

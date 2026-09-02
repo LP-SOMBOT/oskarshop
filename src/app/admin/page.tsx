@@ -94,7 +94,14 @@ import {
   MoreVertical,
   UserPlus,
   Truck,
-  ClipboardList
+  ClipboardList,
+  EyeOff,
+  Lock,
+  Key,
+  SlidersHorizontal,
+  Terminal,
+  CheckCheck,
+  Power
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -268,7 +275,9 @@ function WaitTime({ post }: { post: any }) {
     };
     update();
     const interval = setInterval(update, 60000);
-    return () => typeof window !== 'undefined' && clearInterval(interval);
+    return () => {
+      if (typeof window !== 'undefined') clearInterval(interval);
+    };
   }, [post]);
 
   return (
@@ -416,9 +425,12 @@ export default function AdminPage() {
 
   const [adminSearchQuery, setAdminSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'successful' | 'cancelled'>('all');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'pending' | 'processing' | 'successful' | 'cancelled'>('all');
   const [userFilterTab, setUserFilterTab] = useState<'all' | 'admins' | 'online' | 'verified'>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const adminScrollRef = useRef<HTMLDivElement>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const [isGameDialogOpen, setIsGameDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -474,7 +486,7 @@ export default function AdminPage() {
   const [paymentMethodForm, setPaymentMethodForm] = useState({ name: "", icon: "", ussdTemplate: "", active: true });
   const [promoCodeForm, setPromoCodeInput] = useState({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
   
-  const [brandForm, setBrandForm] = useState({ announcementTicker: "", isLive: false, logo: "" });
+  const [brandForm, setBrandForm] = useState({ name: "Oskarshop", announcementTicker: "", announcement: "", isLive: false, logo: "" });
   const [economyForm, setEconomyForm] = useState({ paymentNumber: "" });
   const [helpLinksForm, setHelpLinksForm] = useState({ tutorialUrl: "", tutorialThumbnail: "", tutorialBannerActive: false, whatsappNumber: "", tiktokUrl: "" });
   const [appStatusForm, setAppStatusForm] = useState({ offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
@@ -528,6 +540,40 @@ export default function AdminPage() {
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Settings Redesign UI States
+  const [settingsActiveTab, setSettingsActiveTab] = useState<string>('branding');
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState<string>('');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showFazerKey, setShowFazerKey] = useState(false);
+  const [settingsAutomationSubTab, setSettingsAutomationSubTab] = useState<'config' | 'webhooks' | 'sms'>('config');
+
+  // Mobile Settings Navigation States & Unsaved tracking
+  const [mobileSettingsSubView, setMobileSettingsSubView] = useState<'menu' | 'general' | 'section'>('menu');
+  const [isUnsavedChangesOpen, setIsUnsavedChangesOpen] = useState(false);
+  const [isSettingsDirty, setIsSettingsDirty] = useState(false);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('oskarshop_settings_active_section');
+      if (cached) setSettingsActiveTab(cached);
+    } catch (e) {}
+  }, []);
+
+  const handleSettingsTabChange = (tab: string) => {
+    setSettingsActiveTab(tab);
+    try {
+      localStorage.setItem('oskarshop_settings_active_section', tab);
+    } catch (e) {}
+  };
+
+  const copyToClipboard = (text: string, fieldKey: string, toastMessage: string = "Copied to clipboard") => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldKey);
+    toast({ title: toastMessage, description: text });
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const formsInitialized = useRef(false);
 
   const sensors = useSensors(
@@ -555,6 +601,130 @@ export default function AdminPage() {
     if (!loading && !user?.isAdmin) router.replace('/');
   }, [user, loading, router]);
 
+  // Click outside search container to collapse breathing search bar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        if (isSearchExpanded && !adminSearchQuery) {
+          setIsSearchExpanded(false);
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSearchExpanded, adminSearchQuery]);
+
+  // Global scroll listener for Back-to-Top floating button
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = adminScrollRef.current;
+      if (el) {
+        setShowBackToTop(el.scrollTop > 250);
+      } else {
+        setShowBackToTop(window.scrollY > 250);
+      }
+    };
+
+    const el = adminScrollRef.current;
+    if (el) {
+      el.addEventListener("scroll", handleScroll, { passive: true });
+      return () => el.removeEventListener("scroll", handleScroll);
+    } else {
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  const scrollToTop = () => {
+    const el = adminScrollRef.current;
+    if (el) {
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleMobileSettingsBack = () => {
+    if (isSettingsDirty) {
+      setIsUnsavedChangesOpen(true);
+    } else {
+      setMobileSettingsSubView('menu');
+    }
+  };
+
+  const handleDiscardSettings = () => {
+    if (storeSettings) {
+      setBrandForm({
+        name: (storeSettings as any).platformName || "Oskarshop",
+        announcementTicker: storeSettings.announcementTicker || "",
+        announcement: storeSettings.announcementTicker || "",
+        isLive: storeSettings.isLive || false,
+        logo: storeSettings.logo || ""
+      });
+      setEconomyForm({
+        paymentNumber: storeSettings.paymentNumber || ""
+      });
+      setHelpLinksForm({
+        tutorialUrl: storeSettings.helpLinks?.tutorialUrl || "",
+        tutorialThumbnail: storeSettings.helpLinks?.tutorialThumbnail || "",
+        tutorialBannerActive: storeSettings.helpLinks?.tutorialBannerActive || false,
+        whatsappNumber: storeSettings.helpLinks?.whatsappNumber || "",
+        tiktokUrl: storeSettings.helpLinks?.tiktokUrl || ""
+      });
+      setAppStatusForm({
+        offline: storeSettings.appStatus?.offline || false,
+        offlineTitle: storeSettings.appStatus?.offlineTitle || "",
+        offlineBody: storeSettings.appStatus?.offlineBody || "",
+        offlineImageUrl: storeSettings.appStatus?.offlineImageUrl || ""
+      });
+      setTermsForm({
+        en: storeSettings.termsAndConditions?.en || "",
+        so: storeSettings.termsAndConditions?.so || ""
+      });
+      setTelegramForm({
+        telegramBotToken: storeSettings.telegramBotToken || "",
+        telegramAdminChatIds: storeSettings.telegramAdminChatIds || ""
+      });
+      setScheduleForm(storeSettings.schedule || {
+        enabled: false,
+        openTime: "09:00",
+        closeTime: "21:30",
+        timezone: "Africa/Mogadishu"
+      });
+      setEmailConfigForm({
+        verification: (storeSettings as any).emailjs_verification || { serviceId: "", templateId: "", publicKey: "" },
+        recovery: (storeSettings as any).emailjs || { serviceId: "", templateId: "", publicKey: "" }
+      });
+    }
+    setIsSettingsDirty(false);
+    setIsUnsavedChangesOpen(false);
+    setMobileSettingsSubView('menu');
+  };
+
+  const handleSaveAndExitSettings = async () => {
+    try {
+      setIsSavingStatus(true);
+      await updateStoreSettings({
+        ...brandForm,
+        helpLinks: helpLinksForm,
+        appStatus: appStatusForm,
+        termsAndConditions: termsForm,
+        telegramBotToken: telegramForm.telegramBotToken,
+        telegramAdminChatIds: telegramForm.telegramAdminChatIds,
+        schedule: scheduleForm,
+        emailjs_verification: emailConfigForm.verification,
+        emailjs: emailConfigForm.recovery
+      });
+      setIsSettingsDirty(false);
+      setIsUnsavedChangesOpen(false);
+      setMobileSettingsSubView('menu');
+      toast({ title: "Settings Saved", description: "All modifications were applied successfully." });
+    } catch (e: any) {
+      toast({ title: "Save Failed", description: e.message || "Could not save settings.", variant: "destructive" });
+    } finally {
+      setIsSavingStatus(false);
+    }
+  };
+
   // Live Mogadishu Clock (12h format)
   useEffect(() => {
     const timer = setInterval(() => {
@@ -572,16 +742,32 @@ export default function AdminPage() {
   useEffect(() => {
     if (storeSettings && !formsInitialized.current) {
       setBrandForm({
+        name: (storeSettings as any).platformName || "Oskarshop",
         announcementTicker: storeSettings.announcementTicker || "",
+        announcement: storeSettings.announcementTicker || "",
         isLive: storeSettings.isLive || false,
         logo: storeSettings.logo || ""
       });
       setEconomyForm({
         paymentNumber: storeSettings.paymentNumber || ""
       });
-      setHelpLinksForm(storeSettings.helpLinks || { tutorialUrl: "", tutorialThumbnail: "", tutorialBannerActive: false, whatsappNumber: "", tiktokUrl: "" });
-      setAppStatusForm(storeSettings.appStatus || { offline: false, offlineTitle: "", offlineBody: "", offlineImageUrl: "" });
-      setTermsForm(storeSettings.termsAndConditions || { en: "", so: "" });
+      setHelpLinksForm({
+        tutorialUrl: storeSettings.helpLinks?.tutorialUrl || "",
+        tutorialThumbnail: storeSettings.helpLinks?.tutorialThumbnail || "",
+        tutorialBannerActive: storeSettings.helpLinks?.tutorialBannerActive || false,
+        whatsappNumber: storeSettings.helpLinks?.whatsappNumber || "",
+        tiktokUrl: storeSettings.helpLinks?.tiktokUrl || ""
+      });
+      setAppStatusForm({
+        offline: storeSettings.appStatus?.offline || false,
+        offlineTitle: storeSettings.appStatus?.offlineTitle || "",
+        offlineBody: storeSettings.appStatus?.offlineBody || "",
+        offlineImageUrl: storeSettings.appStatus?.offlineImageUrl || ""
+      });
+      setTermsForm({
+        en: storeSettings.termsAndConditions?.en || "",
+        so: storeSettings.termsAndConditions?.so || ""
+      });
       setTelegramForm({
         telegramBotToken: storeSettings.telegramBotToken || "",
         telegramAdminChatIds: storeSettings.telegramAdminChatIds || ""
@@ -595,8 +781,8 @@ export default function AdminPage() {
       });
 
       setEmailConfigForm({
-        verification: storeSettings.emailjs_verification || { serviceId: "", templateId: "", publicKey: "" },
-        recovery: storeSettings.emailjs || { serviceId: "", templateId: "", publicKey: "" }
+        verification: (storeSettings as any).emailjs_verification || { serviceId: "", templateId: "", publicKey: "" },
+        recovery: (storeSettings as any).emailjs || { serviceId: "", templateId: "", publicKey: "" }
       });
 
       setFazerApiKey(storeSettings.fazercards?.apiKey || "");
@@ -954,7 +1140,7 @@ export default function AdminPage() {
     return accountPosts.filter(p => 
       p.authorName?.toLowerCase().includes(q) || 
       p.gameType?.toLowerCase().includes(q) ||
-      p.title?.toLowerCase().includes(q) ||
+      (p as any).title?.toLowerCase().includes(q) ||
       p.id?.toLowerCase().includes(q)
     );
   }, [accountPosts, adminSearchQuery]);
@@ -1091,7 +1277,7 @@ export default function AdminPage() {
   const handleSaveGame = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
-    try { await saveGame({ ...gameForm, id: editingGame?.id }); setIsGameDialogOpen(false); toast({ title: "Game Saved" }); } finally { setIsUploading(false); }
+    try { await saveGame({ ...gameForm, category: gameForm.category as any, id: editingGame?.id }); setIsGameDialogOpen(false); toast({ title: "Game Saved" }); } finally { setIsUploading(false); }
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -1107,7 +1293,7 @@ export default function AdminPage() {
       await saveProduct({ 
         ...productForm, 
         price: parseFloat(productForm.price), 
-        discountedPrice: productForm.discountedPrice ? parseFloat(productForm.discountedPrice) : null,
+        discountedPrice: productForm.discountedPrice ? parseFloat(productForm.discountedPrice) : undefined,
         id: editingProduct?.id 
       }); 
       setIsProductDialogOpen(false); 
@@ -1148,7 +1334,7 @@ export default function AdminPage() {
     e.preventDefault();
     setIsSavingStatus(true);
     try {
-      await savePromoCode(promoCodeForm);
+      await savePromoCode({ ...promoCodeForm, discount: parseFloat(promoCodeForm.discount) || 0 });
       setIsPromoDialogOpen(false);
       setPromoCodeInput({ code: "", discount: "", duration: "", durationUnit: "days", note: "", type: 'single_use' as any });
       toast({ title: "Promo Saved" });
@@ -1324,8 +1510,8 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSchedule = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsSavingStatus(true);
     try {
       await updateStoreSettings({
@@ -1580,91 +1766,140 @@ export default function AdminPage() {
         <SidebarContent />
       </aside>
 
+      {/* Right-Side Collapsible Menu Sheet for Mobile */}
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-white dark:bg-slate-900 border-r dark:border-white/5 [&>button]:hidden z-50">
-          <SheetHeader className="px-4 py-4 border-b dark:border-white/5">
+        <SheetContent side="right" className="p-0 w-72 bg-white dark:bg-slate-900 border-l dark:border-white/10 [&>button]:hidden z-50 flex flex-col">
+          <SheetHeader className="px-5 py-4 border-b dark:border-white/5 flex flex-row items-center justify-between shrink-0">
             <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
-            <Button 
-              variant="ghost" 
-              onClick={() => { setGlobalLoading(true); router.push('/'); }}
-              className="w-full justify-start gap-3 font-headline font-bold uppercase tracking-tight text-primary hover:bg-primary/5"
-            >
-              <Home size={20} /> Back to Store
-            </Button>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                O
+              </div>
+              <div className="text-left">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-tight">Oskar Control</h3>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Admin Panel</p>
+              </div>
+            </div>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg">
+              <X size={18} />
+            </button>
           </SheetHeader>
-          <SidebarContent isMobile={true} />
+
+          {/* Prominent Back to store button */}
+          <div className="p-3 border-b dark:border-white/5 bg-slate-50/60 dark:bg-slate-800/40">
+            <Button 
+              variant="outline" 
+              onClick={() => { setGlobalLoading(true); router.push('/'); }}
+              className="w-full justify-start gap-2.5 font-bold text-xs uppercase tracking-wider text-primary border-primary/20 hover:bg-primary/10 rounded-xl h-11 shadow-xs"
+            >
+              <Home size={16} /> Back to Store
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <SidebarContent isMobile={true} />
+          </div>
         </SheetContent>
       </Sheet>
 
-      <div className="flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide h-screen">
-        <header className="sticky top-0 h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30 shadow-sm">
-          <div className="flex items-center gap-4">
-             <button className="md:hidden p-2 text-slate-500 rounded-xl hover:bg-slate-50" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24} /></button>
-             <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
-               {selectedOrderId ? "Order Insight" : selectedAccountId ? "Listing Hub" : selectedEventId ? "Auction Manager" : activeView === 'dashboard' ? "Overview" : activeView.toUpperCase().replace('-', ' ')}
-             </h2>
+      <div ref={adminScrollRef} className="admin-scroll-container flex-1 flex flex-col w-full relative overflow-y-auto scrollbar-hide h-screen pb-20 md:pb-0">
+        <header className="sticky top-0 h-16 md:h-20 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/70 dark:border-white/5 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+             {/* Back navigation button if in any sub-view or non-root settings */}
+             {(selectedOrderId || selectedAccountId || selectedEventId || isEditingEvent || (activeView === 'settings' && mobileSettingsSubView !== 'menu')) && (
+               <button
+                 onClick={() => {
+                   if (selectedOrderId) setSelectedOrderId(null);
+                   else if (selectedAccountId) setSelectedAccountId(null);
+                   else if (selectedEventId) setSelectedEventId(null);
+                   else if (isEditingEvent) { setIsEditingEvent(false); setEditingEvent(null); }
+                   else if (activeView === 'settings' && mobileSettingsSubView !== 'menu') {
+                     handleMobileSettingsBack();
+                   }
+                 }}
+                 className="p-2 -ml-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0"
+                 title="Go Back"
+               >
+                 <ArrowLeft size={20} />
+               </button>
+             )}
+
+             <div className={cn(
+               "transition-all duration-300 min-w-0",
+               isSearchExpanded ? "w-0 opacity-0 overflow-hidden pointer-events-none md:w-auto md:opacity-100 md:pointer-events-auto" : "w-auto opacity-100"
+             )}>
+               <h2 className="text-base sm:text-xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white truncate">
+                 {selectedOrderId ? "Order Details" :
+                  selectedAccountId ? "Listing Hub" :
+                  selectedEventId ? "Auction Manager" :
+                  isEditingEvent ? "Event Editor" :
+                  activeView === 'settings' && mobileSettingsSubView === 'general' ? "General Settings" :
+                  activeView === 'dashboard' ? "Overview" :
+                  activeView.toUpperCase().replace('-', ' ')}
+               </h2>
+             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-             {/* Animated Global Header Search */}
-             {['orders', 'users', 'inventory', 'account-posts', 'account-events'].includes(activeView) && !selectedOrderId && !selectedAccountId && !selectedEventId && (
-               <div className="flex items-center">
-                 <div className={cn(
-                   "flex items-center transition-all duration-300 ease-in-out overflow-hidden",
-                   isSearchExpanded ? "w-44 sm:w-64 md:w-80 opacity-100 mr-2" : "w-0 opacity-0 pointer-events-none"
-                 )}>
-                   <div className="relative w-full">
-                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                     <input
-                       ref={searchInputRef}
-                       type="text"
-                       placeholder={
-                         activeView === 'orders' ? "Search orders..." :
-                         activeView === 'users' ? "Search users..." :
-                         activeView === 'inventory' ? "Search products..." :
-                         activeView === 'account-posts' ? "Search listings..." :
-                         activeView === 'account-events' ? "Search events..." : "Search..."
+
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+             {/* Breathing Search in Header */}
+             <div ref={searchContainerRef} className="flex items-center">
+               <div className={cn(
+                 "flex items-center transition-all duration-300 ease-in-out overflow-hidden",
+                 isSearchExpanded ? "w-44 sm:w-64 md:w-80 opacity-100 mr-2" : "w-0 opacity-0 pointer-events-none"
+               )}>
+                 <div className="relative w-full">
+                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                   <input
+                     ref={searchInputRef}
+                     type="text"
+                     placeholder={
+                       activeView === 'orders' ? "Search orders..." :
+                       activeView === 'users' ? "Search users..." :
+                       activeView === 'inventory' ? "Search products..." :
+                       activeView === 'account-posts' ? "Search listings..." :
+                       activeView === 'account-events' ? "Search events..." : "Search..."
+                     }
+                     value={adminSearchQuery}
+                     onChange={(e) => setAdminSearchQuery(e.target.value)}
+                     className="w-full h-9 sm:h-10 pl-9 pr-8 rounded-full bg-slate-100 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400"
+                   />
+                   <button 
+                     onClick={() => {
+                       if (adminSearchQuery) {
+                         setAdminSearchQuery("");
+                       } else {
+                         setIsSearchExpanded(false);
                        }
-                       value={adminSearchQuery}
-                       onChange={(e) => setAdminSearchQuery(e.target.value)}
-                       className="w-full h-9 sm:h-10 pl-9 pr-7 rounded-full bg-slate-100 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400"
-                     />
-                     {adminSearchQuery && (
-                       <button 
-                         onClick={() => setAdminSearchQuery("")}
-                         className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
-                       >
-                         <X size={13} />
-                       </button>
-                     )}
-                   </div>
+                     }}
+                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                   >
+                     <X size={14} />
+                   </button>
                  </div>
+               </div>
+
+               {!isSearchExpanded && (
                  <button
                    onClick={() => {
-                     setIsSearchExpanded(!isSearchExpanded);
-                     if (!isSearchExpanded) {
-                       setTimeout(() => searchInputRef.current?.focus(), 150);
-                     }
+                     setIsSearchExpanded(true);
+                     setTimeout(() => searchInputRef.current?.focus(), 150);
                    }}
-                   className={cn(
-                     "p-2.5 rounded-full transition-all active:scale-90",
-                     isSearchExpanded || adminSearchQuery
-                       ? "bg-primary text-white shadow-md shadow-primary/20" 
-                       : "bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-primary"
-                   )}
+                   className="p-2.5 rounded-full bg-slate-100/80 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all active:scale-90"
                    title="Search"
                  >
                    <Search size={18} className="sm:size-5" />
                  </button>
-               </div>
-             )}
+               )}
+             </div>
 
              <div className="hidden sm:flex items-center gap-2 bg-green-50 dark:bg-green-500/10 px-4 py-1.5 rounded-full text-green-600 font-bold text-[10px] uppercase tracking-widest border border-green-100 dark:border-green-500/20">
                 <RefreshCw size={12} className="animate-spin" /> Live
              </div>
+
              <Popover>
                <PopoverTrigger asChild>
-                  <button className="relative p-2.5 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-500 hover:text-primary transition-all active:scale-90">
-                     <Bell size={20} />
+                  <button className="relative p-2.5 bg-slate-100/80 dark:bg-slate-800 rounded-full text-slate-500 hover:text-primary transition-all active:scale-90">
+                     <Bell size={18} className="sm:size-5" />
                      {adminNotifications.filter(n => !n.readBy?.[user.uid]).length > 0 && (
                        <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
                           {adminNotifications.filter(n => !n.readBy?.[user.uid]).length}
@@ -1692,9 +1927,10 @@ export default function AdminPage() {
                   </div>
                </PopoverContent>
              </Popover>
-             <div className="flex items-center gap-3 pl-4 border-l dark:border-white/5">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white shadow-sm shrink-0">
-                   {user.photoURL ? <Image src={user.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={20} /></div>}
+
+             <div className="flex items-center gap-3 pl-2 sm:pl-4 border-l dark:border-white/5">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-sm shrink-0">
+                   {user.photoURL ? <Image src={user.photoURL} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><User size={18} /></div>}
                 </div>
              </div>
           </div>
@@ -2046,7 +2282,7 @@ export default function AdminPage() {
                    onDelete={() => { setDeleteTarget({id: selectedOrderId, type:'order'}); setIsDeleteDialogOpen(true); }}
                  />
                ) : (
-                 <div className="space-y-6">
+                  <div className="space-y-6">
                     {/* Status Tabs */}
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                        <button 
@@ -2054,7 +2290,7 @@ export default function AdminPage() {
                          className={cn(
                            "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
                            orderStatusFilter === 'all'
-                             ? "bg-[#6a1edb] text-white shadow-md"
+                             ? "bg-primary text-white shadow-md shadow-primary/20"
                              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
                          )}
                        >
@@ -2065,18 +2301,29 @@ export default function AdminPage() {
                          className={cn(
                            "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
                            orderStatusFilter === 'pending'
-                             ? "bg-[#6a1edb] text-white shadow-md"
+                             ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
                              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
                          )}
                        >
-                         Processing ({topUpOrders.filter(o => o.status === 'pending').length})
+                         Pending ({topUpOrders.filter(o => o.status === 'pending').length})
+                       </button>
+                       <button 
+                         onClick={() => setOrderStatusFilter('processing')}
+                         className={cn(
+                           "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
+                           orderStatusFilter === 'processing'
+                             ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                             : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                         )}
+                       >
+                         Processing ({topUpOrders.filter(o => o.status === 'processing').length})
                        </button>
                        <button 
                          onClick={() => setOrderStatusFilter('successful')}
                          className={cn(
                            "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
                            orderStatusFilter === 'successful'
-                             ? "bg-[#6a1edb] text-white shadow-md"
+                             ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
                          )}
                        >
@@ -2087,7 +2334,7 @@ export default function AdminPage() {
                          className={cn(
                            "px-4 py-2 rounded-full font-medium text-xs sm:text-sm whitespace-nowrap transition-all active:scale-95",
                            orderStatusFilter === 'cancelled'
-                             ? "bg-[#6a1edb] text-white shadow-md"
+                             ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
                              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800"
                          )}
                        >
@@ -2108,11 +2355,14 @@ export default function AdminPage() {
                            const itemTitle = isEventWinnerOrder ? 'Guuleystaha' : (item?.title || "Top-up");
                            const customerName = order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest");
                            
-                           const isPending = order.status === 'pending' || order.status === 'processing';
+                           const isPending = order.status === 'pending';
+                           const isProcessing = order.status === 'processing';
                            const isSuccess = order.status === 'successful';
 
                            const leftBarClass = isPending
-                             ? "bg-gradient-to-b from-primary to-[#6a1edb] shadow-[0_0_10px_rgba(106,30,219,0.4)]"
+                             ? "bg-gradient-to-b from-amber-400 to-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                             : isProcessing
+                             ? "bg-gradient-to-b from-blue-500 to-indigo-600 shadow-[0_0_10px_rgba(37,99,235,0.4)]"
                              : isSuccess
                              ? "bg-gradient-to-b from-[#10B981] to-[#34D399]"
                              : "bg-gradient-to-b from-rose-500 to-red-600";
@@ -2135,7 +2385,7 @@ export default function AdminPage() {
                                              navigator.clipboard.writeText(order.id);
                                              toast({ title: "Order ID Copied!", description: `#${order.id} is in clipboard.` });
                                            }}
-                                           className="text-slate-400 hover:text-[#6a1edb] transition-colors p-0.5"
+                                           className="text-slate-400 hover:text-primary transition-colors p-0.5"
                                            title="Copy Order ID"
                                          >
                                            <Copy size={13} />
@@ -2148,6 +2398,11 @@ export default function AdminPage() {
 
                                    {/* Status Badge */}
                                    {isPending ? (
+                                     <div className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center gap-1.5 border border-amber-200/40">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        Pending
+                                     </div>
+                                   ) : isProcessing ? (
                                      <div className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center gap-1.5 animate-pulse border border-blue-200/40">
                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                                         Processing
@@ -2234,7 +2489,7 @@ export default function AdminPage() {
                                       </button>
                                       <button 
                                         onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
-                                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-[#6a1edb] hover:bg-[#5a16be] text-white font-medium text-xs shadow-sm transition-all active:scale-95"
+                                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-medium text-xs shadow-sm transition-all active:scale-95"
                                       >
                                         <span>View</span>
                                         <ChevronRight size={14} />
@@ -2275,7 +2530,8 @@ export default function AdminPage() {
                                     const itemTitle = isEventWinnerOrder ? 'Guuleystaha' : (item?.title || "Top-up");
                                     const customerName = order.gameDetails?.isEventWinner ? order.gameDetails?.eventTitle : (order.gameDetails?.playerName || order.gameDetails?.name || "Guest");
                                     
-                                    const isPending = order.status === 'pending' || order.status === 'processing';
+                                    const isPending = order.status === 'pending';
+                                    const isProcessing = order.status === 'processing';
                                     const isSuccess = order.status === 'successful';
 
                                     return (
@@ -2342,6 +2598,11 @@ export default function AdminPage() {
                                          </TableCell>
                                          <TableCell>
                                             {isPending ? (
+                                              <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-xs font-semibold inline-flex items-center gap-1.5 border border-amber-200/40">
+                                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                 Pending
+                                              </span>
+                                            ) : isProcessing ? (
                                               <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-semibold inline-flex items-center gap-1.5 border border-blue-200/40">
                                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
                                                  Processing
@@ -2362,28 +2623,28 @@ export default function AdminPage() {
                                             <div className="flex justify-end items-center gap-2">
                                                <button 
                                                  onClick={() => { setSelectedOrderId(order.id); setPendingStatus(order.status); setCancellationReason(order.cancellationReason || ""); }}
-                                                 className="px-3.5 py-1.5 bg-[#6a1edb] hover:bg-[#5a16be] text-white rounded-lg font-medium text-xs shadow-sm transition-all active:scale-95"
+                                                 className="px-3.5 py-1.5 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium text-xs shadow-sm transition-all active:scale-95"
                                                >
                                                  View
                                                </button>
                                                <button 
-                                                 onClick={() => { setDeleteTarget({ id: order.id, type: 'order' }); setIsDeleteDialogOpen(true); }}
-                                                 className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                                                 title="Delete"
-                                               >
-                                                 <Trash2 size={16} />
-                                               </button>
-                                            </div>
-                                         </TableCell>
-                                      </TableRow>
-                                    );
-                                  })
-                                )}
-                             </TableBody>
-                          </Table>
-                       </div>
-                    </div>
-                 </div>
+                                                  onClick={() => { setDeleteTarget({ id: order.id, type: 'order' }); setIsDeleteDialogOpen(true); }}
+                                                  className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                                                  title="Delete"
+                                                >
+                                                  <Trash2 size={16} />
+                                                </button>
+                                             </div>
+                                          </TableCell>
+                                       </TableRow>
+                                     );
+                                   })
+                                 )}
+                              </TableBody>
+                           </Table>
+                        </div>
+                     </div>
+                  </div>
                )}
             </div>
           )}
@@ -2796,7 +3057,7 @@ export default function AdminPage() {
                                  <Badge className="bg-green-500 text-white border-none font-bold text-[8px] uppercase px-2 py-0.5">LIVE</Badge>
                               </div>
                               <div className="absolute top-4 right-4 flex gap-2">
-                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
+                                 <button onClick={() => { setEditingEvent(e); setEventForm({ ...e, redirectRoute: e.redirectRoute || "", buttonText: e.buttonText || "", duration: "", durationUnit: "days" }); setIsEditingEvent(true); }} className="w-8 h-8 rounded-lg bg-blue-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
                                     <Edit size={14} />
                                  </button>
                                  <button onClick={() => { setDeleteTarget({id:e.id, type:'event'}); setIsDeleteDialogOpen(true); }} className="w-8 h-8 rounded-lg bg-red-50/90 text-white flex items-center justify-center backdrop-blur-sm shadow-lg hover:scale-110 transition-transform">
@@ -3288,704 +3549,1094 @@ export default function AdminPage() {
                   </div>
                </div>
             </div>
-          )}
+           )}
+              {activeView === 'settings' && (
+            <div className="max-w-7xl mx-auto settings-view space-y-6 pb-28 animate-in fade-in duration-500">
+              
+              {/* ========================================================================= */}
+              {/* MOBILE SETTINGS MENU VIEW (< md and mobileSettingsSubView === 'menu')     */}
+              {/* ========================================================================= */}
+              {mobileSettingsSubView === 'menu' && (
+                <div className="md:hidden space-y-5 animate-in fade-in slide-in-from-left-4 duration-300">
+                  {/* Mobile Settings Header */}
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      Settings
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Manage your store configuration, APIs, payments and operating hours.
+                    </p>
+                  </div>
 
-          {activeView === 'settings' && (
-            <div className="max-w-5xl mx-auto settings-view space-y-6 sm:space-y-12 pb-20 sm:pb-24">
-               <Accordion type="single" collapsible className="space-y-4 sm:space-y-6">
-                  <AccordionItem value="branding" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-blue-500">
+                  {/* Settings Search Input */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search settings..."
+                      value={settingsSearchQuery}
+                      onChange={e => setSettingsSearchQuery(e.target.value)}
+                      className="h-11 pl-10 pr-9 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 text-xs font-medium focus-visible:ring-primary shadow-xs"
+                    />
+                    {settingsSearchQuery && (
+                      <button
+                        onClick={() => setSettingsSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* TOP & DEFAULT HERO CARD: General Settings (All-in-One Bento) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettingsActiveTab('all');
+                      setMobileSettingsSubView('general');
+                    }}
+                    className="w-full text-left p-5 rounded-3xl bg-gradient-to-br from-indigo-600 via-primary to-purple-700 text-white shadow-xl shadow-primary/25 relative overflow-hidden group active:scale-[0.99] transition-transform"
+                  >
+                    <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0 border border-white/20 shadow-inner">
+                          <LayoutGrid className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-headline font-black text-base uppercase tracking-tight">General settings</h3>
+                            <span className="text-[8px] font-black uppercase bg-white/25 backdrop-blur-md text-white px-2 py-0.5 rounded-full">
+                              All-in-One
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-white/80 font-medium truncate mt-0.5">
+                            Combined view of all store settings sections
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-white/80 shrink-0 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </button>
+
+                  {/* List of Individual Category Cards */}
+                  <div className="space-y-2.5">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                      Individual Sections
+                    </p>
+
+                    {[
+                      { id: 'branding', label: 'Brand & Identity', desc: 'Logo, live stream broadcast & ticker', icon: ImagePlus, color: 'from-blue-500/15 to-indigo-500/15 text-blue-500', badge: brandForm.isLive ? 'LIVE' : undefined, badgeColor: 'bg-rose-500 text-white' },
+                      { id: 'automation', label: 'Automation & APIs', desc: 'FazerCards API, SMS webhook & matcher', icon: Cpu, color: 'from-indigo-500/15 to-purple-500/15 text-indigo-500', badge: storeSettings.fazercards?.enabled ? 'Active' : undefined, badgeColor: 'bg-emerald-500 text-white' },
+                      { id: 'email-otp', label: 'Email & OTP Dispatcher', desc: 'EmailJS credentials, verification OTP', icon: Mail, color: 'from-amber-500/15 to-orange-500/15 text-amber-500' },
+                      { id: 'finance', label: 'Payment Gateways', desc: 'Merchant phone & USSD payment methods', icon: Wallet, color: 'from-emerald-500/15 to-teal-500/15 text-emerald-500', badge: `${paymentMethods.length} Gateways`, badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
+                      { id: 'telegram', label: 'Telegram Bot Alerts', desc: 'Real-time order & payment alerts', icon: BellRing, color: 'from-sky-500/15 to-cyan-500/15 text-sky-500', badge: telegramForm.telegramBotToken ? 'Connected' : undefined, badgeColor: 'bg-sky-500 text-white' },
+                      { id: 'communication', label: 'Channels & Links', desc: 'WhatsApp support, TikTok & video guide', icon: MessageCircle, color: 'from-violet-500/15 to-pink-500/15 text-violet-500' },
+                      { id: 'maintenance', label: 'Maintenance & Schedule', desc: 'Store offline lock & Mogadishu hours', icon: ShieldAlert, color: 'from-rose-500/15 to-red-500/15 text-rose-500', badge: scheduleForm.enabled ? 'Auto' : appStatusForm.offline ? 'Offline' : 'Online', badgeColor: appStatusForm.offline ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white' },
+                      { id: 'legal', label: 'Legal & Terms', desc: 'Bilingual English & Somali policy editor', icon: ScrollText, color: 'from-emerald-500/15 to-green-500/15 text-emerald-600' }
+                    ]
+                    .filter(c => !settingsSearchQuery || `${c.label} ${c.desc}`.toLowerCase().includes(settingsSearchQuery.toLowerCase()))
+                    .map(cat => {
+                      const IconComp = cat.icon;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setSettingsActiveTab(cat.id);
+                            setMobileSettingsSubView('section');
+                          }}
+                          className="w-full text-left p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-xs flex items-center justify-between gap-3 hover:border-primary/40 active:scale-[0.99] transition-all group"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className={cn("w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-inner", cat.color)}>
+                              <IconComp className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">{cat.label}</h4>
+                                {cat.badge && (
+                                  <span className={cn("text-[8px] font-black uppercase px-2 py-0.2 rounded-full shrink-0", cat.badgeColor)}>
+                                    {cat.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-400 truncate mt-0.5">{cat.desc}</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================================= */}
+              {/* MOBILE SUB-PAGE HEADER (Visible when inside 'general' or 'section' on mobile) */}
+              {/* ========================================================================= */}
+              {mobileSettingsSubView !== 'menu' && (
+                <div className="md:hidden flex items-center justify-between p-2 mb-2">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleMobileSettingsBack}
+                      className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-200 shadow-xs active:scale-95 transition-all"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                      <h3 className="font-bold text-base text-slate-900 dark:text-white capitalize">
+                        {mobileSettingsSubView === 'general' ? 'General settings' : settingsActiveTab.replace('-', ' ')}
+                      </h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {mobileSettingsSubView === 'general' ? 'All sections combined' : 'Store setting'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      updateStoreSettings(brandForm);
+                      syncEconomySettings();
+                      handleSaveTelegram();
+                      setIsSettingsDirty(false);
+                      toast({ title: "Settings Saved", description: "All configurations synced successfully." });
+                    }}
+                    className="h-9 px-3.5 rounded-xl font-black uppercase text-[10px] tracking-wider bg-primary hover:bg-primary/90 text-white gap-1.5 shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" /> Save
+                  </Button>
+                </div>
+              )}
+
+              {/* ========================================================================= */}
+              {/* DESKTOP 2-COLUMN LAYOUT & MOBILE CONTENT CONTAINER                        */}
+              {/* ========================================================================= */}
+              <div className={cn(
+                "gap-8",
+                mobileSettingsSubView === 'menu' ? "hidden md:grid md:grid-cols-12" : "grid grid-cols-1 md:grid-cols-12"
+              )}>
+
+                {/* --------------------------------------------------------------------- */}
+                {/* DESKTOP LEFT COLUMN: Settings Menu Sidebar (hidden on mobile)         */}
+                {/* --------------------------------------------------------------------- */}
+                <div className="hidden md:block md:col-span-4 lg:col-span-3.5 space-y-4 sticky top-24 self-start">
+                  {/* Left Sidebar Header */}
+                  <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-primary">
+                        <Sparkles className="w-5 h-5" />
+                        <h3 className="font-headline font-black text-sm uppercase tracking-tight text-slate-900 dark:text-white">Settings Menu</h3>
+                      </div>
+                      <Badge className="bg-primary/10 text-primary text-[8px] font-black uppercase border-none">
+                        v2.4
+                      </Badge>
+                    </div>
+
+                    {/* Search inside settings */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search settings..."
+                        value={settingsSearchQuery}
+                        onChange={e => setSettingsSearchQuery(e.target.value)}
+                        className="h-9 pl-8 pr-7 rounded-xl bg-slate-50 dark:bg-slate-800 border-none text-xs font-medium focus-visible:ring-primary shadow-inner"
+                      />
+                      {settingsSearchQuery && (
+                        <button onClick={() => setSettingsSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 p-0.5">
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Navigation List */}
+                  <div className="p-2 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 shadow-sm space-y-1">
+                    {/* General Settings All-in-One Option at Top */}
+                    <button
+                      type="button"
+                      onClick={() => handleSettingsTabChange('all')}
+                      className={cn(
+                        "w-full text-left px-3.5 py-3 rounded-2xl font-bold text-xs flex items-center justify-between transition-all group",
+                        settingsActiveTab === 'all'
+                          ? "bg-primary text-white shadow-md shadow-primary/20"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <LayoutGrid className={cn("w-4 h-4", settingsActiveTab === 'all' ? "text-white" : "text-primary")} />
+                        <span>General Settings (All)</span>
+                      </div>
+                      <Badge className={cn("text-[8px] font-black uppercase px-2 py-0 border-none", settingsActiveTab === 'all' ? "bg-white/20 text-white" : "bg-primary/10 text-primary")}>
+                        Full
+                      </Badge>
+                    </button>
+
+                    <div className="h-px bg-slate-100 dark:bg-white/5 my-1" />
+
+                    {[
+                      { id: 'branding', label: 'Brand & Identity', icon: ImagePlus, badge: brandForm.isLive ? 'LIVE' : undefined, badgeColor: 'bg-rose-500 text-white' },
+                      { id: 'automation', label: 'Automation & APIs', icon: Cpu, badge: storeSettings.fazercards?.enabled ? 'Active' : undefined, badgeColor: 'bg-emerald-500 text-white' },
+                      { id: 'email-otp', label: 'Email & OTP', icon: Mail },
+                      { id: 'finance', label: 'Payment Gateways', icon: Wallet, count: paymentMethods.length },
+                      { id: 'telegram', label: 'Telegram Alerts', icon: BellRing, badge: telegramForm.telegramBotToken ? 'Connected' : undefined, badgeColor: 'bg-sky-500 text-white' },
+                      { id: 'communication', label: 'Channels & Links', icon: MessageCircle },
+                      { id: 'maintenance', label: 'Maintenance & Hours', icon: ShieldAlert, badge: scheduleForm.enabled ? 'Auto' : undefined, badgeColor: 'bg-indigo-500 text-white' },
+                      { id: 'legal', label: 'Legal & Policies', icon: ScrollText }
+                    ].map(tab => {
+                      const IconComp = tab.icon;
+                      const isActive = settingsActiveTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => handleSettingsTabChange(tab.id)}
+                          className={cn(
+                            "w-full text-left px-3.5 py-2.5 rounded-2xl font-bold text-xs flex items-center justify-between transition-all",
+                            isActive 
+                              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md scale-100" 
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          )}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <IconComp className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "text-slate-400")} />
+                            <span className="truncate">{tab.label}</span>
+                          </div>
+                          {tab.badge && (
+                            <span className={cn("text-[8px] font-black uppercase px-2 py-0.2 rounded-full shrink-0", tab.badgeColor)}>
+                              {tab.badge}
+                            </span>
+                          )}
+                          {tab.count !== undefined && (
+                            <span className={cn("text-[9px] font-bold px-2 py-0.2 rounded-full shrink-0", isActive ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-100 dark:bg-slate-800 text-slate-400")}>
+                              {tab.count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop Quick Sync Card */}
+                  <div className="p-4 rounded-3xl bg-slate-900 text-white border border-white/10 space-y-3 shadow-lg">
+                    <div className="flex items-center justify-between text-slate-400 text-[10px] font-black uppercase tracking-wider">
+                      <span>Mogadishu Clock</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    </div>
+                    <p className="text-lg font-headline font-black tabular-nums">{mogadishuTime || "00:00:00 AM"}</p>
+                    <Button
+                      onClick={() => {
+                        updateStoreSettings(brandForm);
+                        syncEconomySettings();
+                        handleSaveTelegram();
+                        setIsSettingsDirty(false);
+                        toast({ title: "Configuration Snapshot Saved", description: "All current settings have been synced." });
+                      }}
+                      className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs uppercase tracking-wider gap-2 shadow-md shadow-primary/20"
+                    >
+                      <Save className="w-3.5 h-3.5" /> Quick Sync All
+                    </Button>
+                  </div>
+                </div>
+
+                {/* --------------------------------------------------------------------- */}
+                {/* RIGHT COLUMN: Settings Content Cards (or single card)                 */}
+                {/* --------------------------------------------------------------------- */}
+                <div className="col-span-1 md:col-span-8 lg:col-span-8.5 space-y-6">
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 1: Brand Identity & Broadcast (branding)                   */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'branding') && 
+                   (!settingsSearchQuery || 'brand identity logo ticker live broadcast announcement oskar'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shadow-inner">
                               <ImagePlus className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Brand Identity</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Logo, Ticker & Live Toggles</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-10">
-                              <div className="flex flex-col md:flex-row gap-6 md:gap-10">
-                                 <div className="w-full md:w-48 space-y-3">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Store Logo</Label>
-                                    <div className="relative aspect-square rounded-[2rem] bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
-                                       {brandForm.logo ? <Image src={brandForm.logo} alt="Logo" fill className="object-cover p-4" /> : <ImagePlus className="text-slate-300" />}
-                                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'logo')} />
-                                       {isUploading && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center"><Loader2 className="animate-spin" /></div>}
-                                    </div>
-                                 </div>
-                                 <div className="flex-1 space-y-6">
-                                    <SettingInput label="Announcement Ticker" value={brandForm.announcementTicker} onChange={v => setBrandForm(f => ({ ...f, announcementTicker: v }))} placeholder="Welcome to Oskar Shop..." />
-                                    <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-between border dark:border-white/5">
-                                       <div className="flex items-center gap-3">
-                                          <Radio className={cn("w-5 h-5", brandForm.isLive ? "text-red-500 animate-pulse" : "text-slate-400")} />
-                                          <div>
-                                             <p className="text-sm font-bold">Oskar is LIVE</p>
-                                             <p className="text-[10px] text-muted-foreground font-medium">Show TikTok live banner on home</p>
-                                          </div>
-                                       </div>
-                                       <Switch checked={brandForm.isLive} onCheckedChange={v => setBrandForm(f => ({ ...f, isLive: v }))} />
-                                    </div>
-                                 </div>
-                              </div>
-                              <Button onClick={() => updateStoreSettings(brandForm).then(()=>toast({title:"Branding Synced"}))} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">Save Brand Updates</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Brand Identity & Live Broadcast
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Store logo asset, announcement ticker message, and TikTok live toggle.
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-wider border-blue-500/30 text-blue-500">
+                            Visual Assets
+                          </Badge>
+                        </div>
 
-                  <AccordionItem value="automation" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-indigo-500">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                          <div className="lg:col-span-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                                Store Logo
+                              </Label>
+                              <span className="text-[9px] font-bold text-slate-400">PNG, SVG, WEBP</span>
+                            </div>
+
+                            <div className="relative aspect-square max-w-[200px] mx-auto lg:max-w-none rounded-3xl bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center overflow-hidden shadow-inner group hover:border-primary/50 transition-all">
+                              {brandForm.logo ? (
+                                <div className="relative w-full h-full p-4 flex items-center justify-center">
+                                  <Image 
+                                    src={brandForm.logo} 
+                                    alt="Store Logo" 
+                                    fill 
+                                    className="object-contain p-3 group-hover:scale-105 transition-transform" 
+                                  />
+                                  <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity text-white">
+                                    <ImagePlus className="w-6 h-6 text-primary" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">Replace Logo</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center gap-2 text-slate-400 p-4 text-center">
+                                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-700 flex items-center justify-center shadow-xs">
+                                    <ImagePlus className="w-6 h-6 text-slate-300 dark:text-slate-500" />
+                                  </div>
+                                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300">Upload Brand Logo</p>
+                                </div>
+                              )}
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                                onChange={e => {
+                                  if (e.target.files?.[0]) {
+                                    setIsSettingsDirty(true);
+                                    handleImageUpload(e.target.files[0], 'logo');
+                                  }
+                                }} 
+                              />
+                              {isUploading && (
+                                <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/90 flex flex-col items-center justify-center gap-2 z-20">
+                                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-primary">Uploading...</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="lg:col-span-8 space-y-4">
+                            <SettingInput 
+                              label="Platform / Store Name" 
+                              value={brandForm.name} 
+                              onChange={v => { setIsSettingsDirty(true); setBrandForm(f => ({ ...f, name: v })); }} 
+                              placeholder="Oskarshop" 
+                            />
+
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Radio className={cn("w-5 h-5", brandForm.isLive ? "text-rose-500 animate-pulse" : "text-slate-400")} />
+                                <div>
+                                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">TikTok Live Broadcast</h4>
+                                  <p className="text-[10px] text-slate-400">Shows flashing red LIVE badge on storefront</p>
+                                </div>
+                              </div>
+                              <Switch 
+                                checked={brandForm.isLive} 
+                                onCheckedChange={v => { setIsSettingsDirty(true); setBrandForm(f => ({ ...f, isLive: v })); }} 
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                                Announcement Ticker Message
+                              </Label>
+                              <Textarea 
+                                value={brandForm.announcement} 
+                                onChange={e => { setIsSettingsDirty(true); setBrandForm(f => ({ ...f, announcement: e.target.value })); }} 
+                                className="min-h-[85px] rounded-2xl bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-white/10 p-3.5 font-medium text-xs leading-relaxed text-slate-900 dark:text-white shadow-inner focus-visible:ring-primary" 
+                                placeholder="E.g. Kusoo dhawaada Oskarshop! Adeeg degdeg ah 24/7..." 
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                          <Button 
+                            onClick={() => { updateStoreSettings(brandForm).then(() => { setIsSettingsDirty(false); toast({ title: "Brand Identity Saved" }); }); }} 
+                            className="w-full sm:w-auto h-11 px-6 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                          >
+                            <Save className="w-4 h-4" /> Save Brand Details
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 2: Automation & APIs (automation)                          */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'automation') && 
+                   (!settingsSearchQuery || 'automation fazercards api webhooks sms matcher evc webhook reseller key'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-indigo-500/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shadow-inner">
                               <Cpu className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Reseller & Automation</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">FazerCards & Webhooks</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                            <Tabs defaultValue="config">
-                               <TabsList className="bg-slate-50 dark:bg-slate-800 mb-6 overflow-x-auto">
-                                  <TabsTrigger value="config">Settings</TabsTrigger>
-                                  <TabsTrigger value="webhooks">Webhook Logs</TabsTrigger>
-                                  <TabsTrigger value="sms">SMS Matcher</TabsTrigger>
-                               </TabsList>
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Reseller Engine & Webhook Automation
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                FazerCards API fulfillment, live webhook stream, and EVC SMS auto-matcher.
+                              </p>
+                            </div>
+                          </div>
 
-                               <TabsContent value="config">
-                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                   {/* FazerCards Config */}
-                                   <div className="space-y-6">
-                                     <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
-                                         <div className="flex items-center justify-between">
-                                           <div>
-                                               <h5 className="font-bold text-sm">FazerCards Reseller</h5>
-                                               <p className="text-[10px] text-muted-foreground font-medium uppercase">fazercards.com API</p>
-                                           </div>
-                                           <Switch 
-                                               checked={storeSettings.fazercards?.enabled || false} 
-                                               onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } })} 
-                                           />
-                                         </div>
-                                         
-                                         <SettingInput 
-                                           label="FazerCards API Key" 
-                                           type="password"
-                                           value={fazerApiKey} 
-                                           onChange={v => setFazerApiKey(v)} 
-                                           placeholder="Enter API Key" 
-                                         />
-                                         <Button size="sm" onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(()=>toast({title:"API Key Saved"}))} className="w-full h-10 rounded-xl font-bold uppercase text-[10px] tracking-widest">Keydi / Save</Button>
+                          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                            {[
+                              { id: 'config', label: 'API Config' },
+                              { id: 'webhooks', label: `Webhooks (${webhookLogs.length})` },
+                              { id: 'sms', label: 'SMS Matcher' }
+                            ].map(subTab => (
+                              <button
+                                key={subTab.id}
+                                type="button"
+                                onClick={() => setSettingsAutomationSubTab(subTab.id as any)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
+                                  settingsAutomationSubTab === subTab.id
+                                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                                )}
+                              >
+                                {subTab.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-                                         <div className="pt-4 border-t dark:border-white/5 space-y-4">
-                                           <div className="flex items-center justify-between">
-                                               <p className="text-xs font-bold">Auto Top-Up</p>
-                                               <Switch 
-                                                 checked={storeSettings.fazercards?.autoTopupEnabled || false} 
-                                                 onCheckedChange={v => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } })} 
-                                               />
-                                           </div>
-                                           <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 shadow-sm">
-                                               <div className="flex flex-col">
-                                                 <span className="text-[10px] font-black uppercase text-slate-400">API Balance</span>
-                                                 <span className="text-sm font-bold text-primary">{storeSettings.fazercards?.balance || "---"}</span>
-                                               </div>
-                                               <div className="flex gap-2">
-                                                 <Button variant="ghost" size="sm" onClick={handleTestFazerConnection} disabled={isTestingFazer} className="h-8 rounded-lg text-[9px] font-black uppercase">{isTestingFazer ? <Loader2 className="animate-spin" /> : "Sync"}</Button>
-                                               </div>
-                                           </div>
-                                         </div>
-                                     </div>
-                                   </div>
-                                 </div>
-                               </TabsContent>
-
-                               <TabsContent value="webhooks">
-                                  <div className="space-y-4">
-                                     <div className="flex justify-between items-center px-1">
-                                        <h6 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Incoming FazerCards Hooks</h6>
-                                        <Button variant="ghost" size="sm" onClick={handleClearWebhookLogs} className="h-8 text-red-500 font-bold uppercase text-[9px]">Clear Logs</Button>
-                                     </div>
-                                     <div className="border rounded-2xl overflow-hidden bg-white dark:bg-slate-900 divide-y dark:divide-white/5">
-                                        {webhookLogs.length === 0 ? (
-                                           <div className="p-12 text-center opacity-20 italic font-bold uppercase text-xs">No logs found</div>
-                                        ) : (
-                                           webhookLogs.map(log => (
-                                              <div key={log.id} className="p-4 text-xs font-medium grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                                                 <div className="flex flex-col gap-1">
-                                                   <div className="flex items-center gap-2">
-                                                      <div className={cn("w-2 h-2 rounded-full", log.matched ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]")} />
-                                                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Received</span>
-                                                   </div>
-                                                   <span className="text-[10px] font-bold">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
-                                                 </div>
-                                                 <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Fazer ID</span>
-                                                    <span className="font-mono text-primary font-bold text-[10px]">{log.extractedId || '---'}</span>
-                                                 </div>
-                                                 <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-slate-400 uppercase">Status</span>
-                                                    <Badge variant="outline" className="w-fit text-[8px] h-4 py-0 font-black uppercase border-slate-200">{log.extractedStatus || '---'}</Badge>
-                                                 </div>
-                                                 <div className="flex flex-col justify-center gap-1">
-                                                    {log.matched ? (
-                                                      <div className="flex flex-col">
-                                                         <span className="text-[8px] font-black text-green-500 uppercase">Matched Order</span>
-                                                         <span className="text-[10px] font-bold text-slate-900 dark:text-white">#{log.matchedOrderId?.toUpperCase()}</span>
-                                                      </div>
-                                                    ) : (
-                                                      <span className="text-[8px] font-black text-slate-300 uppercase italic">No order matched yet</span>
-                                                    )}
-                                                 </div>
-                                              </div>
-                                           ))
-                                        )}
-                                     </div>
+                        {settingsAutomationSubTab === 'config' && (
+                          <div className="space-y-6 animate-in fade-in duration-300">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                              <div className="lg:col-span-7 space-y-4">
+                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 flex items-center justify-between">
+                                  <div className="space-y-0.5">
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">FazerCards Integration</h4>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                      Enables automated order placement on fazercards.com
+                                    </p>
                                   </div>
-                               </TabsContent>
+                                  <Switch 
+                                    checked={storeSettings.fazercards?.enabled || false} 
+                                    onCheckedChange={v => { setIsSettingsDirty(true); updateStoreSettings({ fazercards: { ...storeSettings.fazercards, enabled: v } }); }} 
+                                  />
+                                </div>
 
-                               <TabsContent value="sms">
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                     <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border dark:border-white/5 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                           <div>
-                                              <h5 className="font-bold text-sm">SMS Auto-Matcher</h5>
-                                              <p className="text-[10px] text-muted-foreground font-medium uppercase">Auto-approve via EVC Plus</p>
-                                           </div>
-                                           <Switch 
-                                              checked={storeSettings.sms_webhook?.enabled || false} 
-                                              onCheckedChange={v => updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } })} 
-                                           />
-                                        </div>
+                                <SettingInput 
+                                  label="FazerCards API Key" 
+                                  type={showFazerKey ? "text" : "password"}
+                                  value={fazerApiKey} 
+                                  onChange={v => { setIsSettingsDirty(true); setFazerApiKey(v); }} 
+                                  placeholder="Enter secret API Key..." 
+                                  rightElement={
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowFazerKey(!showFazerKey)}
+                                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                      >
+                                        {showFazerKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                                      </button>
+                                      <Button 
+                                        size="sm" 
+                                        onClick={() => updateStoreSettings({ fazercards: { ...storeSettings.fazercards, apiKey: fazerApiKey } }).then(() => { setIsSettingsDirty(false); toast({ title: "API Key Saved" }); })} 
+                                        className="h-8 rounded-xl font-bold uppercase text-[9px] tracking-wider px-3"
+                                      >
+                                        Save
+                                      </Button>
+                                    </div>
+                                  }
+                                />
 
-                                        <div className="space-y-4">
-                                           <div className="space-y-1.5">
-                                              <Label className="text-[9px] font-black uppercase text-slate-400 ml-1">Webhook URL</Label>
-                                              <div className="flex gap-2">
-                                                 <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl bg-white dark:bg-slate-900 border-none font-mono text-[10px]" />
-                                                 <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText("https://oskarshop.so/api/sms-webhook"); toast({title:"Copied!"}); }} className="h-10 w-10 rounded-xl"><Copy size={14}/></Button>
-                                              </div>
-                                           </div>
-                                        </div>
-
-                                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                                           <h6 className="text-[11px] font-black uppercase mb-3 text-primary">SETUP INSTRUCTIONS</h6>
-                                           <div className="space-y-3 text-[10px] leading-relaxed text-muted-foreground font-medium">
-                                              <div className="space-y-1">
-                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 1 — Message Template:</p>
-                                                 <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">%mb%</p>
-                                              </div>
-                                              <div className="space-y-1">
-                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 2 — URL Settings:</p>
-                                                 <p>Request Type: <span className="font-bold text-primary">POST</span></p>
-                                                 <p>URL: <span className="font-bold text-primary">https://oskarshop.so/api/sms-webhook</span></p>
-                                              </div>
-                                              <div className="space-y-1">
-                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 3 — Headers:</p>
-                                                 <p><span className="font-bold">Content-Type:</span> application/json</p>
-                                              </div>
-                                              <div className="space-y-1">
-                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 4 — Body (JSON):</p>
-                                                 <p className="bg-white dark:bg-slate-900 p-2 rounded-lg border font-mono">{"{\"sms\":\"{msg}\",\"from\":\"{sender}\"}"}</p>
-                                              </div>
-                                              <div className="space-y-1">
-                                                 <p className="font-bold text-slate-600 dark:text-slate-300">STEP 5 — Filter Rule:</p>
-                                                 <p>Contains: <span className="font-bold text-primary">"ka heshay"</span></p>
-                                              </div>
-                                           </div>
-                                        </div>
-                                     </div>
-                                     <div className="space-y-3">
-                                        <div className="flex items-center justify-between ml-1">
-                                           <div className="flex items-center gap-2">
-                                              <h6 className="text-[9px] font-black uppercase text-slate-400">Processed Payments</h6>
-                                              <Badge variant="outline" className="text-[9px] font-bold px-2 py-0">{recentSms.length} Total</Badge>
-                                           </div>
-                                           {recentSms.length > 0 && (
-                                              <Button 
-                                                 variant="ghost" 
-                                                 size="sm" 
-                                                 onClick={handleClearSmsPayments} 
-                                                 className="h-6 px-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 font-bold uppercase text-[8px] tracking-wider"
-                                              >
-                                                 Clear
-                                              </Button>
-                                           )}
-                                        </div>
-                                        <div className="space-y-2">
-                                           {recentSms.slice(0, 3).map(sms => (
-                                              <div key={sms.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl border dark:border-white/5 flex items-center justify-between text-[10px] shadow-xs">
-                                                 <div className="min-w-0">
-                                                    <p className="font-bold text-slate-900 dark:text-white">61{sms.senderPhone?.slice(-7) || "---"} - ${sms.amount}</p>
-                                                    <p className="opacity-40">{safeFormatDistanceToNow(sms.receivedAt)} ago</p>
-                                                 </div>
-                                                 <Badge className={cn("text-[7px] font-black uppercase border-none", sms.matched ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400")}>
-                                                    {sms.matched ? "Approved" : "Unmatched"}
-                                                 </Badge>
-                                              </div>
-                                           ))}
-                                           {recentSms.length === 0 && <div className="py-8 text-center opacity-20 italic font-bold">No payments found</div>}
-                                        </div>
-                                     </div>
+                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 flex items-center justify-between">
+                                  <div className="space-y-0.5">
+                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Auto Top-Up Fulfillment</h4>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                      Instantly send top-up requests on approval
+                                    </p>
                                   </div>
-                               </TabsContent>
-                            </Tabs>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="email-otp" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-primary">
-                              <Mail className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Email & OTP Config</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">EmailJS Service & Templates</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-10">
-                              {/* Verification Config */}
-                              <div className="space-y-4">
-                                 <div className="flex items-center gap-2 text-indigo-500">
-                                    <UserCheck size={18} />
-                                    <h5 className="font-bold text-sm uppercase tracking-widest">Sign-up Verification</h5>
-                                 </div>
-                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <SettingInput label="Service ID" value={emailConfigForm.verification.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, serviceId: v } }))} placeholder="service_..." />
-                                    <SettingInput label="Template ID" value={emailConfigForm.verification.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, templateId: v } }))} placeholder="template_..." />
-                                    <SettingInput label="Public Key" value={emailConfigForm.verification.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, publicKey: v } }))} placeholder="pk_..." />
-                                 </div>
+                                  <Switch 
+                                    checked={storeSettings.fazercards?.autoTopupEnabled || false} 
+                                    onCheckedChange={v => { setIsSettingsDirty(true); updateStoreSettings({ fazercards: { ...storeSettings.fazercards, autoTopupEnabled: v } }); }} 
+                                  />
+                                </div>
                               </div>
 
-                              {/* Recovery Config */}
-                              <div className="space-y-4">
-                                 <div className="flex items-center gap-2 text-amber-500">
-                                    <RefreshCw size={18} />
-                                    <h5 className="font-bold text-sm uppercase tracking-widest">Password Recovery</h5>
-                                 </div>
-                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <SettingInput label="Service ID" value={emailConfigForm.recovery.serviceId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, serviceId: v } }))} placeholder="service_..." />
-                                    <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.verification, templateId: v } }))} placeholder="template_..." />
-                                    <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, publicKey: v } }))} placeholder="pk_..." />
-                                 </div>
-                              </div>
-
-                              <Button onClick={handleSaveEmailConfig} disabled={isSavingStatus} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">
-                                 {isSavingStatus ? <Loader2 className="animate-spin" /> : "Sync Email Config"}
-                              </Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="economy" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-amber-500">
-                              <HandCoins className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Financial Settings</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Payment number & config</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-10">
-                              <SettingInput label="EVC / Premier Payment Number" value={economyForm.paymentNumber} onChange={v => setEconomyForm(f => ({ ...f, paymentNumber: v }))} placeholder="613982172" />
-                              <Button onClick={syncEconomySettings} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-amber-500 hover:bg-amber-600">Update Financials</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="gateways" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-emerald-500">
-                              <Wallet className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Payment Infrastructure</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Manage USSD Templates</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-8">
-                              <div className="flex justify-end">
-                                 <Button onClick={() => handleOpenPaymentMethodDialog()} size="sm" className="rounded-xl font-bold uppercase text-[10px] tracking-widest gap-2">
-                                    <Plus size={14} /> Add Method
-                                 </Button>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                 {paymentMethods.map(m => (
-                                    <div key={m.id} className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-800 flex items-center justify-between border dark:border-white/5">
-                                       <div className="flex items-center gap-4">
-                                          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center text-primary shadow-sm overflow-hidden relative">
-                                             {m.icon ? <Image src={m.icon} alt={m.name} fill className="object-cover" /> : <Smartphone size={24} />}
-                                          </div>
-                                          <div>
-                                             <p className="font-bold text-sm">{m.name}</p>
-                                             <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">{m.active ? 'Active' : 'Disabled'}</p>
-                                          </div>
-                                       </div>
-                                       <div className="flex gap-2">
-                                          <button onClick={() => handleOpenPaymentMethodDialog(m)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit size={18} /></button>
-                                          <button onClick={() => { setDeleteTarget({id:m.id, type:'paymentMethod'}); setIsDeleteDialogOpen(true); }} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18} /></button>
-                                       </div>
-                                    </div>
-                                 ))}
-                              </div>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="telegram" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-primary">
-                              <BellRing className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Notification Center</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Telegram Bot & Admin Alerts</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-8">
-                              <div className="p-4 sm:p-6 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/20">
-                                 <p className="text-[11px] sm:text-xs font-medium leading-relaxed flex items-start gap-3 text-primary dark:text-blue-300">
-                                    <span className="w-5 h-5 shrink-0 mt-0.5"><Info /></span>
-                                    Connect your Telegram Bot to receive real-time order alerts. Use @userinfobot to get Chat IDs.
-                                 </p>
-                              </div>
-                              <div className="grid grid-cols-1 gap-6">
-                                 <SettingInput 
-                                   label="Telegram Bot Token" 
-                                   value={telegramForm.telegramBotToken} 
-                                   onChange={v => setTelegramForm(f => ({ ...f, telegramBotToken: v }))} 
-                                   placeholder="8817771628:AA..." 
-                                 />
-                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Admin Chat IDs (Comma Separated)</Label>
-                                    <Textarea 
-                                      value={telegramForm.telegramAdminChatIds} 
-                                      onChange={e => setTelegramForm(f => ({ ...f, telegramAdminChatIds: e.target.value }))} 
-                                      className="min-h-[100px] rounded-3xl bg-slate-50 dark:bg-slate-800 border-none p-6 font-bold shadow-inner" 
-                                      placeholder="8105182517, 123456789" 
-                                    />
-                                 </div>
-                              </div>
-                              <Button onClick={handleSaveTelegram} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-primary">Sync Telegram Config</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="communication" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-indigo-500">
-                              <MessageCircle className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Communication Hub</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Socials, Support & Tutorials</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-6 sm:space-y-10">
-                              <div className="flex flex-col md:flex-row gap-6 md:gap-10">
-                                 <div className="space-y-6">
-                                    <SettingInput label="WhatsApp Support No" value={helpLinksForm.whatsappNumber} onChange={v => setHelpLinksForm(f => ({ ...f, whatsappNumber: v }))} placeholder="252613982172" />
-                                    <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tiktokUrl: v }))} placeholder="https://tiktok.com/@..." />
-                                    <SettingInput label="Tutorial Video URL" value={helpLinksForm.tutorialUrl} onChange={v => setHelpLinksForm(f => ({ ...f, tutorialUrl: v }))} placeholder="https://youtube.com/..." />
-                                 </div>
-                                 <div className="space-y-6">
-                                    <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-between border dark:border-white/5">
-                                       <div className="flex items-center gap-3">
-                                          <Video className={cn("w-5 h-5", helpLinksForm.tutorialBannerActive ? "text-primary" : "text-slate-400")} />
-                                          <div>
-                                             <p className="text-sm font-bold">Tutorial Banner</p>
-                                             <p className="text-[10px] text-muted-foreground font-medium">Show app guide on home slider</p>
-                                          </div>
-                                       </div>
-                                       <Switch checked={helpLinksForm.tutorialBannerActive} onCheckedChange={v => setHelpLinksForm(f => ({ ...f, tutorialBannerActive: v }))} />
-                                    </div>
-                                    <div className="space-y-3">
-                                       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Tutorial Thumbnail</Label>
-                                       <div className="relative aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center overflow-hidden shadow-inner group">
-                                          {helpLinksForm.tutorialThumbnail ? <Image src={helpLinksForm.tutorialThumbnail} alt="Tutorial" fill className="object-cover" /> : <ImageIcon className="text-slate-300 w-10 h-10" />}
-                                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'tutorialThumbnail')} />
-                                          {isUploading && <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center"><Loader2 className="animate-spin" /></div>}
-                                       </div>
-                                    </div>
-                                 </div>
-                              </div>
-                              <Button onClick={() => updateStoreSettings({ helpLinks: helpLinksForm }).then(()=>toast({title:"Links Synced"}))} className="w-full h-12 md:h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-indigo-500 hover:bg-indigo-600">Save Communication Links</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="legal" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-emerald-600">
-                              <ScrollText className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Compliance Editor</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Terms &amp; Conditions (EN/SO)</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-8 sm:space-y-12">
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-                                 <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">English Terms</Label>
-                                    <Textarea value={termsForm.en} onChange={e => setTermsForm(f => ({ ...f, en: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Enter English terms..." />
-                                 </div>
-                                 <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Somali Terms (Shuruudaha)</Label>
-                                    <Textarea value={termsForm.so} onChange={e => setTermsForm(f => ({ ...f, so: e.target.value }))} className="min-h-[300px] rounded-3xl border-none bg-slate-50 dark:bg-slate-800 p-6 font-medium shadow-inner" placeholder="Geli shuruudaha afka Soomaaliga..." />
-                                 </div>
-                              </div>
-                              <Button onClick={() => updateStoreSettings({ termsAndConditions: termsForm }).then(()=>toast({title:"Policy Updated"}))} className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl bg-emerald-600">Sync Legal Policy</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="maintenance" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-red-500">
-                              <ShieldAlert className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Maintenance Console</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Global Maintenance Mode</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-8 sm:space-y-12">
-                              <div className={cn(
-                                "p-6 md:p-10 rounded-3xl flex items-center justify-between border-2 transition-all",
-                                scheduleForm.enabled ? "bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-white/5 opacity-80" : "bg-red-50 dark:bg-red-950/20 border-red-100 dark:border-red-900/30"
-                              )}>
-                                 <div className="flex items-center gap-4 md:gap-6">
-                                    <div className={cn(
-                                      "w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg",
-                                      scheduleForm.enabled ? "bg-slate-400 text-white" : "bg-red-600 text-white"
-                                    )}>
-                                      <Monitor className="w-7 h-7" />
-                                    </div>
-                                    <div>
-                                       <p className="text-lg md:text-2xl font-headline font-bold uppercase tracking-tight">Maintenance Mode</p>
-                                       <p className="text-xs text-sm font-medium text-slate-500 dark:text-slate-400">
-                                         {scheduleForm.enabled ? "Controlled by Auto Schedule" : "Lock entire store for maintenance"}
-                                       </p>
-                                    </div>
-                                 </div>
-                                 <Switch 
-                                   checked={appStatusForm.offline} 
-                                   disabled={scheduleForm.enabled}
-                                   onCheckedChange={v => setAppStatusForm(f => ({ ...f, offline: v }))} 
-                                   className="scale-125" 
-                                 />
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-14">
-                                 <div className="space-y-6">
-                                    <SettingInput label="Maintenance Title" value={appStatusForm.offlineTitle} onChange={v => setAppStatusForm(f => ({ ...f, offlineTitle: v }))} placeholder="Under Maintenance" />
-                                    <div className="space-y-3">
-                                       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Maintenance Description</Label>
-                                       <Textarea value={appStatusForm.offlineBody} onChange={e => setAppStatusForm(f => ({ ...f, offlineBody: e.target.value }))} className="min-h-[150px] rounded-3xl bg-slate-50 dark:bg-slate-800 border-none p-6 font-medium shadow-inner" placeholder="Describe the downtime..." />
-                                    </div>
-                                 </div>
-                                 <div className="space-y-3">
-                                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Maintenance Image / Poster</Label>
-                                    <div className="relative aspect-video rounded-3xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center overflow-hidden shadow-inner group">
-                                       {appStatusForm.offlineImageUrl ? <Image src={appStatusForm.offlineImageUrl} alt="Poster" fill className="object-cover" /> : <ImageIcon className="text-slate-300 w-10 h-10" />}
-                                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'offlineImage')} />
-                                       <p className="text-[8px] font-black uppercase text-slate-400 mt-2">Upload Poster</p>
-                                    </div>
-                                 </div>
-                              </div>
-                              <Button onClick={() => updateStoreSettings({ appStatus: appStatusForm }).then(()=>toast({title:"System State Synced"}))} variant="destructive" className="w-full h-12 md:h-20 rounded-3xl font-black uppercase tracking-widest shadow-2xl">Publish System State</Button>
-                           </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-
-                  <AccordionItem value="auto-schedule" className="border-none">
-                     <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-                        <AccordionTrigger className="px-4 py-6 sm:px-8 sm:py-8 hover:no-underline">
-                           <div className="flex items-center gap-4 text-indigo-600">
-                              <CalendarIcon className="w-6 h-6" />
-                              <div className="text-left">
-                                 <h4 className="font-headline font-bold text-lg uppercase tracking-tight">Auto offline/online</h4>
-                                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">Scheduled Operating Hours</p>
-                              </div>
-                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-6 pt-2 sm:px-8 sm:pb-8 sm:pt-4">
-                           <div className="space-y-8 sm:space-y-12">
-                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                    <div className="flex items-center justify-between w-full gap-4 bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 rounded-3xl border dark:border-white/5">
-                                      <div className="text-left">
-                                        <p className="text-[10px] sm:text-xs font-black uppercase text-slate-400">auto close/open</p>
-                                        <p className="text-[9px] sm:text-10px] font-bold text-muted-foreground uppercase">Automatically switch status</p>
-                                      </div>
-                                      <Switch 
-                                        checked={scheduleForm.enabled} 
-                                        onCheckedChange={async (v) => {
-                                          const updatedSchedule = { ...scheduleForm, enabled: v };
-                                          setScheduleForm(updatedSchedule);
-                                          
-                                          // If disabling, force the app online immediately
-                                          if (!v) {
-                                            setGlobalLoading(true);
-                                            try {
-                                              const updates = {
-                                                schedule: updatedSchedule,
-                                                appStatus: { ...appStatusForm, offline: false }
-                                              };
-                                              await updateStoreSettings(updates);
-                                              setAppStatusForm(f => ({ ...f, offline: false }));
-                                              toast({ title: "Schedule Disabled", description: "Shop is now forced Online." });
-                                            } finally {
-                                              setGlobalLoading(false);
-                                            }
-                                          } else {
-                                            // If enabling, just update the schedule settings
-                                            // The background hook will take over and enforce the window in 3 seconds
-                                            setGlobalLoading(true);
-                                            try {
-                                              await updateStoreSettings({ schedule: updatedSchedule });
-                                              toast({ title: "Schedule Enabled", description: "Operating hours are now active." });
-                                            } finally {
-                                              setGlobalLoading(false);
-                                            }
-                                          }
-                                        }} 
-                                        className="scale-110"
-                                      />
-                                    </div>
+                              <div className="lg:col-span-5 space-y-4">
+                                <div className="p-5 rounded-3xl bg-gradient-to-br from-indigo-950 to-slate-900 border border-indigo-800/40 text-white space-y-3 shadow-xl">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300">Live API Balance</span>
+                                    <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[8px] font-black uppercase">
+                                      {storeSettings.fazercards?.enabled ? "Connected" : "Standby"}
+                                    </Badge>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t dark:border-white/5">
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
-                                      <Clock size={20} className="text-indigo-500" />
-                                      <p className="text-[11px] font-black uppercase text-slate-400">Mogadishu Time</p>
-                                      <p className="text-2xl font-headline font-bold text-slate-900 dark:text-white tabular-nums">{mogadishuTime || "0:00:00 AM"}</p>
-                                    </div>
+                                  <p className="text-2xl font-headline font-black text-white tabular-nums tracking-tight">
+                                    {storeSettings.fazercards?.balance || "---"}
+                                  </p>
 
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
-                                      <div className={cn("w-3 h-3 rounded-full animate-pulse", storeSettings.appStatus?.offline ? "bg-red-500" : "bg-green-500")} />
-                                      <p className="text-[11px] font-black uppercase text-slate-400">Shop Status</p>
-                                      <p className="text-xl font-bold text-slate-900 dark:text-white uppercase">
-                                        {storeSettings.appStatus?.offline ? "🔴 Xidhan (Closed)" : "🟢 Furan (Open)"}
-                                      </p>
-                                    </div>
-
-                                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-[2rem] border dark:border-white/5 flex flex-col items-center justify-center text-center space-y-2">
-                                      <History size={20} className="text-amber-500" />
-                                      <p className="text-[11px] font-black uppercase text-slate-400">Next Auto-Action</p>
-                                      <p className="text-lg font-bold text-slate-900 dark:text-white uppercase tabular-nums">
-                                        ⏭ {nextScheduleEvent || "None scheduled"}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {scheduleForm.enabled && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-top-4 duration-500">
-                                      <div className="space-y-3">
-                                        <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga Furitaanka / Open Time</Label>
-                                        <div className="flex gap-2">
-                                          <div className="relative flex-1">
-                                            <Input 
-                                              type="time" 
-                                              value={scheduleForm.openTime} 
-                                              onChange={(e) => setScheduleForm({...scheduleForm, openTime: e.target.value})}
-                                              className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
-                                            />
-                                          </div>
-                                          <div className="flex flex-col bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl h-16 shrink-0 border dark:border-white/5 shadow-inner">
-                                            <button 
-                                              type="button"
-                                              onClick={() => setScheduleForm({...scheduleForm, openTime: setPeriod(scheduleForm.openTime, 'AM')})}
-                                              className={cn(
-                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
-                                                getPeriod(scheduleForm.openTime) === 'AM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
-                                              )}
-                                            >AM</button>
-                                            <button 
-                                              type="button"
-                                              onClick={() => setScheduleForm({...scheduleForm, openTime: setPeriod(scheduleForm.openTime, 'PM')})}
-                                              className={cn(
-                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
-                                                getPeriod(scheduleForm.openTime) === 'PM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
-                                              )}
-                                            >PM</button>
-                                          </div>
-                                        </div>
-                                        <p className="text-[9px] font-black uppercase text-slate-300 ml-1">Maalin (AM)</p>
-                                      </div>
-
-                                      <div className="space-y-3">
-                                        <Label className="text-[11px] font-black uppercase text-slate-400 ml-1">Wakhtiga xirmaayo / Close Time</Label>
-                                        <div className="flex gap-2">
-                                          <div className="relative flex-1">
-                                            <Input 
-                                              type="time" 
-                                              value={scheduleForm.closeTime} 
-                                              onChange={(e) => setScheduleForm({...scheduleForm, closeTime: e.target.value})}
-                                              className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none font-black text-xl px-6 focus-visible:ring-primary shadow-inner"
-                                            />
-                                          </div>
-                                          <div className="flex flex-col bg-slate-50 dark:bg-slate-800 p-1 rounded-2xl h-16 shrink-0 border dark:border-white/5 shadow-inner">
-                                            <button 
-                                              type="button"
-                                              onClick={() => setScheduleForm({...scheduleForm, closeTime: setPeriod(scheduleForm.closeTime, 'AM')})}
-                                              className={cn(
-                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
-                                                getPeriod(scheduleForm.closeTime) === 'AM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
-                                              )}
-                                            >AM</button>
-                                            <button 
-                                              type="button"
-                                              onClick={() => setScheduleForm({...scheduleForm, closeTime: setPeriod(scheduleForm.closeTime, 'PM')})}
-                                              className={cn(
-                                                "flex-1 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all",
-                                                getPeriod(scheduleForm.closeTime) === 'PM' ? "bg-white dark:bg-slate-700 text-primary shadow-md" : "text-slate-400"
-                                              )}
-                                            >PM</button>
-                                          </div>
-                                        </div>
-                                        <p className="text-[9px] font-black uppercase text-slate-300 ml-1">Habeen (PM)</p>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <Button 
-                                    onClick={handleSaveSchedule}
-                                    disabled={isSavingStatus}
-                                    className="w-full h-16 rounded-2xl font-black uppercase tracking-widest shadow-2xl bg-indigo-600 hover:bg-indigo-700"
+                                  <Button
+                                    onClick={handleTestFazerConnection}
+                                    disabled={isTestingFazer}
+                                    className="w-full h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider border border-white/15 gap-2 backdrop-blur-sm"
                                   >
-                                    {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save Schedule"}
+                                    {isTestingFazer ? <Loader2 className="w-6 h-6 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                                    Sync API Balance
                                   </Button>
                                 </div>
-                        </AccordionContent>
-                     </Card>
-                  </AccordionItem>
-               </Accordion>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {settingsAutomationSubTab === 'webhooks' && (
+                          <div className="space-y-3 animate-in fade-in duration-300">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                                Incoming Stream ({webhookLogs.length} events)
+                              </span>
+                              {webhookLogs.length > 0 && (
+                                <Button variant="ghost" size="sm" onClick={handleClearWebhookLogs} className="h-7 text-rose-500 text-[9px] font-bold uppercase">
+                                  <Trash2 className="w-3 h-3 mr-1" /> Clear Logs
+                                </Button>
+                              )}
+                            </div>
+                            <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/50 divide-y divide-slate-100 dark:divide-white/5">
+                              {webhookLogs.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400 text-xs font-medium">No webhook events logged yet</div>
+                              ) : (
+                                webhookLogs.slice(0, 10).map(log => (
+                                  <div key={log.id} className="p-3 text-xs flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className={cn("w-2 h-2 rounded-full", log.matched ? "bg-emerald-500" : "bg-amber-500")} />
+                                      <span className="font-mono text-primary font-bold">{log.extractedId || '---'}</span>
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">{safeFormatDistanceToNow(log.receivedAt)} ago</span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {settingsAutomationSubTab === 'sms' && (
+                          <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 flex items-center justify-between">
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-bold text-slate-900 dark:text-white">SMS Auto-Approval</h4>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400">Matches incoming EVC Plus SMS to orders</p>
+                              </div>
+                              <Switch 
+                                checked={storeSettings.sms_webhook?.enabled || false} 
+                                onCheckedChange={v => { setIsSettingsDirty(true); updateStoreSettings({ sms_webhook: { ...storeSettings.sms_webhook, enabled: v } }); }} 
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Input readOnly value="https://oskarshop.so/api/sms-webhook" className="h-10 rounded-xl font-mono text-xs font-bold text-primary" />
+                              <Button variant="outline" onClick={() => copyToClipboard("https://oskarshop.so/api/sms-webhook", "sms_webhook", "URL Copied")} className="h-10 px-3 rounded-xl font-bold text-xs">
+                                Copy URL
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 3: Payment Gateways (finance)                              */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'finance') && 
+                   (!settingsSearchQuery || 'payment gateways ussd evc premier number methods financial economy'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-emerald-500/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-inner">
+                              <Wallet className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Payment Gateways & Financial Settlement
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Primary merchant receiving number and USSD payment gateways.
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button 
+                            onClick={() => handleOpenPaymentMethodDialog()} 
+                            className="h-10 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 self-start sm:self-auto"
+                          >
+                            <Plus className="w-4 h-4" /> Add Gateway
+                          </Button>
+                        </div>
+
+                        {/* Primary Settlement Number */}
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <h4 className="text-xs font-bold text-slate-900 dark:text-white">Primary Settlement Number</h4>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">Receiving phone number for customer transfers</p>
+                            </div>
+                            <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-none text-[8px] font-black uppercase">
+                              Merchant Phone
+                            </Badge>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-2.5">
+                            <div className="flex-1">
+                              <Input 
+                                value={economyForm.paymentNumber} 
+                                onChange={e => { setIsSettingsDirty(true); setEconomyForm(f => ({ ...f, paymentNumber: e.target.value })); }} 
+                                placeholder="613982172" 
+                                className="h-11 rounded-xl bg-white dark:bg-slate-900 font-mono font-bold text-sm"
+                              />
+                            </div>
+                            <Button 
+                              onClick={() => { syncEconomySettings(); setIsSettingsDirty(false); }} 
+                              className="h-11 px-5 rounded-xl font-bold uppercase text-xs bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20"
+                            >
+                              Save Number
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Gateways Grid with 3-Dots Menu */}
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                            Active Gateways ({paymentMethods.length})
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            {paymentMethods.map(m => (
+                              <div 
+                                key={m.id} 
+                                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-white/5 flex flex-col justify-between space-y-3 group shadow-xs"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 flex items-center justify-center text-primary shadow-xs overflow-hidden relative shrink-0">
+                                      {m.icon ? (
+                                        <Image src={m.icon} alt={m.name} fill className="object-cover p-1" />
+                                      ) : (
+                                        <Smartphone className="w-5 h-5 text-primary" />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{m.name}</p>
+                                      <Badge className={cn("text-[8px] font-black uppercase border-none mt-0.5", m.active ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-slate-200 dark:bg-slate-700 text-slate-400")}>
+                                        {m.active ? 'Active' : 'Disabled'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  {/* 3-DOTS ACTION POPOVER DROPDOWN */}
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button 
+                                        className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors"
+                                        title="Gateway Actions"
+                                      >
+                                        <MoreVertical className="w-4 h-4" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-44 p-1.5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-xl bg-white dark:bg-slate-900 z-50">
+                                      <div className="space-y-0.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenPaymentMethodDialog(m)}
+                                          className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+                                        >
+                                          <Edit className="w-3.5 h-3.5 text-blue-500" /> Edit Method
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            const rawList = storeSettings.paymentMethods;
+                                            const list: any[] = Array.isArray(rawList) ? rawList : (rawList ? Object.values(rawList) : []);
+                                            const updated = list.map((p: any) => p.id === m.id ? { ...p, active: !p.active } : p);
+                                            await updateStoreSettings({ paymentMethods: updated });
+                                            toast({ title: `Gateway ${m.active ? 'Disabled' : 'Activated'}` });
+                                          }}
+                                          className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+                                        >
+                                          <Power className="w-3.5 h-3.5 text-emerald-500" /> {m.active ? 'Deactivate' : 'Activate'}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setDeleteTarget({ id: m.id, type: 'paymentMethod' });
+                                            setIsDeleteDialogOpen(true);
+                                          }}
+                                          className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Delete Method
+                                        </button>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+
+                                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/5 space-y-0.5">
+                                  <span className="text-[9px] font-black uppercase text-slate-400">USSD Code</span>
+                                  <p className="font-mono text-xs font-bold text-primary truncate">{m.ussdTemplate || "No USSD set"}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 4: Email & OTP Dispatcher (email-otp)                      */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'email-otp') && 
+                   (!settingsSearchQuery || 'email otp service template public key emailjs verification password recovery'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+                              <Mail className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Email & OTP Dispatcher (EmailJS)
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Service credentials for user verification OTPs and password recovery.
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-wider border-primary/30 text-primary">
+                            EmailJS Config
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 space-y-4">
+                            <div className="flex items-center gap-2 text-indigo-500 font-bold text-xs uppercase tracking-wider">
+                              <UserCheck className="w-4 h-4" /> Sign-up Verification
+                            </div>
+                            <SettingInput label="Service ID" value={emailConfigForm.verification.serviceId} onChange={v => { setIsSettingsDirty(true); setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, serviceId: v } })); }} placeholder="service_..." />
+                            <SettingInput label="Template ID" value={emailConfigForm.verification.templateId} onChange={v => { setIsSettingsDirty(true); setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, templateId: v } })); }} placeholder="template_..." />
+                            <SettingInput label="Public Key" value={emailConfigForm.verification.publicKey} onChange={v => { setIsSettingsDirty(true); setEmailConfigForm(f => ({ ...f, verification: { ...f.verification, publicKey: v } })); }} placeholder="pk_..." />
+                          </div>
+
+                          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 space-y-4">
+                            <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-wider">
+                              <RefreshCw className="w-4 h-4" /> Password Recovery
+                            </div>
+                            <SettingInput label="Service ID" value={emailConfigForm.recovery.serviceId} onChange={v => { setIsSettingsDirty(true); setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, serviceId: v } })); }} placeholder="service_..." />
+                            <SettingInput label="Template ID" value={emailConfigForm.recovery.templateId} onChange={v => { setIsSettingsDirty(true); setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, templateId: v } })); }} placeholder="template_..." />
+                            <SettingInput label="Public Key" value={emailConfigForm.recovery.publicKey} onChange={v => { setIsSettingsDirty(true); setEmailConfigForm(f => ({ ...f, recovery: { ...f.recovery, publicKey: v } })); }} placeholder="pk_..." />
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                          <Button 
+                            onClick={() => { handleSaveEmailConfig(); setIsSettingsDirty(false); }} 
+                            disabled={isSavingStatus} 
+                            className="w-full sm:w-auto h-11 px-6 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl bg-primary hover:bg-primary/90 text-white gap-2"
+                          >
+                            <Save className="w-4 h-4" /> Sync Email Config
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 5: Telegram Bot Alerts (telegram)                          */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'telegram') && 
+                   (!settingsSearchQuery || 'telegram bot notifications token admin chat ids alerts'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-sky-500/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center shadow-inner">
+                              <BellRing className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Telegram Real-Time Admin Alerts
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Instant order and payment notifications to admins on Telegram.
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-wider border-sky-500/30 text-sky-500">
+                            Telegram Bot
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-4">
+                          <SettingInput 
+                            label="Telegram Bot Token" 
+                            value={telegramForm.telegramBotToken} 
+                            onChange={v => { setIsSettingsDirty(true); setTelegramForm(f => ({ ...f, telegramBotToken: v })); }} 
+                            placeholder="8817771628:AA..." 
+                          />
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                              Admin Chat IDs (Comma Separated)
+                            </Label>
+                            <Textarea 
+                              value={telegramForm.telegramAdminChatIds} 
+                              onChange={e => { setIsSettingsDirty(true); setTelegramForm(f => ({ ...f, telegramAdminChatIds: e.target.value })); }} 
+                              className="min-h-[80px] rounded-2xl bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-white/10 p-3.5 font-mono text-xs font-bold" 
+                              placeholder="8105182517, 123456789" 
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                          <Button 
+                            onClick={() => { handleSaveTelegram(); setIsSettingsDirty(false); }} 
+                            disabled={isSavingStatus} 
+                            className="w-full sm:w-auto h-11 px-6 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl bg-sky-600 hover:bg-sky-700 text-white gap-2"
+                          >
+                            <Save className="w-4 h-4" /> Sync Telegram Config
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 6: Channels & Support (communication)                      */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'communication') && 
+                   (!settingsSearchQuery || 'communication channels support whatsapp tiktok tutorial video links'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-indigo-500/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shadow-inner">
+                              <MessageCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Support & Channels Hub
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                WhatsApp support line, TikTok link, and video guide.
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-wider border-indigo-500/30 text-indigo-500">
+                            Help & Socials
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <SettingInput label="WhatsApp Official Support No" value={helpLinksForm.whatsappNumber} onChange={v => { setIsSettingsDirty(true); setHelpLinksForm(f => ({ ...f, whatsappNumber: v })); }} placeholder="252613982172" />
+                            <SettingInput label="TikTok Channel URL" value={helpLinksForm.tiktokUrl} onChange={v => { setIsSettingsDirty(true); setHelpLinksForm(f => ({ ...f, tiktokUrl: v })); }} placeholder="https://tiktok.com/@..." />
+                            <SettingInput label="Tutorial Video URL" value={helpLinksForm.tutorialUrl} onChange={v => { setIsSettingsDirty(true); setHelpLinksForm(f => ({ ...f, tutorialUrl: v })); }} placeholder="https://youtube.com/watch?v=..." />
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 flex items-center justify-between">
+                              <div>
+                                <h4 className="text-xs font-bold text-slate-900 dark:text-white">Tutorial Home Banner</h4>
+                                <p className="text-[10px] text-slate-400">Show video card on home slider</p>
+                              </div>
+                              <Switch 
+                                checked={helpLinksForm.tutorialBannerActive} 
+                                onCheckedChange={v => { setIsSettingsDirty(true); setHelpLinksForm(f => ({ ...f, tutorialBannerActive: v })); }} 
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                          <Button 
+                            onClick={() => { updateStoreSettings({ helpLinks: helpLinksForm }).then(() => { setIsSettingsDirty(false); toast({ title: "Links Synced" }); }); }} 
+                            className="w-full sm:w-auto h-11 px-6 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                          >
+                            <Save className="w-4 h-4" /> Save Communication Links
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 7: Maintenance & Operating Schedule (maintenance)          */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'maintenance') && 
+                   (!settingsSearchQuery || 'maintenance schedule operating hours mogadishu offline emergency auto close open'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-rose-500/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shadow-inner">
+                              <ShieldAlert className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Maintenance & Scheduled Operating Hours
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Emergency maintenance lockdown and Mogadishu operating window.
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-wider border-rose-500/30 text-rose-500">
+                            System Operations
+                          </Badge>
+                        </div>
+
+                        {/* Emergency Switch */}
+                        <div className={cn(
+                          "p-5 rounded-2xl border transition-all space-y-4",
+                          scheduleForm.enabled ? "bg-slate-50 dark:bg-slate-800/30 opacity-80" : "bg-rose-50/70 dark:bg-rose-950/20 border-rose-200"
+                        )}>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <Monitor className="w-6 h-6 text-rose-600 shrink-0" />
+                              <div>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Global Maintenance Lockdown</h4>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400">Locks storefront and displays maintenance page</p>
+                              </div>
+                            </div>
+                            <Switch 
+                              checked={appStatusForm.offline} 
+                              disabled={scheduleForm.enabled}
+                              onCheckedChange={v => { setIsSettingsDirty(true); setAppStatusForm(f => ({ ...f, offline: v })); }} 
+                            />
+                          </div>
+                        </div>
+
+                        {/* Operating Schedule */}
+                        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-white/5 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Scheduled Operating Hours</h4>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">Auto open/close based on East Africa Time (EAT)</p>
+                            </div>
+                            <Switch 
+                              checked={scheduleForm.enabled} 
+                              onCheckedChange={v => { setIsSettingsDirty(true); setScheduleForm(f => ({ ...f, enabled: v })); }} 
+                            />
+                          </div>
+
+                          {scheduleForm.enabled && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-200/80 dark:border-white/5">
+                              <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase text-slate-400">Open Time</Label>
+                                <Input 
+                                  type="time" 
+                                  value={scheduleForm.openTime} 
+                                  onChange={e => { setIsSettingsDirty(true); setScheduleForm({ ...scheduleForm, openTime: e.target.value }); }} 
+                                  className="h-11 rounded-xl bg-white dark:bg-slate-900 font-bold text-sm"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-[10px] font-black uppercase text-slate-400">Close Time</Label>
+                                <Input 
+                                  type="time" 
+                                  value={scheduleForm.closeTime} 
+                                  onChange={e => { setIsSettingsDirty(true); setScheduleForm({ ...scheduleForm, closeTime: e.target.value }); }} 
+                                  className="h-11 rounded-xl bg-white dark:bg-slate-900 font-bold text-sm"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <Button 
+                            onClick={() => { handleSaveSchedule(); setIsSettingsDirty(false); }} 
+                            disabled={isSavingStatus} 
+                            className="w-full h-11 rounded-xl font-bold uppercase text-xs bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-md"
+                          >
+                            <Save className="w-4 h-4" /> Save Operating Schedule
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* ------------------------------------------------------------------ */}
+                  {/* SECTION 8: Compliance & Terms Editor (legal)                       */}
+                  {/* ------------------------------------------------------------------ */}
+                  {(settingsActiveTab === 'all' || settingsActiveTab === 'legal') && 
+                   (!settingsSearchQuery || 'legal compliance terms shuruudaha policy conditions privacy'.toLowerCase().includes(settingsSearchQuery.toLowerCase())) && (
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-xl shadow-slate-900/5 overflow-hidden transition-all hover:shadow-2xl hover:shadow-emerald-500/5">
+                      <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-5">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-600/10 text-emerald-600 flex items-center justify-center shadow-inner">
+                              <ScrollText className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="font-headline font-black text-lg md:text-xl uppercase tracking-tight text-slate-900 dark:text-white">
+                                Terms & Conditions (Compliance Editor)
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                Dual-language policy manager in English & Somali.
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-black uppercase tracking-wider border-emerald-600/30 text-emerald-600">
+                            Bilingual Legal
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">English Terms</Label>
+                            <Textarea 
+                              value={termsForm.en} 
+                              onChange={e => { setIsSettingsDirty(true); setTermsForm(f => ({ ...f, en: e.target.value })); }} 
+                              className="min-h-[200px] rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-slate-800/80 p-4 font-medium text-xs leading-relaxed" 
+                              placeholder="Enter store policy in English..." 
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">Somali Terms (Shuruudaha)</Label>
+                            <Textarea 
+                              value={termsForm.so} 
+                              onChange={e => { setIsSettingsDirty(true); setTermsForm(f => ({ ...f, so: e.target.value })); }} 
+                              className="min-h-[200px] rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-slate-800/80 p-4 font-medium text-xs leading-relaxed" 
+                              placeholder="Geli shuruudaha afka Soomaaliga..." 
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                          <Button 
+                            onClick={() => { updateStoreSettings({ termsAndConditions: termsForm }).then(() => { setIsSettingsDirty(false); toast({ title: "Policy Updated" }); }); }} 
+                            className="w-full sm:w-auto h-11 px-6 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                          >
+                            <Save className="w-4 h-4" /> Sync Legal Policy
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                </div>
+              </div>
             </div>
           )}
         </main>
@@ -4236,7 +4887,7 @@ export default function AdminPage() {
                       <Label className="text-[10px] font-black uppercase text-slate-400">Handling Type</Label>
                       <Select value={productForm.category} onValueChange={v => {
                         const handling = v as any;
-                        setProductForm({ ...productForm, category: handling, specialHandling: handling });
+                        setProductForm({ ...productForm, category: handling });
                       }}>
                         <SelectTrigger className="h-8 rounded-lg bg-white dark:bg-slate-900 border-none px-3 font-bold shadow-sm w-40">
                           <SelectValue />
@@ -4779,6 +5430,122 @@ export default function AdminPage() {
            </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Bottom Navbar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/70 dark:border-white/10 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] pb-safe">
+        <div className="h-16 flex items-center justify-around px-2">
+          <button
+            onClick={() => { setActiveTab('dashboard'); setSelectedOrderId(null); setSelectedAccountId(null); setSelectedEventId(null); setIsEditingEvent(false); }}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
+              activeView === 'dashboard' && !selectedOrderId && !selectedAccountId && !selectedEventId ? "text-primary font-bold" : "text-slate-400 hover:text-primary"
+            )}
+          >
+            <LayoutDashboard size={20} />
+            <span className="text-[10px]">Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('users'); }}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
+              activeView === 'users' ? "text-primary font-bold" : "text-slate-400 hover:text-primary"
+            )}
+          >
+            <Users size={20} />
+            <span className="text-[10px]">Users</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('orders'); setSelectedOrderId(null); }}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors relative",
+              activeView === 'orders' ? "text-primary font-bold" : "text-slate-400 hover:text-primary"
+            )}
+          >
+            <div className="relative">
+              <ShoppingBag size={20} />
+              {topUpOrders.filter(o => o.status === 'pending').length > 0 && (
+                <span className="absolute -top-1 -right-2 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                  {topUpOrders.filter(o => o.status === 'pending').length}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px]">Orders</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('inventory'); }}
+            className={cn(
+              "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
+              activeView === 'inventory' ? "text-primary font-bold" : "text-slate-400 hover:text-primary"
+            )}
+          >
+            <Box size={20} />
+            <span className="text-[10px]">Inventory</span>
+          </button>
+
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 hover:text-primary transition-colors"
+          >
+            <Menu size={20} />
+            <span className="text-[10px]">Menu</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Global Floating Scroll-To-Top Button */}
+      <button
+        aria-label="Scroll to top"
+        onClick={scrollToTop}
+        className={cn(
+          "fixed z-40 w-11 h-11 md:w-12 md:h-12 rounded-full bg-gradient-to-tr from-[#6a1edb] to-[#8343f4] text-white flex items-center justify-center shadow-[0_4px_20px_rgba(106,30,219,0.35)] hover:-translate-y-1 active:scale-95 transition-all duration-300 bottom-20 right-4 md:bottom-8 md:right-8",
+          showBackToTop ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+      >
+        <ArrowUpCircle className="w-5 h-5 md:w-6 md:h-6" />
+      </button>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <Dialog open={isUnsavedChangesOpen} onOpenChange={setIsUnsavedChangesOpen}>
+        <DialogContent className="max-w-md rounded-3xl p-6 sm:p-8 border-none shadow-2xl bg-white dark:bg-slate-900 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={28} />
+          </div>
+          <DialogTitle className="text-lg sm:text-xl font-headline font-bold text-slate-900 dark:text-white">
+            Unsaved Changes
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2">
+            You have unsaved changes in Settings. Do you want to save them before leaving or discard all changes?
+          </DialogDescription>
+          <div className="flex flex-col gap-2.5 mt-6">
+            <Button
+              onClick={handleSaveAndExitSettings}
+              disabled={isSavingStatus}
+              className="w-full h-12 rounded-xl font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
+            >
+              {isSavingStatus ? <Loader2 className="animate-spin" /> : "Save & Exit"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDiscardSettings}
+              disabled={isSavingStatus}
+              className="w-full h-12 rounded-xl font-bold text-xs uppercase tracking-wider text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+            >
+              Discard Changes
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setIsUnsavedChangesOpen(false)}
+              disabled={isSavingStatus}
+              className="w-full h-10 rounded-xl font-bold text-xs uppercase tracking-wider text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              Stay on Page
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -4853,525 +5620,616 @@ function OrderDetailView({ order, onBack, onUpdate, onManualSuccess, onManualSyn
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(order.id.toUpperCase());
-    toast({ title: "Reference Copied" });
+    toast({ title: "Reference Copied", description: `#${order.id.toUpperCase()} copied to clipboard.` });
   };
 
   const handleWhatsApp = () => {
-    const num = formatWhatsAppNumber(order.gameDetails?.whatsappNumber || "252613982172");
-    window.open(`https://wa.me/${num}`, '_blank');
+    const num = formatWhatsAppNumber(order.gameDetails?.whatsappNumber || order.gameDetails?.phone || buyer?.phoneNumber || "252613982172");
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(`Hello ${order.gameDetails?.playerName || buyer?.name || ''}, regarding your order #${order.id.toUpperCase().slice(-8)} on Oskarshop:`)}`, '_blank');
   };
 
   const handleCopyPlayerId = () => {
-    const pid = order.ffUid || order.gameDetails?.playerID;
+    const pid = order.ffUid || order.gameDetails?.playerID || order.gameDetails?.playerId || order.gameDetails?.uid;
     if (pid) {
       navigator.clipboard.writeText(pid);
-      toast({ title: "Player ID Copied" });
+      toast({ title: "Player ID Copied", description: pid });
     }
   };
 
+  const handleCopyReceipt = () => {
+    const receiptText = `=== OSKARSHOP ORDER RECEIPT ===
+Order Ref: #${order.id.toUpperCase()}
+Date: ${order.createdAt ? format(new Date(order.createdAt), "MMM d, yyyy, HH:mm") : 'N/A'}
+Status: ${order.status.toUpperCase()}
+Item: ${item?.title || "Top-up"}
+Player ID: ${order.ffUid || order.gameDetails?.playerID || order.gameDetails?.playerId || 'N/A'}
+Player Name: ${order.ffPlayerName || order.gameDetails?.playerName || 'N/A'}
+Total: $${order.total?.toFixed(2)}
+Payment: ${order.paymentMethod || 'EVCPlus'}
+Sender: ${order.gameDetails?.senderNumber || 'N/A'}
+=================================`;
+    navigator.clipboard.writeText(receiptText);
+    toast({ title: "Receipt Copied", description: "Full order receipt copied to clipboard." });
+  };
+
+  const isPending = order.status === 'pending';
+  const isProcessing = order.status === 'processing';
+  const isSuccess = order.status === 'successful';
+  const isCancelled = order.status === 'cancelled';
+
+  const playerId = order.ffUid || order.gameDetails?.playerID || order.gameDetails?.playerId || order.gameDetails?.uid || "N/A";
+  const playerName = order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A";
+  const senderNumber = order.gameDetails?.senderNumber || order.gameDetails?.senderPhone || "N/A";
+  const whatsappNum = order.gameDetails?.whatsappNumber || order.gameDetails?.phone || "N/A";
+
+  const standardKeys = new Set([
+    'playerID', 'playerId', 'uid', 'ffUid',
+    'playerName', 'name', 'ffPlayerName',
+    'senderNumber', 'senderPhone',
+    'whatsappNumber', 'phone',
+    'category', 'isEventWinner', 'eventTitle', 'postId',
+    'paymentMethod', 'region', 'ffRegion'
+  ]);
+
+  const customFields = Object.entries(order.gameDetails || {}).filter(
+    ([key]) => !standardKeys.has(key) && !key.startsWith('_') && typeof order.gameDetails[key] !== 'object'
+  );
+
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
-       <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-6">
-             <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+    <div className="space-y-6 animate-in slide-in-from-right-4 duration-500 pb-24 max-w-4xl mx-auto">
+       {/* Header Bar */}
+       <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-3">
+             <button 
+               onClick={onBack} 
+               className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-xs"
+             >
                 <ArrowLeft size={18} />
              </button>
              <div>
-                <h3 className="font-headline font-bold text-xl uppercase tracking-tighter text-slate-900 dark:text-white">Order Insight</h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">REF: #{order.id.toUpperCase()}</p>
+                <h1 className="font-bold text-lg text-slate-900 dark:text-white">Order Details</h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">#{order.id.toUpperCase()}</p>
              </div>
           </div>
-          <div className="flex items-center gap-4">
-             <StatusBadge status={order.status} />
-             <button onClick={onDelete} className="w-10 h-10 flex items-center justify-center text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl hover:bg-red-100 transition-colors">
-                <Trash2 size={18} />
-             </button>
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+             <User size={16} />
           </div>
        </div>
 
-       <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden px-8 py-10 md:px-14 md:py-16">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
-             <div>
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                   <h2 className="text-2xl md:text-5xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-white">
-                      {item?.title?.replace("Auction Winner", "Guuleystaha")?.replace(/💎/g, '') || "ACCOUNT: UNKNOWN"}
-                   </h2>
-                   {item?.isOneTime && <Badge className="bg-rose-500 text-white border-none font-bold text-[8px] md:text-[11px] px-2.5 py-0.5 uppercase">ONE TIME</Badge>}
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                   <Badge variant="outline" className="rounded-full px-3.5 py-1 text-[9px] font-black uppercase tracking-widest border-slate-200 dark:border-white/10">
-                      {order.paymentMethod || "WHATSAPP DIRECT"}
-                   </Badge>
-                   <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">
-                      ABOUT {safeFormatDistanceToNow(order.createdAt)} AGO
+       {/* Top Order Summary Card */}
+       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm flex items-center justify-between relative overflow-hidden">
+          <div className="space-y-1.5 min-w-0">
+             <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono font-bold text-base sm:text-lg text-slate-900 dark:text-white">
+                   Order #{order.id.toUpperCase().slice(-10)}
+                </span>
+                <button 
+                  onClick={handleCopyId}
+                  className="text-slate-400 hover:text-primary transition-colors p-1"
+                  title="Copy Order ID"
+                >
+                   <Copy size={14} />
+                </button>
+                {isPending && (
+                   <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider border border-amber-200/40">
+                      PENDING
                    </span>
-                </div>
+                )}
+                {isProcessing && (
+                   <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider animate-pulse border border-blue-200/40">
+                      PROCESSING
+                   </span>
+                )}
+                {isSuccess && (
+                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider border border-emerald-200/40">
+                      SUCCESS
+                   </span>
+                )}
+                {isCancelled && (
+                   <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider border border-rose-200/40">
+                      CANCELLED
+                   </span>
+                )}
              </div>
-             <div className="text-left md:text-right">
-                <p className="text-3xl sm:text-5xl md:text-6xl font-headline font-bold text-primary tracking-tighter">
-                   ${order.total.toFixed(2)}
+             <p className="text-xs text-slate-400 flex items-center gap-1.5 font-medium">
+                <Clock size={13} />
+                {order.createdAt && !isNaN(new Date(order.createdAt).getTime()) ? format(new Date(order.createdAt), "MMM d, yyyy, HH:mm") : "---"}
+             </p>
+          </div>
+
+          <button 
+             onClick={onDelete}
+             className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center shrink-0 shadow-xs active:scale-95"
+             title="Delete Order"
+          >
+             <Trash2 size={16} />
+          </button>
+       </div>
+
+       {/* Item Details Card */}
+       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm flex items-center justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="flex items-center gap-4 min-w-0">
+             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-purple-500/15 text-primary flex items-center justify-center text-2xl shadow-inner shrink-0 border border-primary/20">
+                {item?.thumbnail ? (
+                   <div className="w-full h-full rounded-2xl overflow-hidden relative">
+                      <Image src={item.thumbnail} alt="" fill className="object-cover" />
+                   </div>
+                ) : (
+                   <span>💎</span>
+                )}
+             </div>
+             <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                   <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white truncate">
+                      {item?.title?.replace("Auction Winner", "Guuleystaha")?.replace(/💎/g, '') || "110 Diamonds"}
+                   </h3>
+                   {item?.isOneTime && (
+                      <Badge className="bg-rose-500 text-white text-[9px] px-2 py-0.2 font-bold uppercase border-none">
+                         One Time
+                      </Badge>
+                   )}
+                </div>
+                <p className="text-xs font-semibold text-primary flex items-center gap-1 mt-0.5">
+                   <Gamepad2 size={13} />
+                   {order.gameDetails?.category || "Free Fire"}
                 </p>
              </div>
           </div>
 
-          <div className="h-px bg-slate-100 dark:bg-white/5 w-full mb-10" />
+          <div className="text-right shrink-0">
+             <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                ${order.total?.toFixed(2)}
+             </p>
+             <span className="inline-block px-2.5 py-0.5 mt-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+                {order.paymentMethod || "EVCPlus"}
+             </span>
+          </div>
+       </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-8 sm:gap-y-10 gap-x-6 sm:gap-x-8">
-             <InsightStat label="Player ID" value={order.ffUid || order.gameDetails?.playerID || "N/A"} icon={Gamepad2} isPrimary action={(order.ffUid || order.gameDetails?.playerID) ? <button onClick={handleCopyPlayerId} className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" title="Copy Player ID"> <Copy size={14} /> </button> : null} />
-             <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                   <User size={14} className="opacity-40" />
-                   <p className="text-[9px] font-black uppercase tracking-[0.2em]">In-Game Name</p>
-                </div>
-                <div className="flex items-center gap-1.5 min-w-0">
-                   <p className="text-sm md:text-lg font-bold truncate text-slate-900 dark:text-white">{order.ffPlayerName || order.gameDetails?.playerName || order.gameDetails?.name || "N/A"}</p>
-                   {order.ffVerified ? (
-                     <VerifiedBadge />
-                   ) : order.ffUid ? (
-                     <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-none text-[8px] h-5 px-1.5 uppercase font-black">Manual</Badge>
-                   ) : null}
-                </div>
-             </div>
-             <InsightStat label="Sender Number" value={order.gameDetails?.senderNumber || "N/A"} icon={CreditCard} />
-             <InsightStat label="WhatsApp" value={order.gameDetails?.whatsappNumber || "N/A"} icon={MessageCircle} action={order.gameDetails?.whatsappNumber ? <button onClick={handleWhatsApp} className="p-1.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-all" title="Open WhatsApp"> <MessageCircle size={14} /> </button> : null} />
-             <InsightStat label="Order Date" value={order.createdAt && !isNaN(new Date(order.createdAt).getTime()) ? format(new Date(order.createdAt), "MMM d, h:mm a") : "---"} icon={Clock} />
-             <InsightStat label="Order Category" value={order.gameDetails?.category || "Top-Up"} icon={Layers} />
-             {order.ffRegion && <InsightStat label="Region" value={order.ffRegion} icon={Globe} />}
-             {order.promoCode && <InsightStat label="Promo Code" value={order.promoCode} icon={Ticket} isPrimary />}
-             {order.rankDiscount > 0 && <InsightStat label="Rank Reward" value={`Rank ${order.rank || 1} (-${order.rankDiscount}%)`} icon={Trophy} isPrimary />}
+       {/* Player Details Card */}
+       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-primary">
+             <Gamepad2 size={18} />
+             <h4 className="font-bold text-xs uppercase tracking-widest text-primary">Player Details</h4>
           </div>
 
-          {/* Special Package Delivery Status UI */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+             {/* PLAYER ID */}
+             <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">PLAYER ID</span>
+                <div className="flex items-center justify-between">
+                   <span className="font-mono font-bold text-sm text-slate-900 dark:text-white truncate">{playerId}</span>
+                   {playerId !== "N/A" && (
+                      <button 
+                        onClick={handleCopyPlayerId}
+                        className="p-1 text-slate-400 hover:text-primary transition-colors rounded-lg"
+                        title="Copy Player ID"
+                      >
+                         <Copy size={14} />
+                      </button>
+                   )}
+                </div>
+             </div>
+
+             {/* PLAYER NAME */}
+             <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">PLAYER NAME</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                   <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{playerName}</span>
+                   {order.ffVerified && <VerifiedBadge />}
+                </div>
+             </div>
+
+             {/* SENDER NUMBER */}
+             <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">SENDER #</span>
+                <div className="flex items-center justify-between">
+                   <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">{senderNumber}</span>
+                   {senderNumber !== "N/A" && (
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(senderNumber);
+                          toast({ title: "Sender Number Copied", description: senderNumber });
+                        }}
+                        className="p-1 text-slate-400 hover:text-primary transition-colors rounded-lg"
+                        title="Copy Sender Number"
+                      >
+                         <Copy size={14} />
+                      </button>
+                   )}
+                </div>
+             </div>
+
+             {/* WHATSAPP */}
+             <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">WHATSAPP</span>
+                <div className="flex items-center justify-between">
+                   <span className="font-mono font-bold text-sm text-slate-900 dark:text-white truncate">{whatsappNum}</span>
+                   {whatsappNum !== "N/A" && (
+                      <button 
+                        onClick={handleWhatsApp}
+                        className="p-1 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-all"
+                        title="Open WhatsApp Chat"
+                      >
+                         <MessageCircle size={15} />
+                      </button>
+                   )}
+                </div>
+             </div>
+
+             {/* Dynamic Fazercards Custom Category Fields */}
+             {customFields.map(([k, v]) => (
+                <div key={k} className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                      {k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}
+                   </span>
+                   <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-slate-900 dark:text-white truncate">{String(v)}</span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(String(v));
+                          toast({ title: `${k} Copied`, description: String(v) });
+                        }}
+                        className="p-1 text-slate-400 hover:text-primary transition-colors rounded-lg"
+                        title="Copy Value"
+                      >
+                         <Copy size={14} />
+                      </button>
+                   </div>
+                </div>
+             ))}
+
+             {order.ffRegion && (
+                <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">REGION</span>
+                   <span className="block font-bold text-sm text-slate-900 dark:text-white">{order.ffRegion}</span>
+                </div>
+             )}
+
+             {order.promoCode && (
+                <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1">
+                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">PROMO CODE</span>
+                   <span className="block font-bold text-sm text-primary">{order.promoCode}</span>
+                </div>
+             )}
+          </div>
+
+          {/* Special Package Delivery Status UI if present */}
           {delivery && (
-            <div className="mt-10 space-y-6 animate-in fade-in duration-500">
-               <div className="p-4 sm:p-6 md:p-8 bg-slate-50 dark:bg-slate-800 rounded-[2rem] border dark:border-white/5 space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                     <div className="flex items-center gap-3 text-primary">
-                        <ShoppingBag size={22} />
-                        <h4 className="font-headline font-bold text-base md:text-xl uppercase tracking-tight">Package Delivery Status</h4>
-                     </div>
-                     <Badge className={cn(
-                       "rounded-full px-4 py-1.5 font-black text-[9px] uppercase tracking-widest border-none shadow-xs w-fit",
-                       delivery.overallStatus === 'completed' ? "bg-emerald-600 text-white" :
-                       delivery.overallStatus === 'failed' ? "bg-rose-600 text-white" :
-                       delivery.overallStatus === 'partial' ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
-                     )}>
-                        {delivery.overallStatus === 'completed' ? "Delivered" :
-                         delivery.overallStatus === 'processing' ? "In Progress" :
-                         delivery.overallStatus === 'partial' ? "Partially Delivered" :
-                         delivery.overallStatus === 'failed' ? "Failed" : "Pending"}
-                     </Badge>
+            <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-white/5 space-y-4">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                     <ShoppingBag size={16} />
+                     <span>Package Delivery Progress</span>
                   </div>
-
-                  <div className="space-y-2">
-                     <div className="flex justify-between items-end mb-1">
-                        <p className="text-[10px] font-black uppercase text-slate-400">{delivery.completedOffers} / {delivery.totalOffers} items delivered</p>
-                        <p className="text-xs font-black text-primary">{Math.round((delivery.completedOffers / delivery.totalOffers) * 100)}%</p>
-                     </div>
-                     <Progress value={(delivery.completedOffers / delivery.totalOffers) * 100} className="h-2.5 rounded-full bg-slate-200 dark:bg-slate-700" />
-                  </div>
-
-                  <div className="space-y-3 pt-2">
-                     {Object.entries(delivery.offers).map(([offId, offData]: [string, any]) => (
-                       <div key={offId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-white dark:bg-slate-900 rounded-2xl border dark:border-white/5 group shadow-xs transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                             <div className={cn(
-                               "w-2.5 h-2.5 rounded-full shrink-0",
-                               offData.status === 'completed' ? "bg-emerald-500" :
-                               offData.status === 'failed' ? "bg-rose-500" :
-                               offData.status === 'processing' ? "bg-amber-500 animate-pulse" : "bg-slate-300"
-                             )} />
-                             <div className="min-w-0">
-                                <p className="font-bold text-xs sm:text-sm truncate dark:text-white">{offData.offerName}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                   {offData.fazercardsOrderId ? (
-                                     <a 
-                                       href={`https://reseller.fazercards.com/panel/orders/${offData.fazercardsOrderId}`} 
-                                       target="_blank" 
-                                       className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1 truncate max-w-[150px] sm:max-w-none"
-                                     >
-                                        #{offData.fazercardsOrderId} <ExternalLink size={10} className="shrink-0" />
-                                     </a>
-                                   ) : (
-                                     <span className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase italic">Pending...</span>
-                                   )}
-                                </div>
-                             </div>
-                          </div>
-                          <div className="text-left sm:text-right shrink-0">
-                             <p className={cn(
-                               "text-[10px] font-black uppercase tracking-widest",
-                               offData.status === 'completed' ? "text-emerald-600 dark:text-emerald-400" :
-                               offData.status === 'failed' ? "text-rose-600 dark:text-rose-400" :
-                               offData.status === 'processing' ? "text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-slate-600"
-                             )}>
-                                {offData.status}
-                             </p>
-                             {offData.error && <p className="text-[9px] text-rose-500 mt-0.5 max-w-[200px] truncate" title={offData.error}>{offData.error}</p>}
-                          </div>
-                       </div>
-                     ))}
-                  </div>
+                  <Badge className={cn(
+                    "rounded-full px-3 py-0.5 text-[9px] font-bold uppercase border-none",
+                    delivery.overallStatus === 'completed' ? "bg-emerald-600 text-white" :
+                    delivery.overallStatus === 'failed' ? "bg-rose-600 text-white" :
+                    delivery.overallStatus === 'partial' ? "bg-amber-500 text-white" : "bg-amber-50 text-amber-700"
+                  )}>
+                     {delivery.overallStatus}
+                  </Badge>
+               </div>
+               <Progress value={(delivery.completedOffers / Math.max(delivery.totalOffers, 1)) * 100} className="h-2 rounded-full" />
+               <div className="space-y-2">
+                  {Object.entries(delivery.offers || {}).map(([offId, offData]: any) => (
+                    <div key={offId} className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5 text-xs">
+                       <span className="font-bold text-slate-900 dark:text-white truncate">{offData.offerName}</span>
+                       <span className={cn(
+                         "font-bold uppercase text-[10px]",
+                         offData.status === 'completed' ? "text-emerald-500" :
+                         offData.status === 'failed' ? "text-rose-500" : "text-amber-500"
+                       )}>
+                          {offData.status}
+                       </span>
+                    </div>
+                  ))}
                </div>
             </div>
           )}
+       </div>
 
-          {/* Automation Insight for Regular Orders */}
-          {!delivery && (order.autoTopupStatus || order.smsMatchedId) && (
-            <div className="mt-8 sm:mt-10 p-5 sm:p-7 md:p-8 bg-slate-50/90 dark:bg-slate-800/60 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200/80 dark:border-white/10 space-y-6 shadow-sm">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/60 dark:border-white/5 pb-4">
-                  <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-sm">
-                        <Cpu size={20} />
-                     </div>
-                     <div>
-                        <h5 className="font-headline font-bold text-sm sm:text-base uppercase tracking-tight text-slate-900 dark:text-white">Automation System Log</h5>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                     {order.autoTopupStatus === 'completed' && (
-                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-xs">
-                           Delivered & Synced
-                        </Badge>
-                     )}
-                     {order.autoTopupStatus === 'processing' && (
-                        <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[9px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
-                           <Loader2 size={10} className="animate-spin" /> Processing Order
-                        </Badge>
-                     )}
-                  </div>
+       {/* Fazercards Automation Card */}
+       {!delivery && (order.autoTopupStatus || order.smsMatchedId || order.autoTopupOrderId) && (
+         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2 text-primary">
+                  <Cpu size={18} />
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-primary">Fazercards Log</h4>
                </div>
-               
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                  {/* Card 1: Reseller Status */}
-                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-xs space-y-3 flex flex-col justify-between">
-                     <div className="flex items-center justify-between text-slate-400">
-                        <span className="text-[9px] font-black uppercase tracking-widest">Reseller Status</span>
-                        <Activity size={14} className="opacity-50" />
-                     </div>
-                     <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                           {order.autoTopupStatus === 'completed' && (
-                              <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5">
-                                 <CheckCircle2 size={12} className="text-emerald-500" /> Completed
-                              </Badge>
-                           )}
-                           {order.autoTopupStatus === 'processing' && (
-                              <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5">
-                                 <Loader2 size={12} className="animate-spin text-amber-500" /> Processing
-                              </Badge>
-                           )}
-                           {order.autoTopupStatus === 'failed' && (
-                              <Badge className="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl flex items-center gap-1.5">
-                                 <XCircle size={12} className="text-rose-500" /> Failed / Rejected
-                              </Badge>
-                           )}
-                           {!order.autoTopupStatus && (
-                              <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-none text-[10px] font-bold px-2.5 py-1 rounded-xl">
-                                 Not Started
-                              </Badge>
-                           )}
-                        </div>
-                        <p className="text-[10px] font-medium text-muted-foreground leading-tight">
-                           {order.autoTopupStatus === 'processing' ? 'Waiting for FazerCards API delivery confirmation' :
-                            order.autoTopupStatus === 'completed' ? 'Successfully top-up delivered to player' :
-                            order.autoTopupStatus === 'failed' ? 'Provider rejected or delivery failed' :
-                            'Awaiting reseller dispatch'}
-                        </p>
-                     </div>
-                  </div>
-
-                  {/* Card 2: Provider Order ID */}
-                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-xs space-y-3 flex flex-col justify-between">
-                     <div className="flex items-center justify-between text-slate-400">
-                        <span className="text-[9px] font-black uppercase tracking-widest">Provider Order Reference</span>
-                        <Hash size={14} className="opacity-50" />
-                     </div>
-                     <div className="space-y-2">
-                        {order.autoTopupOrderId ? (
-                           <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg truncate max-w-[180px]">
-                                 #{order.autoTopupOrderId}
-                              </span>
-                              <a 
-                                 href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.toString().split(',')[0].trim()}`} 
-                                 target="_blank" 
-                                 className="inline-flex items-center gap-1 text-[10px] font-black text-primary hover:underline bg-primary/10 px-2.5 py-1 rounded-lg transition-all"
-                              >
-                                 VIEW <ExternalLink size={10} />
-                              </a>
-                           </div>
-                        ) : (
-                           <p className="text-xs font-bold text-slate-400 italic">No provider ID assigned</p>
-                        )}
-                        <p className="text-[10px] font-medium text-muted-foreground leading-tight">
-                           {order.autoTopupOrderId ? 'Click view to inspect on FazerCards panel' : 'Dispatched when automation starts'}
-                        </p>
-                     </div>
-                  </div>
-
-                  {/* Card 3: Payment Validation */}
-                  <div className="p-4 sm:p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-white/5 shadow-xs space-y-3 flex flex-col justify-between sm:col-span-2 lg:col-span-1">
-                     <div className="flex items-center justify-between text-slate-400">
-                        <span className="text-[9px] font-black uppercase tracking-widest">Payment Validation</span>
-                        <Smartphone size={14} className="opacity-50" />
-                     </div>
-                     <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                           {order.smsMatchedId ? (
-                              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-xl w-fit">
-                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Auto-Matched via SMS</span>
-                              </div>
-                           ) : (
-                              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-xl w-fit">
-                                 <div className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-                                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Manual Verification</span>
-                              </div>
-                           )}
-                        </div>
-                        <p className="text-[10px] font-medium text-muted-foreground leading-tight">
-                           {order.smsMatchedId ? `Matched to SMS Record: #${order.smsMatchedId.slice(-8)}` : 'Manual transaction check by admin'}
-                        </p>
-                     </div>
-                  </div>
-
-                  {/* Error Alert Box (if present) */}
-                  {order.autoTopupError && (
-                     <div className="col-span-full p-4 sm:p-5 bg-rose-50 dark:bg-rose-950/30 rounded-2xl border border-rose-200/80 dark:border-rose-900/30 flex items-start gap-3 text-rose-700 dark:text-rose-300">
-                        <AlertTriangle size={18} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                        <div className="min-w-0 flex-1">
-                           <p className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Provider Error Message</p>
-                           <p className="text-xs sm:text-sm font-medium mt-1 leading-relaxed break-words">
-                              {order.autoTopupError}
-                           </p>
-                        </div>
-                     </div>
-                  )}
-               </div>
-
-               {/* Action Buttons */}
-               {(order.autoTopupStatus === 'failed' || order.autoTopupStatus === 'processing') && (
-                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                     {order.autoTopupStatus === 'failed' && (
-                        <Button 
-                           onClick={onRetryTopup} 
-                           disabled={isSaving} 
-                           className="flex-1 sm:flex-none h-11 sm:h-12 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-[10px] tracking-widest shadow-md shadow-rose-600/20 gap-2 active:scale-[0.98] transition-all"
-                        >
-                           <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Retry FazerCards Order
-                        </Button>
-                     )}
-                     {order.autoTopupStatus === 'processing' && (
-                        <Button 
-                           onClick={() => onManualSync(order.id)} 
-                           disabled={isSaving} 
-                           className="flex-1 sm:flex-none h-11 sm:h-12 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase text-[10px] tracking-widest shadow-md shadow-amber-500/20 gap-2 active:scale-[0.98] transition-all"
-                        >
-                           <RefreshCw size={14} className={cn(isSaving && "animate-spin")} /> Sync Status
-                        </Button>
-                     )}
-                  </div>
+               {order.autoTopupStatus === 'completed' && (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[9px] font-bold uppercase px-2.5 py-0.5 rounded-full">
+                     Delivered & Synced
+                  </Badge>
                )}
             </div>
-          )}
 
-       </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+               {/* Reseller Status */}
+               <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1.5">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Reseller Status</span>
+                  <div>
+                     {order.autoTopupStatus === 'completed' && (
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                           <CheckCircle2 size={13} /> COMPLETED
+                        </span>
+                     )}
+                     {order.autoTopupStatus === 'processing' && (
+                        <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold text-xs animate-pulse">
+                           <Loader2 size={13} className="animate-spin" /> PROCESSING
+                        </span>
+                     )}
+                     {order.autoTopupStatus === 'failed' && (
+                        <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-bold text-xs">
+                           <XCircle size={13} /> FAILED
+                        </span>
+                     )}
+                     {!order.autoTopupStatus && (
+                        <span className="text-slate-400 font-bold text-xs">PENDING</span>
+                     )}
+                  </div>
+               </div>
 
-       {/* Buyer Profile Card */}
-       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-10 space-y-8">
-            <div className="flex items-center gap-4 text-primary">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <User size={24} />
-              </div>
-              <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Macamiilka</h4>
+               {/* Provider Order ID */}
+               <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1.5">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Provider IDs</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                     {order.autoTopupOrderId ? (
+                        <a 
+                          href={`https://reseller.fazercards.com/panel/orders/${order.autoTopupOrderId.toString().split(',')[0].trim()}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-mono text-xs font-bold text-primary hover:underline bg-primary/10 px-2 py-0.5 rounded-md"
+                        >
+                           #{order.autoTopupOrderId} <ExternalLink size={10} />
+                        </a>
+                     ) : (
+                        <span className="text-xs text-slate-400 font-medium italic">None assigned</span>
+                     )}
+                  </div>
+               </div>
+
+               {/* Payment Validation */}
+               <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 space-y-1.5">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Payment Validation</span>
+                  <div>
+                     {order.smsMatchedId ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                           <CheckCircle2 size={13} /> Auto-Matched via SMS
+                        </span>
+                     ) : (
+                        <span className="text-slate-500 font-bold text-xs">Manual verification check by admin</span>
+                     )}
+                  </div>
+               </div>
             </div>
 
-            <div className="p-5 md:p-8 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border dark:border-white/5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden relative border-2 border-white dark:border-slate-700 shadow-md bg-white shrink-0">
-                  {buyer?.photoURL ? (
-                    <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-100 dark:bg-slate-900">
-                      <User size={32} />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <p className="truncate font-bold text-lg md:text-2xl text-slate-900 dark:text-white">{buyer?.name || "Deleted User"}</p>
-                    {buyer?.isVerified && <VerifiedBadge />}
+            {/* Error banner if present */}
+            {order.autoTopupError && (
+               <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/30 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+                  <AlertTriangle size={15} className="shrink-0 mt-0.5 text-rose-600" />
+                  <div>
+                     <p className="font-bold text-[10px] uppercase tracking-wider">Provider Error</p>
+                     <p className="mt-0.5">{order.autoTopupError}</p>
                   </div>
-                  <div className="flex items-center gap-2 mt-1 md:mt-2">
-                    <Smartphone size={14} className="text-primary" />
-                    <span className="text-xs md:text-sm font-black text-slate-500">{buyer?.phoneNumber || "N/A"}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 md:mt-3">
-                    <Badge className="bg-amber-500 text-white border-none font-bold text-[8px] md:text-[10px] uppercase">{buyer?.points || 0} Points</Badge>
-                    <Badge variant="outline" className="text-[8px] md:text-[10px] uppercase font-bold">{buyer?.role || 'User'}</Badge>
-                  </div>
-                </div>
-              </div>
+               </div>
+            )}
 
-              {(buyer?.uid || order.userId) && (
+            {/* Retry / Sync buttons */}
+            {(order.autoTopupStatus === 'failed' || order.autoTopupStatus === 'processing') && (
+               <div className="flex gap-2 pt-1">
+                  {order.autoTopupStatus === 'failed' && (
+                     <Button 
+                        onClick={onRetryTopup} 
+                        disabled={isSaving} 
+                        className="h-10 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider gap-2 shadow-xs"
+                     >
+                        <RefreshCw size={13} className={cn(isSaving && "animate-spin")} /> Retry FazerCards Order
+                     </Button>
+                  )}
+                  {order.autoTopupStatus === 'processing' && (
+                     <Button 
+                        onClick={() => onManualSync(order.id)} 
+                        disabled={isSaving} 
+                        className="h-10 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider gap-2 shadow-xs"
+                     >
+                        <RefreshCw size={13} className={cn(isSaving && "animate-spin")} /> Sync Status
+                     </Button>
+                  )}
+               </div>
+            )}
+         </div>
+       )}
+
+       {/* Customer Card (Macamiilka) */}
+       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-2 text-primary">
+                <User size={18} />
+                <h4 className="font-bold text-xs uppercase tracking-widest text-primary">Macamiilka</h4>
+             </div>
+             {(buyer?.uid || order.userId) && (
                 <button
                   type="button"
                   onClick={() => router.push(`/admin/users/${buyer?.uid || order.userId}`)}
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10 text-slate-500 hover:text-primary transition-all flex items-center justify-center shadow-xs active:scale-95 shrink-0"
-                  title="View Customer Info"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
                 >
-                  <Eye size={20} />
+                   View Profile <ExternalLink size={12} />
                 </button>
-              )}
-            </div>
+             )}
           </div>
-       </Card>
 
-       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-10 space-y-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 md:gap-4 text-primary">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner">
-                  <ShieldCheck size={20} className="md:size-6" />
-                </div>
-                <h4 className="font-headline font-bold text-base md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Administration Log</h4>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] md:rounded-[3rem] -z-10" />
-              <div className="p-5 md:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8">
-                <div className="flex flex-row items-center gap-4 md:gap-8 text-left w-full sm:w-auto">
-                  <div className="relative shrink-0">
-                    <div className="w-16 h-16 md:w-32 md:h-32 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative shadow-2xl ring-4 md:ring-8 ring-white dark:ring-slate-900 bg-white flex items-center justify-center">
-                      {order.processedBy?.photoURL ? (
-                        <Image src={order.processedBy.photoURL} alt={order.processedBy.name} fill className="object-cover" />
-                      ) : order.processedBy?.name ? (
-                        <div className="w-full h-full bg-primary/10 flex items-center justify-center font-bold text-primary text-3xl md:text-5xl">
-                          {order.processedBy.name.charAt(0).toUpperCase()}
-                        </div>
-                      ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
-                        <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                          <Smartphone className="size-8 md:size-16" />
-                        </div>
-                      ) : (
-                        <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-300 dark:text-slate-600 text-3xl md:text-5xl">
-                          <User className="size-8 md:size-16" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="min-w-0 space-y-1">
-                    <p className="text-[9px] md:text-xs font-black text-primary uppercase tracking-[0.2em] mb-0.5">Handling Admin</p>
-                    <h5 className="text-xl md:text-4xl font-headline font-bold text-slate-900 dark:text-white truncate max-w-[150px] md:max-w-md">
-                      {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS Match' : "Wali lama furin")}
-                    </h5>
-                    {order.processedAt && (
-                      <div className="flex items-center gap-1.5 text-muted-foreground justify-start">
-                         <Clock size={12} className="opacity-40" />
-                         <p className="text-[8px] md:text-xs font-bold uppercase tracking-tight">
-                            {safeFormatDistanceToNow(order.processedAt)} ago
-                         </p>
+          <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 flex items-center justify-between gap-4">
+             <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-12 h-12 rounded-xl overflow-hidden relative border border-slate-200 dark:border-slate-700 bg-white shrink-0">
+                   {buyer?.photoURL ? (
+                      <Image src={buyer.photoURL} alt="" fill className="object-cover" unoptimized />
+                   ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-base bg-primary/10 text-primary">
+                         {(buyer?.name || "U").slice(0, 1).toUpperCase()}
                       </div>
-                    )}
-                  </div>
+                   )}
                 </div>
-
-                <div className="hidden sm:block w-px h-16 md:h-24 bg-slate-200 dark:bg-white/10" />
-
-                <div className="text-center sm:text-right space-y-1 md:space-y-2 shrink-0 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-                  <p className="text-[9px] md:text-xs font-black text-muted-foreground uppercase tracking-widest opacity-40">Resolved on</p>
-                  <div className="space-y-0.5">
-                     <p className="text-base md:text-2xl font-black text-slate-900 dark:text-white">
-                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
-                     </p>
-                     <p className="text-xs md:text-lg font-bold text-primary">
-                        {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
-                     </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-       </Card>
-
-       <Card className="rounded-[2.5rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="p-6 md:p-12 space-y-8">
-             <div className="flex items-center gap-4 text-primary">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                   <RefreshCw size={24} className={cn(isSaving && "animate-spin")} />
-                </div>
-                <h4 className="font-headline font-bold text-xl md:text-3xl uppercase tracking-tight text-slate-900 dark:text-white">Status Control</h4>
-             </div>
-
-             <div className="grid grid-cols-1 gap-8">
-                <div className="space-y-3">
-                   <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Change Order Status</label>
-                   <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger className="h-16 md:h-20 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none px-8 font-bold text-lg shadow-inner">
-                         <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-none shadow-2xl z-[200]">
-                         {['pending', 'processing', 'successful', 'cancelled'].map(s => (
-                           <SelectItem key={s} value={s} className="p-4 font-bold uppercase text-xs rounded-xl">{s}</SelectItem>
-                         ))}
-                      </SelectContent>
-                   </Select>
-                </div>
-
-                {status === 'cancelled' && (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                     <label className="text-[11px] font-black text-red-500 uppercase tracking-widest ml-1">Cancellation Reason</label>
-                     <Textarea 
-                       value={reason} 
-                       onChange={(e) => setReason(e.target.value)} 
-                       placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
-                       className="rounded-2xl bg-slate-50 dark:bg-slate-800 border-none min-h-[150px] p-8 font-medium shadow-inner text-lg" 
-                     />
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-4">
-                  <Button 
-                    onClick={onUpdate} 
-                    disabled={isSaving} 
-                    className="w-full h-12 md:h-14 rounded-xl md:rounded-2xl font-black text-[10px] md:text-sm uppercase tracking-widest shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90 active:scale-[0.98] transition-all"
-                  >
-                    {isSaving ? <Loader2 className="animate-spin w-8 h-8" /> : "Save Status"}
-                  </Button>
-
-                  {/* MANUAL SUCCESS BUTTON */}
-                  {order.status !== 'successful' && (
-                    <Button 
-                      onClick={() => onManualSuccess(order.id)} 
-                      disabled={isSaving} 
-                      className="w-full h-12 md:h-13 rounded-xl md:rounded-2xl font-black text-[9px] sm:text-sm uppercase tracking-tighter sm:tracking-widest shadow-xl bg-green-600 hover:bg-green-700 text-white active:scale-[0.98] transition-all"
-                    >
-                      {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="mr-2" /> Confirm Success (Manual)</>}
-                    </Button>
-                  )}
-                </div>
-
-                <div className="pt-6 space-y-6">
-                   <p className="text-center text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Quick Actions</p>
-                   <div className="grid grid-cols-2 gap-4">
-                      <Button variant="outline" onClick={handleCopyId} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
-                         <Copy size={16} /> Copy ID
-                      </Button>
-                      <Button variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl font-bold uppercase text-xs gap-2 border-2">
-                         <MessageCircle size={16} /> WhatsApp
-                      </Button>
+                <div className="min-w-0">
+                   <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{buyer?.name || "Deleted User"}</p>
+                      {buyer?.isVerified && <VerifiedBadge />}
+                   </div>
+                   <p className="text-xs font-medium text-slate-400 mt-0.5">{buyer?.phoneNumber || "No phone linked"}</p>
+                   <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-primary/10 text-primary border-none text-[9px] font-bold px-2 py-0">
+                         {buyer?.role || 'User'}
+                      </Badge>
+                      <span className="text-[10px] text-slate-400 font-semibold">{buyer?.points || 0} pts</span>
                    </div>
                 </div>
              </div>
+
+             {(buyer?.uid || order.userId) && (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/admin/users/${buyer?.uid || order.userId}`)}
+                  className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-white/10 hover:border-primary text-slate-500 hover:text-primary transition-all flex items-center justify-center shrink-0 shadow-xs"
+                  title="Inspect Profile"
+                >
+                   <Eye size={16} />
+                </button>
+             )}
           </div>
-       </Card>
-    </div>
-  );
-}
+       </div>
+
+       {/* Handling Staff Card (Admin Log) */}
+       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-primary">
+             <ShieldCheck size={18} />
+             <h4 className="font-bold text-xs uppercase tracking-widest text-primary">Handling Staff</h4>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-white/5 flex items-center justify-between gap-4">
+             <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-12 h-12 rounded-xl overflow-hidden relative border border-slate-200 dark:border-slate-700 bg-white shrink-0 flex items-center justify-center">
+                   {order.processedBy?.photoURL ? (
+                      <Image src={order.processedBy.photoURL} alt="" fill className="object-cover" />
+                   ) : order.processedBy?.name ? (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center font-bold text-primary text-base">
+                         {order.processedBy.name.charAt(0).toUpperCase()}
+                      </div>
+                   ) : (order.approvedBy === 'auto_sms' || order.smsMatchedId) ? (
+                      <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                         <Smartphone size={20} />
+                      </div>
+                   ) : (
+                      <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                         <User size={20} />
+                      </div>
+                   )}
+                </div>
+                <div className="min-w-0">
+                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Assigned Handler</p>
+                   <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                      {order.processedBy?.name || ((order.approvedBy === 'auto_sms' || order.smsMatchedId) ? 'Auto-SMS Match' : "Wali lama furin")}
+                    </p>
+                    {order.processedAt && (
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                         {safeFormatDistanceToNow(order.processedAt)} ago
+                      </p>
+                    )}
+                 </div>
+              </div>
+
+              <div className="text-right shrink-0">
+                 <p className="text-[9px] font-bold uppercase text-slate-400">Resolved Date</p>
+                 <p className="font-bold text-xs text-slate-900 dark:text-white">
+                    {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "MMM d, yyyy") : "---"}
+                 </p>
+                 <p className="text-[10px] font-semibold text-primary">
+                    {order.completedAt && !isNaN(new Date(order.completedAt).getTime()) ? format(new Date(order.completedAt), "HH:mm") : "PENDING..."}
+                 </p>
+              </div>
+           </div>
+        </div>
+
+        {/* Actions & Status Control Card */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-white/10 shadow-sm space-y-5">
+           <div className="flex items-center gap-2 text-primary">
+              <RefreshCw size={18} className={cn(isSaving && "animate-spin")} />
+              <h4 className="font-bold text-xs uppercase tracking-widest text-primary">Actions</h4>
+           </div>
+
+           <div className="space-y-4">
+              <div className="space-y-2">
+                 <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Update Status</label>
+                 <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/70 dark:border-white/10 px-4 font-bold text-sm">
+                       <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border dark:border-white/10 shadow-2xl z-[200]">
+                       {['pending', 'processing', 'successful', 'cancelled'].map(s => (
+                         <SelectItem key={s} value={s} className="p-3 font-bold uppercase text-xs rounded-lg">{s}</SelectItem>
+                       ))}
+                    </SelectContent>
+                 </Select>
+              </div>
+
+              {status === 'cancelled' && (
+                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-xs font-bold text-rose-500">Cancellation Reason</label>
+                    <Textarea 
+                      value={reason} 
+                      onChange={(e) => setReason(e.target.value)} 
+                      placeholder="e.g. Invalid Sender Number or Wrong Player ID" 
+                      className="rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/70 dark:border-white/10 min-h-[100px] p-4 font-medium text-sm" 
+                    />
+                 </div>
+              )}
+
+              <div className="flex flex-col gap-2.5 pt-2">
+                 <Button 
+                   onClick={onUpdate} 
+                   disabled={isSaving} 
+                   className="w-full h-12 rounded-xl font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20 transition-all active:scale-[0.98]"
+                 >
+                    {isSaving ? <Loader2 className="animate-spin w-5 h-5" /> : "Save Status"}
+                 </Button>
+
+                 {order.status !== 'successful' && (
+                    <Button 
+                      onClick={() => onManualSuccess(order.id)} 
+                      disabled={isSaving} 
+                      className="w-full h-12 rounded-xl font-bold text-xs uppercase tracking-wider bg-[#10B981] hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98] gap-2"
+                    >
+                       {isSaving ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={16} /> Successfully</>}
+                    </Button>
+                 )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-white/5 space-y-3">
+                 <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quick Operations</p>
+                 <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCopyReceipt} 
+                      className="h-11 rounded-xl font-bold uppercase text-xs gap-2 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    >
+                       <Copy size={15} /> Receipt
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleWhatsApp} 
+                      className="h-11 rounded-xl font-bold uppercase text-xs gap-2 text-emerald-600 border-emerald-200/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                    >
+                       <MessageCircle size={15} /> Contact
+                    </Button>
+                 </div>
+              </div>
+           </div>
+        </div>
+     </div>
+   );
+ }
 
 function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus, buyerId, setBuyerId, isSaving, onDelete, onEnforce, enforceAccountAction, suspendSeller, dismissAccountWarning }: any) {
   const [now, setNow] = useState(Date.now());
@@ -5554,7 +6412,7 @@ function AccountDetailView({ post, allUsers, onBack, onUpdate, status, setStatus
                       <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40">
                          ABOUT {safeFormatDistanceToNow(post.createdAt)} AGO
                       </span>
-                </div>
+                   </div>
                 </div>
                 <div className="text-right">
                    <p className="text-4xl md:text-7xl font-headline font-bold text-primary tracking-tighter">
@@ -5775,11 +6633,75 @@ function DetailRow({ label, value, color }: { label: string, value: string, colo
    );
 }
 
-function SettingInput({ label, value, onChange, placeholder, type = "text" }: { label: string, value: string, onChange: (v: string) => void, placeholder: string, type?: string }) {
+function SettingInput({ 
+  label, 
+  value, 
+  onChange, 
+  placeholder, 
+  type = "text",
+  icon: Icon,
+  hint,
+  description,
+  rightElement,
+  className,
+  disabled
+}: { 
+  label: string, 
+  value: string, 
+  onChange: (v: string) => void, 
+  placeholder: string, 
+  type?: string,
+  icon?: any,
+  hint?: string,
+  description?: string,
+  rightElement?: React.ReactNode,
+  className?: string,
+  disabled?: boolean
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const actualType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
-    <div className="space-y-2">
-       <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">{label}</Label>
-       <Input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="h-12 md:h-16 rounded-xl md:rounded-2xl border-none bg-slate-50 dark:bg-slate-800 font-bold px-4 md:px-6 shadow-inner text-sm md:text-lg focus:ring-primary transition-all" />
+    <div className={cn("space-y-2 group/input", className)}>
+       <div className="flex items-center justify-between ml-1">
+         <Label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-1.5">
+           {Icon && <Icon className="w-3.5 h-3.5 text-primary/80" />}
+           {label}
+         </Label>
+         {hint && <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{hint}</span>}
+       </div>
+       <div className="relative flex items-center">
+         <Input 
+           type={actualType} 
+           placeholder={placeholder} 
+           value={value} 
+           disabled={disabled}
+           onChange={e => onChange(e.target.value)} 
+           className={cn(
+             "h-12 md:h-14 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-slate-800/80 font-bold px-4 md:px-5 shadow-inner text-sm md:text-base text-slate-900 dark:text-white focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-white dark:focus-visible:bg-slate-900 transition-all placeholder:text-slate-400/70",
+             isPassword && "pr-12",
+             rightElement && "pr-24"
+           )} 
+         />
+         {isPassword && (
+           <button
+             type="button"
+             onClick={() => setShowPassword(!showPassword)}
+             className="absolute right-3 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+           >
+             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+           </button>
+         )}
+         {rightElement && (
+           <div className="absolute right-2 flex items-center">
+             {rightElement}
+           </div>
+         )}
+       </div>
+       {description && (
+         <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium ml-1 leading-snug">{description}</p>
+       )}
     </div>
   );
 }
@@ -6048,16 +6970,3 @@ function EventAccountParticipantsView({ eventId, eventAccount, onBack, onAssignW
   );
 }
 
-export {
-  OrderDetailView,
-  AccountDetailView,
-  SideNavItem,
-  StatCard,
-  StatusBadge,
-  StatItem,
-  InsightStat,
-  DetailRow,
-  SettingInput,
-  EventAccountAdminCard,
-  EventAccountParticipantsView
-}
